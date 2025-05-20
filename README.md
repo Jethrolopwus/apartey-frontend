@@ -1,8 +1,26 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# ⚛️ Next.js App – Atomic Design, TypeScript & Tailwind CSS
 
+This is a modern web application built with [Next.js 13+ App Router](https://nextjs.org/docs/app), [TypeScript](https://www.typescriptlang.org/), and [Tailwind CSS](https://tailwindcss.com/), following the **Atomic Design** pattern for component architecture.
+
+---
+
+## 🧱 Project Structure
+/app → App Router pages and layouts
+/components → Atomic components (atoms, molecules, organisms, etc.)
+/public → Static assets (e.g., images, favicon)
+/styles → Tailwind and global CSS
 ## Getting Started
+### 1. **Clone the Repository**
 
-First, run the development server:
+```bash
+git clone https://github.com/Apartey/apartey-frontend.git
+cd apartey-frontend
+first,  Install Dependencies
+Make sure you have Node.js (v18 or later) installed.
+```bash
+npm install
+
+Now, run the development server:
 
 ```bash
 npm run dev
@@ -34,3 +52,11 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+
+This project follows the Atomic Design methodology:
+
+/components
+  /atoms        → Basic UI elements (Button, Input, Icon)
+  /molecules    → Groups of atoms (FormField, CardHeader)
+  /organisms    → Sections made of molecules (Navbar, Footer)
+  /templates    → Page-level layouts
