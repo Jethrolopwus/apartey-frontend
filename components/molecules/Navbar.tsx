@@ -95,7 +95,7 @@ export default function Navbar({ logoSrc = '/logo.svg' }: NavbarProps) {
 
         {/* Desktop Right Side */}
         <div className="hidden md:flex items-center space-x-4">
-          <Link href="/login" className="text-gray-600 hover:text-orange-500 transition">Login</Link>
+          <Link href="/signin" className="text-gray-600 hover:text-orange-500 transition">Login</Link>
           <Link href="/contact" className="bg-orange-100 text-orange-500 hover:bg-orange-200 transition px-4 py-2 rounded">
             Contact us
           </Link>
@@ -167,7 +167,7 @@ export default function Navbar({ logoSrc = '/logo.svg' }: NavbarProps) {
             
             <Link href="/insights" className="text-gray-600 hover:text-orange-500 transition py-2">Insights</Link>
             <Link href="/blog" className="text-gray-600 hover:text-orange-500 transition py-2">Blog</Link>
-            <Link href="/login" className="text-gray-600 hover:text-orange-500 transition py-2">Login</Link>
+            <Link href="/signin" className="text-gray-600 hover:text-orange-500 transition py-2">Login</Link>
             <Link href="/contact" className="bg-orange-100 text-orange-500 hover:bg-orange-200 transition px-4 py-2 rounded text-center">Contact us</Link>
           </div>
         </div>

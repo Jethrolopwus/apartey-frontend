@@ -1,3 +1,4 @@
+"use client";
 import ResetPasswordButton from "@/components/atoms/Buttons/ResetPasswordButton";
 import { useForm, SubmitHandler } from "react-hook-form";
 import { FormValues } from "@/types/generated";
