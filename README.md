@@ -57,6 +57,9 @@ This project follows the Atomic Design methodology:
 
 /components
   /atoms        → Basic UI elements (Button, Input, Icon)
+
   /molecules    → Groups of atoms (FormField, CardHeader)
+
   /organisms    → Sections made of molecules (Navbar, Footer)
+  
   /templates    → Page-level layouts

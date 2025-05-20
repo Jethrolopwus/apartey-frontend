@@ -3,6 +3,7 @@ import { FieldErrors, SubmitHandler, UseFormRegister } from "react-hook-form";
 export declare type FormValues = {
     email: string;
   };
+
  export  interface SignUpButtonProps {
     isSubmitting: boolean;
   }
