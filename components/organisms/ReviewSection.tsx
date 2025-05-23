@@ -1,16 +1,14 @@
 "use client";
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Star, ChevronDown, Maximize, Navigation } from 'lucide-react';
 import Image from 'next/image';
-import mapImage  from "@/public/Map.png"; 
+import mapImage from "@/public/Map.png";
 import { ReviewData, ReviewsSectionProps, SortOption } from '@/types/generated';
 
-
-const ReviewsSection: React.FC<ReviewsSectionProps> = ({ 
-  initialReviews, 
+const ReviewsSection: React.FC<ReviewsSectionProps> = ({
+  initialReviews,
   initialSortOption = 'Recent'
 }) => {
-  // Sample data
   const [reviews] = useState<ReviewData[]>(initialReviews || [
     {
       id: '1',
@@ -43,6 +41,7 @@ const ReviewsSection: React.FC<ReviewsSectionProps> = ({
 
   const [sortOption, setSortOption] = useState<string>(initialSortOption);
   const [isDropdownOpen, setIsDropdownOpen] = useState<boolean>(false);
+  const [mapMarkers, setMapMarkers] = useState<{ id: string; top: string; left: string }[]>([]);
 
   const sortOptions: SortOption[] = useMemo(() => [
     { label: 'Recent', value: 'recent' },
@@ -50,17 +49,15 @@ const ReviewsSection: React.FC<ReviewsSectionProps> = ({
     { label: 'Most Reviews', value: 'most_reviews' },
   ], []);
 
- 
-  const mapMarkers = useMemo(() => {
-    // In a real app, these would be actual geocoded locations
-    return Array.from({ length: 12 }).map((_, i) => ({
+  useEffect(() => {
+    const markers = Array.from({ length: 12 }).map((_, i) => ({
       id: `marker-${i + 1}`,
       top: `${20 + Math.random() * 60}%`,
       left: `${20 + Math.random() * 60}%`,
     }));
+    setMapMarkers(markers);
   }, []);
 
-  // Render star rating
   const renderStars = (rating: number) => {
     const stars = [];
     const fullStars = Math.floor(rating);
@@ -68,19 +65,11 @@ const ReviewsSection: React.FC<ReviewsSectionProps> = ({
 
     for (let i = 0; i < 5; i++) {
       if (i < fullStars) {
-        // Full star
-        stars.push(
-          <Star key={i} size={16} className="fill-gray-400 text-gray-400" />
-        );
+        stars.push(<Star key={i} size={16} className="fill-gray-400 text-gray-400" />);
       } else if (i === fullStars && hasHalfStar) {
-        // Half star
-        stars.push(
-          <Star key={i} size={16} className="fill-gray-400 text-gray-400 opacity-50" />
-        );
+        stars.push(<Star key={i} size={16} className="fill-gray-400 text-gray-400 opacity-50" />);
       } else {
-        stars.push(
-          <Star key={i} size={16} className="text-gray-300" />
-        );
+        stars.push(<Star key={i} size={16} className="text-gray-300" />);
       }
     }
     return stars;
@@ -89,7 +78,6 @@ const ReviewsSection: React.FC<ReviewsSectionProps> = ({
   const handleSortChange = (option: SortOption) => {
     setSortOption(option.label);
     setIsDropdownOpen(false);
-    // In a real app, you would apply sorting logic here
   };
 
   return (
@@ -134,12 +122,12 @@ const ReviewsSection: React.FC<ReviewsSectionProps> = ({
         {/* Right Side - Map */}
         <div className="lg:w-1/2 relative">
           {/* Sort Dropdown */}
-          <div className="absolute   top-0 right-0 flex justify-end mb-4 z-10">
+          <div className="absolute top-0 right-0 flex justify-end mb-4 z-10">
             <div className="relative">
               <div className="flex items-center gap-2 bg-white rounded-md shadow px-4 py-2">
                 <span className="text-gray-600 text-sm">Sort by</span>
                 <div className="relative">
-                  <button 
+                  <button
                     className="flex items-center gap-2 text-gray-800"
                     onClick={() => setIsDropdownOpen(!isDropdownOpen)}
                     aria-expanded={isDropdownOpen}
@@ -148,14 +136,14 @@ const ReviewsSection: React.FC<ReviewsSectionProps> = ({
                     {sortOption}
                     <ChevronDown size={16} />
                   </button>
-                  
+
                   {isDropdownOpen && (
-                    <ul 
+                    <ul
                       className="absolute right-0 mt-1 w-40 bg-white shadow-lg rounded-md py-1 z-20"
                       role="listbox"
                     >
                       {sortOptions.map((option) => (
-                        <li 
+                        <li
                           key={option.value}
                           className="px-4 py-2 hover:bg-gray-100 cursor-pointer text-gray-800"
                           onClick={() => handleSortChange(option)}
@@ -174,19 +162,17 @@ const ReviewsSection: React.FC<ReviewsSectionProps> = ({
 
           {/* Map Container */}
           <div className="w-full h-[500px] bg-gray-200 rounded-lg overflow-hidden relative">
-            {/* Map placeholder - in a real app this would be integrated with a map service */}
             <div className="w-full h-full relative">
-              <Image 
-                src={mapImage} 
-                alt="Map of property locations" 
-                layout="fill" 
-                className="object-cover" 
+              <Image
+                src={mapImage}
+                alt="Map of property locations"
+                fill
+                className="object-cover"
                 priority
               />
-              
-              {/* Map markers */}
+
               {mapMarkers.map((marker) => (
-                <div 
+                <div
                   key={marker.id}
                   className="absolute w-6 h-6 flex items-center justify-center"
                   style={{
@@ -198,16 +184,15 @@ const ReviewsSection: React.FC<ReviewsSectionProps> = ({
                   <div className="w-5 h-5 rounded-full bg-orange-500 border-2 border-white drop-shadow-md"></div>
                 </div>
               ))}
-              
-              {/* Map controls */}
+
               <div className="absolute bottom-4 right-4 flex flex-col gap-2">
-                <button 
+                <button
                   className="bg-white p-2 rounded-md shadow-md hover:bg-gray-50 transition-colors"
                   aria-label="Fullscreen"
                 >
                   <Maximize size={20} className="text-gray-700" />
                 </button>
-                <button 
+                <button
                   className="bg-white p-2 rounded-md shadow-md hover:bg-gray-50 transition-colors"
                   aria-label="Navigate to current location"
                 >

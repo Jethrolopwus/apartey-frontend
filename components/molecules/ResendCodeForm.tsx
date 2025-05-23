@@ -1,5 +1,5 @@
 "use client";
-import ResetPasswordButton from "@/components/atoms/Buttons/ResetPasswordButton";
+
 import { useForm, SubmitHandler } from "react-hook-form";
 import { FormValues } from "@/types/generated";
 import { ResetPasswordFormProps } from "@/types/generated";
@@ -39,7 +39,7 @@ const ResetPasswordForm: React.FC<ResetPasswordFormProps> = ({ onSubmit }) => {
           <p className="mt-1 text-sm text-red-500">{errors.email.message}</p>
         )}
       </div>
-      <ResendCodeButton  />
+      <ResendCodeButton />
     </div>
   );
 };

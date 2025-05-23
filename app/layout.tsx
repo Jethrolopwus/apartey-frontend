@@ -3,6 +3,8 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import Navbar from "@/components/molecules/Navbar";
 import Footer from "@/components/molecules/Footer";
+import QueryProvider from "@/app/QueryProvider";
+import ToastProvider from "@/app/ToastProvider";
 
 
 
@@ -33,9 +35,12 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${geistSans.className} ${geistMono.className} bg-gray-50 min-h-screen font-[family-name:var(--font-geist-sans)]`}>
+        <QueryProvider>
+      <ToastProvider/>
         <Navbar />
         {children}
         <Footer/>
+        </QueryProvider>
       </body>
     </html>
   );

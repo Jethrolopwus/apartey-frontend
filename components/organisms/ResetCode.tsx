@@ -4,13 +4,13 @@ import React from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { SubmitHandler } from 'react-hook-form';
-import ResendCodeForm from '../molecules/ResetPasswordForm';
+import ResetPasswordForm from '../molecules/ResetPasswordForm';
 import { FormValues } from '@/types/generated';
 
 
 
 const ResetPassword: React.FC = () => {
-  const handleResendCode: SubmitHandler<FormValues> = (data) => {
+  const handleResetPassword: SubmitHandler<FormValues> = (data) => {
     // Handle password reset logic here
     console.log('Sending reset link to:', data.email);
   };
@@ -32,11 +32,11 @@ const ResetPassword: React.FC = () => {
           </div>
         </div>
         
-        <h1 className="text-4xl font-bold text-center mb-4">Resend code</h1>
-        <p className="text-center text-gray-400 mb-6">Enter your email and we'll send you a new Code</p>
+        <h1 className="text-4xl font-bold text-center mb-4">Reset your password</h1>
+        <p className="text-center text-gray-400 mb-6">Enter your email and we'll send you a link to reset your password</p>
         {/* ==== Reset Password Form ======= */}
         <form onSubmit={(e) => e.preventDefault()}>
-          <ResendCodeForm onSubmit={handleResendCode} />
+          <ResetPasswordForm onSubmit={handleResetPassword} />
         </form>
         
       </div>

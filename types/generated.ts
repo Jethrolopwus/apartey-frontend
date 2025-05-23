@@ -2,7 +2,9 @@ import { FieldErrors, SubmitHandler, UseFormRegister } from "react-hook-form";
 
 export declare type FormValues = {
     email: string;
+    code?: string;
   };
+  
   export interface ReviewLocation {
     lat: number;
     lng: number;
@@ -89,7 +91,7 @@ export declare type FormValues = {
       email: string;
       password: string;
       confirmPassword: string;
-    };
+    }
     
     export interface SignUpFormProps {
       onSubmit: (e: React.FormEvent) => void;
