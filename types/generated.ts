@@ -1,16 +1,25 @@
 import { FieldErrors, SubmitHandler, UseFormRegister } from "react-hook-form";
 
-export declare type FormValues = {
-    email: string;
-    code?: string;
-  };
+export interface FormValues {
+  code: string;
+  email: string;
+  password: string;
+  confirmPassword: string;
+}
   
   export interface ReviewLocation {
+    streetAddress: any;
+    district: string;
+    city: string;
     lat: number;
     lng: number;
   }
   
   export interface ReviewData {
+    linkedProperty: any;
+    isLinkedToDatabaseProperty: any;
+    overallRating(overallRating: any): import("react").ReactNode;
+    detailedReview: string;
     id: string;
     address: string;
     rating: number;
@@ -29,6 +38,7 @@ export declare type FormValues = {
     initialReviews?: ReviewData[];
     initialSortOption?: string;
   }
+ 
   export interface Category {
     id: number;
     title: string;
@@ -58,6 +68,7 @@ export declare type FormValues = {
   
   export interface FeaturedReview {
     id: string;
+    searchTerm?: string;
     imageUrl: string;
     verified?: boolean;
     address: string;
@@ -80,7 +91,9 @@ export declare type FormValues = {
   }
   export interface GoogleAuthButtonProps {
     mode: 'signin' | 'signup';
-    onClick: () => void;
+    onClick?: () => void;
+    callbackUrl?: string;
+
   }
 
   export interface ResetPasswordFormProps {
@@ -88,6 +101,7 @@ export declare type FormValues = {
     }
  
     export declare type FormData = {
+      code: string;
       email: string;
       password: string;
       confirmPassword: string;

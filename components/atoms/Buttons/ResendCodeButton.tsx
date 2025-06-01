@@ -21,7 +21,7 @@ export default function ResendCodeButton({ disabled }: Props) {
       type="button"
       disabled={disabled}
       className={`text-sm mt-4 mb-3 cursor-pointer hover:underline transition-opacity ${
-        disabled ? "text-gray-100  bg-orange-500 py-2  px-2 rounded-2xl  border cursor-not-allowed" : "text-gray-100  bg-orange-500 py-2  px-2 rounded-2xl  border"
+        disabled ? "text-black  cursor-not-allowed" : "text-black hover:text-orange-500 "
       }`}
     >
       Resend code

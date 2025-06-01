@@ -1,3 +1,4 @@
+
 "use client";
 import { useForm, Controller } from "react-hook-form";
 import Image from "next/image";
@@ -7,12 +8,14 @@ import { useRouter } from "next/navigation";
 import { toast } from "react-hot-toast";
 import { useVerifyEmailMutation } from "@/Hooks/use.verifyEmail.mutation";
 import ResendCodeButton from "@/components/atoms/Buttons/ResendCodeButton";
+import {
+  InputOTP,
+  InputOTPGroup,
+  InputOTPSlot,
+} from "@/components/molecules/inputOtp";
 
 interface FormValues {
-  code1: string;
-  code2: string;
-  code3: string;
-  code4: string;
+  code: string;
 }
 
 export default function VerifyEmail() {
@@ -30,12 +33,10 @@ export default function VerifyEmail() {
   const { mutate, data, error, isLoading } = useVerifyEmailMutation();
 
   const onSubmit = (formData: FormValues) => {
-    const code =
-      formData.code1 + formData.code2 + formData.code3 + formData.code4;
     const email = localStorage.getItem("email");
 
     mutate(
-      { email: email as string, code },
+      { email: email as string, code: formData.code },
       {
         onSuccess: () => {
           //   toast.success("Email verified successfully!");
@@ -44,13 +45,10 @@ export default function VerifyEmail() {
 
         onError: () => {
           setSubmitError("Invalid verification code.");
-          // Highlight all code boxes as invalid
-          ["code1", "code2", "code3", "code4"].forEach((field) =>
-            setError(field as keyof FormValues, {
-              type: "manual",
-              message: " ",
-            })
-          );
+          setError("code", {
+            type: "manual",
+            message: "Invalid verification code",
+          });
         },
       }
     );
@@ -64,6 +62,7 @@ export default function VerifyEmail() {
       router.push("/signup");
     }
   }, [router]);
+
   useEffect(() => {
     if (timeLeft > 0) {
       const timer = setTimeout(() => setTimeLeft(timeLeft - 1), 1000);
@@ -91,34 +90,65 @@ export default function VerifyEmail() {
         </p>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-          <div className="flex justify-between space-x-2">
-            {["code1", "code2", "code3", "code4"].map((field) => (
-              <Controller
-                key={field}
-                name={field as keyof FormValues}
-                control={control}
-                defaultValue=""
-                rules={{
-                  required: true,
-                  maxLength: 1,
-                  minLength: 1,
-                  pattern: /[0-9]/,
-                }}
-                render={({ field }) => (
-                  <input
-                    {...field}
-                    maxLength={1}
-                    className={`w-14 h-14 text-center border rounded-md text-xl outline-none ${
-                      errors[field.name] ? "border-red-500" : "border-gray-300"
-                    }`}
-                  />
-                )}
-              />
-            ))}
+          <div className="flex justify-center">
+            <Controller
+              name="code"
+              control={control}
+              defaultValue=""
+              rules={{
+                required: "Please enter the verification code",
+                minLength: {
+                  value: 4,
+                  message: "Code must be 4 digits",
+                },
+                pattern: {
+                  value: /^[0-9]{4}$/,
+                  message: "Code must contain only numbers",
+                },
+              }}
+              render={({ field }) => (
+                <InputOTP
+                  maxLength={4}
+                  value={field.value}
+                  onChange={field.onChange}
+                  onBlur={field.onBlur}
+                  className={errors.code ? "border-red-500" : ""}
+                >
+                  <InputOTPGroup>
+                    <InputOTPSlot 
+                      index={0} 
+                      className={`w-14 h-14 text-xl ${
+                        errors.code ? "border-red-500" : ""
+                      }`}
+                    />
+                    <InputOTPSlot 
+                      index={1} 
+                      className={`w-14 h-14 text-xl ${
+                        errors.code ? "border-red-500" : ""
+                      }`}
+                    />
+                    <InputOTPSlot 
+                      index={2} 
+                      className={`w-14 h-14 text-xl ${
+                        errors.code ? "border-red-500" : ""
+                      }`}
+                    />
+                    <InputOTPSlot 
+                      index={3} 
+                      className={`w-14 h-14 text-xl ${
+                        errors.code ? "border-red-500" : ""
+                      }`}
+                    />
+                  </InputOTPGroup>
+                </InputOTP>
+              )}
+            />
           </div>
 
-          {submitError && (
-            <p className="text-red-500 text-sm mt-2">{submitError}</p>
+          {(submitError || errors.code) && (
+            <p className="text-red-500 text-sm mt-2">
+              {submitError || errors.code?.message}
+            </p>
           )}
 
           <ContinueButton

@@ -1,3 +1,3 @@
-import ResetPassword from "@/components/organisms/ResetPassword";
+import ResetPassword from "@/components/organisms/PasswordReset";
 
 export default ResetPassword;

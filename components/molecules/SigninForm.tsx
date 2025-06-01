@@ -1,11 +1,19 @@
-import React from 'react';
+
+"use clients";
+import React, { useState } from 'react';
+import { EyeIcon, EyeSlashIcon } from '@heroicons/react/24/outline';
 import SignInButton from '@/components/atoms/Buttons/SignInButton';
 import { SignInFormProps } from '@/types/generated';
 
-
 const SignInForm: React.FC<SignInFormProps> = ({ isSubmitting, onSubmit, register, errors }) => {
+  const [showPassword, setShowPassword] = useState(false);
+
+  const togglePasswordVisibility = () => {
+    setShowPassword(!showPassword);
+  };
+
   return (
-    <form className="mt-8 space-y-6 " onSubmit={onSubmit}>
+    <form className="mt-8 space-y-6" onSubmit={onSubmit}>
       <div className="space-y-4 shadow-xl">
         <div>
           <label htmlFor="email" className="block text-sm font-medium text-gray-700">
@@ -45,15 +53,15 @@ const SignInForm: React.FC<SignInFormProps> = ({ isSubmitting, onSubmit, registe
               </a>
             </div>
           </div>
-          <div className="mt-1">
+          <div className="mt-1 relative">
             <input
               id="password"
-              type="password"
+              type={showPassword ? 'text' : 'password'}
               autoComplete="current-password"
               placeholder="Enter password"
               className={`block w-full rounded-md border ${
                 errors.password ? 'border-red-300' : 'border-gray-300'
-              } px-3 py-2 placeholder-gray-400 shadow-sm focus:border-orange-500 focus:outline-none focus:ring-orange-500 sm:text-sm`}
+              } px-3 py-2 pr-10 placeholder-gray-400 shadow-sm focus:border-orange-500 focus:outline-none focus:ring-orange-500 sm:text-sm`}
               {...register('password', {
                 required: 'Password is required',
                 minLength: {
@@ -62,18 +70,33 @@ const SignInForm: React.FC<SignInFormProps> = ({ isSubmitting, onSubmit, registe
                 },
               })}
             />
+            <button
+              type="button"
+              className="absolute inset-y-0 right-0 flex items-center pr-3"
+              onClick={togglePasswordVisibility}
+            >
+              {showPassword ? (
+                <EyeSlashIcon className="h-5 w-5 text-gray-400 hover:text-gray-600 transition-colors" />
+              ) : (
+                <EyeIcon className="h-5 w-5 text-gray-400 hover:text-gray-600 transition-colors" />
+              )}
+            </button>
             {errors.password && (
               <p className="mt-1 text-xs text-red-600">{errors.password.message}</p>
             )}
           </div>
         </div>
       </div>
-            {/* ==== Sign Up Button ========= */}
+      
+      {/* ==== Sign In Button ========= */}
       <div>
-        <SignInButton isSubmitting ={isSubmitting}/>
+        <SignInButton isSubmitting={isSubmitting}/>
       </div>
     </form>
   );
 };
 
 export default SignInForm;
+
+
+

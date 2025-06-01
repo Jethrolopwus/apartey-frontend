@@ -40,7 +40,7 @@ const AxiosInstance = axios.create({
 
   httpSignIn = async (data: FormData) => {
     try {
-        const response = await axios.post(endpoints.signin, data);
+        const response = await AxiosInstance.post(endpoints.signin, data);
         return response.data;
       } catch (error) {
         throw error;
@@ -59,10 +59,41 @@ const AxiosInstance = axios.create({
       const response = await AxiosInstance.post(endpoints.resendCode, data);
       return response.data;
     } catch (error: any) {
-      throw new Error(error.response?.data?.message || "Verification failed");
+      throw new Error(error.response?.data?.message || "ResendCode failed");
+    }
+  };
+  httpResetPassword = async (data: FormValues) => {
+    try {
+      const response = await AxiosInstance.post(endpoints.resetPassword, data);
+      return response.data;
+    } catch (error: any) {
+      throw new Error(error.response?.data?.message || "ResetPassword failed");
     }
   };
 
+ 
+
+
+     httpSearchReviews = async (searchTerm: string) => {
+      try {
+        const response = await AxiosInstance.get("/reviews/search", {
+          params: { fullAddress: searchTerm },
+        });
+        return response.data;
+      } catch (error: any) {
+        throw new Error(error.response?.data?.message || "Search failed");
+      }
+    };
+  
+  httpGetAllReviews = async () =>{
+    try {
+      
+      const response = await AxiosInstance.get(endpoints.getAllReviews) 
+      return response.data;
+    } catch (error:any) {
+      throw new Error(error.response?.data?.message || "Search failed");
+    }
+  }
 
 }
 const http = new BaseURL();
