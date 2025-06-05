@@ -1,4 +1,3 @@
-
 "use client";
 import { useState } from "react";
 import Image from "next/image";
@@ -21,7 +20,6 @@ export default function Hero() {
     router.push(`/searchReview?q=${encodeURIComponent(inputValue)}`);
   };
 
-
   const testimonialAvatars = [
     { src: eclipse, alt: "User avatar" },
     { src: eclipse2, alt: "User avatar" },
@@ -35,7 +33,8 @@ export default function Hero() {
             Find your perfect rental with confidence
           </h1>
           <p className="text-gray-500 text-lg mb-8">
-            Discover what real tenants and homeowners are saying about local properties around you
+            Discover what real tenants and homeowners are saying about local
+            properties around you
           </p>
 
           <SearchInput
@@ -43,27 +42,27 @@ export default function Hero() {
             countryRestrictions={["ng", "ee"]}
             onPlaceSelect={(place) => {
               setInputValue(place.description);
-              router.push(`/searchReview?q=${encodeURIComponent(place.description)}`);
-            } }
+              router.push(
+                `/searchReview?q=${encodeURIComponent(place.description)}`
+              );
+            }}
             onChange={(value) => setInputValue(value)}
             onSubmit={(value) => {
               if (value) {
                 router.push(`/searchReview?q=${encodeURIComponent(value)}`);
               }
-            } } onLocationSelect={function (location: string): void {
+            }}
+            onLocationSelect={function (location: string): void {
               throw new Error("Function not implemented.");
-            } }          />
+            }}
+          />
 
           <div className="flex flex-col md:flex-row gap-4 justify-center my-8">
             <Link href="/reviewsPage">
-            <Button variant="primary">
-              Share your experience
-            </Button>
+              <Button variant="primary">Share your experience</Button>
             </Link>
             <Link href="/writeReviews">
-            <Button variant="secondary" >
-              Leave a review
-            </Button>
+              <Button variant="secondary">Leave a review</Button>
             </Link>
           </div>
 
@@ -73,7 +72,7 @@ export default function Hero() {
           />
         </div>
       </div>
-      <ReviewsSection/>
+      <ReviewsSection />
       <FeaturedReviews searchTerm="" />
     </div>
   );

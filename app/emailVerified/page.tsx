@@ -7,7 +7,7 @@ export default function EmailVerified() {
   const router = useRouter();
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-white px-4 text-center">
+    <div className="min-h-screen flex flex-col items-center justify-center shadow-m border border-gray-100 bg-gray-100 px-4 text-center">
     
       <div className="mb-12">
         <Image

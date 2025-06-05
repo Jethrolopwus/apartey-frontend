@@ -1,67 +1,75 @@
 "use client";
 import Image from "next/image";
-import { Star } from "lucide-react";
-import { useGetALlReviewsQuery } from "@/Hooks/use-GetAllReviews.query";
+import { Star, ChevronDown } from "lucide-react";
+import { useGetAllReviewsQuery } from "@/Hooks/use-GetAllReviews.query";
+import { useSearchParams, useRouter } from "next/navigation";
+import { useState, useEffect } from "react";
+import { Review, AllReviewsProps } from "@/types/generated";
 
-interface Review {
-  _id: string;
-  submitAnonymously: boolean;
-  status: string;
-  createdAt: string;
-  updatedAt: string;
-  location: {
-    country: string;
-    city: string;
-    district: string;
-    zipCode?: string;
-    streetAddress: string;
-    apartmentUnitNumber?: string;
-    displayOnMap?: boolean;
-  };
-  overallRating: number;
-  detailedReview: string;
-  valueForMoney: number;
-  costOfRepairsCoverage: string;
-  overallExperience: number;
-  linkedProperty: {
-    _id: string;
-    propertyType: string;
-    location: {
-      country: string;
-      city: string;
-      district: string;
-      zipCode: string;
-      streetAddress: string;
-      displayOnMap: boolean;
-    };
-    price: number;
-    bedrooms: number;
-    bathrooms: number;
-    media: {
-      photos: string[];
-      videoTourLink: string;
-    };
-  } | null;
-  isLinkedToDatabaseProperty: boolean;
-  reviewer: {
-    _id: string;
-  };
-}
-
-interface AllReviewsProps {
-  className?: string;
-  showHeader?: boolean;
-  maxItems?: number;
-  gridCols?: string;
-}
+// Sort options configuration
+const sortOptions = [
+  {
+    label: "Most Recent",
+    value: "mostRecent",
+    sortBy: "mostRecent",
+    sortOrder: undefined,
+  },
+  {
+    label: "Highest Rating",
+    value: "highestRating",
+    sortBy: "highestRating",
+    sortOrder: "desc",
+  },
+];
 
 const AllReviews: React.FC<AllReviewsProps> = ({
   className = "",
   showHeader = true,
   maxItems,
-  gridCols = "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3"
+  gridCols = "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3",
 }) => {
-  const { data, isLoading, error, refetch } = useGetALlReviewsQuery();
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [sortOption, setSortOption] = useState("Most Recent");
+
+  // Get sort parameters from URL
+  const sortBy = searchParams.get("sortBy") || undefined;
+  const sortOrder = searchParams.get("sortOrder") || undefined;
+
+  // Use the updated query hook with parameters
+  const { data, isLoading, error, refetch } = useGetAllReviewsQuery({
+    sortBy,
+    sortOrder,
+  });
+
+  // Update sort option display based on URL parameters
+  useEffect(() => {
+    if (sortBy) {
+      const currentOption = sortOptions.find(
+        (option) => option.sortBy === sortBy
+      );
+      if (currentOption) {
+        setSortOption(currentOption.label);
+      }
+    }
+  }, [sortBy]);
+
+  // Handle sort change
+  const handleSortChange = (option: (typeof sortOptions)[0]) => {
+    setSortOption(option.label);
+    setIsDropdownOpen(false);
+
+    // Build query parameters
+    const params = new URLSearchParams();
+    params.append("sortBy", option.sortBy);
+    if (option.sortOrder) {
+      params.append("sortOrder", option.sortOrder);
+    }
+
+    // Navigate with new sort parameters
+    router.push(`${window.location.pathname}?${params.toString()}`);
+  };
 
   if (isLoading) {
     return (
@@ -90,8 +98,8 @@ const AllReviews: React.FC<AllReviewsProps> = ({
               <p className="text-lg text-red-600 mb-2">Error loading reviews</p>
               <p className="text-gray-500 text-sm">{error.message}</p>
             </div>
-            <button 
-              onClick={() => refetch()} 
+            <button
+              onClick={() => refetch()}
               className="px-6 py-3 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition-colors focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2"
             >
               Try Again
@@ -108,7 +116,7 @@ const AllReviews: React.FC<AllReviewsProps> = ({
   return (
     <div className={`bg-gray-50 ${className}`}>
       <div className="max-w-7xl mx-auto px-4 py-8">
-        {/* Header */}
+        {/* Header with Sorting */}
         {showHeader && (
           <div className="mb-8">
             <div className="flex items-center justify-between">
@@ -116,16 +124,76 @@ const AllReviews: React.FC<AllReviewsProps> = ({
                 <h1 className="text-3xl font-bold text-gray-900 mb-2">
                   Find Your Perfect Property
                 </h1>
-                <p className="text-gray-600">
-                  Page 1 of {data?.totalPages || 1}
-                </p>
+                <div className="flex items-center gap-4">
+                  <p className="text-gray-600">
+                    Page 1 of {data?.totalPages || 1}
+                  </p>
+                  {/* Display current sort status */}
+                  {sortBy && (
+                    <p className="text-sm text-teal-600 bg-teal-50 px-3 py-1 rounded-full">
+                      Sorted by:{" "}
+                      {sortBy === "mostRecent"
+                        ? "Most Recent"
+                        : "Highest Rating"}
+                    </p>
+                  )}
+                </div>
               </div>
-              
-              <div className="text-right">
-                <p className="text-sm text-gray-500">Total Reviews</p>
-                <p className="text-2xl font-semibold text-gray-900">
-                  {data?.totalReviews || reviews.length}
-                </p>
+
+              <div className="flex items-center gap-4">
+                {/* Total Reviews */}
+                <div className="text-right">
+                  <p className="text-sm text-gray-500">Total Reviews</p>
+                  <p className="text-2xl mr-10 font-semibold text-gray-900">
+                    {data?.totalReviews || reviews.length}
+                  </p>
+                </div>
+
+                {/* Sort Dropdown */}
+                <div className="relative">
+                  <div className="flex items-center gap-2 bg-white rounded-md shadow px-4 py-2">
+                    <span className="text-gray-600 text-sm">Sort by</span>
+                    <div className="relative">
+                      <button
+                        className="flex items-center gap-2 text-gray-800 min-w-[120px] justify-between"
+                        onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                        aria-expanded={isDropdownOpen}
+                        aria-haspopup="listbox"
+                      >
+                        {sortOption}
+                        <ChevronDown
+                          size={16}
+                          className={`transition-transform ${
+                            isDropdownOpen ? "rotate-180" : ""
+                          }`}
+                        />
+                      </button>
+
+                      {isDropdownOpen && (
+                        <ul
+                          className="absolute right-0 mt-1 w-40 bg-white shadow-lg rounded-md py-1 z-20 border"
+                          role="listbox"
+                        >
+                          {sortOptions.map((option) => (
+                            <li
+                              key={option.value}
+                              className={`px-4 py-2 hover:bg-gray-100 cursor-pointer text-gray-800 ${
+                                sortOption === option.label
+                                  ? "bg-teal-50 text-teal-700"
+                                  : ""
+                              }`}
+                              onClick={() => handleSortChange(option)}
+                              role="option"
+                              aria-selected={sortOption === option.label}
+                            >
+                              {option.label}
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -148,12 +216,18 @@ const AllReviews: React.FC<AllReviewsProps> = ({
                 className="bg-white rounded-xl shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden border border-gray-100 group"
               >
                 <div className="relative w-full h-48 overflow-hidden">
-                  {review.linkedProperty?.media?.photos?.[0] ? (
-                    <Image
-                      src={review.linkedProperty.media.photos[0]}
-                      alt="Property"
-                      fill
-                      className="object-cover transition-transform duration-300 group-hover:scale-105"
+                  {review.linkedProperty?.media?.coverPhoto ? (
+                    <img
+                      src={
+                        review?.linkedProperty.media?.coverPhoto &&
+                        review.linkedProperty?.media?.coverPhoto.trim() !== ""
+                          ? review.linkedProperty.media.coverPhoto
+                          : "/placeholder.png"
+                      }
+                      alt="property image"
+                      width={180}
+                      height={120}
+                      className="object-cover w-full h-full"
                     />
                   ) : (
                     <div className="w-full h-full bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center">
@@ -161,21 +235,26 @@ const AllReviews: React.FC<AllReviewsProps> = ({
                         <div className="w-16 h-16 mx-auto mb-2 bg-gray-300 rounded-full flex items-center justify-center">
                           <span className="text-gray-500 text-2xl">🏠</span>
                         </div>
-                        <span className="text-gray-500 text-sm">No Image Available</span>
+                        <span className="text-gray-500 text-sm">
+                          No Image Available
+                        </span>
                       </div>
                     </div>
                   )}
-                  
+
                   {/* Status and Verification Badges */}
                   <div className="absolute top-3 left-3 right-3 flex justify-between">
-                    <span className={`text-xs font-semibold px-2 py-1 rounded-full backdrop-blur-sm ${
-                      review.status === 'pending' 
-                        ? 'bg-yellow-100/90 text-yellow-800' 
-                        : 'bg-green-100/90 text-green-800'
-                    }`}>
-                      {review.status.charAt(0).toUpperCase() + review.status.slice(1)}
-                    </span>
-                    
+                    {/* <span
+                      className={`text-xs font-semibold px-2 py-1 rounded-full backdrop-blur-sm ${
+                        review.status === ""
+                          ? "bg-yellow-100/90 text-yellow-800"
+                          : "bg-green-100/90 text-green-800"
+                      }`}
+                    >
+                      {review.status.charAt(0).toUpperCase() +
+                        review.status.slice(1)}
+                    </span> */}
+
                     {review.isLinkedToDatabaseProperty && (
                       <span className="bg-teal-600/90 backdrop-blur-sm text-white text-xs font-semibold px-3 py-1 rounded-full">
                         Verified
@@ -187,11 +266,13 @@ const AllReviews: React.FC<AllReviewsProps> = ({
                 <div className="p-4 space-y-3">
                   <h3 className="font-medium text-gray-800 text-base line-clamp-2">
                     {review.location.streetAddress}
-                    {review.location.apartmentUnitNumber && `, ${review.location.apartmentUnitNumber}`}
-                    {review.location.district && `, ${review.location.district}`}
+                    {review.location.apartmentUnitNumber &&
+                      `, ${review.location.apartmentUnitNumber}`}
+                    {review.location.district &&
+                      `, ${review.location.district}`}
                     , {review.location.city}
                   </h3>
-                  
+
                   <div className="flex items-center gap-2">
                     <div className="flex gap-0.5">
                       {[...Array(5)].map((_, i) => (
@@ -213,7 +294,7 @@ const AllReviews: React.FC<AllReviewsProps> = ({
                       ({review.overallRating.toFixed(0)} reviews)
                     </span>
                   </div>
-                  
+
                   <p className="text-gray-600 text-sm line-clamp-3 leading-relaxed">
                     {review.detailedReview}
                   </p>
@@ -243,10 +324,10 @@ const AllReviews: React.FC<AllReviewsProps> = ({
                       </span>
                     </div>
                     <span className="text-xs text-gray-400">
-                      {new Date(review.createdAt).toLocaleDateString('en-US', {
-                        month: 'short',
-                        day: 'numeric',
-                        year: 'numeric'
+                      {new Date(review.createdAt).toLocaleDateString("en-US", {
+                        month: "short",
+                        day: "numeric",
+                        year: "numeric",
                       })}
                     </span>
                   </div>
@@ -262,20 +343,20 @@ const AllReviews: React.FC<AllReviewsProps> = ({
             <button className="px-4 py-2 text-sm text-gray-500 hover:text-teal-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
               ← Previous
             </button>
-            
+
             {[...Array(Math.min(data.totalPages, 10))].map((_, i) => (
               <button
                 key={i}
                 className={`w-8 h-8 text-sm rounded transition-colors ${
                   i + 1 === (data.currentPage || 1)
-                    ? 'bg-teal-600 text-white'
-                    : 'text-gray-600 hover:bg-gray-100'
+                    ? "bg-teal-600 text-white"
+                    : "text-gray-600 hover:bg-gray-100"
                 }`}
               >
                 {i + 1}
               </button>
             ))}
-            
+
             {data.totalPages > 10 && (
               <>
                 <span className="px-2 text-gray-400">...</span>
@@ -284,7 +365,7 @@ const AllReviews: React.FC<AllReviewsProps> = ({
                 </button>
               </>
             )}
-            
+
             <button className="px-4 py-2 text-sm text-gray-500 hover:text-teal-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
               Next →
             </button>

@@ -62,9 +62,8 @@ export const useUserData = (): UseUserDataReturn => {
     }
   };
 
-  // Function to refetch user data
   const refetchUserData = () => {
-    update(); // This will trigger a session update
+    update(); 
   };
 
   useEffect(() => {

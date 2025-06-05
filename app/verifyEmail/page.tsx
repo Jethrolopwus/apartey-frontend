@@ -36,7 +36,7 @@ export default function VerifyEmail() {
     const email = localStorage.getItem("email");
 
     mutate(
-      { email: email as string, code: formData.code },
+      { email: email as string, code: formData.code, password: "", confirmPassword: "" },
       {
         onSuccess: () => {
           //   toast.success("Email verified successfully!");

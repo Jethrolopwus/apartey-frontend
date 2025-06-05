@@ -6,119 +6,231 @@ export interface FormValues {
   password: string;
   confirmPassword: string;
 }
-  
-  export interface ReviewLocation {
-    streetAddress: any;
-    district: string;
+
+export interface ReviewLocation {
+  streetAddress: any;
+  district: string;
+  city: string;
+  lat: number;
+  lng: number;
+}
+export interface UseGetAllReviewsQueryParams {
+  limit?: number;
+  sortBy?: string;
+  sortOrder?: string;
+}
+
+export interface ReviewData {
+  linkedProperty: any;
+  isLinkedToDatabaseProperty: any;
+  overallRating(overallRating: any): import("react").ReactNode;
+  detailedReview: string;
+  id: string;
+  address: string;
+  rating: number;
+  reviewCount: number;
+  comment: string;
+  imageUrl: string;
+  location: ReviewLocation;
+}
+
+export interface SortOption {
+  label: string;
+  value: string;
+}
+
+export interface ReviewsSectionProps {
+  initialReviews?: ReviewData[];
+  initialSortOption?: string;
+}
+
+export interface Category {
+  id: number;
+  title: string;
+  image: string;
+}
+export interface BlogPost {
+  id: number;
+  title: string;
+  excerpt: string;
+  image: string;
+  date: string;
+}
+export interface SortComponentProps {
+  sortOptions: SortOption[];
+  currentSort: string;
+  onSortChange: (option: SortOption) => void;
+}
+export interface AllReviewsProps {
+  className?: string;
+  showHeader?: boolean;
+  maxItems?: number;
+  gridCols?: string;
+}
+export interface Review {
+  _id: string;
+  submitAnonymously: boolean;
+  status: string;
+  createdAt: string;
+  updatedAt: string;
+  location: {
+    country: string;
     city: string;
-    lat: number;
-    lng: number;
-  }
-  
-  export interface ReviewData {
-    linkedProperty: any;
-    isLinkedToDatabaseProperty: any;
-    overallRating(overallRating: any): import("react").ReactNode;
-    detailedReview: string;
-    id: string;
-    address: string;
-    rating: number;
-    reviewCount: number;
-    comment: string;
-    imageUrl: string;
-    location: ReviewLocation;
-  }
-  
-  export interface SortOption {
-    label: string;
-    value: string;
-  }
-  
-  export interface ReviewsSectionProps {
-    initialReviews?: ReviewData[];
-    initialSortOption?: string;
-  }
- 
-  export interface Category {
-    id: number;
-    title: string;
-    image: string;
-  }
-  export interface BlogPost {
-    id: number;
-    title: string;
-    excerpt: string;
-    image: string;
-    date: string;
-  }
-  export interface Listing {
-    id: string;
-    imageUrl: string;
-    verified: boolean;
-    title: string;
-    location: string;
-    rating: number;
-    reviewCount: number;
-    beds: number;
-    baths: number;
-    size: string;
-    oldPrice: string;
-    newPrice: string;
-  }
-  
-  export interface FeaturedReview {
-    id: string;
-    searchTerm?: string;
-    imageUrl: string;
-    verified?: boolean;
-    address: string;
-    rating: number;
-    reviewCount: number;
-    comment: string;
-    user: {
-      name: string;
-      avatarUrl: string;
+    district: string;
+    zipCode?: string;
+    streetAddress: string;
+    apartmentUnitNumber?: string;
+    displayOnMap?: boolean;
+  };
+  overallRating: number;
+  detailedReview: string;
+  valueForMoney: number;
+  costOfRepairsCoverage: string;
+  overallExperience: number;
+  linkedProperty: {
+    _id: string;
+    propertyType: string;
+    location: {
+      country: string;
+      city: string;
+      district: string;
+      zipCode: string;
+      streetAddress: string;
+      displayOnMap: boolean;
     };
-    date: string;
-  }
-  
+    price: number;
+    bedrooms: number;
+    bathrooms: number;
+    media: {
+      coverPhoto: string;
+      videoTourLink: string;
+    };
+  } | null;
+  isLinkedToDatabaseProperty: boolean;
+  reviewer: {
+    _id: string;
+  };
+}
+export interface Listing {
+  id: string;
+  imageUrl: string;
+  verified: boolean;
+  title: string;
+  location: string;
+  rating: number;
+  reviewCount: number;
+  beds: number;
+  baths: number;
+  size: string;
+  oldPrice: string;
+  newPrice: string;
+}
 
- export  interface SignUpButtonProps {
-    isSubmitting: boolean;
-  }
- export  interface SignInButtonProps {
-    isSubmitting: boolean;
-  }
-  export interface GoogleAuthButtonProps {
-    mode: 'signin' | 'signup';
-    onClick?: () => void;
-    callbackUrl?: string;
+export interface FeaturedReview {
+  id: string;
+  searchTerm?: string;
+  imageUrl: string;
+  verified?: boolean;
+  address: string;
+  rating: number;
+  reviewCount: number;
+  comment: string;
+  user: {
+    name: string;
+    avatarUrl: string;
+  };
+  date: string;
+}
 
-  }
+export interface SignUpButtonProps {
+  isSubmitting: boolean;
+}
+export interface SignInButtonProps {
+  isSubmitting: boolean;
+}
 
-  export interface ResetPasswordFormProps {
-      onSubmit: SubmitHandler<FormValues>;
-    }
- 
-    export declare type FormData = {
-      code: string;
-      email: string;
-      password: string;
-      confirmPassword: string;
-    }
-    
-    export interface SignUpFormProps {
-      onSubmit: (e: React.FormEvent) => void;
-      register: UseFormRegister<FormData>;
-      errors: FieldErrors<FormData>;
-      isSubmitting: boolean;
-      password: string;
-    }
+export interface GoogleAuthButtonProps {
+  mode: "signin" | "signup";
+  onClick?: () => void;
+  callbackUrl?: string;
+}
 
-    export interface SignInFormProps {
-      isSubmitting: boolean;
-      onSubmit: (e: React.FormEvent) => void;
-      register: any;
-      errors:FieldErrors<FormData>;
-    }
-  
+export interface ResetPasswordFormProps {
+  onSubmit: SubmitHandler<FormValues>;
+}
+export interface RoleSubmissionData {
+  role: "renter" | "homeowner" | "developer";
+}
+
+// Response interface for the API response
+export interface RoleSubmissionResponse {
+  token?: string;
+  authToken?: string;
+  accessToken?: string;
+  message?: string;
+  // Add other expected response fields
+}
+export declare type FormData = {
+  code: string;
+  name: string;
+  email: string;
+  password: string;
+  confirmPassword: string;
+};
+
+export interface StayDetails {
+  numberOfRooms: number;
+  numberOfOccupants: number;
+  dateLeft: string;
+  furnished: boolean;
+  appliancesFixtures: string[];
+  buildingFacilities: string[];
+  landlordLanguages: string[];
+}
+
+export interface CostDetails {
+  rent: number;
+  rentType: "Monthly" | "Yearly";
+  securityDepositRequired: boolean;
+  agentBrokerFeeRequired: boolean;
+  fixedUtilityCost: boolean;
+  julySummerUtilities: number;
+  januaryWinterUtilities: number;
+}
+
+export interface Accessibility {
+  nearestGroceryStore: "Very Close" | "Close" | "Moderate" | "Far";
+  nearestPark: "Very Close" | "Close" | "Moderate" | "Far";
+  nearestRestaurant: "Very Close" | "Close" | "Moderate" | "Far";
+}
+
+export interface RatingsAndReviews {
+  valueForMoney: number;
+  costOfRepairsCoverage: "Landlord" | "Tenant" | "Shared";
+  overallExperience: number;
+  overallRating: number;
+  detailedReview: string;
+}
+
+export declare type ReviewFormData = {
+  stayDetails: StayDetails;
+  costDetails: CostDetails;
+  accessibility: Accessibility;
+  ratingsAndReviews: RatingsAndReviews;
+  submitAnonymously: boolean;
+};
+
+export interface SignUpFormProps {
+  onSubmit: (e: React.FormEvent) => void;
+  register: UseFormRegister<FormData>;
+  errors: FieldErrors<FormData>;
+  isSubmitting: boolean;
+  password: string;
+}
+
+export interface SignInFormProps {
+  isSubmitting: boolean;
+  onSubmit: (e: React.FormEvent) => void;
+  register: any;
+  errors: FieldErrors<FormData>;
+}

@@ -28,6 +28,41 @@ const SignUpForm: React.FC<SignUpFormProps> = ({
     <form className="mt-8 space-y-6" onSubmit={onSubmit}>
       <div className="space-y-4">
         <div>
+          <label htmlFor="name" className="block text-sm font-medium text-gray-700">
+            Name
+          </label>
+          <div className="mt-1">
+            <input
+              id="name"
+              type="text"
+              autoComplete="name"
+              placeholder="Enter your first name"
+              className={`block w-full rounded-md border ${
+                errors?.name ? 'border-red-300' : 'border-gray-300'
+              } px-3 py-2 placeholder-gray-400 shadow-sm focus:border-orange-500 focus:outline-none focus:ring-orange-500 sm:text-sm`}
+              {...register('name', {
+                required: 'Name is required',
+                minLength: {
+                  value: 2,
+                  message: 'Name must be at least 2 characters',
+                },
+                maxLength: {
+                  value: 50,
+                  message: 'Name must be less than 50 characters',
+                },
+                pattern: {
+                  value: /^[a-zA-Z\s'-]+$/,
+                  message: 'Name can only contain letters, spaces, hyphens, and apostrophes',
+                },
+              })}
+            />
+            {errors.name && (
+              <p className="mt-1 text-xs text-red-600">{errors.name.message}</p>
+            )}
+          </div>
+        </div>
+
+        <div>
           <label htmlFor="email" className="block text-sm font-medium text-gray-700">
             Email
           </label>

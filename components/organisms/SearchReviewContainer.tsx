@@ -10,12 +10,13 @@ import { ChevronDown, Maximize, Navigation, Star } from "lucide-react";
 import { ReviewData, ReviewsSectionProps, SortOption } from "@/types/generated";
 import { useRouter } from "next/navigation";
 
-
 const ReviewSearchContainer = () => {
   const searchParams = useSearchParams();
   const [sortOption, setSortOption] = useState<string>();
   const [isDropdownOpen, setIsDropdownOpen] = useState<boolean>(false);
-  const [mapMarkers, setMapMarkers] = useState<{ id: string; top: string; left: string }[]>([]);
+  const [mapMarkers, setMapMarkers] = useState<
+    { id: string; top: string; left: string }[]
+  >([]);
   const router = useRouter();
 
   const search = searchParams.get("q") || "";
@@ -29,13 +30,13 @@ const ReviewSearchContainer = () => {
     router.push(`/reviews?q=${encoded}`);
   };
   useEffect(() => {
-      const markers = Array.from({ length: 12 }).map((_, i) => ({
-        id: `marker-${i + 1}`,
-        top: `${20 + Math.random() * 60}%`,
-        left: `${20 + Math.random() * 60}%`,
-      }));
-      setMapMarkers(markers);
-    }, []);
+    const markers = Array.from({ length: 12 }).map((_, i) => ({
+      id: `marker-${i + 1}`,
+      top: `${20 + Math.random() * 60}%`,
+      left: `${20 + Math.random() * 60}%`,
+    }));
+    setMapMarkers(markers);
+  }, []);
   const renderStars = (rating: number) => {
     const stars = [];
     const fullStars = Math.floor(rating);
@@ -111,18 +112,19 @@ const ReviewSearchContainer = () => {
                   className="flex gap-4 group cursor-pointer hover:bg-gray-50 p-2 rounded-lg transition-colors"
                 >
                   <div className="w-[180px] h-[120px] flex-shrink-0 rounded-md overflow-hidden">
-                    <Image
+                    <img
                       src={
-                        review?.linkedProperty.media?.photos[0] ||
-                        "/placeholder.png"
+                        review?.linkedProperty.media?.coverPhoto &&
+                        review.linkedProperty.media.coverPhoto.trim() !== ""
+                          ? review.linkedProperty.media.coverPhoto
+                          : "/placeholder.png"
                       }
-                      alt={"propert image"}
+                      alt="property image"
                       width={180}
                       height={120}
                       className="object-cover w-full h-full"
                     />
                   </div>
-
                   <div>
                     <p>{review?.location?.country}</p>
                     <h2>{review?.location?.city}</h2>
@@ -148,49 +150,49 @@ const ReviewSearchContainer = () => {
                   </div>
                 </article>
               ))
-            )}          
+            )}
           </div>
         </div>
 
         <div className="lg:w-1/2 relative">
-        {/* Sort Dropdown */}
-        <div className="border absolute top-50  right-20 flex justify-end mb-4 z-10">
-          <div className="relative">
-            <div className="flex items-center gap-2 bg-white rounded-md shadow px-4 py-2">
-              <span className="text-gray-600 text-sm">Sort by</span>
-              <div className="relative">
-                <button
-                  className="flex items-center gap-2 text-gray-800"
-                  onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                  aria-expanded={isDropdownOpen}
-                  aria-haspopup="listbox"
-                >
-                  {sortOption}
-                  <ChevronDown size={16} />
-                </button>
-
-                {isDropdownOpen && (
-                  <ul
-                    className="absolute right-0 mt-1 w-40 bg-white shadow-lg rounded-md py-1 z-20"
-                    role="listbox"
+          {/* Sort Dropdown */}
+          <div className="border absolute top-50  right-20 flex justify-end mb-4 z-10">
+            <div className="relative">
+              <div className="flex items-center gap-2 bg-white rounded-md shadow px-4 py-2">
+                <span className="text-gray-600 text-sm">Sort by</span>
+                <div className="relative">
+                  <button
+                    className="flex items-center gap-2 text-gray-800"
+                    onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                    aria-expanded={isDropdownOpen}
+                    aria-haspopup="listbox"
                   >
-                    {sortOptions.map((option) => (
-                      <li
-                        key={option.value}
-                        className="px-4 py-2 hover:bg-gray-100 cursor-pointer text-gray-800"
-                        onClick={() => handleSortChange(option)}
-                        role="option"
-                        aria-selected={sortOption === option.label}
-                      >
-                        {option.label}
-                      </li>
-                    ))}
-                  </ul>
-                )}
+                    {sortOption}
+                    <ChevronDown size={16} />
+                  </button>
+
+                  {isDropdownOpen && (
+                    <ul
+                      className="absolute right-0 mt-1 w-40 bg-white shadow-lg rounded-md py-1 z-20"
+                      role="listbox"
+                    >
+                      {sortOptions.map((option) => (
+                        <li
+                          key={option.value}
+                          className="px-4 py-2 hover:bg-gray-100 cursor-pointer text-gray-800"
+                          onClick={() => handleSortChange(option)}
+                          role="option"
+                          aria-selected={sortOption === option.label}
+                        >
+                          {option.label}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
               </div>
             </div>
           </div>
-        </div>
           {/* Map Container */}
           <div className="w-full h-[500px] bg-gray-200 rounded-lg overflow-hidden relative">
             <div className="w-full h-full relative">
@@ -209,7 +211,7 @@ const ReviewSearchContainer = () => {
                   style={{
                     top: marker.top,
                     left: marker.left,
-                    transform: 'translate(-50%, -50%)'
+                    transform: "translate(-50%, -50%)",
                   }}
                 >
                   <div className="w-5 h-5 rounded-full bg-orange-500 border-2 border-white drop-shadow-md"></div>

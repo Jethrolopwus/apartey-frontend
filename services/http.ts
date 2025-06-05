@@ -1,51 +1,54 @@
 import axios from "axios";
 import endpoints from "./endpoints";
-import { FormData, FormValues } from "@/types/generated";
-
-
-
+import {
+  FormData,
+  FormValues,
+  ReviewFormData,
+  RoleSubmissionData,
+  RoleSubmissionResponse,
+} from "@/types/generated";
+import { TokenManager } from "@/utils/tokenManager";
 
 const AxiosInstance = axios.create({
-    baseURL: process.env.NEXT_PUBLIC_API_URL,
-    // timeout: 10000,
-    headers: {
-      Accept: "application/json",
-      "Content-Type": "application/json",
-    },
-  });
+  baseURL: process.env.NEXT_PUBLIC_API_URL,
+  headers: {
+    Accept: "application/json",
+    "Content-Type": "application/json",
+  },
+});
 
-  AxiosInstance.interceptors.request.use(
-    (config) => {
-      // Get token from localStorage if it exists
-      const token = localStorage.getItem('token');
-      if (token) {
-        config.headers.Authorization = `Bearer ${token}`;
-      }
-      return config;
-    },
-    (error) => {
-      return Promise.reject(error);
+AxiosInstance.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem("token");
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
     }
-  );
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+);
 
-  class BaseURL {
-    httpSignUp = async (data: FormData) => {
-      try {
-        const response = await AxiosInstance.post(endpoints.signup, data);
-        return response.data; 
-      } catch (error: any) {
-        throw new Error(error.response?.data?.message || "Signup failed");
-      }
-    };
+class BaseURL {
+  httpSignUp = async (data: FormData) => {
+    try {
+      const response = await AxiosInstance.post(endpoints.signup, data);
+      return response.data;
+    } catch (error: any) {
+      throw new Error(error.response?.data?.message || "Signup failed");
+    }
+  };
 
   httpSignIn = async (data: FormData) => {
     try {
-        const response = await AxiosInstance.post(endpoints.signin, data);
-        return response.data;
-      } catch (error) {
-        throw error;
-      }
-  }
+      const response = await AxiosInstance.post(endpoints.signin, data);
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  };
+
   httpVerifyEmail = async (data: FormValues) => {
     try {
       const response = await AxiosInstance.post(endpoints.verifyEmail, data);
@@ -71,30 +74,135 @@ const AxiosInstance = axios.create({
     }
   };
 
- 
-
-
-     httpSearchReviews = async (searchTerm: string) => {
-      try {
-        const response = await AxiosInstance.get("/reviews/search", {
-          params: { fullAddress: searchTerm },
-        });
-        return response.data;
-      } catch (error: any) {
-        throw new Error(error.response?.data?.message || "Search failed");
-      }
-    };
-  
-  httpGetAllReviews = async () =>{
+  httpAddRoles = async (
+    data: RoleSubmissionData
+  ): Promise<RoleSubmissionResponse> => {
     try {
-      
-      const response = await AxiosInstance.get(endpoints.getAllReviews) 
+      const token = TokenManager.getToken();
+
+      if (!token) {
+        throw new Error("No authentication token found. Please login again.");
+      }
+
+      const response = await AxiosInstance.patch(endpoints.addRoles, data, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
+
       return response.data;
-    } catch (error:any) {
+    } catch (error: any) {
+      if (error.response?.status === 401) {
+        TokenManager.clearAllTokens();
+
+        window.location.href = "/signin";
+      }
+      throw error;
+    }
+  };
+
+  httpWriteReview = async (data: ReviewFormData) => {
+    try {
+      const token =
+        localStorage.getItem("authToken") ||
+        localStorage.getItem("token") ||
+        localStorage.getItem("accessToken");
+
+      if (!token) {
+        throw new Error("No authentication token found. Please login again.");
+      }
+
+      const response = await AxiosInstance.post(endpoints.writeReviews, data, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
+      return response.data;
+    } catch (error: any) {
+      if (error.response?.status === 401) {
+        localStorage.removeItem("authToken");
+        localStorage.removeItem("token");
+        localStorage.removeItem("accessToken");
+
+        window.location.href = "/signin";
+      }
+      throw error;
+    }
+  };
+  httpWriteUnlistedReview = async (data: FormData) => {
+    try {
+      const token =
+        localStorage.getItem("authToken") ||
+        localStorage.getItem("token") ||
+        localStorage.getItem("accessToken");
+
+      if (!token) {
+        throw new Error("No authentication token found. Please login again.");
+      }
+
+      const response = await AxiosInstance.post(endpoints.writeReviews, data, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
+      return response.data;
+    } catch (error: any) {
+      if (error.response?.status === 401) {
+        localStorage.removeItem("authToken");
+        localStorage.removeItem("token");
+        localStorage.removeItem("accessToken");
+
+        window.location.href = "/signin";
+      }
+      throw error;
+    }
+  };
+  httpSearchReviews = async (searchTerm: string) => {
+    try {
+      const response = await AxiosInstance.get("/reviews/search", {
+        params: { fullAddress: searchTerm },
+      });
+      return response.data;
+    } catch (error: any) {
       throw new Error(error.response?.data?.message || "Search failed");
     }
-  }
+  };
 
+  httpGetAllReviews = async (
+    limit?: number,
+    sortBy?: string,
+    sortOrder?: string
+  ) => {
+    try {
+      let url = endpoints.getAllReviews;
+
+      // Build query parameters
+      const params = new URLSearchParams();
+      if (sortBy) {
+        params.append("sortBy", sortBy);
+      }
+      if (sortOrder) {
+        params.append("sortOrder", sortOrder);
+      }
+
+      if (limit) {
+        params.append("limit", limit.toString());
+      }
+
+      // Add parameters to URL if they exist
+      if (params.toString()) {
+        url += `?${params.toString()}`;
+      }
+
+      const response = await AxiosInstance.get(url);
+      return response.data;
+    } catch (error: any) {
+      throw new Error(error.response?.data?.message || "Search failed");
+    }
+  };
 }
 const http = new BaseURL();
 export default http;

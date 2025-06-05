@@ -7,6 +7,10 @@ export default Object.freeze({
     verifyEmail: "/auth/verify-email",
     resendCode: "/auth/resend-token",
     resetPassword: "/auth/reset-password",
+    writeReviews: "reviews/683d5058508fe0ecab1b628e",
+    writeUnlistedReview: "/reviews/unlisted",
     searchReviews: "/reviews/search?fullAddress=abuja",
-    getAllReviews: "/reviews"
+    getAllReviews: "/reviews",
+    addRoles: "/users/role",
+
 });

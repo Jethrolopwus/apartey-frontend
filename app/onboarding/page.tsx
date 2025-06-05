@@ -1,24 +1,56 @@
 
 "use client";
-
 import Image from "next/image";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useAddRolesMutation } from "@/Hooks/use.addRoles.mutation";
+import { TokenManager } from "@/utils/tokenManager"; 
+import { toast } from "react-hot-toast"; 
 
 export default function RoleSelect() {
   const [selectedRole, setSelectedRole] = useState<"renter" | "homeowner" | "developer" | null>(null);
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const router = useRouter();
+  const { mutate: addRole, isLoading } = useAddRolesMutation();
 
   const handleContinue = () => {
     if (!selectedRole || !agreedToTerms) return;
-   
-    router.push("/next-step"); 
+
+    addRole(
+      { role: selectedRole },
+      {
+        onSuccess: (response) => {
+          if (TokenManager.updateFromResponse(response)) {
+            toast.success("Role selected successfully!");
+          } else {
+            toast.success("Role selected successfully!");
+            console.warn("No new token received from API response");
+          }
+          
+          router.push("/dashboard");
+        },
+        onError: (error: any) => {
+      
+          console.error("Role submission error:", error);
+          
+          if (error.response?.status === 401) {
+            toast.error("Authentication failed. Please login again.");
+            router.push("/signin");
+          } else {
+            toast.error(
+              error.response?.data?.message || 
+              error.message || 
+              "Failed to submit role. Please try again."
+            );
+          }
+        }
+      }
+    );
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4 bg-gray-50">
-      <div className="w-full max-w-lg text-center px-8 py-12">
+    <div className="min-h-screen flex items-center justify-center  px-4 bg-gray-50">
+      <div className="w-full max-w-2xl text-center px-8 py-12 shadow-md border border-gray-100 bg-white rounded-lg">
         {/* Logo */}
         <div className="mb-12">
           <Image 
@@ -39,7 +71,7 @@ export default function RoleSelect() {
         </p>
 
         {/* Role selection */}
-        <div className="text-left mb-8 w-[560px] ">
+        <div className="text-left mb-8 w-[560px]">
           <p className="text-base font-medium text-gray-900 mb-6">I am a</p>
           
           <div className="grid grid-cols-3 gap-4">
@@ -126,7 +158,7 @@ export default function RoleSelect() {
                 </div>
               </div>
               <div className="text-center">
-                <h3 className="font-bold text-gray-900 text-sm mb-2 ">Developer/Agent</h3>
+                <h3 className="font-bold text-gray-900 text-sm mb-2">Developer/Agent</h3>
                 <p className="text-gray-600 text-sm leading-relaxed">
                   I am a real estate professional
                 </p>
@@ -168,14 +200,14 @@ export default function RoleSelect() {
         {/* Continue button */}
         <button
           onClick={handleContinue}
-          disabled={!selectedRole || !agreedToTerms}
+          disabled={!selectedRole || !agreedToTerms || isLoading}
           className={`w-full py-3 px-6 cursor-pointer rounded-lg font-semibold text-base transition-all duration-200 ${
-            selectedRole && agreedToTerms
+            selectedRole && agreedToTerms && !isLoading
               ? "bg-orange-500 hover:bg-orange-600 cursor-pointer text-white shadow-sm"
               : "bg-gray-200 text-gray-400 cursor-not-allowed"
           }`}
         >
-          Continue
+          {isLoading ? "Submitting..." : "Continue"}
         </button>
       </div>
     </div>

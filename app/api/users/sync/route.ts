@@ -4,7 +4,9 @@ import { NextRequest, NextResponse } from 'next/server';
 interface UserSyncData {
   googleId: string;
   email: string | null;
-  name: string | null;
+  firstName: string | null;
+  lastName: string | null;
+
   image: string | null;
   provider: string | undefined;
   providerId: string | undefined;
@@ -37,7 +39,8 @@ export async function POST(request: NextRequest) {
       body: JSON.stringify({
         googleId: userData.googleId,
         email: userData.email,
-        name: userData.name,
+        firstName: userData.firstName,
+        lastName: userData.lastName,
         avatar: userData.image,
         provider: userData.provider,
         providerId: userData.providerId,
