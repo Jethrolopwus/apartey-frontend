@@ -1,6 +1,7 @@
 "use client";
 import React, { useState } from 'react';
 import { Star } from 'lucide-react';
+import toast from 'react-hot-toast';
 
 interface SubmitReviewProps {
   onSubmit?: (data: any) => Promise<void>;
@@ -41,7 +42,7 @@ const SubmitReviewComponent = React.forwardRef(({
   React.useImperativeHandle(ref, () => ({
     submit: async () => {
       if (!agreeToTerms) {
-        alert('Please agree to the terms and conditions to continue');
+        toast.success('Please agree to the terms and conditions to continue');
         return false;
       }
 

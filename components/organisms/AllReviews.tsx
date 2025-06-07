@@ -42,6 +42,7 @@ const AllReviews: React.FC<AllReviewsProps> = ({
     sortBy,
     sortOrder,
   });
+ 
 
   // Update sort option display based on URL parameters
   useEffect(() => {
@@ -213,7 +214,8 @@ const AllReviews: React.FC<AllReviewsProps> = ({
             {displayReviews.map((review: Review) => (
               <article
                 key={review._id}
-                className="bg-white rounded-xl shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden border border-gray-100 group"
+                onClick={() => router.push(`/reviewsPage/${review._id}`)}
+                className=" cursor-pointer bg-white rounded-xl shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden border border-gray-100 group"
               >
                 <div className="relative w-full h-48 overflow-hidden">
                   {review.linkedProperty?.media?.coverPhoto ? (

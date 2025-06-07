@@ -10,6 +10,7 @@ import FeaturedReviews from "@/components/organisms/FeaturedReviews";
 import { useRouter } from "next/navigation";
 import ReviewsSection from "./ReviewSection";
 import Link from "next/link";
+import Listings from "./Listing";
 
 export default function Hero() {
   const [inputValue, setInputValue] = useState("");
@@ -58,11 +59,11 @@ export default function Hero() {
           />
 
           <div className="flex flex-col md:flex-row gap-4 justify-center my-8">
-            <Link href="/reviewsPage">
-              <Button variant="primary">Share your experience</Button>
-            </Link>
             <Link href="/writeReviews">
-              <Button variant="secondary">Leave a review</Button>
+              <Button variant="primary">Leave a review</Button>
+            </Link>
+            <Link href="/reviewsPage ">
+              <Button variant="secondary">View reviews</Button>
             </Link>
           </div>
 

@@ -19,6 +19,104 @@ export interface UseGetAllReviewsQueryParams {
   sortBy?: string;
   sortOrder?: string;
 }
+export interface useGetAllListingsQueryParams {
+  limit?: number;
+  byId?: number;
+}
+
+
+// Add these types to your types/generated.ts file
+
+export interface PropertyLocation {
+  displayOnMap: boolean;
+  country: string;
+  city: string;
+  district: string;
+  zipCode: string;
+  streetAddress: string;
+}
+
+export interface PropertyMedia {
+  coverPhoto: string;
+  uploads: {
+    url: string;
+    type: 'image' | 'video';
+    _id: string;
+  }[];
+}
+
+export interface PropertyDetails {
+  negotiatedPrice: boolean;
+  amenities: string[];
+  infrastructure: string[];
+  price: number;
+  totalFloors: number;
+  floor: number;
+  totalAreaSqM: number;
+  livingAreaSqM: number;
+  kitchenAreaSqM: number;
+  bedrooms: number;
+  bathrooms: number;
+  parkingSpots: number;
+  description: string;
+}
+
+export interface ContactInfo {
+  openForTourSchedule: boolean;
+  typeOfOffer: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  phoneNumber: string;
+}
+
+export interface AdPromotion {
+  certifiedByFinder: boolean;
+  liftsToTopCount: number;
+  detailedAnalytics: boolean;
+  selectedTier: string;
+}
+
+export interface Property {
+  _id: string;
+  lister: string;
+  propertyType: string;
+  location: PropertyLocation;
+  media: PropertyMedia;
+  propertyDetails: PropertyDetails;
+  contactInfo: ContactInfo;
+  adPromotion: AdPromotion;
+  status: string;
+  createdAt: string;
+  updatedAt: string;
+  __v: number;
+}
+
+export interface PropertiesResponse {
+  message: string;
+  properties: Property[];
+  currentPage: number;
+  totalPages: number;
+  totalProperties: number;
+  limit: number;
+  hasNextPage: boolean;
+  hasPreviousPage: boolean;
+}
+
+export interface Listing {
+  id: string;
+  imageUrl: string;
+  verified: boolean;
+  title: string;
+  location: string;
+  rating: number;
+  reviewCount: number;
+  beds: number;
+  baths: number;
+  size: string;
+  oldPrice: string;
+  newPrice: string;
+}
 
 export interface ReviewData {
   linkedProperty: any;

@@ -203,6 +203,56 @@ class BaseURL {
       throw new Error(error.response?.data?.message || "Search failed");
     }
   };
-}
+  httpGetReviewById = async (id: string) => {
+    try {
+      const response = await AxiosInstance.get(`/reviews/${id}`);
+      return response.data;
+    } catch (error: any) {
+      console.error("API error:", error);
+      throw new Error(error.response?.data?.message || "Review not found");
+    }
+  };
+  httpGetAllListings = async (
+    limit?: number,
+    byId?: number,
+  ) => {
+    try {
+      let url = endpoints.getAllListings;
+  
+      // Build query parameters
+      const params = new URLSearchParams();
+      if (byId) {
+        params.append("byId", byId.toString());
+      }
+      if (limit) {
+        params.append("limit", limit.toString());
+      }
+      if (params.toString()) {
+        url += `?${params.toString()}`;
+      }
+  
+      const response = await AxiosInstance.get(url);
+      return response.data;
+    } catch (error: any) {
+      throw new Error(error.response?.data?.message || "Get all listings failed");
+    }
+  };
+  httpGetListingsById = async (id: string) => {
+    try {
+      const response = await AxiosInstance.get(`/listings/${id}`);
+      return response.data;
+    } catch (error: any) {
+      throw new Error(error.response?.data?.message || "Listing not found");
+    }
+  };
+  
+
+
+    catch (error: any) {
+      throw new Error(error.response?.data?.message || "Get all listings failed");
+      
+    } 
+  };
+
 const http = new BaseURL();
 export default http;

@@ -1,0 +1,512 @@
+
+"use client";
+import { useGetReviewByIdQuery } from "@/Hooks/use-GetReviewById.query";
+import { ArrowLeft, Star, Home, Users, Calendar, DollarSign, MapPin, Wrench } from "lucide-react";
+import Link from "next/link";
+import Image from "next/image";
+import ListingsButtons from "@/components/atoms/Buttons/ListingButtons";
+
+interface Props {
+  id: string;
+}
+
+export default function ReviewDetails({ id }: Props) {
+  const { data, isLoading, error } = useGetReviewByIdQuery(id);
+  const review = data?.review; 
+  
+  console.log("Review ID from props:", id);
+  console.log("Data", data);
+  console.log("Review", review);
+
+  if (isLoading) {
+    return (
+      <div className="max-w-6xl mx-auto p-4">
+        <div className="flex items-center justify-center min-h-[400px]">
+          <div className="flex flex-col items-center gap-4">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-teal-600"></div>
+            <p className="text-lg text-gray-600">Loading review details...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error || !review) {
+    return (
+      <div className="max-w-6xl mx-auto p-4">
+        <div className="flex items-center justify-center min-h-[400px] flex-col gap-4">
+          <div className="text-center">
+            <div className="w-16 h-16 mx-auto mb-4 bg-red-100 rounded-full flex items-center justify-center">
+              <span className="text-red-600 text-2xl">⚠</span>
+            </div>
+            <p className="text-lg text-red-600 mb-2">Review not found</p>
+            <p className="text-gray-500 text-sm">The review you're looking for doesn't exist or has been removed.</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+      minimumFractionDigits: 0,
+    }).format(amount);
+  };
+
+  const getAccessibilityColor = (level: string) => {
+    switch (level?.toLowerCase()) {
+      case 'very close': return 'bg-green-100 text-green-800';
+      case 'close': return 'bg-blue-100 text-blue-800';
+      case 'moderate': return 'bg-yellow-100 text-yellow-800';
+      case 'far': return 'bg-orange-100 text-orange-800';
+      case 'very far': return 'bg-red-100 text-red-800';
+      default: return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  return (
+    <div className="max-w-6xl mx-auto p-4 lg:flex lg:gap-10">
+      {/* Left Column */}
+      <div className="flex-1">
+        <Link href="/reviewsPage" className="text-teal-600 flex items-center gap-2 mb-6 text-sm font-medium hover:underline transition-colors">
+          <ArrowLeft size={16} /> Back to Reviews
+        </Link>
+
+        {/* Property Image */}
+        <div className="relative mb-6">
+          <img
+            src={review?.property?.media?.coverPhoto || "/Apartment1.png"}
+            alt="Review Property"
+            width={800}
+            height={400}
+            className="rounded-lg w-full object-cover"
+          />
+          {review?.property && (
+            <span className="absolute top-4 right-4 bg-teal-600 text-white text-xs font-semibold px-3 py-1 rounded-full">
+              Verified Property
+            </span>
+          )}
+        </div>
+
+        {/* Property Header */}
+        <div className="mb-6">
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">
+            {review?.location?.streetAddress}
+          </h1>
+          <p className="text-gray-600 mb-3">
+            {review?.location?.district && `${review.location.district}, `}
+            {review?.location?.city}, {review?.location?.country}
+            {review?.location?.zipCode && ` ${review.location.zipCode}`}
+          </p>
+
+          <div className="flex items-center gap-4 mb-4">
+            <div className="flex items-center gap-2">
+              <div className="flex gap-0.5">
+                {[...Array(5)].map((_, i) => (
+                  <Star
+                    key={i}
+                    size={18}
+                    className={
+                      i < Math.floor(review?.overallRating || 0)
+                        ? "fill-yellow-400 text-yellow-400"
+                        : "text-gray-300"
+                    }
+                  />
+                ))}
+              </div>
+              <span className="font-semibold text-gray-900">
+                {review?.overallRating?.toFixed(1)}
+              </span>
+              <span className="text-gray-500">
+                (1 review)
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* Stay Details Section */}
+        {review?.stayDetails && (
+          <div className="bg-white rounded-lg border border-gray-200 p-6 mb-6">
+            <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+              <Home size={20} className="text-teal-600" />
+              Stay Details
+            </h3>
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+              {review?.stayDetails?.numberOfRooms && (
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-gray-600">Rooms:</span>
+                  <span className="font-medium">{review.stayDetails.numberOfRooms}</span>
+                </div>
+              )}
+              {review?.stayDetails?.numberOfOccupants && (
+                <div className="flex items-center gap-2">
+                  <Users size={16} className="text-gray-400" />
+                  <span className="text-sm text-gray-600">Occupants:</span>
+                  <span className="font-medium">{review.stayDetails.numberOfOccupants}</span>
+                </div>
+              )}
+              {review?.stayDetails?.dateLeft && (
+                <div className="flex items-center gap-2">
+                  <Calendar size={16} className="text-gray-400" />
+                  <span className="text-sm text-gray-600">Date Left:</span>
+                  <span className="font-medium">
+                    {new Date(review.stayDetails.dateLeft).toLocaleDateString()}
+                  </span>
+                </div>
+              )}
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-gray-600">Furnished:</span>
+                <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                  review?.stayDetails?.furnished 
+                    ? 'bg-green-100 text-green-800' 
+                    : 'bg-gray-100 text-gray-800'
+                }`}>
+                  {review?.stayDetails?.furnished ? 'Yes' : 'No'}
+                </span>
+              </div>
+            </div>
+
+            {/* Appliances & Fixtures */}
+            {review?.stayDetails?.appliancesFixtures && review.stayDetails.appliancesFixtures.length > 0 && (
+              <div className="mt-4">
+                <h4 className="font-semibold text-gray-900 mb-2">Appliances & Fixtures</h4>
+                <div className="flex flex-wrap gap-2">
+                  {review.stayDetails.appliancesFixtures.map((item: string) => (
+                    <span key={item} className="text-xs bg-blue-50 border border-blue-200 px-3 py-1 rounded-full text-blue-700">
+                      {item}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Building Facilities */}
+            {review?.stayDetails?.buildingFacilities && review.stayDetails.buildingFacilities.length > 0 && (
+              <div className="mt-4">
+                <h4 className="font-semibold text-gray-900 mb-2">Building Facilities</h4>
+                <div className="flex flex-wrap gap-2">
+                  {review.stayDetails.buildingFacilities.map((item: string) => (
+                    <span key={item} className="text-xs bg-purple-50 border border-purple-200 px-3 py-1 rounded-full text-purple-700">
+                      {item}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Landlord Languages */}
+            {review?.stayDetails?.landlordLanguages && review.stayDetails.landlordLanguages.length > 0 && (
+              <div className="mt-4">
+                <h4 className="font-semibold text-gray-900 mb-2">Landlord Languages</h4>
+                <div className="flex flex-wrap gap-2">
+                  {review.stayDetails.landlordLanguages.map((lang: string) => (
+                    <span key={lang} className="text-xs bg-gray-50 border border-gray-200 px-3 py-1 rounded-full text-gray-700">
+                      {lang}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Cost Details Section */}
+        {review?.costDetails && (
+          <div className="bg-white rounded-lg border border-gray-200 p-6 mb-6">
+            <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+              <DollarSign size={20} className="text-teal-600" />
+              Cost Details
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {review?.costDetails?.rent && (
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <div className="text-sm text-gray-600 mb-1">Rent ({review?.costDetails?.rentType})</div>
+                  <div className="text-2xl font-bold text-gray-900">
+                    {formatCurrency(review.costDetails.rent)}
+                  </div>
+                </div>
+              )}
+              
+              <div className="space-y-3">
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-gray-600">Security Deposit:</span>
+                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                    review?.costDetails?.securityDepositRequired 
+                      ? 'bg-orange-100 text-orange-800' 
+                      : 'bg-green-100 text-green-800'
+                  }`}>
+                    {review?.costDetails?.securityDepositRequired ? 'Required' : 'Not Required'}
+                  </span>
+                </div>
+                
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-gray-600">Agent/Broker Fee:</span>
+                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                    review?.costDetails?.agentBrokerFeeRequired 
+                      ? 'bg-orange-100 text-orange-800' 
+                      : 'bg-green-100 text-green-800'
+                  }`}>
+                    {review?.costDetails?.agentBrokerFeeRequired ? 'Required' : 'Not Required'}
+                  </span>
+                </div>
+
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-gray-600">Fixed Utility Cost:</span>
+                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                    review?.costDetails?.fixedUtilityCost 
+                      ? 'bg-blue-100 text-orange-500' 
+                      : 'bg-gray-100 text-gray-800'
+                  }`}>
+                    {review?.costDetails?.fixedUtilityCost ? 'Yes' : 'No'}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Utility Costs */}
+            {(review?.costDetails?.julySummerUtilities || review?.costDetails?.januaryWinterUtilities) && (
+              <div className="mt-4 pt-4 border-t border-gray-200">
+                <h4 className="font-semibold text-gray-900 mb-3">Monthly Utility Costs</h4>
+                <div className="grid grid-cols-2 gap-4">
+                  {review?.costDetails?.julySummerUtilities && (
+                    <div className="text-center p-3 bg-yellow-50 rounded-lg">
+                      <div className="text-sm text-gray-600">Summer (July)</div>
+                      <div className="font-bold text-yellow-700">
+                        {formatCurrency(review.costDetails.julySummerUtilities)}
+                      </div>
+                    </div>
+                  )}
+                  {review?.costDetails?.januaryWinterUtilities && (
+                    <div className="text-center p-3 bg-blue-50 rounded-lg">
+                      <div className="text-sm text-gray-600">Winter (January)</div>
+                      <div className="font-bold text-blue-700">
+                        {formatCurrency(review.costDetails.januaryWinterUtilities)}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Accessibility Section */}
+        {review?.accessibility && (
+          <div className="bg-white rounded-lg border border-gray-200 p-6 mb-6">
+            <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+              <MapPin size={20} className="text-teal-600" />
+              Accessibility & Location
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {review?.accessibility?.nearestGroceryStore && (
+                <div className="text-center p-3 rounded-lg border">
+                  <div className="text-sm text-gray-600 mb-2">Nearest Grocery Store</div>
+                  <span className={`px-3 py-1 rounded-full text-xs font-medium ${getAccessibilityColor(review.accessibility.nearestGroceryStore)}`}>
+                    {review.accessibility.nearestGroceryStore}
+                  </span>
+                </div>
+              )}
+              {review?.accessibility?.nearestPark && (
+                <div className="text-center p-3 rounded-lg border">
+                  <div className="text-sm text-gray-600 mb-2">Nearest Park</div>
+                  <span className={`px-3 py-1 rounded-full text-xs font-medium ${getAccessibilityColor(review.accessibility.nearestPark)}`}>
+                    {review.accessibility.nearestPark}
+                  </span>
+                </div>
+              )}
+              {review?.accessibility?.nearestRestaurant && (
+                <div className="text-center p-3 rounded-lg border">
+                  <div className="text-sm text-gray-600 mb-2">Nearest Restaurant</div>
+                  <span className={`px-3 py-1 rounded-full text-xs font-medium ${getAccessibilityColor(review.accessibility.nearestRestaurant)}`}>
+                    {review.accessibility.nearestRestaurant}
+                  </span>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Ratings Breakdown */}
+        <div className="bg-white rounded-lg border border-gray-200 p-6 mb-6">
+          <h3 className="text-lg font-bold text-gray-900 mb-4">Rating Breakdown</h3>
+          <div className="space-y-4">
+            {review?.valueForMoney && (
+              <div className="flex items-center justify-between">
+                <span className="text-gray-600">Value for Money</span>
+                <div className="flex items-center gap-2">
+                  <div className="flex gap-0.5">
+                    {[...Array(5)].map((_, i) => (
+                      <Star
+                        key={i}
+                        size={16}
+                        className={
+                          i < review.valueForMoney
+                            ? "fill-yellow-400 text-yellow-400"
+                            : "text-gray-300"
+                        }
+                      />
+                    ))}
+                  </div>
+                  <span className="font-medium">{review.valueForMoney}/5</span>
+                </div>
+              </div>
+            )}
+            
+            {review?.overallExperience && (
+              <div className="flex items-center justify-between">
+                <span className="text-gray-600">Overall Experience</span>
+                <div className="flex items-center gap-2">
+                  <div className="flex gap-0.5">
+                    {[...Array(5)].map((_, i) => (
+                      <Star
+                        key={i}
+                        size={16}
+                        className={
+                          i < review.overallExperience
+                            ? "fill-yellow-400 text-yellow-400"
+                            : "text-gray-300"
+                        }
+                      />
+                    ))}
+                  </div>
+                  <span className="font-medium">{review.overallExperience}/5</span>
+                </div>
+              </div>
+            )}
+
+            {review?.costOfRepairsCoverage && (
+              <div className="flex items-center justify-between pt-2 border-t border-gray-100">
+                <span className="text-gray-600">Repairs Coverage</span>
+                <span className="font-medium text-teal-600">{review.costOfRepairsCoverage}</span>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Review Section */}
+        <div className="bg-white rounded-lg border border-gray-200 p-6 mb-6">
+          <h3 className="text-lg font-bold text-gray-900 mb-4">Detailed Review</h3>
+          <p className="text-gray-700 leading-relaxed mb-4">
+            {review?.detailedReview}
+          </p>
+
+          {review?.pros && review.pros.length > 0 && (
+            <div className="mb-4">
+              <h4 className="font-semibold text-green-700 mb-2">✓ Pros</h4>
+              <ul className="list-disc list-inside text-sm text-gray-700 pl-4 space-y-1">
+                {review.pros.map((item: string, index: number) => (
+                  <li key={index}>{item}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {review?.cons && review.cons.length > 0 && (
+            <div>
+              <h4 className="font-semibold text-red-700 mb-2">✗ Cons</h4>
+              <ul className="list-disc list-inside text-sm text-gray-700 pl-4 space-y-1">
+                {review.cons.map((item: string, index: number) => (
+                  <li key={index}>{item}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </div>
+
+        {/* Amenities */}
+        {review?.amenities && review.amenities.length > 0 && (
+          <div className="bg-white rounded-lg border border-gray-200 p-6 mb-6">
+            <h4 className="text-lg font-bold text-gray-900 mb-4">Available Amenities</h4>
+            <div className="flex flex-wrap gap-2">
+              {review.amenities.map((item: string) => (
+                <span key={item} className="text-sm bg-teal-50 border border-teal-200 px-3 py-2 rounded-lg text-teal-700">
+                  {item}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Footer */}
+        <div className="mt-10 p-4 bg-gray-50 rounded-lg text-sm text-gray-600">
+          <p>Apartely is a community-powered rental platform designed to help renters make informed decisions about their next home.</p>
+        </div>
+      </div>
+
+      {/* Right Column */}
+      <div className="lg:w-96 mt-10 lg:mt-0">
+        {/* Reviewer Info */}
+        <div className="bg-white border border-gray-200 rounded-lg p-6 mb-6">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-teal-400 to-teal-600 flex items-center justify-center">
+              <span className="text-white font-semibold">
+                {review?.submitAnonymously ? "A" : (review?.reviewer?.email?.[0]?.toUpperCase() || "R")}
+              </span>
+            </div>
+            <div>
+              <p className="font-semibold text-gray-900">
+                {review?.submitAnonymously ? "Anonymous Reviewer" : (review?.reviewerName || "Reviewer")}
+              </p>
+              <p className="text-sm text-gray-500">
+                {new Date(review?.createdAt || Date.now()).toLocaleDateString('en-US', {
+                  year: 'numeric',
+                  month: 'long',
+                  day: 'numeric'
+                })}
+              </p>
+            </div>
+          </div>
+          
+          {review?.durationOfStay && (
+            <p className="text-sm text-gray-600 mb-4">
+              Lived here for <span className="font-medium">{review.durationOfStay} months</span>
+            </p>
+          )}
+          
+          <p className="text-xs text-gray-500 mb-4">
+            Status: <span className={`font-medium ${review?.status === 'pending' ? 'text-yellow-600' : 'text-green-600'}`}>
+              {review?.status || 'Unknown'}
+            </span>
+          </p>
+          
+          <ListingsButtons variant="outline" className="w-full text-center text-sm">
+            Contact Reviewer
+          </ListingsButtons>
+        </div>
+
+        {/* Similar Properties Placeholder */}
+        <div className="bg-white border border-gray-200 rounded-lg p-6">
+          <h4 className="font-bold mb-4 text-gray-900">Similar Properties</h4>
+          {[1, 2, 3].map((_, idx) => (
+            <div key={idx} className="flex items-center gap-3 mb-4 last:mb-0">
+              <Image
+                src="/cleanHouse.png"
+                alt="Similar Property"
+                width={80}
+                height={60}
+                className="rounded-lg object-cover"
+              />
+              <div className="flex-1 min-w-0">
+                <p className="font-semibold text-sm text-gray-900 truncate">
+                  Sample Street {idx + 1}
+                </p>
+                <div className="flex items-center gap-1 mb-1">
+                  <Star className="text-yellow-400 fill-current" size={12} />
+                  <span className="text-xs text-gray-600">4.0 (28 reviews)</span>
+                </div>
+                <p className="text-xs text-gray-500 line-clamp-2">
+                  "Great location but maintenance issues..."
+                </p>
+              </div>
+            </div>
+          ))}
+          <ListingsButtons className="w-full mt-4 text-sm">
+            Write a Review
+          </ListingsButtons>
+        </div>
+      </div>
+    </div>
+  );
+}

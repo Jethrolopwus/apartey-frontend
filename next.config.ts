@@ -3,7 +3,7 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   /* config options here */
   images: {
-    remotePatterns: [new URL("https://apartey-media-storage.s3.eu-north-1.amazonaws.com/public/properties/images/1748812200484-e13ef158-b415-4244-afc8-c8b45a86969f-cover-1748812200484-cover.jpg")],
+    remotePatterns: [new URL("https://apartey-media-storage.s3.eu-north-1.amazonaws.com/public/properties/images/1748812200484-e13ef158-b415-4244-afc8-c8b45a86969f-cover-1748812200484-cover.jpg"                                                                    )],
   },
   keyframes: {
     "caret-blink": {
