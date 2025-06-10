@@ -109,24 +109,43 @@ export const useAuthRedirect = (
     }
   };
 
+  // const handlePostLoginRedirect = () => {
+  //   try {
+  //     const redirectPath = localStorage.getItem('redirectAfterLogin');
+      
+  //     localStorage.removeItem('redirectAfterLogin');
+      
+  //     if (redirectPath && redirectPath !== '/signin' && redirectPath !== '/login') {
+    
+  //       router.push(redirectPath);
+  //     } else {
+  //       router.push('/dashboard');
+  //     }
+  //   } catch (error) {
+  //     console.error('Error handling post-login redirect:', error);
+    
+  //     router.push('/dashboard');
+  //   }
+  // };
+  
   const handlePostLoginRedirect = () => {
     try {
-      const redirectPath = localStorage.getItem('redirectAfterLogin');
-      
-      localStorage.removeItem('redirectAfterLogin');
-      
-      if (redirectPath && redirectPath !== '/signin' && redirectPath !== '/login') {
-    
-        router.push(redirectPath);
-      } else {
-        router.push('/dashboard');
+      const redirectPath = localStorage.getItem("redirectAfterLogin");
+      localStorage.removeItem("redirectAfterLogin");
+  
+      const finalRedirect = redirectPath && !["/signin", "/login"].includes(redirectPath)
+        ? redirectPath
+        : "/dashboard";
+  
+      if (window.location.pathname !== finalRedirect) {
+        router.push(finalRedirect);
       }
     } catch (error) {
-      console.error('Error handling post-login redirect:', error);
-    
-      router.push('/dashboard');
+      console.error("Error handling post-login redirect:", error);
+      router.push("/dashboard");
     }
   };
+  
   const clearPendingData = () => {
     try {
       localStorage.removeItem('pendingReviewData');

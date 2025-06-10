@@ -2,7 +2,7 @@ import { useMutation } from "@tanstack/react-query";
 import http from "@/services/http";
 import { FormData, ReviewData } from "@/types/generated";
 
-export const useWriteReviewMutation = () => {
+export const useWriteUnlistedReviewMutation = () => {
   const { data, isPending, error, mutate } = useMutation({
     mutationFn: (data: FormData) => http.httpWriteUnlistedReview(data),
   });

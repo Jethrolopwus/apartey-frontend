@@ -166,12 +166,7 @@ const router = useRouter();
             Deals for you
           </h2>
         </div>
-        <a
-          href="/listings"
-          className="text-sm text-gray-700 hover:text-teal-600 flex items-center gap-1"
-        >
-          See all <span className="text-2xl">→</span>
-        </a>
+       
       </div>
 
       {/* Properties Count */}
