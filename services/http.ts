@@ -101,6 +101,50 @@ class BaseURL {
       throw error;
     }
   };
+  httpGetUsersProfile = async () => {
+    try {
+      const token = TokenManager.getToken();
+      if (!token) throw new Error("No authentication token found.");
+  
+      const response = await AxiosInstance.get(endpoints.getUserProfile, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
+  
+      return response.data;
+    } catch (error: any) {
+      if (error.response?.status === 401) {
+        TokenManager.clearAllTokens();
+        window.location.href = "/signin";
+      }
+      throw error;
+    }
+  };
+ 
+httpGetUsersRoles = async (): Promise<RoleSubmissionResponse> => {
+  try {
+    const token = TokenManager.getToken();
+    if (!token) throw new Error("No authentication token found.");
+
+    const response = await AxiosInstance.get(endpoints.getUsersRole, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+    });
+
+    return response.data;
+  } catch (error: any) {
+    if (error.response?.status === 401) {
+      TokenManager.clearAllTokens();
+      window.location.href = "/signin";
+    }
+    throw error;
+  }
+};
+
 
   httpWriteReview = async (data: ReviewFormData) => {
     try {
@@ -212,6 +256,15 @@ class BaseURL {
       throw new Error(error.response?.data?.message || "Review not found");
     }
   };
+  httpGeRelatedtReviews = async (id: string) => {
+    try {
+      const response = await AxiosInstance.get(`/reviews/${id}`);
+      return response.data;
+    } catch (error: any) {
+      console.error("API error:", error);
+      throw new Error(error.response?.data?.message || "Review not found");
+    }
+  };
   httpGetAllListings = async (
     limit?: number,
     byId?: number,
@@ -245,13 +298,16 @@ class BaseURL {
       throw new Error(error.response?.data?.message || "Listing not found");
     }
   };
+
+  httpGetRelatedListings = async (id: string) => {
+    try {
+      const response = await AxiosInstance.get(`/listings/${id}`);
+      return response.data;
+    } catch (error: any) {
+      throw new Error(error.response?.data?.message || "Listing not found");
+    }
+  };
   
-
-
-    catch (error: any) {
-      throw new Error(error.response?.data?.message || "Get all listings failed");
-      
-    } 
   };
 
 const http = new BaseURL();

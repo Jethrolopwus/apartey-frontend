@@ -8,13 +8,18 @@ export default Object.freeze({
     verifyEmail: "/auth/verify-email",
     resendCode: "/auth/resend-token",
     resetPassword: "/auth/reset-password",
-    addRoles: "/users/role",
+    addRoles: "/user/role",
+    getUsersRole: "/user/role",
+    getUserProfile: "user/profile",
     writeReviews: "reviews/683d5058508fe0ecab1b628e",
     writeUnlistedReview: "/reviews/unlisted",
     searchReviews: "/reviews/search?fullAddress=abuja",
     getAllReviews: "/reviews",
     getReviewById: (id: string) => `/reviews/${id}`,
+    getRelatedReviews: (id: string) => `/reviews/${id}`,
+
     getAllListings: "/listings",
     getListingById: (id: string) => `/listings/${id}`,
+    getRelatedListing: (id: string) => `/listings/${id}`
 
 });

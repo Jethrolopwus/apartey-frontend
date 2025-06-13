@@ -1,6 +1,8 @@
 "use client";
-import SignUp from '@/components/organisms/SignUp';
+import SignUp from "@/components/organisms/SignUp";
 
 export default SignUp;
+
+
 
 

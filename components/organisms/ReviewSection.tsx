@@ -120,7 +120,6 @@ const ReviewsSection: React.FC<ReviewsSectionProps> = ({
 
   const handleSortChange = (option: SortOption) => {
     setSortOption(option.label);
-    // Navigate to reviews page with selected sort option
     router.push(`/reviewsPage?sort=${option.value}`);
   };
 

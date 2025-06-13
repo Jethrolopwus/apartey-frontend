@@ -21,8 +21,7 @@
     // Handle NextAuth session (Google OAuth)
     useEffect(() => {
       if (session) {
-        // User is already authenticated via Google, redirect to dashboard
-        router.push('/dashboard');
+        router.push('/profile');
       }
     }, [session, router]);
 
@@ -108,7 +107,7 @@
             {/* Google Auth Button */}
             <GoogleAuthButton 
               mode="signin"
-              callbackUrl="/dashboard"
+              callbackUrl="/profile"
               onClick={handleGoogleSignIn}
             />
           

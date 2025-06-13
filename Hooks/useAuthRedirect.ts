@@ -109,25 +109,7 @@ export const useAuthRedirect = (
     }
   };
 
-  // const handlePostLoginRedirect = () => {
-  //   try {
-  //     const redirectPath = localStorage.getItem('redirectAfterLogin');
-      
-  //     localStorage.removeItem('redirectAfterLogin');
-      
-  //     if (redirectPath && redirectPath !== '/signin' && redirectPath !== '/login') {
-    
-  //       router.push(redirectPath);
-  //     } else {
-  //       router.push('/dashboard');
-  //     }
-  //   } catch (error) {
-  //     console.error('Error handling post-login redirect:', error);
-    
-  //     router.push('/dashboard');
-  //   }
-  // };
-  
+ 
   const handlePostLoginRedirect = () => {
     try {
       const redirectPath = localStorage.getItem("redirectAfterLogin");
@@ -156,6 +138,8 @@ export const useAuthRedirect = (
       console.error('Error clearing pending data:', error);
     }
   };
+  
+  
 
   const submitPendingReview = async (data: PendingReviewData) => {
     try {

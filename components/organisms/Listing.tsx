@@ -1,8 +1,9 @@
 "use client";
 import React, { useState } from "react";
-import { Star, Bed, Bath, Ruler, Heart } from "lucide-react";
+import { Star, Bed, Bath, Ruler, Heart, ArrowRight } from "lucide-react";
 import { useGetAllListingsQuery } from "@/Hooks/use-getAllListings.query";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 
 const Listings = () => {
 const router = useRouter();
@@ -166,7 +167,12 @@ const router = useRouter();
             Deals for you
           </h2>
         </div>
-       
+        <Link href="/listings">
+          <button className="flex items-center text-gray-600 hover:text-gray-900 transition-colors group">
+            <span className="text-sm md:text-base mr-2">See all</span>
+            <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+          </button>
+        </Link>
       </div>
 
       {/* Properties Count */}

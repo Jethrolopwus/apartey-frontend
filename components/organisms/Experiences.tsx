@@ -51,8 +51,8 @@ export default function ExperienceComponent() {
         </div>
 
         <div className="flex justify-center ">
-          <button onClick={handleWriteReview} className="bg-orange-500 cursor-pointer hover:bg-orange-600 text-white font-medium py-3 px-20 rounded-md transition duration-300">
-            Write a review
+          <button onClick={handleWriteReview} className="bg-[#C85212] cursor-pointer hover:bg-orange-700 text-white font-medium py-3 px-20 rounded-md transition duration-300">
+            Leave a review
           </button>
         </div>
       </div>

@@ -24,7 +24,7 @@ export default function ListingsButtons({
       className={clsx(
         'flex items-center gap-2 px-4 py-2 rounded font-medium transition',
         variant === 'primary'
-          ? 'bg-orange-500 text-white hover:bg-orange-600'
+          ? 'bg-[#C85212] text-white hover:bg-orange-700'
           : 'border border-gray-300 text-gray-700 hover:bg-gray-100',
         className
       )}

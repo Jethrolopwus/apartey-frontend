@@ -1,7 +1,7 @@
 "use client";
 import Image from "next/image";
 import Link from "next/link";
-import { Star } from "lucide-react";
+import { ArrowRight, Star } from "lucide-react";
 import { useGetAllReviewsQuery } from "@/Hooks/use-GetAllReviews.query";
 
 interface Review {
@@ -122,11 +122,11 @@ const FeaturedReviews = ({ searchTerm }: FeaturedReviewsProps) => {
             Featured reviews ({data?.totalReviews || reviews.length})
           </h2>
         </div>
-        <Link
-          href="/reviewsPage"
-          className="text-sm text-gray-700 hover:text-teal-600 flex items-center gap-1 transition-colors"
-        >
-          See all <span className="text-xl">→</span>
+        <Link href="/reviewsPage">
+          <button className="flex items-center text-gray-600 hover:text-gray-900 transition-colors group">
+            <span className="text-sm md:text-base mr-2">See all</span>
+            <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+          </button>
         </Link>
       </div>
 

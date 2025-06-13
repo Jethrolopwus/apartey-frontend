@@ -1,3 +1,5 @@
+
+
 "use client";
 import React, { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
@@ -18,12 +20,12 @@ const SignUp: React.FC = () => {
   const password = watch('password', '');
   const { mutate, isLoading, error, data } = useSignUPMutation();
 
-  // Handle NextAuth session (Google OAuth)
-  useEffect(() => {
-    if (session) {
-      router.push('/dashboard');
-    }
-  }, [session, router]);
+  // Comment out or remove this useEffect to prevent automatic redirect
+  // useEffect(() => {
+  //   if (session) {
+  //     router.push('/profile');
+  //   }
+  // }, [session, router]);
 
   // Handle traditional signup success
   useEffect(() => {
@@ -60,18 +62,29 @@ const SignUp: React.FC = () => {
     );
   }
 
-  if (session) {
-    return null;
-  }
+  // Comment out this early return to always show the signup form
+  // if (session) {
+  //   return null;
+  // }
 
   return (
     <div className="flex min-h-screen bg-gray-50 items-center justify-center px-4 py-12 sm:px-6 lg:px-8">
       <div className="w-full max-w-md space-y-8 px-6 py-8 shadow-xl bg-white rounded-xl border border-gray-100"> 
         
+        {/* Show a notice if user is already logged in */}
+        {session && (
+          <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
+            <p className="text-sm text-blue-800">
+              You're already logged in as {session.user?.email}. 
+              <Link href="/profile" className="underline ml-1">Go to profile</Link>
+            </p>
+          </div>
+        )}
+        
         <div className="flex flex-col items-center">
           <div className="mb-6">
             <Image
-              src="/logo.png"
+              src="/aparteyLogo.png"
               alt="Apartey Logo"
               width={100}
               height={50}
@@ -111,14 +124,14 @@ const SignUp: React.FC = () => {
           {/* Google Auth Button */}
           <GoogleAuthButton 
             mode="signup"
-            callbackUrl="/dashboard"
+            callbackUrl="/profile"
             onClick={handleGoogleSignUp}
           />
         </div>
         
         <p className="mt-4 text-center text-sm text-gray-500">
           Already have an account?{' '}
-          <Link href="/signin" className="font-semibold leading-6 text-orange-600 hover:text-orange-500">
+          <Link href="/signin" className="font-semibold leading-6 text-[#C85212] hover:text-orange-700">
             Sign in
           </Link>
         </p>

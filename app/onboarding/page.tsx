@@ -1,17 +1,46 @@
-
 "use client";
 import Image from "next/image";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAddRolesMutation } from "@/Hooks/use.addRoles.mutation";
-import { TokenManager } from "@/utils/tokenManager"; 
-import { toast } from "react-hot-toast"; 
+import { TokenManager } from "@/utils/tokenManager";
+import { toast } from "react-hot-toast";
+import { useGetUserRoleQuery } from "@/Hooks/use-getUserRole.query";
 
 export default function RoleSelect() {
-  const [selectedRole, setSelectedRole] = useState<"renter" | "homeowner" | "developer" | null>(null);
+  const [selectedRole, setSelectedRole] = useState<
+    "renter" | "homeowner" | "agent" | null
+  >(null);
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const router = useRouter();
-  const { mutate: addRole, isLoading } = useAddRolesMutation();
+  const {
+    mutate: addRole,
+    isLoading,
+    data: addRoleData,
+  } = useAddRolesMutation();
+  const { data, refetch } = useGetUserRoleQuery();
+
+  useEffect(() => {
+    if (addRoleData  ) {
+      // console.log(data);
+      // get user role from data
+      // perform your redirect
+      if (data?.currentUserRole?.role === "renter") {
+        router.push("/")
+      } 
+       if (data?.currentUserRole?.role === "homeowner") {
+        router.push("/landlord")
+      } 
+       if (data?.currentUserRole?.role === "agent") {
+        router.push("/agent")
+      }
+        console.debug(" users Role",data?.currentUserRole?.role);
+        
+    }
+    if (data) {
+      setSelectedRole(data?.currentUserRole?.role);
+    }
+  }, [addRoleData, data]);
 
   const handleContinue = () => {
     if (!selectedRole || !agreedToTerms) return;
@@ -26,24 +55,22 @@ export default function RoleSelect() {
             toast.success("Role selected successfully!");
             console.warn("No new token received from API response");
           }
-          
-          router.push("/dashboard");
+          refetch();
         },
         onError: (error: any) => {
-      
           console.error("Role submission error:", error);
-          
+
           if (error.response?.status === 401) {
             toast.error("Authentication failed. Please login again.");
             router.push("/signin");
           } else {
             toast.error(
-              error.response?.data?.message || 
-              error.message || 
-              "Failed to submit role. Please try again."
+              error.response?.data?.message ||
+                error.message ||
+                "Failed to submit role. Please try again."
             );
           }
-        }
+        },
       }
     );
   };
@@ -53,12 +80,12 @@ export default function RoleSelect() {
       <div className="w-full max-w-2xl text-center px-8 py-12 shadow-md border border-gray-100 bg-white rounded-lg">
         {/* Logo */}
         <div className="mb-12">
-          <Image 
-            src="/logo.png" 
-            alt="Apartey Logo" 
-            width={140} 
-            height={45} 
-            className="mx-auto" 
+          <Image
+            src="/logo.png"
+            alt="Apartey Logo"
+            width={140}
+            height={45}
+            className="mx-auto"
           />
         </div>
 
@@ -73,7 +100,7 @@ export default function RoleSelect() {
         {/* Role selection */}
         <div className="text-left mb-8 w-[560px]">
           <p className="text-base font-medium text-gray-900 mb-6">I am a</p>
-          
+
           <div className="grid grid-cols-3 gap-4">
             {/* Renter */}
             <div
@@ -98,7 +125,9 @@ export default function RoleSelect() {
                 </div>
               </div>
               <div className="text-center">
-                <h3 className="font-semibold text-gray-900 text-base mb-2">Renter</h3>
+                <h3 className="font-semibold text-gray-900 text-base mb-2">
+                  Renter
+                </h3>
                 <p className="text-gray-600 text-sm leading-relaxed">
                   I want to find a home to rent
                 </p>
@@ -128,7 +157,9 @@ export default function RoleSelect() {
                 </div>
               </div>
               <div className="text-center">
-                <h3 className="font-semibold text-gray-900 text-base mb-2">Homeowner</h3>
+                <h3 className="font-semibold text-gray-900 text-base mb-2">
+                  Homeowner
+                </h3>
                 <p className="text-gray-600 text-sm leading-relaxed">
                   I want to sell or rent out my property
                 </p>
@@ -137,9 +168,9 @@ export default function RoleSelect() {
 
             {/* Developer/Agent */}
             <div
-              onClick={() => setSelectedRole("developer")}
+              onClick={() => setSelectedRole("agent")}
               className={`cursor-pointer border-2 rounded-xl p-4 transition-all duration-200 h-full ${
-                selectedRole === "developer"
+                selectedRole === "agent"
                   ? "border-orange-500 bg-white shadow-sm"
                   : "border-gray-200 bg-white hover:border-gray-300"
               }`}
@@ -147,18 +178,20 @@ export default function RoleSelect() {
               <div className="flex items-center justify-center mb-3">
                 <div
                   className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
-                    selectedRole === "developer"
+                    selectedRole === "agent"
                       ? "border-orange-500 bg-orange-500"
                       : "border-gray-300 bg-white"
                   }`}
                 >
-                  {selectedRole === "developer" && (
+                  {selectedRole === "agent" && (
                     <div className="w-2 h-2 rounded-full bg-white"></div>
                   )}
                 </div>
               </div>
               <div className="text-center">
-                <h3 className="font-bold text-gray-900 text-sm mb-2">Developer/Agent</h3>
+                <h3 className="font-bold text-gray-900 text-sm mb-2">
+                  Developer/Agent
+                </h3>
                 <p className="text-gray-600 text-sm leading-relaxed">
                   I am a real estate professional
                 </p>
@@ -169,18 +202,28 @@ export default function RoleSelect() {
 
         {/* Terms checkbox */}
         <div className="flex items-start space-x-3 mb-8 text-left">
-          <div 
+          <div
             onClick={() => setAgreedToTerms(!agreedToTerms)}
             className="flex-shrink-0 mt-0.5 cursor-pointer"
           >
-            <div className={`w-5 h-5 border-2 rounded flex items-center justify-center transition-colors ${
-              agreedToTerms 
-                ? 'border-orange-500 bg-orange-500' 
-                : 'border-gray-300 bg-white hover:border-gray-400'
-            }`}>
+            <div
+              className={`w-5 h-5 border-2 rounded flex items-center justify-center transition-colors ${
+                agreedToTerms
+                  ? "border-orange-500 bg-orange-500"
+                  : "border-gray-300 bg-white hover:border-gray-400"
+              }`}
+            >
               {agreedToTerms && (
-                <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                <svg
+                  className="w-3 h-3 text-white"
+                  fill="currentColor"
+                  viewBox="0 0 20 20"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                    clipRule="evenodd"
+                  />
                 </svg>
               )}
             </div>

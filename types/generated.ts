@@ -257,16 +257,16 @@ export interface ResetPasswordFormProps {
   onSubmit: SubmitHandler<FormValues>;
 }
 export interface RoleSubmissionData {
-  role: "renter" | "homeowner" | "developer";
+  role: "renter" | "homeowner" | "agent";
 }
 
-// Response interface for the API response
 export interface RoleSubmissionResponse {
   token?: string;
   authToken?: string;
   accessToken?: string;
   message?: string;
-  // Add other expected response fields
+  role?: string;
+  [key: string]: any;
 }
 export declare type FormData = {
   code: string;
@@ -331,4 +331,39 @@ export interface SignInFormProps {
   onSubmit: (e: React.FormEvent) => void;
   register: any;
   errors: FieldErrors<FormData>;
+}
+
+
+
+// types/blog.ts
+export interface Article {
+  id: string;
+  title: string;
+  description: string;
+  image: string;
+  category: string;
+  featured?: boolean;
+  slug?: string;
+  publishedAt?: string;
+  author?: {
+    name: string;
+    avatar?: string;
+  };
+  readTime?: number;
+  tags?: string[];
+}
+
+export interface BlogPageProps {
+  articles: Article[];
+  featuredArticle?: Article;
+}
+
+export interface ArticleCardProps {
+  article: Article;
+  featured?: boolean;
+}
+
+export interface SearchProps {
+  onSearch: (query: string) => void;
+  placeholder?: string;
 }

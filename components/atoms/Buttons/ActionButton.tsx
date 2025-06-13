@@ -14,10 +14,10 @@ const Button = ({
   className = '', 
   ...props 
 }: ButtonProps) => {
-  const baseClasses = "py-3 px-8 rounded-md transition-colors";
+  const baseClasses = "py-2 px-16 rounded-md transition-colors";
   
   const variantClasses = {
-    primary: "bg-orange-500 hover:bg-orange-600 cursor-pointer text-white",
+    primary: "bg-[#C85212] hover:bg-orange-600 cursor-pointer text-white",
     secondary: "border border-orange-500 text-orange-500 cursor-pointer hover:bg-orange-50"
   };
   

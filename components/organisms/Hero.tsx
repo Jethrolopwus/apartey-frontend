@@ -1,20 +1,25 @@
+
 "use client";
 import { useState } from "react";
-import Image from "next/image";
+import { useRouter } from "next/navigation";
 import eclipse from "@/public/Ellipse-2.png";
 import eclipse2 from "@/public/Ellipse-1.png";
 import SearchInput from "@/components/atoms/Buttons/SearchInput";
 import Button from "@/components/atoms/Buttons/ActionButton";
 import TestimonialStrip from "@/components/molecules/TestimonialStrip";
 import FeaturedReviews from "@/components/organisms/FeaturedReviews";
-import { useRouter } from "next/navigation";
 import ReviewsSection from "./ReviewSection";
+import LandlordsToolsSection from "../molecules/LandlordsToolSection";
+import AgentsToolSection from "../molecules/AgentsToolSection";
 import Link from "next/link";
-import Listings from "./Listing";
+import { useGetUserRoleQuery } from "@/Hooks/use-getUserRole.query";
 
 export default function Hero() {
   const [inputValue, setInputValue] = useState("");
   const router = useRouter();
+  const { data, isLoading } = useGetUserRoleQuery();
+
+  const role = data?.role || "renter";
 
   const handleSearchSubmit = () => {
     if (!inputValue) return;
@@ -25,6 +30,8 @@ export default function Hero() {
     { src: eclipse, alt: "User avatar" },
     { src: eclipse2, alt: "User avatar" },
   ];
+
+  if (isLoading) return <div className="text-center py-10">Loading homepage...</div>;
 
   return (
     <div className="relative py-12 bg-gray-50 md:py-12 overflow-hidden">
@@ -39,13 +46,11 @@ export default function Hero() {
           </p>
 
           <SearchInput
-            placeholder="Search locations in Nigeria and Estonia"
+            placeholder="Search by address, neighborhood, or city"
             countryRestrictions={["ng", "ee"]}
             onPlaceSelect={(place) => {
               setInputValue(place.description);
-              router.push(
-                `/searchReview?q=${encodeURIComponent(place.description)}`
-              );
+              router.push(`/searchReview?q=${encodeURIComponent(place.description)}`);
             }}
             onChange={(value) => setInputValue(value)}
             onSubmit={(value) => {
@@ -53,16 +58,14 @@ export default function Hero() {
                 router.push(`/searchReview?q=${encodeURIComponent(value)}`);
               }
             }}
-            onLocationSelect={function (location: string): void {
-              throw new Error("Function not implemented.");
-            }}
+            onLocationSelect={() => {}}
           />
 
           <div className="flex flex-col md:flex-row gap-4 justify-center my-8">
             <Link href="/writeReviews">
               <Button variant="primary">Leave a review</Button>
             </Link>
-            <Link href="/reviewsPage ">
+            <Link href="/reviewsPage">
               <Button variant="secondary">View reviews</Button>
             </Link>
           </div>
@@ -73,8 +76,11 @@ export default function Hero() {
           />
         </div>
       </div>
+
       <ReviewsSection />
       <FeaturedReviews searchTerm="" />
+      {role === "landlord" && <LandlordsToolsSection />}
+      {role === "agent" && <AgentsToolSection />}
     </div>
   );
 }
