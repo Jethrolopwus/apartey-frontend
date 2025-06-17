@@ -1,7 +1,7 @@
 "use client";
 import { Search } from "lucide-react";
 import { ChangeEvent, KeyboardEvent, useState, useRef, useEffect } from "react";
-interface PlacePrediction {
+export interface PlacePrediction {
   place_id: string;
   description: string;
   structured_formatting: {
@@ -16,7 +16,6 @@ declare global {
   }
 }
 
-
 interface SearchInputProps {
   onLocationSelect: (location: string) => void;
   placeholder?: string;
@@ -27,7 +26,7 @@ interface SearchInputProps {
   className?: string;
   inputClassName?: string;
   iconSize?: number;
-  countryRestrictions?: string[]; 
+  countryRestrictions?: string[];
   googleApiKey?: string;
 }
 
@@ -40,7 +39,7 @@ const SearchInput = ({
   className = "max-w-2xl mx-auto mb-6",
   inputClassName = "w-full px-4 py-3 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-orange-500 pl-10 text-sm sm:text-base",
   iconSize = 18,
-  countryRestrictions = ["ng", "ee"], 
+
   googleApiKey,
 }: SearchInputProps) => {
   const [searchQuery, setSearchQuery] = useState(initialValue);
@@ -53,7 +52,6 @@ const SearchInput = ({
   const suggestionsRef = useRef<HTMLDivElement>(null);
   const debounceRef = useRef<NodeJS.Timeout | undefined>(undefined);
 
-  
   const initializeGooglePlaces = () => {
     if (typeof window !== "undefined" && window.google) {
       const service = new window.google.maps.places.AutocompleteService();
@@ -75,9 +73,11 @@ const SearchInput = ({
       service.getPlacePredictions(
         {
           input: query,
-          componentRestrictions: { country: countryRestrictions },
         },
-        (predictions: PlacePrediction[] | PromiseLike<PlacePrediction[]>, status: any) => {
+        (
+          predictions: PlacePrediction[] | PromiseLike<PlacePrediction[]>,
+          status: any
+        ) => {
           if (
             status === window.google.maps.places.PlacesServiceStatus.OK &&
             predictions
@@ -96,7 +96,6 @@ const SearchInput = ({
     onChange?.(value);
     setActiveSuggestionIndex(-1);
 
-    // Debounce the API call
     if (debounceRef.current) {
       clearTimeout(debounceRef.current);
     }
@@ -243,10 +242,10 @@ const SearchInput = ({
                   onClick={() => handleSuggestionClick(suggestion)}
                   onMouseEnter={() => setActiveSuggestionIndex(index)}
                 >
-                  <div className="text-sm font-medium text-gray-900">
+                  <div className="text-sm  text-start font-medium text-gray-900">
                     {suggestion.structured_formatting.main_text}
                   </div>
-                  <div className="text-xs text-gray-500 mt-1">
+                  <div className="text-xs text-start text-gray-500 mt-1">
                     {suggestion.structured_formatting.secondary_text}
                   </div>
                 </div>

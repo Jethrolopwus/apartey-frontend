@@ -14,7 +14,12 @@ import CostDetails from "@/components/molecules/CostDetails";
 import Accessibility from "@/components/molecules/Accessibility";
 import RatingsAndReviews, { RatingsAndReviewsData } from "./RatingsAndReviews";
 
-const PropertyReviewForm: React.FC = () => {
+interface Props {
+  id: string;
+}
+
+
+const PropertyReviewForm: React.FC<Props> = ({ id }) => {
   const router = useRouter();
   const { mutate, isLoading, error } = useWriteReviewMutation();
 
@@ -206,24 +211,30 @@ const PropertyReviewForm: React.FC = () => {
         return;
       }
 
-      mutate(submissionData, {
-        onSuccess: (data) => {
-          clearPendingData();
-          localStorage.removeItem("pendingReviewData");
-          router.push("/dashboard");
-          console.log("Review submitted successfully:", data);
-        },
-        onError: (error: any) => {
-          console.error("Error submitting review:", error);
+      mutate(
+        { id, data: submissionData },
+        {
+          onSuccess: (data) => {
+            clearPendingData();
+            localStorage.removeItem("pendingReviewData");
 
-          if (error.response?.status === 401) {
-            toast.error("Session expired. Please log in again.");
-            handleAuthRedirect(submissionData);
-          } else {
-            toast.error("Failed to submit review. Please try again.");
-          }
-        },
-      });
+            setTimeout(() => {
+              router.push(`/reviewsPage/${data.review.id}`);
+            }, 2000);
+            console.log("Review submitted successfully:", data);
+          },
+          onError: (error: any) => {
+            console.error("Error submitting review:", error);
+
+            if (error.response?.status === 401) {
+              toast.error("Session expired. Please log in again.");
+              handleAuthRedirect(submissionData);
+            } else {
+              toast.error("Failed to submit review. Please try again.");
+            }
+          },
+        }
+      );
     } catch (error) {
       console.error("Error in handleSubmit:", error);
       toast.error("An unexpected error occurred. Please try again.");
@@ -305,9 +316,8 @@ const PropertyReviewForm: React.FC = () => {
         <RatingsAndReviews
           data={formData.ratingsAndReviews}
           onChange={handleRatingsAndReviewsChange}
-          className="mb-6" 
+          className="mb-6"
         />
-      
 
         {/* Submit Section */}
         <div className="bg-gray-50 p-6 rounded-lg">

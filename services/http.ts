@@ -6,6 +6,7 @@ import {
   ReviewFormData,
   RoleSubmissionData,
   RoleSubmissionResponse,
+  UnlistedPropertyReview,
 } from "@/types/generated";
 import { TokenManager } from "@/utils/tokenManager";
 
@@ -43,6 +44,7 @@ class BaseURL {
   httpSignIn = async (data: FormData) => {
     try {
       const response = await AxiosInstance.post(endpoints.signin, data);
+      // console.log("Login Data", response.data);
       return response.data;
     } catch (error) {
       throw error;
@@ -101,18 +103,19 @@ class BaseURL {
       throw error;
     }
   };
+
   httpGetUsersProfile = async () => {
     try {
       const token = TokenManager.getToken();
       if (!token) throw new Error("No authentication token found.");
-  
+
       const response = await AxiosInstance.get(endpoints.getUserProfile, {
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
         },
       });
-  
+
       return response.data;
     } catch (error: any) {
       if (error.response?.status === 401) {
@@ -122,31 +125,59 @@ class BaseURL {
       throw error;
     }
   };
- 
-httpGetUsersRoles = async (): Promise<RoleSubmissionResponse> => {
-  try {
-    const token = TokenManager.getToken();
-    if (!token) throw new Error("No authentication token found.");
-
-    const response = await AxiosInstance.get(endpoints.getUsersRole, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
-      },
-    });
-
-    return response.data;
-  } catch (error: any) {
-    if (error.response?.status === 401) {
-      TokenManager.clearAllTokens();
-      window.location.href = "/signin";
+  httpGetProfileCompletionStat = async () => {
+    try {
+      const token =
+        localStorage.getItem("authToken") ||
+        localStorage.getItem("token") ||
+        localStorage.getItem("accessToken");
+      if (!token) throw new Error("No authentication token found.");
+      const response = await AxiosInstance.get(
+        endpoints.getProfileCompletionStat,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+      return response.data;
+    } catch (error: any) {
+      if (error.response?.status === 401) {
+        TokenManager.clearAllTokens();
+        window.location.href = "/signin";
+      }
+      throw error;
     }
-    throw error;
-  }
-};
+  };
 
+  httpGetUsersRoles = async (): Promise<RoleSubmissionResponse> => {
+    try {
+      const token =
+        localStorage.getItem("authToken") ||
+        localStorage.getItem("token") ||
+        localStorage.getItem("accessToken");
+      console.log("Tonek", token);
+      if (!token) throw new Error("No authentication token found.");
 
-  httpWriteReview = async (data: ReviewFormData) => {
+      const response = await AxiosInstance.get(endpoints.getUsersRole, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
+
+      return response.data;
+    } catch (error: any) {
+      if (error.response?.status === 401) {
+        TokenManager.clearAllTokens();
+        window.location.href = "/signin";
+      }
+      throw error;
+    }
+  };
+
+  httpWriteReview = async (id: string, data: ReviewFormData) => {
     try {
       const token =
         localStorage.getItem("authToken") ||
@@ -157,7 +188,40 @@ httpGetUsersRoles = async (): Promise<RoleSubmissionResponse> => {
         throw new Error("No authentication token found. Please login again.");
       }
 
-      const response = await AxiosInstance.post(endpoints.writeReviews, data, {
+      const response = await AxiosInstance.post(
+        endpoints.writeReviews(id),
+        data,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+      return response.data;
+    } catch (error: any) {
+      if (error.response?.status === 401) {
+        localStorage.removeItem("authToken");
+        localStorage.removeItem("token");
+        localStorage.removeItem("accessToken");
+
+        window.location.href = "/signin";
+      }
+      throw error;
+    }
+  };
+  httpCreateListings = async (data: ReviewFormData) => {
+    try {
+      const token =
+        localStorage.getItem("authToken") ||
+        localStorage.getItem("token") ||
+        localStorage.getItem("accessToken");
+
+      if (!token) {
+        throw new Error("No authentication token found. Please login again.");
+      }
+
+      const response = await AxiosInstance.post(endpoints.createListing, data, {
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
@@ -175,7 +239,7 @@ httpGetUsersRoles = async (): Promise<RoleSubmissionResponse> => {
       throw error;
     }
   };
-  httpWriteUnlistedReview = async (data: FormData) => {
+  httpWriteUnlistedReview = async (data: UnlistedPropertyReview) => {
     try {
       const token =
         localStorage.getItem("authToken") ||
@@ -186,12 +250,20 @@ httpGetUsersRoles = async (): Promise<RoleSubmissionResponse> => {
         throw new Error("No authentication token found. Please login again.");
       }
 
-      const response = await AxiosInstance.post(endpoints.writeReviews, data, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-      });
+      console.log(data);
+
+      const response = await AxiosInstance.post(
+        endpoints.writeUnlistedReview,
+        data,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      console.log(response.data);
       return response.data;
     } catch (error: any) {
       if (error.response?.status === 401) {
@@ -265,13 +337,10 @@ httpGetUsersRoles = async (): Promise<RoleSubmissionResponse> => {
       throw new Error(error.response?.data?.message || "Review not found");
     }
   };
-  httpGetAllListings = async (
-    limit?: number,
-    byId?: number,
-  ) => {
+  httpGetAllListings = async (limit?: number, byId?: number) => {
     try {
       let url = endpoints.getAllListings;
-  
+
       // Build query parameters
       const params = new URLSearchParams();
       if (byId) {
@@ -283,11 +352,13 @@ httpGetUsersRoles = async (): Promise<RoleSubmissionResponse> => {
       if (params.toString()) {
         url += `?${params.toString()}`;
       }
-  
+
       const response = await AxiosInstance.get(url);
       return response.data;
     } catch (error: any) {
-      throw new Error(error.response?.data?.message || "Get all listings failed");
+      throw new Error(
+        error.response?.data?.message || "Get all listings failed"
+      );
     }
   };
   httpGetListingsById = async (id: string) => {
@@ -307,8 +378,7 @@ httpGetUsersRoles = async (): Promise<RoleSubmissionResponse> => {
       throw new Error(error.response?.data?.message || "Listing not found");
     }
   };
-  
-  };
+}
 
 const http = new BaseURL();
 export default http;

@@ -1,16 +1,14 @@
+"use client";
+import React from "react";
+import DatePicker from "react-datepicker";
+import { Calendar } from "lucide-react";
+import "react-datepicker/dist/react-datepicker.css";
+import { MoveOutDatePickerProps } from "@/types/generated";
 
-'use client';
-import React from 'react';
-import DatePicker from 'react-datepicker';
-import { Calendar } from 'lucide-react';
-import 'react-datepicker/dist/react-datepicker.css'; 
-
-type MoveOutDatePickerProps = {
-  value: string;
-  onChange: (value: string) => void;
-};
-
-const MoveOutDatePicker: React.FC<MoveOutDatePickerProps> = ({ value, onChange }) => {
+const MoveOutDatePicker: React.FC<MoveOutDatePickerProps> = ({
+  value = "",
+  onChange,
+}) => {
   const parsedDate = value ? new Date(value) : null;
 
   return (
@@ -22,7 +20,7 @@ const MoveOutDatePicker: React.FC<MoveOutDatePickerProps> = ({ value, onChange }
         <DatePicker
           selected={parsedDate}
           onChange={(date: Date | null) => {
-            if (date) onChange(date.toISOString().split('T')[0]); 
+            if (date) onChange(date.toISOString().split("T")[0]);
           }}
           dateFormat="yyyy-MM-dd"
           placeholderText="Select date"

@@ -24,7 +24,6 @@ export interface useGetAllListingsQueryParams {
   byId?: number;
 }
 
-
 // Add these types to your types/generated.ts file
 
 export interface PropertyLocation {
@@ -40,7 +39,7 @@ export interface PropertyMedia {
   coverPhoto: string;
   uploads: {
     url: string;
-    type: 'image' | 'video';
+    type: "image" | "video";
     _id: string;
   }[];
 }
@@ -132,6 +131,223 @@ export interface ReviewData {
   location: ReviewLocation;
 }
 
+export interface UnlistedPropertyReview {
+  // Location details
+  location: {
+    country: string;
+    city: string;
+    district: string;
+    postalCode: string;
+    streetAddress: string;
+  };
+
+  // Form-specific location fields (for form state management)
+  country?: string;
+  city?: string;
+  state?: string;
+  district?: string;
+  zipCode?: string;
+  address?: string;
+
+  // Stay details
+  stayDetails: {
+    numberOfRooms: number;
+    numberOfOccupants: number;
+    dateLeft: string; // ISO date string
+    furnished: boolean;
+    appliancesFixtures: string[];
+    buildingFacilities: string[];
+    landlordLanguages: string[];
+  };
+
+  // Form-specific property fields
+  apartmentNumber?: string;
+  numberOfRooms?: string; // Form uses string, converted to number for API
+  numberOfOccupants?: string; // Form uses string, converted to number for API
+  moveOutDate?: string;
+  furnished?: boolean;
+
+  // Appliances (nested object for form state)
+  appliances?: {
+    oven?: boolean;
+    washingMachine?: boolean;
+    refrigerator?: boolean;
+    garbageDisposal?: boolean;
+    airConditioner?: boolean;
+    dryer?: boolean;
+    microwave?: boolean;
+    others?: boolean;
+    otherText?: string;
+  };
+
+  // Building facilities (nested object for form state)
+  buildingFacilities?: {
+    parkingLot?: boolean;
+    streetParking?: boolean;
+    gymFitness?: boolean;
+    elevator?: boolean;
+    storageSpace?: boolean;
+    childrenPlayArea?: boolean;
+    roofTerrace?: boolean;
+    securitySystem?: boolean;
+    dedicatedParking?: boolean;
+    swimmingPool?: boolean;
+    gardenCourtyard?: boolean;
+    others?: boolean;
+    otherText?: string;
+  };
+
+  // Landlord languages (nested object for form state)
+  landlordLanguages?: {
+    english?: boolean;
+    spanish?: boolean;
+    french?: boolean;
+    german?: boolean;
+    portuguese?: boolean;
+    others?: boolean;
+    otherText?: string;
+    customLanguage?: boolean;
+    customLanguageText?: string;
+  };
+
+  // Cost details
+  costDetails: {
+    rent: number;
+    rentType: "Daily" | "Monthly" | "Yearly";
+    securityDepositRequired: boolean;
+    agentBrokerFeeRequired: boolean;
+    fixedUtilityCost: boolean;
+    julySummerUtilities: number;
+    januaryWinterUtilities: number;
+  };
+
+  // Form-specific cost fields
+  rentType?: "actual" | "range"; // Form uses different enum
+  yearlyRent?: string; // Form uses string, converted to number for API
+  securityDepositRequired?: boolean;
+  agentFeeRequired?: boolean;
+  fixedUtilityCost?: boolean;
+  julyUtilities?: string; // Form uses string, converted to number for API
+  januaryUtilities?: string; // Form uses string, converted to number for API
+
+  // Accessibility
+  accessibility: {
+    nearestGroceryStore: "Very Close" | "Close" | "Moderate" | "Far" | string;
+    nearestPark: "Very Close" | "Close" | "Moderate" | "Far" | string;
+    nearestRestaurant: "Very Close" | "Close" | "Moderate" | "Far" | string;
+  };
+
+  // Form-specific accessibility fields
+  nearestGroceryStore?: string;
+  nearestPark?: string;
+  nearestPublicTransport?: string;
+
+  // Ratings and reviews
+  ratingsAndReviews: {
+    valueForMoney: number; // 1-5 scale
+    costOfRepairsCoverage: "Landlord" | "Tenant" | "Shared" | string;
+    overallExperience: number; // 1-5 scale
+    overallRating: number; // 1-5 scale, could be float
+    detailedReview: string;
+  };
+
+  // Form-specific rating fields
+  valueForMoney?: number;
+  costOfRepairs?: string;
+  overallExperience?: number;
+  overallRating?: number;
+  detailedReview?: string;
+  additionalComments?: string;
+
+  // Submission preferences
+
+  submitAnonymously?: boolean; // Optional for form state
+  agreeToTerms?: boolean;
+}
+
+// Component-specific interfaces for better type safety
+export interface AddressInputProps {
+  value?: string;
+  onChange: (value: string) => void;
+}
+
+export interface PropertyDetailsSectionProps {
+  apartmentNumber?: string;
+  numberOfRooms?: string;
+  numberOfOccupants?: string;
+  onChange: (
+    field: "apartmentNumber" | "numberOfRooms" | "numberOfOccupants",
+    value: string
+  ) => void;
+}
+export interface RatingComponentProps {
+  data: {
+    valueForMoney?: number;
+    overallExperience?: number;
+    costOfRepairs?: string;
+    detailedReview?: string;
+  };
+  onChange: (field: string, value: any) => void;
+  className?: string;
+  title?: string;
+  description?: string;
+}
+export interface MoveOutDatePickerProps {
+  value?: string;
+  onChange: (value: string) => void;
+}
+
+export interface ToggleCardProps {
+  title: string;
+  description: string;
+  questionText: string;
+  fieldName: string;
+  checked?: boolean;
+  onChange: (field: string, value: boolean) => void;
+  className?: string;
+}
+
+export interface AgentBrokerFeesData {
+  agentFeeRequired?: boolean;
+}
+
+export interface AgentBrokerFeesToggleProps {
+  data: AgentBrokerFeesData;
+  onChange: (field: string, value: boolean) => void;
+  className?: string;
+  title?: string;
+  description?: string;
+  questionText?: string;
+}
+
+export interface SecurityDepositData {
+  securityDepositRequired?: boolean;
+}
+
+export interface SecurityDepositToggleProps {
+  data: SecurityDepositData;
+  onChange: (field: string, value: boolean) => void;
+  className?: string;
+  title?: string;
+  description?: string;
+  questionText?: string;
+}
+
+export interface RentData {
+  rentType?: "actual" | "range";
+  yearlyRent?: string;
+}
+
+export interface RentInputProps {
+  data: RentData;
+  onChange: (field: string, value: string) => void;
+  className?: string;
+  title?: string;
+  description?: string;
+  label?: string;
+  placeholder?: string;
+}
+
 export interface SortOption {
   label: string;
   value: string;
@@ -206,6 +422,7 @@ export interface Review {
   } | null;
   isLinkedToDatabaseProperty: boolean;
   reviewer: {
+    [x: string]: string;
     _id: string;
   };
 }
@@ -332,8 +549,6 @@ export interface SignInFormProps {
   register: any;
   errors: FieldErrors<FormData>;
 }
-
-
 
 // types/blog.ts
 export interface Article {

@@ -1,31 +1,137 @@
 "use client";
 import React, { useRef, useState, useEffect } from "react";
 import { ChevronDown, Calendar, Home, Star, MessageSquare } from "lucide-react";
+/// <reference types="@types/google.maps" />
 import RatingComponent from "@/components/molecules/ReviewsRating";
 import SubmitReviewComponent from "@/components/organisms/SubmitReviews";
-import LocationForm from "../molecules/LocationForm";
 import { useAuthRedirect } from "@/Hooks/useAuthRedirect";
 import { useWriteUnlistedReviewMutation } from "@/Hooks/use.writeUnlistedReviews.mutation";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
 import toast from "react-hot-toast";
-import AddressInput from "@/components/molecules/AddressInput";
 import PropertyDetailsSection from "@/components/molecules/PropertyDetailsSection";
 import MoveOutDatePicker from "@/components/atoms/MoveOutDatePicker";
-import RentInput, { RentData } from "@/components/molecules/RentInput";
+import RentInput from "@/components/molecules/RentInput";
 import SecurityDepositToggle from "@/components/molecules/SecurityDepositToggle";
-import ToggleCard from "@/components/molecules/ToggleCard";
-import AgentBrokerFeesToggle, {
-  AgentBrokerFeesData,
-} from "@/components/molecules/AgentBrokers";
-import AmenitiesAccessibility from "../molecules/AmenitiesAccessibility";
+import SearchInput, {
+  PlacePrediction,
+} from "@/components/atoms/Buttons/SearchInput";
+import LocationForm, {
+  LocationFormRef,
+  LocationFields,
+} from "../molecules/LocationForm";
+import AgentBrokerFeesToggle from "@/components/molecules/AgentBrokers";
+import { UnlistedPropertyReview } from "@/types/generated";
+import AmenitiesAccessibility from "@/components/molecules/AmenitiesAccessibility";
 
-export const WriteUnlistedPropertyReview = () => {
+const WriteUnlistedPropertyReviews = () => {
   const [currentStep, setCurrentStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [canSubmit, setCanSubmit] = useState(false);
-  const submitReviewRef = useRef(null);
+  const [canSubmit, setCanSubmit] = useState(true);
   const [currentSubStep, setCurrentSubStep] = useState(1);
+  const [inputValue, setInputValue] = useState("");
+
+  interface SubmitReviewRef {
+    validate: () => boolean;
+  }
+
+  const locationFormRef = useRef<LocationFormRef>(null);
+
+  /* -- helper to fetch full place details -- */
+  const getPlaceDetails = (
+    placeId: string
+  ): Promise<google.maps.places.PlaceResult> =>
+    new Promise((resolve, reject) => {
+      const svc = new window.google.maps.places.PlacesService(
+        document.createElement("div")
+      );
+      interface PlaceDetailsRequest {
+        placeId: string;
+        fields: string[];
+      }
+
+      interface PlaceDetailsCallback {
+        (
+          result: google.maps.places.PlaceResult | null,
+          status: google.maps.places.PlacesServiceStatus
+        ): void;
+      }
+
+      svc.getDetails(
+        {
+          placeId,
+          fields: ["address_components", "formatted_address"],
+        } as PlaceDetailsRequest,
+        ((place, status) =>
+          status === window.google.maps.places.PlacesServiceStatus.OK && place
+            ? resolve(place)
+            : reject(
+                new Error("Could not load place details")
+              )) as PlaceDetailsCallback
+      );
+    });
+  const mapStateName = (country: string, raw: string): string => {
+    if (!raw) return "";
+
+    const mappings: Record<string, Record<string, string>> = {
+      nigeria: {
+        "federal capital territory": "Abuja FCT",
+      },
+      ghana: {
+        // google → you (identical here, so we could omit)
+        "greater accra": "Greater Accra",
+      },
+      kenya: {},
+      "south-africa": {},
+    };
+
+    const key = raw.toLowerCase();
+    const mapped = mappings[country]?.[key];
+    return mapped ?? raw;
+  };
+
+  const parseAddress = (
+    comps: google.maps.GeocoderAddressComponent[]
+  ): Partial<LocationFields> => {
+    const find = (type: string) =>
+      comps.find((c) => c.types.includes(type))?.long_name || "";
+
+    const country = find("country").toLowerCase();
+
+    /*  primary components */
+    const googleState = find("administrative_area_level_1");
+    const googleCity =
+      find("locality") ||
+      find("administrative_area_level_2") ||
+      find("sublocality_level_1");
+
+    /*  small stuff */
+    const district =
+      find("sublocality_level_2") || find("sublocality_level_1") || googleCity;
+    const zipCode = find("postal_code");
+    const streetNumber = find("street_number");
+    const route = find("route");
+    const streetAddress = [streetNumber, route].filter(Boolean).join(" ");
+
+    return {
+      country,
+      state: mapStateName(country, googleState),
+      city: googleCity,
+      district,
+      zipCode,
+      streetAddress,
+    };
+  };
+
+  const handlePlaceSelect = async (p: PlacePrediction) => {
+    try {
+      const details = await getPlaceDetails(p.place_id);
+      const parsed = parseAddress(details.address_components ?? []);
+      locationFormRef.current?.setAddress(parsed);
+    } catch (err) {
+      console.error(err);
+      toast.error("Could not load address details");
+    }
+  };
 
   // Mutations and Auth
   const writeReviewMutation = useWriteUnlistedReviewMutation();
@@ -42,42 +148,23 @@ export const WriteUnlistedPropertyReview = () => {
   } = useAuthRedirect(writeReviewMutation);
   const router = useRouter();
 
-  const [formData, setFormData] = useState({
-    // Step 1 - Property Details
-    
+  const [formData, setFormData] = useState<UnlistedPropertyReview>({
+    // Location fields
     country: "",
+    city: "",
+    state: "",
+    district: "",
+    zipCode: "",
     address: "",
+
+    // Property details
     apartmentNumber: "",
     numberOfRooms: "",
     numberOfOccupants: "",
-    moveOutDate: "May 2025",
-    additionalComments: "",
-    propertyCondition: 0,
-    landlordResponsiveness: 0,
-    reviewText: "",
-
-    // Accessibility Features
-    accessibilityFeatures: {
-      wheelchairAccessible: false,
-      elevator: false,
-      brailleSigns: false,
-      audioAssistance: false,
-    },
-
-    // Step 2A - Cost Details
-    nearestPublicTransport: "",
-    rentType: "actual" as "actual" | "range",
-    yearlyRent: "",
-
-    securityDepositRequired: false,
-    agentFeeRequired: false,
-    fixedUtilityCost: false,
-    centralHeating: false,
+    moveOutDate: "",
     furnished: false,
-    julyUtilities: "",
-    januaryUtilities: "",
 
-    // Step 2B - Amenities & Accessibility
+    // Appliances
     appliances: {
       oven: false,
       washingMachine: false,
@@ -87,87 +174,111 @@ export const WriteUnlistedPropertyReview = () => {
       dryer: false,
       microwave: false,
       others: false,
+      otherText: "",
     },
+
+    // Building facilities
+    buildingFacilities: {
+      parkingLot: false,
+      streetParking: false,
+      gymFitness: false,
+      elevator: false,
+      storageSpace: false,
+      childrenPlayArea: false,
+      roofTerrace: false,
+      securitySystem: false,
+      dedicatedParking: false,
+      swimmingPool: false,
+      gardenCourtyard: false,
+      others: false,
+      otherText: "",
+    },
+
+    // Landlord languages
     landlordLanguages: {
       english: false,
-      french: false,
-      estonian: false,
-      italian: false,
       spanish: false,
+      french: false,
       german: false,
+      portuguese: false,
       others: false,
-      customLanguage: false,
       otherText: "",
+      customLanguage: false,
       customLanguageText: "",
     },
-    buildingFacilities: {
-      parkingLot: false as boolean,
-      streetParking: false as boolean,
-      gymFitness: false as boolean,
-      elevator: false as boolean,
-      storageSpace: false as boolean,
-      childrenPlayArea: false as boolean,
-      roofTerrace: false as boolean,
-      securitySystem: false as boolean,
-      dedicatedParking: false as boolean,
-      swimmingPool: false as boolean,
-      gardenCourtyard: false as boolean,
-      others: false as boolean,
-      otherText: "" as string,
-    },
+
+    // Cost details
+    rentType: "actual",
+    yearlyRent: "",
+    securityDepositRequired: false,
+    agentFeeRequired: false,
+    fixedUtilityCost: false,
+    julyUtilities: "",
+    januaryUtilities: "",
+
+    // Accessibility
     nearestGroceryStore: "",
     nearestPark: "",
+    nearestPublicTransport: "",
 
-    // Step 2C - Ratings & Reviews
+    // Ratings
     valueForMoney: 0,
     costOfRepairs: "",
     overallExperience: 0,
+    overallRating: 0,
     detailedReview: "",
+    additionalComments: "",
 
-    // Step 3 - Submit Review
+    // Submission preferences
     submitAnonymously: false,
     agreeToTerms: false,
+
+    // Required for API (will be populated during transformation)
+    location: {
+      country: "",
+      city: "",
+      district: "",
+      postalCode: "",
+      streetAddress: "",
+    },
+    stayDetails: {
+      numberOfRooms: 0,
+      numberOfOccupants: 0,
+      dateLeft: "",
+      furnished: false,
+      appliancesFixtures: [],
+      buildingFacilities: [],
+      landlordLanguages: [],
+    },
+    costDetails: {
+      rent: 0,
+      rentType: "Monthly",
+      securityDepositRequired: false,
+      agentBrokerFeeRequired: false,
+      fixedUtilityCost: false,
+      julySummerUtilities: 0,
+      januaryWinterUtilities: 0,
+    },
+    accessibility: {
+      nearestGroceryStore: "",
+      nearestPark: "",
+      nearestRestaurant: "",
+    },
+    ratingsAndReviews: {
+      valueForMoney: 0,
+      costOfRepairsCoverage: "",
+      overallExperience: 0,
+      overallRating: 0,
+      detailedReview: "",
+    },
   });
-
-  // Handle pending data restoration when user returns after login
-  useEffect(() => {
-    if (isAuthenticated && hasPendingData && pendingReviewData) {
-      console.log("Restoring form data after login:", pendingReviewData);
-
-      // Restore the form data from localStorage
-      setFormData((prevData) => ({
-        ...prevData,
-        ...pendingReviewData.stayDetails,
-        ...pendingReviewData.costDetails,
-        ...pendingReviewData.accessibility,
-        ...pendingReviewData.ratingsAndReviews,
-        submitAnonymously: pendingReviewData.submitAnonymously,
-      }));
-
-      // Navigate to the submit step
-      setCurrentStep(3);
-      setCanSubmit(true);
-
-      // Optionally show a success message
-      console.log("Form data restored successfully");
-    }
-  }, [isAuthenticated, hasPendingData, pendingReviewData]);
-
-  // Handle authenticated user with pending data on mount
-  useEffect(() => {
-    if (isAuthenticated && hasPendingData && pendingReviewData) {
-      handlePostLoginRedirect();
-    }
-  }, [isAuthenticated, hasPendingData]);
 
   const updateFormData = (field: string, value: string | boolean) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
-  type FormDataCategory = keyof typeof formData;
-
   const updateNestedFormData = (
-    category: FormDataCategory,
+    category: keyof UnlistedPropertyReview,
     field: string,
     value: string | boolean
   ) => {
@@ -206,141 +317,27 @@ export const WriteUnlistedPropertyReview = () => {
     }
   };
 
-  // Transform form data to match API format
-  const transformFormDataToAPI = (data: typeof formData) => {
-    // Get selected appliances
-    const selectedAppliances = Object.entries(data.appliances)
-      .filter(([key, value]) => value && key !== "others")
-      .map(([key]) => key.charAt(0).toUpperCase() + key.slice(1));
+  interface RentData {
+    rentType: string;
+    yearlyRent: string;
+  }
 
-    // Get selected building facilities
-    const selectedFacilities = Object.entries(data.buildingFacilities)
-      .filter(([key, value]) => value && key !== "others")
-      .map(([key]) => key.charAt(0).toUpperCase() + key.slice(1));
-
-    // Get selected landlord languages
-    const selectedLanguages = Object.entries(data.landlordLanguages)
-      .filter(
-        ([key, value]) =>
-          value &&
-          key !== "others" &&
-          key !== "customLanguage" &&
-          key !== "otherText"
-      )
-      .map(([key]) => key.charAt(0).toUpperCase() + key.slice(1));
-
-    return {
-      location: {
-        country: data.country,
-        city: "",
-        district: "",
-        zipCode: "",
-        streetAddress: data.address,
-      },
-      stayDetails: {
-        numberOfRooms: parseInt(data.numberOfRooms) || 0,
-        numberOfOccupants: parseInt(data.numberOfOccupants) || 0,
-        dateLeft: new Date(data.moveOutDate).toISOString(),
-        furnished: data.furnished,
-        appliancesFixtures: selectedAppliances,
-        buildingFacilities: selectedFacilities,
-        landlordLanguages: selectedLanguages,
-      },
-      costDetails: {
-        rent: parseFloat(data.yearlyRent.replace(/[^\d.]/g, "")) || 0,
-        rentType: data.rentType === "actual" ? "Yearly" : "Range",
-        securityDepositRequired: data.securityDepositRequired,
-        agentBrokerFeeRequired: data.agentFeeRequired,
-        fixedUtilityCost: data.fixedUtilityCost,
-        julySummerUtilities:
-          parseFloat(data.julyUtilities.replace(/[^\d.]/g, "")) || 0,
-        januaryWinterUtilities:
-          parseFloat(data.januaryUtilities.replace(/[^\d.]/g, "")) || 0,
-      },
-      accessibility: {
-        nearestGroceryStore: data.nearestGroceryStore || "Not specified",
-        nearestPark: data.nearestPark || "Not specified",
-        nearestRestaurant: data.nearestPublicTransport || "Not specified",
-      },
-      ratingsAndReviews: {
-        valueForMoney: data.valueForMoney,
-        costOfRepairsCoverage: data.costOfRepairs || "Not specified",
-        overallExperience: data.overallExperience,
-        overallRating: (data.valueForMoney + data.overallExperience) / 2,
-        detailedReview:
-          data.detailedReview ||
-          data.additionalComments ||
-          "No detailed review provided",
-      },
-      submitAnonymously: data.submitAnonymously,
-    };
-  };
-
-  const handleFinalSubmit = async () => {
-    if (!canSubmit) {
-      toast.error("Please agree to the terms and conditions to continue");
-      return;
-    }
-
-    setIsSubmitting(true);
-
-    try {
-      // Transform form data to API format
-      const apiData = transformFormDataToAPI(formData);
-
-      // Check if user is authenticated
-      if (!isAuthenticated) {
-        console.log("User not authenticated, redirecting to signin...");
-
-        // Create the pending review data structure
-        const pendingReviewData = {
-          stayDetails: apiData.stayDetails,
-          costDetails: apiData.costDetails,
-          accessibility: apiData.accessibility,
-          ratingsAndReviews: apiData.ratingsAndReviews,
-          submitAnonymously: apiData.submitAnonymously,
-        };
-
-        // Store data and redirect to signin
-        handleAuthRedirect(pendingReviewData);
-        return;
-      }
-
-      // User is authenticated, submit the review directly
-      console.log("Submitting review for authenticated user...", apiData);
-
-    //  writeReviewMutation.mutate(apiData);
-
-      console.log("Review submitted successfully!");
-
-      // Clear any pending data
-      clearPendingData();
-
-      // Show success message or redirect
-      toast.success("Review submitted successfully!");
-
-      // Optionally redirect to a success page or reset form
-      router.push("/signin");
-    } catch (error) {
-      console.error("Error submitting review:", error);
-      alert("There was an error submitting your review. Please try again.");
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
   const rentData: RentData = {
-    rentType: formData.rentType,
-    yearlyRent: formData.yearlyRent,
+    rentType: formData.rentType || "actual",
+    yearlyRent: formData.yearlyRent || "",
   };
 
   const securityDepositData = {
     securityDepositRequired: formData.securityDepositRequired,
   };
+
+  interface AgentBrokerFeesData {
+    agentFeeRequired: boolean;
+  }
+
   const agentBrokerFeesData: AgentBrokerFeesData = {
-    agentFeeRequired: formData.agentFeeRequired,
+    agentFeeRequired: formData.agentFeeRequired ?? false,
   };
- 
-  
 
   const handleTermsChange = (
     agreed: boolean | ((prevState: boolean) => boolean)
@@ -350,33 +347,277 @@ export const WriteUnlistedPropertyReview = () => {
     updateFormData("agreeToTerms", newValue);
   };
 
-  useEffect(() => {
-    const handlePendingSubmission = async () => {
-      if (isAuthenticated && hasPendingData && pendingReviewData && canSubmit) {
-        try {
-          console.log("Auto-submitting pending review after login...");
-          await submitPendingReview(pendingReviewData);
-          alert("Review submitted successfully!");
+  const transformFormDataToAPI = (data: typeof formData) => {
+    // Get selected appliances
+    const selectedAppliances = Object.entries(data.appliances || {})
+      .filter(([key, value]) => value && key !== "others")
+      .map(([key]) => {
+        const appliances: { [key: string]: string } = {
+          oven: "Oven",
+          washingMachine: "Washing Machine",
+          refrigerator: "Refrigerator",
+          garbageDisposal: "Garbage Disposal",
+          airConditioner: "Air Conditioner",
+          dryer: "Dryer",
+          microwave: "Microwave",
+        };
+        return appliances[key] || key;
+      });
 
-          // Reset form or redirect as needed
-          // router.push('/reviews/success');
-        } catch (error) {
-          console.error("Error auto-submitting pending review:", error);
-          alert("There was an error submitting your review. Please try again.");
-        }
+    // Add custom appliances if specified
+    if (data?.appliances?.others && data.appliances.otherText) {
+      selectedAppliances.push(data.appliances.otherText);
+    }
+
+    // Get selected building facilities
+    const selectedFacilities = Object.entries(data.buildingFacilities || {})
+      .filter(([key, value]) => value && key !== "others")
+      .map(([key]) => {
+        const facilities: { [key: string]: string } = {
+          parkingLot: "Parking Lot",
+          streetParking: "Street Parking",
+          gymFitness: "Gym/Fitness",
+          elevator: "Elevator",
+          storageSpace: "Storage Space",
+          childrenPlayArea: "Children Play Area",
+          roofTerrace: "Roof Terrace",
+          securitySystem: "Security System",
+          dedicatedParking: "Dedicated Parking",
+          swimmingPool: "Swimming Pool",
+          gardenCourtyard: "Garden/Courtyard",
+        };
+        return facilities[key] || key;
+      });
+
+    if (
+      data.buildingFacilities?.others &&
+      data?.buildingFacilities?.otherText
+    ) {
+      selectedFacilities.push(data.buildingFacilities.otherText);
+    }
+
+    // Get selected landlord languages
+    const selectedLanguages = Object.entries(data.landlordLanguages || {})
+      .filter(
+        ([key, value]) =>
+          value &&
+          key !== "others" &&
+          key !== "customLanguage" &&
+          key !== "otherText" &&
+          key !== "customLanguageText"
+      )
+      .map(([key]) => key.charAt(0).toUpperCase() + key.slice(1));
+
+    // Add custom languages if specified
+    if (data?.landlordLanguages?.others && data.landlordLanguages.otherText) {
+      selectedLanguages.push(data.landlordLanguages.otherText);
+    }
+    if (
+      data?.landlordLanguages?.customLanguage &&
+      data.landlordLanguages.customLanguageText
+    ) {
+      selectedLanguages.push(data.landlordLanguages.customLanguageText);
+    }
+
+    // Parse rent amount from string (remove currency symbols and commas)
+    const rentAmount =
+      parseFloat(data.yearlyRent ?? "".replace(/[^\d.]/g, "")) || 0;
+
+    // Parse utility costs
+    const julyUtilities =
+      parseFloat((data?.julyUtilities ?? "").replace(/[^\d.]/g, "")) || 0;
+    const januaryUtilities =
+      parseFloat((data?.januaryUtilities ?? "").replace(/[^\d.]/g, "")) || 0;
+
+    // Convert move out date to ISO string
+    const moveOutDate = new Date(data?.moveOutDate ?? "");
+    if (isNaN(moveOutDate.getTime())) {
+      throw new Error("Invalid move out date");
+    }
+
+    return {
+      location: {
+        country: data?.country || "",
+        city: "",
+        district: "",
+        postalCode: "",
+        streetAddress: data.address || "",
+      },
+      stayDetails: {
+        numberOfRooms: parseInt(data.numberOfRooms ?? "1") || 1,
+        numberOfOccupants: parseInt(data.numberOfOccupants ?? "1") || 1,
+        dateLeft: moveOutDate.toISOString(),
+        furnished: Boolean(data.furnished),
+        appliancesFixtures: selectedAppliances,
+        buildingFacilities: selectedFacilities,
+        landlordLanguages: selectedLanguages,
+      },
+      costDetails: {
+        rent: rentAmount,
+        rentType: (data.rentType === "actual" ? "Monthly" : "Yearly") as
+          | "Monthly"
+          | "Yearly",
+        securityDepositRequired: data.securityDepositRequired ?? false,
+        agentBrokerFeeRequired: data.agentFeeRequired ?? false,
+        fixedUtilityCost: data.fixedUtilityCost ?? false,
+        julySummerUtilities: julyUtilities,
+        januaryWinterUtilities: januaryUtilities,
+      },
+      accessibility: {
+        nearestGroceryStore: data.nearestGroceryStore || "Not specified",
+        nearestPark: data.nearestPark || "Not specified",
+        nearestRestaurant: data.nearestPublicTransport || "Not specified",
+      },
+      ratingsAndReviews: {
+        valueForMoney: data.valueForMoney || 1,
+        costOfRepairsCoverage: data.costOfRepairs || "Not specified",
+        overallExperience: data.overallExperience || 1,
+        overallRating:
+          Math.round(
+            ((data.valueForMoney ?? 0) + (data.overallExperience ?? 0)) / 2
+          ) || 1,
+        detailedReview:
+          data.detailedReview ||
+          data.additionalComments ||
+          "No detailed review provided",
+      },
+      submitAnonymously: data.submitAnonymously ?? false,
+    };
+  };
+
+  const validateFormData = (data: typeof formData): string[] => {
+    const errors: string[] = [];
+
+    // Required fields validation
+    if (!data?.country) errors.push("Country is required");
+    if (!data.address) errors.push("Address is required");
+    if (!data.numberOfRooms) errors.push("Number of rooms is required");
+    if (!data.numberOfOccupants) errors.push("Number of occupants is required");
+    if (!data.moveOutDate) errors.push("Move out date is required");
+    if (!data.yearlyRent) errors.push("Rent amount is required");
+
+    // Validate rent amount
+    const rentAmount = parseFloat(
+      (data.yearlyRent ?? "").replace(/[^\d.]/g, "")
+    );
+    if (isNaN(rentAmount) || rentAmount <= 0) {
+      errors.push("Please enter a valid rent amount");
+    }
+
+    // Validate ratings
+    if ((data.valueForMoney ?? 0) <= 0) {
+      errors.push("Please provide a value for money rating");
+    }
+    if ((data.overallExperience ?? 0) <= 0) {
+      errors.push("Please provide an overall experience rating");
+    }
+
+    // Validate move out date
+    const moveOutDate = new Date(data?.moveOutDate ?? "");
+    if (isNaN(moveOutDate.getTime())) {
+      errors.push("Please provide a valid move out date");
+    }
+
+    return errors;
+  };
+
+  const handleFinalSubmitWithValidation = async () => {
+    if (!canSubmit) {
+      toast.error("Please agree to the terms and conditions to continue");
+      return;
+    }
+
+    let locationData: {
+      country?: any;
+      city?: any;
+      state?: any;
+      district?: any;
+      zipCode?: any;
+      address?: any;
+    };
+    try {
+      if (!locationFormRef?.current?.submit) {
+        toast.error("Please fill in the location details");
+        return;
       }
+      locationData = await locationFormRef.current.submit();
+
+      console.log("Location data submitted successfully:", locationData);
+      if (!locationData || Object.keys(locationData).length === 0) {
+        throw new Error("Location data is empty");
+      }
+      // Update formData with location data
+      setFormData((prev) => ({
+        ...prev,
+        country: locationData.country || prev.country,
+        city: locationData?.city || prev.city,
+        state: locationData.state || prev.state,
+        district: locationData.district || prev.district,
+        zipCode: locationData.zipCode || prev.zipCode,
+        address: locationData.address || prev.address,
+      }));
+    } catch (formErrors) {
+      console.log(formErrors);
+      toast.error("Please complete all required location fields.");
+      return;
+    }
+
+    const mergedData = {
+      ...formData,
+      ...locationData,
     };
 
-    // Add a small delay to ensure all state updates are complete
-    const timeoutId = setTimeout(handlePendingSubmission, 100);
-    return () => clearTimeout(timeoutId);
-  }, [
-    isAuthenticated,
-    hasPendingData,
-    pendingReviewData,
-    canSubmit,
-    submitPendingReview,
-  ]);
+    const validationErrors = validateFormData(mergedData);
+    if (validationErrors.length > 0) {
+      toast.error(validationErrors[0]);
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      const apiData = transformFormDataToAPI(mergedData);
+
+      console.log("Submitting review data:", apiData);
+
+      if (!isAuthenticated) {
+        console.log("User not authenticated, redirecting to signin...");
+        handleAuthRedirect(apiData);
+        return;
+      }
+
+      writeReviewMutation.mutate(apiData, {
+        onSuccess: (response) => {
+          console.log("Review submitted successfully!", response);
+          clearPendingData();
+          toast.success("Review submitted successfully!");
+
+          setTimeout(() => {
+            router.push("/");
+          }, 2000);
+        },
+        onError: (error: any) => {
+          console.error("Error submitting review:", error);
+
+          if (error.response?.status === 401) {
+            toast.error("Session expired. Please log in again.");
+            handleAuthRedirect(apiData);
+          } else {
+            const errorMessage =
+              error.response?.data?.message ||
+              error.message ||
+              "There was an error submitting your review. Please try again.";
+            toast.error(errorMessage);
+          }
+        },
+      });
+    } catch (error) {
+      console.error("Error in handleFinalSubmit:", error);
+      toast.error("An unexpected error occurred. Please try again.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   const StarRating = ({
     rating,
@@ -435,13 +676,11 @@ export const WriteUnlistedPropertyReview = () => {
     return "";
   };
 
-  const handleSubmit = () => {
-    // Handle form submission
+  const handleFinalSubmit = () => {
     console.log("Form submitted:", formData);
     toast.success("Review submitted successfully!");
   };
 
-  // Show loading state while checking authentication
   if (authLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -453,9 +692,33 @@ export const WriteUnlistedPropertyReview = () => {
     );
   }
 
+  const handleRatingsChange = (field: string, value: any) => {
+    // Update the ratings and reviews section of formData
+    setFormData((prev) => ({
+      ...prev,
+      ratingsAndReviews: {
+        ...prev.ratingsAndReviews,
+        [field]: value,
+      },
+    }));
+
+    // If valueForMoney or overallExperience is updated, recalculate overallRating
+    if (field === "valueForMoney" || field === "overallExperience") {
+      setFormData((prev) => ({
+        ...prev,
+        ratingsAndReviews: {
+          ...prev.ratingsAndReviews,
+          overallRating: Math.round(
+            (prev.ratingsAndReviews.valueForMoney +
+              prev.ratingsAndReviews.overallExperience) /
+              2
+          ),
+        },
+      }));
+    }
+  };
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Show restoration message if data was restored */}
       {hasPendingData && isAuthenticated && (
         <div className="bg-green-50 border border-green-200 rounded-lg p-4 mx-4 mt-4">
           <p className="text-green-700 text-sm flex items-center">
@@ -543,8 +806,6 @@ export const WriteUnlistedPropertyReview = () => {
             </p>
           </div>
         )}
-
-        {/* Form Content */}
         <div className="bg-white rounded-lg shadow-sm p-8">
           {/* Step 1: Property Details */}
           {currentStep === 1 && (
@@ -558,15 +819,19 @@ export const WriteUnlistedPropertyReview = () => {
                   {getCurrentStepMessage()}
                 </p>
               </div>
-
+              <SearchInput
+                placeholder="Search by address, neighborhood, or city"
+                countryRestrictions={["ng", "ee"]}
+                onPlaceSelect={handlePlaceSelect}
+                onChange={(value) => setInputValue(value)}
+                onSubmit={(value) =>
+                  value &&
+                  router.push(`/searchReview?q=${encodeURIComponent(value)}`)
+                }
+                onLocationSelect={() => {}}
+              />
               <div className="space-y-6">
-                {/* Location */}
-                <LocationForm />
-                {/* Address  */}
-                <AddressInput
-                  value={formData.address}
-                  onChange={(val) => updateFormData("address", val)}
-                />
+                <LocationForm ref={locationFormRef} />
 
                 {/* PropertyDetailsSections */}
                 <PropertyDetailsSection
@@ -620,16 +885,6 @@ export const WriteUnlistedPropertyReview = () => {
                       onChange={updateFormData}
                       className="mb-6"
                     />
-                    {/* Agent/Broker Fees */}
-                    <ToggleCard
-                      title="Security Deposit"
-                      description="Information about your security deposit"
-                      questionText="Was a security deposit required?"
-                      fieldName="securityDepositRequired"
-                      checked={formData.securityDepositRequired}
-                      onChange={updateFormData}
-                      className="mb-6"
-                    />
                   </div>
                 </div>
               )}
@@ -645,20 +900,18 @@ export const WriteUnlistedPropertyReview = () => {
               {/* Step 2C: Ratings & Reviews */}
               {currentSubStep === 3 && (
                 <RatingComponent
-                  label="Overall Experience"
-                  onSubmit={handleSubmit}
-                  rating={formData.overallExperience}
-                  onRatingChange={(value: any) =>
-                    updateFormData("overallExperience", value)
-                  }
+                  data={formData.ratingsAndReviews}
+                  onChange={handleRatingsChange}
+                  className="mt-8"
+                  title="Rate Your Experience"
+                  description="Help future tenants by sharing your honest experience"
                 />
               )}
             </div>
           )}
 
           {/* Step 3: Submit Review */}
-          {currentStep === 3 &&
-           <SubmitReviewComponent />}
+          {currentStep === 3 && <SubmitReviewComponent />}
 
           {/* Navigation Buttons */}
           <div className="flex justify-between mt-8">
@@ -679,14 +932,13 @@ export const WriteUnlistedPropertyReview = () => {
               </button>
             )}
             {currentStep === 3 && (
-              <Link href="/signin">
-                <button
-                  onClick={handleFinalSubmit}  disabled={!canSubmit || isSubmitting}
-                  className="bg-orange-600 text-white px-6 py-2 rounded-md hover:bg-orange-700 transition duration-200"
-                >
-                  Submit Review
-                </button>
-              </Link>
+              <button
+                onClick={handleFinalSubmitWithValidation}
+                disabled={!canSubmit || isSubmitting}
+                className="bg-orange-600 text-white px-6 py-2 rounded-md hover:bg-orange-700 transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isSubmitting ? "Submitting..." : "Submit Review"}
+              </button>
             )}
           </div>
         </div>
@@ -694,3 +946,5 @@ export const WriteUnlistedPropertyReview = () => {
     </div>
   );
 };
+
+export default WriteUnlistedPropertyReviews;

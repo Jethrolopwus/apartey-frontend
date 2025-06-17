@@ -1,20 +1,9 @@
 "use client";
-
-import React from 'react';
-export interface SecurityDepositData {
-  securityDepositRequired: boolean;
-}
-
-
-interface SecurityDepositToggleProps {
-  data: SecurityDepositData;
-  onChange: (field: string, value: boolean) => void;
-  className?: string;
-  title?: string;
-  description?: string;
-  questionText?: string;
-}
-
+import React from "react";
+import {
+  SecurityDepositData,
+  SecurityDepositToggleProps,
+} from "@/types/generated";
 
 const SecurityDepositToggle: React.FC<SecurityDepositToggleProps> = ({
   data,
@@ -34,7 +23,7 @@ const SecurityDepositToggle: React.FC<SecurityDepositToggleProps> = ({
         <div className="relative inline-block w-10 mr-2 align-middle select-none transition duration-200 ease-in">
           <input
             type="checkbox"
-            checked={data.securityDepositRequired}
+            checked={data.securityDepositRequired || false}
             onChange={(e) =>
               onChange("securityDepositRequired", e.target.checked)
             }

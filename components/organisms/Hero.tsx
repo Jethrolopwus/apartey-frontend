@@ -1,4 +1,3 @@
-
 "use client";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
@@ -31,7 +30,8 @@ export default function Hero() {
     { src: eclipse2, alt: "User avatar" },
   ];
 
-  if (isLoading) return <div className="text-center py-10">Loading homepage...</div>;
+  if (isLoading)
+    return <div className="text-center py-10">Loading homepage...</div>;
 
   return (
     <div className="relative py-12 bg-gray-50 md:py-12 overflow-hidden">
@@ -50,7 +50,9 @@ export default function Hero() {
             countryRestrictions={["ng", "ee"]}
             onPlaceSelect={(place) => {
               setInputValue(place.description);
-              router.push(`/searchReview?q=${encodeURIComponent(place.description)}`);
+              router.push(
+                `/searchReview?q=${encodeURIComponent(place.description)}`
+              );
             }}
             onChange={(value) => setInputValue(value)}
             onSubmit={(value) => {
@@ -62,7 +64,7 @@ export default function Hero() {
           />
 
           <div className="flex flex-col md:flex-row gap-4 justify-center my-8">
-            <Link href="/writeReviews">
+            <Link href="/write-reviews/unlisted">
               <Button variant="primary">Leave a review</Button>
             </Link>
             <Link href="/reviewsPage">

@@ -1,22 +1,6 @@
-
 "use client";
-import React from 'react';
-export interface RentData {
-  rentType: 'actual' | 'range';
-  yearlyRent: string;
-}
-
-
-interface RentInputProps {
-  data: RentData;
-  onChange: (field: string, value: string) => void;
-  className?: string;
-  title?: string;
-  description?: string;
-  label?: string;
-  placeholder?: string;
-}
-
+import React from "react";
+import { RentInputProps, RentData } from "@/types/generated";
 
 const RentInput: React.FC<RentInputProps> = ({
   data,
@@ -67,7 +51,7 @@ const RentInput: React.FC<RentInputProps> = ({
         </label>
         <input
           type="text"
-          value={data.yearlyRent}
+          value={data.yearlyRent || ""}
           onChange={(e) => onChange("yearlyRent", e.target.value)}
           placeholder={placeholder}
           className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"

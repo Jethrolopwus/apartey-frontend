@@ -1,23 +1,12 @@
-import React from 'react';
+import React from "react";
+import { ToggleCardProps } from "@/types/generated";
 
-// ToggleCard component props
-interface ToggleCardProps {
-  title: string;
-  description: string;
-  questionText: string;
-  fieldName: string;
-  checked: boolean;
-  onChange: (field: string, value: boolean) => void;
-  className?: string;
-}
-
-// Main ToggleCard component
 const ToggleCard: React.FC<ToggleCardProps> = ({
   title,
   description,
   questionText,
   fieldName,
-  checked,
+  checked = false,
   onChange,
   className = "",
 }) => {

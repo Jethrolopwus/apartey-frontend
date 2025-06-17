@@ -42,7 +42,6 @@ const AllReviews: React.FC<AllReviewsProps> = ({
     sortBy,
     sortOrder,
   });
- 
 
   // Update sort option display based on URL parameters
   useEffect(() => {
@@ -322,7 +321,12 @@ const AllReviews: React.FC<AllReviewsProps> = ({
                         </span>
                       </div>
                       <span className="text-sm font-medium text-gray-800">
-                        {review.submitAnonymously ? "Anonymous" : "Reviewer"}
+                       
+                        <p className="font-semibold text-gray-900">
+                          {review?.submitAnonymously
+                            ? "Anonymous Reviewer"
+                            : review?.reviewer?.firstName || "Reviewer"}
+                        </p>
                       </span>
                     </div>
                     <span className="text-xs text-gray-400">

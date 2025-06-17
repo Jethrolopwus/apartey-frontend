@@ -45,6 +45,7 @@ interface Review {
   } | null;
   isLinkedToDatabaseProperty: boolean;
   reviewer: {
+    [x: string]: string;
     _id: string;
   };
 }
@@ -241,7 +242,11 @@ const FeaturedReviews = ({ searchTerm }: FeaturedReviewsProps) => {
                     </span>
                   </div>
                   <span className="text-sm font-medium text-gray-800">
-                    {review.submitAnonymously ? "Anonymous" : "Reviewer"}
+                  <p className="font-semibold text-gray-900">
+                          {review?.submitAnonymously
+                            ? "Anonymous Reviewer"
+                            : review?.reviewer?.firstName || ""}
+                        </p>
                   </span>
                 </div>
                 <span className="text-xs text-gray-400">
@@ -257,17 +262,6 @@ const FeaturedReviews = ({ searchTerm }: FeaturedReviewsProps) => {
         ))}
       </div>
 
-      {/* Show more button if there are more reviews */}
-      {reviews.length > 6 && (
-        <div className="text-center mt-8">
-          <Link
-            href="/reviews"
-            className="inline-flex items-center px-6 py-3 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition-colors focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2"
-          >
-            View All {data?.totalReviews || reviews.length} Reviews
-          </Link>
-        </div>
-      )}
 
       {/* Pagination info if needed */}
       {data?.totalPages && data.totalPages > 1 && (

@@ -1,66 +1,26 @@
 "use client";
-import React, { useState } from 'react';
-import { Star } from 'lucide-react';
+import React from "react";
+import { Star } from "lucide-react";
+import { RatingComponentProps } from "@/types/generated";
 
-interface ReviewData {
-  valueForMoney?: number;
-  overallExperience?: number;
-  costOfRepairs?: string;
-  detailedReview?: string;
-}
+const RatingComponent: React.FC<RatingComponentProps> = ({
+  data,
+  onChange,
+  className = "",
+  title = "Ratings & Reviews",
+  description = "Rate your experience with this property",
+}) => {
+  const handleStarClick = (field: string, rating: number) => {
+    onChange(field, rating);
+  };
 
-interface RatingComponentProps {
-  onSubmit: (data: ReviewData) => void;
-  initialData?: ReviewData;
-  className?: string;
-  label: string;
+  const StarRating = ({
+    rating,
+    onRatingChange,
+  }: {
     rating: number;
     onRatingChange: (rating: number) => void;
-}
-
-const RatingComponent = ({ 
-  onSubmit, 
-  initialData = {} as ReviewData,
-  className = "" 
-}: RatingComponentProps) => {
-  const [ratings, setRatings] = useState({
-    valueForMoney: initialData.valueForMoney || 0,
-    overallExperience: initialData.overallExperience || 0
-  });
-  
-  const [costOfRepairs, setCostOfRepairs] = useState(
-    initialData.costOfRepairs || ""
-  );
-  
-  const [detailedReview, setDetailedReview] = useState(
-    initialData.detailedReview || ""
-  );
-
-  const handleStarClick = (category: string, rating: any) => {
-    setRatings(prev => ({
-      ...prev,
-      [category]: rating
-    }));
-  };
-
-  const handleRepairCostChange = (value: any) => {
-    setCostOfRepairs(value);
-  };
-
-  const handleSubmit = () => {
-    const formData = {
-      valueForMoney: ratings.valueForMoney,
-      costOfRepairs,
-      overallExperience: ratings.overallExperience,
-      detailedReview
-    };
-    
-    if (onSubmit) {
-      onSubmit(formData);
-    }
-  };
-
-  const StarRating = ({ rating, onRatingChange, label }: { rating: number, onRatingChange: (rating: number) => void, label?: string }) => {
+  }) => {
     return (
       <div className="space-y-2">
         <div className="flex items-center space-x-1">
@@ -69,13 +29,14 @@ const RatingComponent = ({
               key={star}
               onClick={() => onRatingChange(star)}
               className="focus:outline-none focus:ring-2 focus:ring-blue-300 rounded"
+              type="button"
             >
               <Star
                 size={24}
                 className={`${
                   star <= rating
-                    ? 'fill-yellow-400 text-yellow-400'
-                    : 'fill-gray-200 text-gray-200'
+                    ? "fill-yellow-400 text-yellow-400"
+                    : "fill-gray-200 text-gray-200"
                 } hover:fill-yellow-300 hover:text-yellow-300 transition-colors cursor-pointer`}
               />
             </button>
@@ -85,7 +46,17 @@ const RatingComponent = ({
     );
   };
 
-  const RadioOption = ({ value, label, checked, onChange }: { value: string, label: string, checked: boolean, onChange: (value: string) => void }) => (
+  const RadioOption = ({
+    value,
+    label,
+    checked,
+    onChange: onRadioChange,
+  }: {
+    value: string;
+    label: string;
+    checked: boolean;
+    onChange: (value: string) => void;
+  }) => (
     <div className="flex items-center space-x-3 py-1">
       <input
         type="radio"
@@ -93,11 +64,11 @@ const RatingComponent = ({
         name="costOfRepairs"
         value={value}
         checked={checked}
-        onChange={() => onChange(value)}
+        onChange={() => onRadioChange(value)}
         className="h-4 w-4 text-orange-600 focus:ring-orange-500 border-gray-300"
       />
-      <label 
-        htmlFor={value} 
+      <label
+        htmlFor={value}
         className="text-sm text-gray-700 cursor-pointer select-none"
       >
         {label}
@@ -106,15 +77,13 @@ const RatingComponent = ({
   );
 
   return (
-    <div className={`bg-white rounded-lg border border-gray-200 p-6 space-y-8 ${className}`}>
+    <div
+      className={`bg-white rounded-lg border border-gray-200 p-6 space-y-8 ${className}`}
+    >
       {/* Header */}
       <div>
-        <h2 className="text-xl font-semibold text-gray-900 mb-2">
-          Ratings & Reviews
-        </h2>
-        <p className="text-sm text-gray-500">
-          Rate your experience with this property
-        </p>
+        <h2 className="text-xl font-semibold text-gray-900 mb-2">{title}</h2>
+        <p className="text-sm text-gray-500">{description}</p>
       </div>
 
       {/* Value for Money */}
@@ -128,8 +97,11 @@ const RatingComponent = ({
           </p>
         </div>
         <StarRating
-                  rating={ratings.valueForMoney}
-                  onRatingChange={(rating: any) => handleStarClick('valueForMoney', rating)} label={undefined}        />
+          rating={data.valueForMoney || 0}
+          onRatingChange={(rating: number) =>
+            handleStarClick("valueForMoney", rating)
+          }
+        />
       </div>
 
       {/* Cost of Repairs */}
@@ -146,26 +118,26 @@ const RatingComponent = ({
           <RadioOption
             value="tenant"
             label="Tenant (You)"
-            checked={costOfRepairs === "tenant"}
-            onChange={handleRepairCostChange}
+            checked={data.costOfRepairs === "tenant"}
+            onChange={(value) => onChange("costOfRepairs", value)}
           />
           <RadioOption
             value="landlord"
             label="Landlord"
-            checked={costOfRepairs === "landlord"}
-            onChange={handleRepairCostChange}
+            checked={data.costOfRepairs === "landlord"}
+            onChange={(value) => onChange("costOfRepairs", value)}
           />
           <RadioOption
             value="split"
             label="Split between both"
-            checked={costOfRepairs === "split"}
-            onChange={handleRepairCostChange}
+            checked={data.costOfRepairs === "split"}
+            onChange={(value) => onChange("costOfRepairs", value)}
           />
           <RadioOption
             value="depends"
             label="Depends on the issue"
-            checked={costOfRepairs === "depends"}
-            onChange={handleRepairCostChange}
+            checked={data.costOfRepairs === "depends"}
+            onChange={(value) => onChange("costOfRepairs", value)}
           />
         </div>
       </div>
@@ -181,20 +153,21 @@ const RatingComponent = ({
           </p>
         </div>
         <StarRating
-                  rating={ratings.overallExperience}
-                  onRatingChange={(rating: any) => handleStarClick('overallExperience', rating)} label={undefined}        />
+          rating={data.overallExperience || 0}
+          onRatingChange={(rating: number) =>
+            handleStarClick("overallExperience", rating)
+          }
+        />
       </div>
 
       {/* Detailed Review */}
       <div className="space-y-3">
-        <h3 className="text-base font-medium text-gray-900">
-          Detailed Review
-        </h3>
+        <h3 className="text-base font-medium text-gray-900">Detailed Review</h3>
         <textarea
-          value={detailedReview}
-          onChange={(e) => setDetailedReview(e.target.value)}
+          value={data.detailedReview || ""}
+          onChange={(e) => onChange("detailedReview", e.target.value)}
           placeholder="Share the details of your experience, what you liked and what you didn't like etc."
-          className="w-full h-32 p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent  resize-none"
+          className="w-full h-32 p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent resize-none"
         />
       </div>
     </div>

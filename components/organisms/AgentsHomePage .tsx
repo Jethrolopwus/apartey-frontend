@@ -11,7 +11,7 @@ import ReviewsSection from "./ReviewSection";
 import Link from "next/link";
 import AgentsToolSection from "../molecules/AgentsToolSection";
 
- const  AgentsHomePage = () => {
+const AgentsHomePage = () => {
   const [inputValue, setInputValue] = useState("");
   const router = useRouter();
 
@@ -33,10 +33,9 @@ import AgentsToolSection from "../molecules/AgentsToolSection";
             Grow Your Real Estate Business
           </h1>
           <p className="text-gray-500 text-lg mb-8">
-            Connect with potentials clients, showcase your project and build trust through verify reviews and testimonials
+            Connect with potentials clients, showcase your project and build
+            trust through verify reviews and testimonials
           </p>
-
-          
 
           <div className="flex flex-col md:flex-row gap-4 justify-center my-8">
             <Link href="/writeReviews">
@@ -46,15 +45,12 @@ import AgentsToolSection from "../molecules/AgentsToolSection";
               <Button variant="secondary">View Portfolio</Button>
             </Link>
           </div>
-
-         
         </div>
       </div>
-    
-      <FeaturedReviews searchTerm="" />
-      <AgentsToolSection/>
 
+      <FeaturedReviews searchTerm="" />
+      <AgentsToolSection />
     </div>
   );
-}
-export default AgentsHomePage
+};
+export default AgentsHomePage;

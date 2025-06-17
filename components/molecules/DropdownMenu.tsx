@@ -1,17 +1,16 @@
-
 "use client";
-import React, { useState, useRef, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { 
-  User, 
-  ShoppingBag, 
-  Heart, 
-  Award, 
-  Settings, 
-  HelpCircle, 
-  UserCheck, 
-  LogOut 
-} from 'lucide-react';
+import React, { useState, useRef, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import {
+  User,
+  ShoppingBag,
+  Heart,
+  Award,
+  Settings,
+  HelpCircle,
+  UserCheck,
+  LogOut,
+} from "lucide-react";
 
 interface UserDropdownMenuProps {
   isOpen: boolean;
@@ -26,110 +25,116 @@ const UserDropdownMenu: React.FC<UserDropdownMenuProps> = ({
   isOpen,
   onClose,
   onSwitchProfile,
-  favoriteCount = 3
+  favoriteCount = 3,
 }) => {
   const router = useRouter();
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const [selectedItem, setSelectedItem] = useState<string | null>(null); // Track selected item
 
   const menuItems = [
     {
-      id: 'profile',
-      label: 'My profile',
+      id: "profile",
+      label: "My profile",
       icon: User,
-      route: '/profile',
-      hasNotification: false
+      route: "/profile",
+      hasNotification: false,
     },
     {
-      id: 'orders',
-      label: 'Orders',
+      id: "orders",
+      label: "Orders",
       icon: ShoppingBag,
-      route: '/orders',
-      hasNotification: false
+      route: "/orders",
+      hasNotification: false,
     },
     {
-      id: 'favorites',
-      label: 'Favorites',
+      id: "favorites",
+      label: "Favorites",
       icon: Heart,
-      route: '/favorites',
+      route: "/favorites",
       hasNotification: true,
-      notificationCount: favoriteCount
+      notificationCount: favoriteCount,
     },
     {
-      id: 'rewards',
-      label: 'Rewards',
+      id: "rewards",
+      label: "Rewards",
       icon: Award,
-      route: '/rewards',
-      hasNotification: false
+      route: "/rewards",
+      hasNotification: false,
     },
     {
-      id: 'settings',
-      label: 'Account settings',
+      id: "settings",
+      label: "Account settings",
       icon: Settings,
-      route: '/settings',
-      hasNotification: false
+      route: "/settings",
+      hasNotification: false,
     },
     {
-      id: 'help',
-      label: 'Help center',
+      id: "help",
+      label: "Help center",
       icon: HelpCircle,
-      route: '/help',
-      hasNotification: false
-    }
+      route: "/help",
+      hasNotification: false,
+    },
   ];
 
-  const handleMenuItemClick = (item: typeof menuItems[0]) => {
-    if (item.route) {
-      router.push(item.route);
+  const handleMenuItemClick = (item: (typeof menuItems)[0]) => {
+    setSelectedItem(item.id); // Set selected item
+    if (item.id === "profile") {
+      router.push("/profile"); // Explicit route to profile
+    } else if (item.route) {
+      router.push(item.route); // Route to other pages
     }
-    onClose();
+    onClose(); // Close dropdown after click
   };
 
   const handleSwitchProfile = () => {
     onSwitchProfile();
-    // Don't close the dropdown here, let the parent handle it
   };
 
   const handleLogout = () => {
-    // Add your logout logic here
-    console.log('Logging out...');
+    console.log("Logging out...");
     onClose();
   };
 
   // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(event.target as Node)
+      ) {
         onClose();
       }
     };
 
     if (isOpen) {
-      document.addEventListener('mousedown', handleClickOutside);
+      document.addEventListener("mousedown", handleClickOutside);
     }
 
     return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener("mousedown", handleClickOutside);
     };
   }, [isOpen, onClose]);
 
   if (!isOpen) return null;
 
   return (
-    <div 
+    <div
       ref={dropdownRef}
       className="absolute right-0 top-full mt-2 w-72 bg-white rounded-xl shadow-2xl border border-gray-100 py-2 z-50"
     >
-    
-
       {/* Menu Items */}
       <div className="py-2">
         {menuItems.map((item) => {
           const Icon = item.icon;
+          const isSelected = selectedItem === item.id;
           return (
             <button
               key={item.id}
               onClick={() => handleMenuItemClick(item)}
-              className="w-full px-4 py-3 text-left hover:bg-gray-50 transition-colors flex items-center justify-between group"
+              className={`w-full px-4 py-3 text-left transition-colors flex items-center justify-between group ${
+                isSelected ? "bg-gray-100" : "hover:bg-gray-50"
+              }`}
             >
               <div className="flex items-center space-x-3">
                 <Icon className="w-5 h-5 text-gray-500 group-hover:text-gray-700" />
@@ -137,11 +142,13 @@ const UserDropdownMenu: React.FC<UserDropdownMenuProps> = ({
                   {item.label}
                 </span>
               </div>
-              {item.hasNotification && item.notificationCount && item.notificationCount > 0 && (
-                <span className="bg-red-500 text-white text-xs rounded-full px-2 py-1 min-w-[20px] h-5 flex items-center justify-center">
-                  {item.notificationCount}
-                </span>
-              )}
+              {item.hasNotification &&
+                item.notificationCount &&
+                item.notificationCount > 0 && (
+                  <span className="bg-red-500 text-white text-xs rounded-full px-2 py-1 min-w-[20px] h-5 flex items-center justify-center">
+                    {item.notificationCount}
+                  </span>
+                )}
             </button>
           );
         })}
@@ -170,9 +177,7 @@ const UserDropdownMenu: React.FC<UserDropdownMenuProps> = ({
         className="w-full px-4 py-3 text-left hover:bg-red-50 transition-colors flex items-center space-x-3 group"
       >
         <LogOut className="w-5 h-5 text-[#C85212]" />
-        <span className="text-[#C85212] font-medium">
-          Log out
-        </span>
+        <span className="text-[#C85212] font-medium">Log out</span>
       </button>
     </div>
   );

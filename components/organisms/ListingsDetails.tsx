@@ -1,4 +1,3 @@
-
 "use client";
 import Image from "next/image";
 import ListingsButtons from "@/components/atoms/Buttons/ListingButtons";
@@ -12,6 +11,7 @@ import {
   Ruler,
 } from "lucide-react";
 import { useGetListingsByIdQuery } from "@/Hooks/use-getAllListingsById.query";
+import Link from "next/link";
 
 interface Props {
   id: string;
@@ -87,7 +87,6 @@ export default function ListingDetail({ id }: Props) {
               <li>Library: In Clubroom</li>
             </ul>
 
-
             <ul className="list-disc list-inside space-y-1">
               <li>Swimming Pool: Brand New</li>
               <li>Gated Entry: Access</li>
@@ -143,7 +142,9 @@ export default function ListingDetail({ id }: Props) {
           <ListingsButtons icon={Mail} variant="outline">
             Send Message
           </ListingsButtons>
-          <ListingsButtons variant="primary">Write a Review</ListingsButtons>
+          <Link href={`/write-reviews/listed/${id}`}>
+            <ListingsButtons variant="primary">Leave a Review</ListingsButtons>
+          </Link>
         </div>
       </div>
 

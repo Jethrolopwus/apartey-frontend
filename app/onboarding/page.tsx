@@ -21,22 +21,6 @@ export default function RoleSelect() {
   const { data, refetch } = useGetUserRoleQuery();
 
   useEffect(() => {
-    if (addRoleData  ) {
-      // console.log(data);
-      // get user role from data
-      // perform your redirect
-      if (data?.currentUserRole?.role === "renter") {
-        router.push("/")
-      } 
-       if (data?.currentUserRole?.role === "homeowner") {
-        router.push("/landlord")
-      } 
-       if (data?.currentUserRole?.role === "agent") {
-        router.push("/agent")
-      }
-        console.debug(" users Role",data?.currentUserRole?.role);
-        
-    }
     if (data) {
       setSelectedRole(data?.currentUserRole?.role);
     }
@@ -49,13 +33,25 @@ export default function RoleSelect() {
       { role: selectedRole },
       {
         onSuccess: (response) => {
+          console.log(response);
           if (TokenManager.updateFromResponse(response)) {
             toast.success("Role selected successfully!");
           } else {
             toast.success("Role selected successfully!");
             console.warn("No new token received from API response");
           }
+
           refetch();
+
+          if (response?.user?.role === "renter") {
+            router.push("/");
+          }
+          if (response?.user?.role === "homeowner") {
+            router.push("/landlord");
+          }
+          if (response?.user?.role === "agent") {
+            router.push("/agent");
+          }
         },
         onError: (error: any) => {
           console.error("Role submission error:", error);

@@ -4,7 +4,8 @@ import { ReviewFormData } from "@/types/generated";
 
 export const useWriteReviewMutation = () => {
   const { data, isPending, error, mutate } = useMutation({
-    mutationFn: (data: ReviewFormData) => http.httpWriteReview(data),
+    mutationFn: (variables: { id: string; data: ReviewFormData }) =>
+      http.httpWriteReview(variables.id, variables.data),
   });
 
   return {

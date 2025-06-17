@@ -1,21 +1,9 @@
-import React from 'react';
+import React from "react";
+import {
+  AgentBrokerFeesData,
+  AgentBrokerFeesToggleProps,
+} from "@/types/generated";
 
-// Agent/Broker fees data interface
-export interface AgentBrokerFeesData {
-  agentFeeRequired: boolean;
-}
-
-// AgentBrokerFeesToggle component props
-interface AgentBrokerFeesToggleProps {
-  data: AgentBrokerFeesData;
-  onChange: (field: string, value: boolean) => void;
-  className?: string;
-  title?: string;
-  description?: string;
-  questionText?: string;
-}
-
-// Main AgentBrokerFeesToggle component
 const AgentBrokerFeesToggle: React.FC<AgentBrokerFeesToggleProps> = ({
   data,
   onChange,
@@ -34,10 +22,8 @@ const AgentBrokerFeesToggle: React.FC<AgentBrokerFeesToggleProps> = ({
         <div className="relative inline-block w-10 mr-2 align-middle select-none transition duration-200 ease-in">
           <input
             type="checkbox"
-            checked={data.agentFeeRequired}
-            onChange={(e) =>
-              onChange("agentFeeRequired", e.target.checked)
-            }
+            checked={data.agentFeeRequired || false}
+            onChange={(e) => onChange("agentFeeRequired", e.target.checked)}
             className="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 appearance-none cursor-pointer"
           />
           <label

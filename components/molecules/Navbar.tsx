@@ -1,6 +1,6 @@
 
 'use client';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { ChevronDown, Menu, Phone, User, X } from 'lucide-react';
@@ -10,18 +10,29 @@ import ListingsDropdown from '@/components//molecules/ListingsDropdown';
 import Image from 'next/image';
 import logo from "@/public/aparteyLogo.png"
 import { TokenManager } from '@/utils/tokenManager';
+import { useGetUserRoleQuery } from "@/Hooks/use-getUserRole.query";
 
 interface NavbarProps {
-  currentProfile?: 'renter' | 'landlord' | 'agent';
+  
 }
 
-const Navbar: React.FC<NavbarProps> = ({ currentProfile = 'renter' }) => {
+const Navbar: React.FC<NavbarProps> = () => {
   const pathname = usePathname();
   const router = useRouter()
   const [isUserDropdownOpen, setIsUserDropdownOpen] = useState(false);
   const [isListingsDropdownOpen, setIsListingsDropdownOpen] = useState(false);
   const [isSwitchProfileModalOpen, setIsSwitchProfileModalOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  
+  // Fetch user role data
+  const { data: userRoleData, isLoading, error } = useGetUserRoleQuery();
+  const [selectedRole, setSelectedRole] = useState();
+
+  useEffect(() => {
+    if (userRoleData) {
+      setSelectedRole(userRoleData?.currentUserRole?.role);
+    }
+  }, [userRoleData]);
 
   const navItems = [
     { label: 'Home', href: '/', active: pathname === '/', hasDropdown: false },
@@ -36,9 +47,10 @@ const Navbar: React.FC<NavbarProps> = ({ currentProfile = 'renter' }) => {
     if (TokenManager.hasToken()){
       setIsUserDropdownOpen(true)
     }else{
-      router.push('/signup')
+      router.push('/signin')
     }
   }
+  
   const handleSwitchProfile = () => {
     setIsSwitchProfileModalOpen(true);
     setIsUserDropdownOpen(false);
@@ -46,7 +58,8 @@ const Navbar: React.FC<NavbarProps> = ({ currentProfile = 'renter' }) => {
   const handleCloseUserDropdown = () => setIsUserDropdownOpen(false);
   const handleCloseSwitchProfileModal = () => setIsSwitchProfileModalOpen(false);
   const handleCloseListingsDropdown = () => setIsListingsDropdownOpen(false);
-const toggleMobileMenu = () => setIsMobileMenuOpen(!isMobileMenuOpen);
+  const toggleMobileMenu = () => setIsMobileMenuOpen(!isMobileMenuOpen);
+ 
   return (
     <>
       <nav className="bg-white shadow-sm border-b border-gray-100 relative">
@@ -108,10 +121,10 @@ const toggleMobileMenu = () => setIsMobileMenuOpen(!isMobileMenuOpen);
 
             {/* Right Actions */}
             <div className="hidden md:flex items-center space-x-4">
+              <div className='flex gap-4 items-center'>
               <Link href="/signin" className="text-gray-700 hover:text-gray-900 font-medium text-sm">
                 Login
               </Link>
-              <div className='flex items-center'>
               <Link
                 href="/contact"
                 className=" text-white bg-orange-200  px-4 py-2 rounded-lg font-medium text-sm transition-colors "
@@ -184,14 +197,11 @@ const toggleMobileMenu = () => setIsMobileMenuOpen(!isMobileMenuOpen);
             
             {/* Mobile Menu Actions */}
             <div className="px-3 py-4 space-y-3 border-t border-gray-200">
-              <Link 
-                href="/signin" 
-                className="block text-gray-700 hover:text-gray-900 font-medium"
-                onClick={() => setIsMobileMenuOpen(false)}
-              >
+      
+              <div className='flex items-center space-x-2'>
+              <Link href="/signin" className="text-gray-700 hover:text-gray-900 font-medium text-sm">
                 Login
               </Link>
-              <div className='flex items-center space-x-2'>
                 <Link
                   href="/contact"
                   className="flex-1 text-center text-white bg-orange-200 px-4 py-2 rounded-lg font-medium"
@@ -207,17 +217,15 @@ const toggleMobileMenu = () => setIsMobileMenuOpen(!isMobileMenuOpen);
         </div>
       </nav>
 
-      {/* Profile Switch Modal */}
+      {/* Profile Switch Modal - Now uses userData instead of hardcoded currentProfile */}
       <SwitchProfileModal
         isOpen={isSwitchProfileModalOpen}
         onClose={handleCloseSwitchProfileModal}
-        currentProfile={currentProfile}
+        userData={userRoleData ? { currentUserRole: { role: userRoleData.currentUserRole.role } } : undefined}
       />
+
     </>
   );
 };
 
 export default Navbar;
-
-
-
