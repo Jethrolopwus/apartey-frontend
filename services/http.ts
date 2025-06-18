@@ -3,9 +3,11 @@ import endpoints from "./endpoints";
 import {
   FormData,
   FormValues,
+  OnboardingStatusResponse,
   ReviewFormData,
   RoleSubmissionData,
   RoleSubmissionResponse,
+  SignInResponse,
   UnlistedPropertyReview,
 } from "@/types/generated";
 import { TokenManager } from "@/utils/tokenManager";
@@ -41,12 +43,14 @@ class BaseURL {
     }
   };
 
-  httpSignIn = async (data: FormData) => {
+  httpSignIn = async (data: FormData): Promise<SignInResponse> => {
     try {
-      const response = await AxiosInstance.post(endpoints.signin, data);
-      // console.log("Login Data", response.data);
+      const response = await AxiosInstance.post(endpoints.signin, {
+        email: data.email,
+        password: data.password,
+      });
       return response.data;
-    } catch (error) {
+    } catch (error: any) {
       throw error;
     }
   };
@@ -166,6 +170,66 @@ class BaseURL {
           "Content-Type": "application/json",
         },
       });
+
+      return response.data;
+    } catch (error: any) {
+      if (error.response?.status === 401) {
+        TokenManager.clearAllTokens();
+        window.location.href = "/signin";
+      }
+      throw error;
+    }
+  };
+
+  httpGetOnboardingStatus = async (): Promise<OnboardingStatusResponse> => {
+    try {
+      const token =
+        localStorage.getItem("authToken") ||
+        localStorage.getItem("token") ||
+        localStorage.getItem("accessToken");
+
+      console.log("Token for onboarding check:", token);
+
+      if (!token) throw new Error("No authentication token found.");
+
+      const response = await AxiosInstance.get(endpoints.getOnboardingStatus, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
+
+      return response.data;
+    } catch (error: any) {
+      if (error.response?.status === 401) {
+        TokenManager.clearAllTokens();
+        window.location.href = "/signin";
+      }
+      throw error;
+    }
+  };
+  httpUpdateOnboardingStatus = async (): Promise<RoleSubmissionResponse> => {
+    try {
+      const token =
+        localStorage.getItem("authToken") ||
+        localStorage.getItem("token") ||
+        localStorage.getItem("accessToken");
+
+      console.log("Token", token);
+
+      if (!token) throw new Error("No authentication token found.");
+
+      // Fix: Move headers to the correct position and use proper method
+      const response = await AxiosInstance.patch(
+        endpoints.updateOnboardingStatus,
+        {}, // Empty body for PATCH request
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
 
       return response.data;
     } catch (error: any) {

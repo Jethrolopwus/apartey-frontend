@@ -3,6 +3,7 @@ import Image from "next/image";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAddRolesMutation } from "@/Hooks/use.addRoles.mutation";
+import { useUpdateOnboardingStatusMutation } from "@/Hooks/use.updateOnboardingStatus.mutation";
 import { TokenManager } from "@/utils/tokenManager";
 import { toast } from "react-hot-toast";
 import { useGetUserRoleQuery } from "@/Hooks/use-getUserRole.query";
@@ -13,11 +14,16 @@ export default function RoleSelect() {
   >(null);
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const router = useRouter();
+
   const {
     mutate: addRole,
-    isLoading,
+    isLoading: isAddingRole,
     data: addRoleData,
   } = useAddRolesMutation();
+
+  const { mutate: updateOnboardingStatus, isLoading: isUpdatingOnboarding } =
+    useUpdateOnboardingStatusMutation();
+
   const { data, refetch } = useGetUserRoleQuery();
 
   useEffect(() => {
@@ -29,29 +35,47 @@ export default function RoleSelect() {
   const handleContinue = () => {
     if (!selectedRole || !agreedToTerms) return;
 
+    // Step 1: Add the role first
     addRole(
       { role: selectedRole },
       {
         onSuccess: (response) => {
-          console.log(response);
+          console.log("Role added successfully:", response);
+
+          // Update token if provided
           if (TokenManager.updateFromResponse(response)) {
-            toast.success("Role selected successfully!");
+            console.log("Token updated from role response");
           } else {
-            toast.success("Role selected successfully!");
-            console.warn("No new token received from API response");
+            console.warn("No new token received from role API response");
           }
 
+          // Refetch user data
           refetch();
 
-          if (response?.user?.role === "renter") {
-            router.push("/");
-          }
-          if (response?.user?.role === "homeowner") {
-            router.push("/landlord");
-          }
-          if (response?.user?.role === "agent") {
-            router.push("/agent");
-          }
+          // Step 2: Update onboarding status after role is successfully added
+          updateOnboardingStatus(undefined, {
+            onSuccess: (onboardingResponse) => {
+              console.log("Onboarding status updated:", onboardingResponse);
+
+              // Update token if provided from onboarding response
+              if (TokenManager.updateFromResponse(onboardingResponse)) {
+                console.log("Token updated from onboarding response");
+              }
+
+              toast.success("Setup completed successfully!");
+
+              // Navigate to profile regardless of role
+              router.push("/profile");
+            },
+            onError: (onboardingError: any) => {
+              console.error("Onboarding status update error:", onboardingError);
+
+              // Even if onboarding status update fails, we can still navigate
+              // since the role was successfully set
+              toast.success("Role selected successfully!");
+              router.push("/profile");
+            },
+          });
         },
         onError: (error: any) => {
           console.error("Role submission error:", error);
@@ -70,9 +94,11 @@ export default function RoleSelect() {
       }
     );
   };
+  // Show loading state if either operation is in progress
+  const isLoading = isAddingRole || isUpdatingOnboarding;
 
   return (
-    <div className="min-h-screen flex items-center justify-center  px-4 bg-gray-50">
+    <div className="min-h-screen flex items-center justify-center px-4 bg-gray-50">
       <div className="w-full max-w-2xl text-center px-8 py-12 shadow-md border border-gray-100 bg-white rounded-lg">
         {/* Logo */}
         <div className="mb-12">
@@ -246,7 +272,11 @@ export default function RoleSelect() {
               : "bg-gray-200 text-gray-400 cursor-not-allowed"
           }`}
         >
-          {isLoading ? "Submitting..." : "Continue"}
+          {isLoading
+            ? isAddingRole
+              ? "Setting up your role..."
+              : "Completing setup..."
+            : "Continue"}
         </button>
       </div>
     </div>

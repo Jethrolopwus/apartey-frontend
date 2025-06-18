@@ -9,6 +9,8 @@ export default Object.freeze({
   resetPassword: "/auth/reset-password",
   addRoles: "/user/role",
   getUsersRole: "/user/role",
+  getOnboardingStatus: "user/onboarding/status",
+  updateOnboardingStatus: "user/onboarding",
   getUserProfile: "user/profile",
   getProfileCompletionStat: "/user/profile-completion",
   writeReviews: (id: string) => `reviews/${id}`,

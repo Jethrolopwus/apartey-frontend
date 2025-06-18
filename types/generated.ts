@@ -485,6 +485,39 @@ export interface RoleSubmissionResponse {
   role?: string;
   [key: string]: any;
 }
+
+export interface OnboardingStatusResponse {
+  currentUserStatus: {
+    _id: string;
+    isOnboarded: boolean;
+  };
+  message: string;
+}
+
+// Add these interfaces to your existing generated.ts file
+
+export interface SignInResponse {
+  user: {
+    _id: string;
+    firstName: string;
+    email: string;
+    role?: string;
+    isOnboarded?: boolean;
+    // Add other user properties as needed
+  };
+  token?: string;
+  accessToken?: string;
+  message: string;
+}
+
+export interface OnboardingStatusResponse {
+  currentUserStatus: {
+    _id: string;
+    isOnboarded: boolean;
+  };
+  message: string;
+}
+
 export declare type FormData = {
   code: string;
   name: string;
@@ -492,7 +525,6 @@ export declare type FormData = {
   password: string;
   confirmPassword: string;
 };
-
 export interface StayDetails {
   numberOfRooms: number;
   numberOfOccupants: number;

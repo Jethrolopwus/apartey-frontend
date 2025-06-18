@@ -22,6 +22,7 @@ import LocationForm, {
 import AgentBrokerFeesToggle from "@/components/molecules/AgentBrokers";
 import { UnlistedPropertyReview } from "@/types/generated";
 import AmenitiesAccessibility from "@/components/molecules/AmenitiesAccessibility";
+import AddressForm from "../molecules/AddressForm";
 
 const WriteUnlistedPropertyReviews = () => {
   const [currentStep, setCurrentStep] = useState(1);
@@ -77,7 +78,6 @@ const WriteUnlistedPropertyReviews = () => {
         "federal capital territory": "Abuja FCT",
       },
       ghana: {
-        // google → you (identical here, so we could omit)
         "greater accra": "Greater Accra",
       },
       kenya: {},
@@ -318,12 +318,12 @@ const WriteUnlistedPropertyReviews = () => {
   };
 
   interface RentData {
-    rentType: string;
+    rentType: "actual" | "range" | undefined;
     yearlyRent: string;
   }
 
   const rentData: RentData = {
-    rentType: formData.rentType || "actual",
+    rentType: (formData.rentType as "actual" | "range") || "actual",
     yearlyRent: formData.yearlyRent || "",
   };
 
@@ -819,7 +819,7 @@ const WriteUnlistedPropertyReviews = () => {
                   {getCurrentStepMessage()}
                 </p>
               </div>
-              <SearchInput
+              {/* <SearchInput
                 placeholder="Search by address, neighborhood, or city"
                 countryRestrictions={["ng", "ee"]}
                 onPlaceSelect={handlePlaceSelect}
@@ -829,10 +829,9 @@ const WriteUnlistedPropertyReviews = () => {
                   router.push(`/searchReview?q=${encodeURIComponent(value)}`)
                 }
                 onLocationSelect={() => {}}
-              />
+              /> */}
               <div className="space-y-6">
-                <LocationForm ref={locationFormRef} />
-
+                <AddressForm />
                 {/* PropertyDetailsSections */}
                 <PropertyDetailsSection
                   apartmentNumber={formData.apartmentNumber}

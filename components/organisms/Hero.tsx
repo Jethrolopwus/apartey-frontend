@@ -31,7 +31,14 @@ export default function Hero() {
   ];
 
   if (isLoading)
-    return <div className="text-center py-10">Loading homepage...</div>;
+    return (
+      <div className="text-center py-10">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-orange-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
 
   return (
     <div className="relative py-12 bg-gray-50 md:py-12 overflow-hidden">

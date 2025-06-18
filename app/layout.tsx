@@ -8,8 +8,6 @@ import QueryProvider from "@/app/QueryProvider";
 import ToastProvider from "@/app/ToastProvider";
 import NextProvider from "@/app/NextProvider";
 
-
-
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
@@ -23,11 +21,10 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Apartey",
   icons: {
-    icon: "/favicon.png", 
+    icon: "/favicon.png",
   },
   description: "make confident, awell-informed rental decision",
 };
-
 
 export default function RootLayout({
   children,
@@ -36,7 +33,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-       <head>
+      <head>
         <Script
           src={`https://maps.googleapis.com/maps/api/js?key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}&libraries=places`}
           async
@@ -44,14 +41,16 @@ export default function RootLayout({
           strategy="beforeInteractive"
         />
       </head>
-      <body className={`${geistSans.className} ${geistMono.className} bg-gray-50 min-h-screen font-[family-name:var(--font-geist-sans)]`}>
+      <body
+        className={`${geistSans.className} ${geistMono.className} bg-gray-50 min-h-screen font-[family-name:var(--font-geist-sans)]`}
+      >
         <NextProvider>
-        <QueryProvider>
-      <ToastProvider/>
-        <Navbar />
-        {children}
-        <Footer/>
-        </QueryProvider>
+          <QueryProvider>
+            <ToastProvider />
+            <Navbar />
+            {children}
+            <Footer />
+          </QueryProvider>
         </NextProvider>
       </body>
     </html>

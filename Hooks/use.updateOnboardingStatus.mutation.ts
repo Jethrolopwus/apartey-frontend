@@ -1,14 +1,14 @@
 import { useMutation } from "@tanstack/react-query";
 import http from "@/services/http";
-import { FormData, SignInResponse } from "@/types/generated";
+import { RoleSubmissionResponse } from "@/types/generated";
 
-export const useSignInMutation = () => {
+export const useUpdateOnboardingStatusMutation = () => {
   const { data, isPending, error, mutate } = useMutation<
-    SignInResponse,
+    RoleSubmissionResponse,
     Error,
-    FormData
+    void
   >({
-    mutationFn: (data: FormData) => http.httpSignIn(data),
+    mutationFn: () => http.httpUpdateOnboardingStatus(),
   });
 
   return {
