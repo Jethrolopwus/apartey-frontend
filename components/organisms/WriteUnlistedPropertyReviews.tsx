@@ -1,7 +1,7 @@
 "use client";
-import React, { useRef, useState, useEffect } from "react";
+import * as React from "react";
+import { useRef, useState, useEffect } from "react";
 import { ChevronDown, Calendar, Home, Star, MessageSquare } from "lucide-react";
-/// <reference types="@types/google.maps" />
 import RatingComponent from "@/components/molecules/ReviewsRating";
 import SubmitReviewComponent from "@/components/organisms/SubmitReviews";
 import { useAuthRedirect } from "@/Hooks/useAuthRedirect";
@@ -23,6 +23,7 @@ import AgentBrokerFeesToggle from "@/components/molecules/AgentBrokers";
 import { UnlistedPropertyReview } from "@/types/generated";
 import AmenitiesAccessibility from "@/components/molecules/AmenitiesAccessibility";
 import AddressForm from "../molecules/AddressForm";
+import { ReviewFormProvider, useReviewForm } from "@/app/context/RevievFormContext";
 
 const WriteUnlistedPropertyReviews = () => {
   const [currentStep, setCurrentStep] = useState(1);
@@ -36,6 +37,8 @@ const WriteUnlistedPropertyReviews = () => {
   }
 
   const locationFormRef = useRef<LocationFormRef>(null);
+  const { location } = useReviewForm();
+  const submitReviewRef = useRef<{ handleFinalSubmit: () => Promise<any> }>(null);
 
   /* -- helper to fetch full place details -- */
   const getPlaceDetails = (
@@ -521,84 +524,85 @@ const WriteUnlistedPropertyReviews = () => {
     return errors;
   };
 
+  const transformContextToApiData = (contextData: any): UnlistedPropertyReview & { submitAnonymously: boolean } => {
+    return {
+      location: {
+        country: contextData.country || "",
+        city: contextData.city || "",
+        district: contextData.district || "",
+        postalCode: contextData.postalCode || "",
+        streetAddress: contextData.street || "",
+      },
+      stayDetails: {
+        numberOfRooms: Number(contextData.numberOfRooms) || 1,
+        numberOfOccupants: Number(contextData.numberOfOccupants) || 1,
+        dateLeft: contextData.moveOutDate || "",
+        furnished: !!contextData.furnished,
+        appliancesFixtures: contextData.appliancesFixtures || [],
+        buildingFacilities: contextData.buildingFacilities || [],
+        landlordLanguages: contextData.landlordLanguages || [],
+      },
+      costDetails: {
+        rent: Number(contextData.yearlyRent) || 0,
+        rentType: contextData.rentType === "range" ? "Yearly" : "Monthly",
+        securityDepositRequired: !!contextData.securityDepositRequired,
+        agentBrokerFeeRequired: !!contextData.agentFeeRequired,
+        fixedUtilityCost: !!contextData.fixedUtilityCost,
+        julySummerUtilities: Number(contextData.julyUtilities) || 0,
+        januaryWinterUtilities: Number(contextData.januaryUtilities) || 0,
+      },
+      accessibility: {
+        nearestGroceryStore: contextData.nearestGroceryStore || "",
+        nearestPark: contextData.nearestPark || "",
+        nearestRestaurant: contextData.nearestRestaurant || "",
+      },
+      ratingsAndReviews: {
+        valueForMoney: contextData.valueForMoney || 0,
+        costOfRepairsCoverage: contextData.costOfRepairs || "",
+        overallExperience: contextData.overallExperience || 0,
+        overallRating: Math.round(
+          ((contextData.valueForMoney || 0) + (contextData.overallExperience || 0)) / 2
+        ),
+        detailedReview: contextData.detailedReview || "",
+      },
+      submitAnonymously: !!contextData.isAnonymous,
+      agreeToTerms: !!contextData.agreeToTerms,
+    };
+  };
+
   const handleFinalSubmitWithValidation = async () => {
     if (!canSubmit) {
       toast.error("Please agree to the terms and conditions to continue");
       return;
     }
 
-    let locationData: {
-      country?: any;
-      city?: any;
-      state?: any;
-      district?: any;
-      zipCode?: any;
-      address?: any;
-    };
-    try {
-      if (!locationFormRef?.current?.submit) {
-        toast.error("Please fill in the location details");
-        return;
-      }
-      locationData = await locationFormRef.current.submit();
-
-      console.log("Location data submitted successfully:", locationData);
-      if (!locationData || Object.keys(locationData).length === 0) {
-        throw new Error("Location data is empty");
-      }
-      // Update formData with location data
-      setFormData((prev) => ({
-        ...prev,
-        country: locationData.country || prev.country,
-        city: locationData?.city || prev.city,
-        state: locationData.state || prev.state,
-        district: locationData.district || prev.district,
-        zipCode: locationData.zipCode || prev.zipCode,
-        address: locationData.address || prev.address,
-      }));
-    } catch (formErrors) {
-      console.log(formErrors);
-      toast.error("Please complete all required location fields.");
-      return;
-    }
-
-    const mergedData = {
-      ...formData,
-      ...locationData,
-    };
-
-    const validationErrors = validateFormData(mergedData);
-    if (validationErrors.length > 0) {
-      toast.error(validationErrors[0]);
-      return;
+    // Call the child's handleFinalSubmit for validation and data
+    let contextData = location;
+    if (submitReviewRef.current && submitReviewRef.current.handleFinalSubmit) {
+      const result = await submitReviewRef.current.handleFinalSubmit();
+      if (!result) return; // Validation failed in child
+      contextData = result;
     }
 
     setIsSubmitting(true);
 
     try {
-      const apiData = transformFormDataToAPI(mergedData);
-
-      console.log("Submitting review data:", apiData);
+      const apiData = transformContextToApiData(contextData);
 
       if (!isAuthenticated) {
-        console.log("User not authenticated, redirecting to signin...");
         handleAuthRedirect(apiData);
         return;
       }
 
       writeReviewMutation.mutate(apiData, {
         onSuccess: (response) => {
-          console.log("Review submitted successfully!", response);
           clearPendingData();
           toast.success("Review submitted successfully!");
-
           setTimeout(() => {
             router.push("/");
           }, 2000);
         },
         onError: (error: any) => {
-          console.error("Error submitting review:", error);
-
           if (error.response?.status === 401) {
             toast.error("Session expired. Please log in again.");
             handleAuthRedirect(apiData);
@@ -612,7 +616,6 @@ const WriteUnlistedPropertyReviews = () => {
         },
       });
     } catch (error) {
-      console.error("Error in handleFinalSubmit:", error);
       toast.error("An unexpected error occurred. Please try again.");
     } finally {
       setIsSubmitting(false);
@@ -718,108 +721,109 @@ const WriteUnlistedPropertyReviews = () => {
     }
   };
   return (
-    <div className="min-h-screen bg-gray-50">
-      {hasPendingData && isAuthenticated && (
-        <div className="bg-green-50 border border-green-200 rounded-lg p-4 mx-4 mt-4">
-          <p className="text-green-700 text-sm flex items-center">
-            <span className="mr-2">✓</span>
-            Welcome back! Your review data has been restored.
-          </p>
-        </div>
-      )}
-
-      {/* Main Content */}
-      <main className="max-w-4xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
-        {/* Title */}
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-teal-700 mb-2">
-            Write a Property Review
-          </h1>
-          <p className="text-gray-600">
-            Share your honest opinion about a property to help others make
-            informed decisions.
-          </p>
-        </div>
-
-        {/* Progress Steps */}
-        <div className="bg-orange-100 rounded-lg p-6 mb-8">
-          <div className="flex items-center justify-between">
-            <div
-              className={`flex items-center space-x-2 ${
-                currentStep >= 1 ? "text-orange-600" : "text-gray-400"
-              }`}
-            >
-              <div
-                className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
-                  currentStep >= 1
-                    ? "bg-orange-600 text-white"
-                    : "bg-gray-300 text-gray-600"
-                }`}
-              >
-                {currentStep > 1 ? "✓" : "1"}
-              </div>
-              <span className="text-sm font-medium">Property Details</span>
-            </div>
-            <div
-              className={`flex items-center space-x-2 ${
-                currentStep >= 2 ? "text-orange-600" : "text-gray-400"
-              }`}
-            >
-              <div
-                className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
-                  currentStep >= 2
-                    ? "bg-orange-600 text-white"
-                    : "bg-gray-300 text-gray-600"
-                }`}
-              >
-                {currentStep > 2 ? "✓" : "2"}
-              </div>
-              <span className="text-sm font-medium">
-                Experience and Ratings
-              </span>
-            </div>
-            <div
-              className={`flex items-center space-x-2 ${
-                currentStep >= 3 ? "text-orange-600" : "text-gray-400"
-              }`}
-            >
-              <div
-                className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
-                  currentStep >= 3
-                    ? "bg-orange-600 text-white"
-                    : "bg-gray-300 text-gray-600"
-                }`}
-              >
-                3
-              </div>
-              <span className="text-sm font-medium">Submit Review</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Progress Message */}
-        {currentStep === 2 && (
-          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
-            <p className="text-yellow-700 text-sm flex items-center">
-              <span className="mr-2">👋</span>
-              {getCurrentStepMessage()}
+    <ReviewFormProvider>
+      <div className="min-h-screen bg-gray-50">
+        {hasPendingData && isAuthenticated && (
+          <div className="bg-green-50 border border-green-200 rounded-lg p-4 mx-4 mt-4">
+            <p className="text-green-700 text-sm flex items-center">
+              <span className="mr-2">✓</span>
+              Welcome back! Your review data has been restored.
             </p>
           </div>
         )}
-        <div className="bg-white rounded-lg shadow-sm p-8">
-          {/* Step 1: Property Details */}
-          {currentStep === 1 && (
-            <div>
-              <div className="mb-6">
-                <h2 className="text-xl font-semibold text-gray-900 mb-2">
-                  {getCurrentStepTitle()}
-                </h2>
-                <p className="text-gray-600 flex items-center">
-                  <Home className="w-4 h-4 mr-1" />
-                  {getCurrentStepMessage()}
-                </p>
+
+        {/* Main Content */}
+        <main className="max-w-4xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
+          {/* Title */}
+          <div className="text-center mb-8">
+            <h1 className="text-3xl font-bold text-teal-700 mb-2">
+              Write a Property Review
+            </h1>
+            <p className="text-gray-600">
+              Share your honest opinion about a property to help others make
+              informed decisions.
+            </p>
+          </div>
+
+          {/* Progress Steps */}
+          <div className="bg-orange-100 rounded-lg p-6 mb-8">
+            <div className="flex items-center justify-between">
+              <div
+                className={`flex items-center space-x-2 ${
+                  currentStep >= 1 ? "text-orange-600" : "text-gray-400"
+                }`}
+              >
+                <div
+                  className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
+                    currentStep >= 1
+                      ? "bg-orange-600 text-white"
+                      : "bg-gray-300 text-gray-600"
+                  }`}
+                >
+                  {currentStep > 1 ? "✓" : "1"}
+                </div>
+                <span className="text-sm font-medium">Property Details</span>
               </div>
-              {/* <SearchInput
+              <div
+                className={`flex items-center space-x-2 ${
+                  currentStep >= 2 ? "text-orange-600" : "text-gray-400"
+                }`}
+              >
+                <div
+                  className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
+                    currentStep >= 2
+                      ? "bg-orange-600 text-white"
+                      : "bg-gray-300 text-gray-600"
+                  }`}
+                >
+                  {currentStep > 2 ? "✓" : "2"}
+                </div>
+                <span className="text-sm font-medium">
+                  Experience and Ratings
+                </span>
+              </div>
+              <div
+                className={`flex items-center space-x-2 ${
+                  currentStep >= 3 ? "text-orange-600" : "text-gray-400"
+                }`}
+              >
+                <div
+                  className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
+                    currentStep >= 3
+                      ? "bg-orange-600 text-white"
+                      : "bg-gray-300 text-gray-600"
+                  }`}
+                >
+                  3
+                </div>
+                <span className="text-sm font-medium">Submit Review</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Progress Message */}
+          {currentStep === 2 && (
+            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
+              <p className="text-yellow-700 text-sm flex items-center">
+                <span className="mr-2">👋</span>
+                {getCurrentStepMessage()}
+              </p>
+            </div>
+          )}
+          <div className="bg-white rounded-lg shadow-sm p-8">
+            {/* Step 1: Property Details */}
+            {currentStep === 1 && (
+              <div>
+                <div className="mb-6">
+                  <h2 className="text-xl font-semibold text-gray-900 mb-2">
+                    {getCurrentStepTitle()}
+                  </h2>
+                  <p className="text-gray-600 flex items-center">
+                    <Home className="w-4 h-4 mr-1" />
+                    {getCurrentStepMessage()}
+                  </p>
+                </div>
+                {/* <SearchInput
                 placeholder="Search by address, neighborhood, or city"
                 countryRestrictions={["ng", "ee"]}
                 onPlaceSelect={handlePlaceSelect}
@@ -830,119 +834,102 @@ const WriteUnlistedPropertyReviews = () => {
                 }
                 onLocationSelect={() => {}}
               /> */}
-              <div className="space-y-6">
-                <AddressForm />
-                {/* PropertyDetailsSections */}
-                <PropertyDetailsSection
-                  apartmentNumber={formData.apartmentNumber}
-                  numberOfRooms={formData.numberOfRooms}
-                  numberOfOccupants={formData.numberOfOccupants}
-                  onChange={(field, value) => updateFormData(field, value)}
-                />
+                <div className="space-y-6">
+                  <AddressForm />
+                  {/* PropertyDetailsSections */}
+                  <PropertyDetailsSection
+                    apartmentNumber={formData.apartmentNumber}
+                    numberOfRooms={formData.numberOfRooms}
+                    numberOfOccupants={formData.numberOfOccupants}
+                    onChange={(field, value) => updateFormData(field, value)}
+                  />
 
-                {/* Move data */}
-                <MoveOutDatePicker
-                  value={formData.moveOutDate}
-                  onChange={(val) => updateFormData("moveOutDate", val)}
-                />
-              </div>
-            </div>
-          )}
-
-          {/* Step 2: Experience and Ratings */}
-          {currentStep === 2 && (
-            <div>
-              {/* Step 2A: Cost Details */}
-              {currentSubStep === 1 && (
-                <div>
-                  <div className="mb-6">
-                    <h2 className="text-xl font-semibold text-gray-900 mb-2">
-                      {getCurrentSubStepTitle()}
-                    </h2>
-                    <p className="text-gray-600">
-                      Tell us about the rental costs
-                    </p>
-                  </div>
-
-                  <div className="space-y-6">
-                    {/* Rent */}
-                    <RentInput
-                      data={rentData}
-                      onChange={updateFormData}
-                      className="mb-6"
-                    />
-                    {/* Security Deposit */}
-                    <SecurityDepositToggle
-                      data={securityDepositData}
-                      onChange={updateFormData}
-                      className="mb-6"
-                    />
-
-                    {/* Agent/Broker Fees */}
-                    <AgentBrokerFeesToggle
-                      data={agentBrokerFeesData}
-                      onChange={updateFormData}
-                      className="mb-6"
-                    />
-                  </div>
+                  {/* Move data */}
+                  <MoveOutDatePicker
+                  />
                 </div>
+              </div>
+            )}
+
+            {/* Step 2: Experience and Ratings */}
+            {currentStep === 2 && (
+              <div>
+                {/* Step 2A: Cost Details */}
+                {currentSubStep === 1 && (
+                  <div>
+                    <div className="mb-6">
+                      <h2 className="text-xl font-semibold text-gray-900 mb-2">
+                        {getCurrentSubStepTitle()}
+                      </h2>
+                      <p className="text-gray-600">
+                        Tell us about the rental costs
+                      </p>
+                    </div>
+
+                    <div className="space-y-6">
+                      {/* Rent */}
+                      <RentInput
+                    
+                      />
+                      {/* Security Deposit */}
+                      <SecurityDepositToggle
+                      />
+
+                      {/* Agent/Broker Fees */}
+                      <AgentBrokerFeesToggle
+                      />
+                    </div>
+                  </div>
+                )}
+                {/* Step 2B: Amenities & Accessibility */}
+                {currentSubStep === 2 && (
+                  <AmenitiesAccessibility
+                  
+                  />
+                )}
+                {/* Step 2C: Ratings & Reviews */}
+                {currentSubStep === 3 && (
+                  <RatingComponent
+                  />
+                )}
+              </div>
+            )}
+
+            {/* Step 3: Submit Review */}
+            {currentStep === 3 && <SubmitReviewComponent ref={submitReviewRef} />}
+
+            {/* Navigation Buttons */}
+            <div className="flex justify-between mt-8">
+              {currentStep > 1 && (
+                <button
+                  onClick={prevStep}
+                  className="bg-gray-200 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-300 transition duration-200"
+                >
+                  Previous
+                </button>
               )}
-              {/* Step 2B: Amenities & Accessibility */}
-              {currentSubStep === 2 && (
-                <AmenitiesAccessibility
-                  formData={formData}
-                  updateFormData={updateFormData}
-                  updateNestedFormData={updateNestedFormData}
-                  getCurrentSubStepTitle={getCurrentSubStepTitle}
-                />
+              {currentStep < 3 && (
+                <button
+                  onClick={nextStep}
+                  className="bg-orange-600 text-white px-6 py-2 rounded-md hover:bg-orange-700 transition duration-200"
+                >
+                  Continue
+                </button>
               )}
-              {/* Step 2C: Ratings & Reviews */}
-              {currentSubStep === 3 && (
-                <RatingComponent
-                  data={formData.ratingsAndReviews}
-                  onChange={handleRatingsChange}
-                  className="mt-8"
-                  title="Rate Your Experience"
-                  description="Help future tenants by sharing your honest experience"
-                />
+              {currentStep === 3 && (
+                <button
+                  onClick={handleFinalSubmitWithValidation}
+                  disabled={!canSubmit || isSubmitting}
+                  className="bg-orange-600 text-white px-6 py-2 rounded-md hover:bg-orange-700 transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isSubmitting ? "Submitting..." : "Submit Review"}
+                </button>
               )}
             </div>
-          )}
-
-          {/* Step 3: Submit Review */}
-          {currentStep === 3 && <SubmitReviewComponent />}
-
-          {/* Navigation Buttons */}
-          <div className="flex justify-between mt-8">
-            {currentStep > 1 && (
-              <button
-                onClick={prevStep}
-                className="bg-gray-200 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-300 transition duration-200"
-              >
-                Previous
-              </button>
-            )}
-            {currentStep < 3 && (
-              <button
-                onClick={nextStep}
-                className="bg-orange-600 text-white px-6 py-2 rounded-md hover:bg-orange-700 transition duration-200"
-              >
-                Continue
-              </button>
-            )}
-            {currentStep === 3 && (
-              <button
-                onClick={handleFinalSubmitWithValidation}
-                disabled={!canSubmit || isSubmitting}
-                className="bg-orange-600 text-white px-6 py-2 rounded-md hover:bg-orange-700 transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {isSubmitting ? "Submitting..." : "Submit Review"}
-              </button>
-            )}
           </div>
-        </div>
-      </main>
-    </div>
+        </main>
+      </div>
+    </ReviewFormProvider>
   );
 };
 

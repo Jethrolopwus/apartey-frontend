@@ -1,12 +1,12 @@
 "use client";
 import React from "react";
 import { PropertyDetailsSectionProps } from "@/types/generated";
+import { useReviewForm } from "@/app/context/RevievFormContext";
 
-const PropertyDetailsSection: React.FC<PropertyDetailsSectionProps> = ({
-  numberOfRooms = "",
-  numberOfOccupants = "",
-  onChange,
-}) => {
+
+
+const PropertyDetailsSection: React.FC<PropertyDetailsSectionProps> = () => {
+  const { location, setLocation } = useReviewForm();
   return (
     <div className="space-y-6">
       {/* Number of Rooms & Occupants */}
@@ -19,8 +19,10 @@ const PropertyDetailsSection: React.FC<PropertyDetailsSectionProps> = ({
             type="text"
             placeholder="e.g. 2"
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-            value={numberOfRooms}
-            onChange={(e) => onChange("numberOfRooms", e.target.value)}
+            value={location?.numberOfRooms || ""}
+            onChange={e =>
+              setLocation({ ...location, numberOfRooms: e.target.value })
+            }
           />
         </div>
         <div>
@@ -31,8 +33,10 @@ const PropertyDetailsSection: React.FC<PropertyDetailsSectionProps> = ({
             type="text"
             placeholder="e.g. 4"
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-            value={numberOfOccupants}
-            onChange={(e) => onChange("numberOfOccupants", e.target.value)}
+            value={location?.numberOfOccupants || ""}
+            onChange={e =>
+              setLocation({ ...location, numberOfOccupants: e.target.value })
+            }
           />
         </div>
       </div>

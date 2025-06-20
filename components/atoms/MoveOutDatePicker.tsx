@@ -3,13 +3,11 @@ import React from "react";
 import DatePicker from "react-datepicker";
 import { Calendar } from "lucide-react";
 import "react-datepicker/dist/react-datepicker.css";
-import { MoveOutDatePickerProps } from "@/types/generated";
+import { useReviewForm } from "@/app/context/RevievFormContext";
 
-const MoveOutDatePicker: React.FC<MoveOutDatePickerProps> = ({
-  value = "",
-  onChange,
-}) => {
-  const parsedDate = value ? new Date(value) : null;
+const MoveOutDatePicker: React.FC = () => {
+  const { location, setLocation } = useReviewForm();
+  const parsedDate = location?.moveOutDate ? new Date(location.moveOutDate) : null;
 
   return (
     <div>
@@ -20,7 +18,7 @@ const MoveOutDatePicker: React.FC<MoveOutDatePickerProps> = ({
         <DatePicker
           selected={parsedDate}
           onChange={(date: Date | null) => {
-            if (date) onChange(date.toISOString().split("T")[0]);
+            if (date) setLocation({ ...location, moveOutDate: date.toISOString().split("T")[0] });
           }}
           dateFormat="yyyy-MM-dd"
           placeholderText="Select date"

@@ -1,19 +1,76 @@
+"use client";
+import React, { useState, useEffect } from "react";
+import { EyeIcon, EyeSlashIcon } from "@heroicons/react/24/outline";
+import SignInButton from "@/components/atoms/Buttons/SignInButton";
+import { SignInFormProps } from "@/types/generated";
+import { useAuthStatusQuery } from "@/Hooks/use-getAuthStatus.query";
+import { toast } from "react-hot-toast";
+import { useRouter } from "next/navigation";
 
-"use clients";
-import React, { useState } from 'react';
-import { EyeIcon, EyeSlashIcon } from '@heroicons/react/24/outline';
-import SignInButton from '@/components/atoms/Buttons/SignInButton';
-import { SignInFormProps } from '@/types/generated';
-
-const SignInForm: React.FC<SignInFormProps> = ({ isSubmitting, onSubmit, register, errors }) => {
+const SignInForm: React.FC<SignInFormProps> = ({
+  isSubmitting,
+  onSubmit,
+  register,
+  errors,
+}) => {
   const [showPassword, setShowPassword] = useState(false);
+  const router = useRouter();
+
+  const {
+    data: authData,
+    isLoading: isCheckingAuth,
+    error: authError,
+    refetch: refetchAuthStatus,
+  } = useAuthStatusQuery();
 
   const togglePasswordVisibility = () => {
     setShowPassword(!showPassword);
   };
 
+  useEffect(() => {
+    if (authData && !authError) {
+      toast.error("You are already signed in!");
+      const userRole =
+        authData.user?.role || authData.role || authData.currentUserRole?.role;
+
+      switch (userRole?.toLowerCase()) {
+        case "renter":
+          router.push("/");
+          break;
+        case "homeowner":
+          router.push("/landlord");
+          break;
+        case "agent":
+          router.push("/agent");
+          break;
+        default:
+          router.push("/profile");
+          break;
+      }
+    }
+  }, [authData, authError, router]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      await onSubmit(e);
+      refetchAuthStatus();
+    } catch (error) {
+      console.error("Sign-in error:", error);
+    }
+  };
+
+  if (isCheckingAuth) {
+    return (
+      <div className="flex justify-center items-center p-8">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        <span className="ml-2">Checking authentication...</span>
+      </div>
+    );
+  }
+
   return (
-    <form className="mt-8 space-y-6" onSubmit={onSubmit}>
+    <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
       <div className="space-y-4 shadow-xl">
         <div>
           <label htmlFor="email" className="block text-sm font-medium text-gray-700">
@@ -48,7 +105,7 @@ const SignInForm: React.FC<SignInFormProps> = ({ isSubmitting, onSubmit, registe
               Password
             </label>
             <div className="text-sm">
-              <a href="#" className="font-medium text-blue-500 hover:text-blue-400">
+              <a href="/resetPassword" className="font-medium text-blue-500 hover:text-blue-400">
                 Forgot password?
               </a>
             </div>
@@ -87,16 +144,13 @@ const SignInForm: React.FC<SignInFormProps> = ({ isSubmitting, onSubmit, registe
           </div>
         </div>
       </div>
-      
-      {/* ==== Sign In Button ========= */}
+
+      {/* Sign In Button */}
       <div>
-        <SignInButton isSubmitting={isSubmitting}/>
+        <SignInButton isSubmitting={isSubmitting} />
       </div>
     </form>
   );
 };
 
 export default SignInForm;
-
-
-

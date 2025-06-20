@@ -29,7 +29,7 @@ const UserDropdownMenu: React.FC<UserDropdownMenuProps> = ({
 }) => {
   const router = useRouter();
   const dropdownRef = useRef<HTMLDivElement>(null);
-  const [selectedItem, setSelectedItem] = useState<string | null>(null); // Track selected item
+  const [selectedItem, setSelectedItem] = useState<string | null>(null);
 
   const menuItems = [
     {
@@ -78,13 +78,13 @@ const UserDropdownMenu: React.FC<UserDropdownMenuProps> = ({
   ];
 
   const handleMenuItemClick = (item: (typeof menuItems)[0]) => {
-    setSelectedItem(item.id); // Set selected item
+    setSelectedItem(item.id);
     if (item.id === "profile") {
-      router.push("/profile"); // Explicit route to profile
+      router.push("/profile");
     } else if (item.route) {
-      router.push(item.route); // Route to other pages
+      router.push(item.route);
     }
-    onClose(); // Close dropdown after click
+    onClose();
   };
 
   const handleSwitchProfile = () => {

@@ -1,74 +1,40 @@
 "use client";
-import React, { useState } from 'react';
+import React, { forwardRef, useImperativeHandle } from 'react';
 import { Star } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { useReviewForm } from '@/app/context/RevievFormContext';
 
-interface SubmitReviewProps {
-  onSubmit?: (data: any) => Promise<void>;
-  formData?: Record<string, any>;
-  className?: string;
-  // New props to expose internal state to parent
-  onTermsChange?: (agreed: boolean) => void;
-  onAnonymousChange?: (isAnonymous: boolean) => void;
-  isSubmitting?: boolean;
-  ref?: React.ForwardedRef<any>;
-}
-
-const SubmitReviewComponent = React.forwardRef(({ 
-  onSubmit, 
-  formData = {},
-  className = "",
-  onTermsChange,
-  onAnonymousChange,
-  isSubmitting = false
-}: SubmitReviewProps, ref) => {
-  const [isAnonymous, setIsAnonymous] = useState(false);
-  const [agreeToTerms, setAgreeToTerms] = useState(false);
+const SubmitReviewComponent = forwardRef((props, ref) => {
+  const { location, setLocation } = useReviewForm();
+  const isAnonymous = location?.isAnonymous || false;
+  const agreeToTerms = location?.agreeToTerms || false;
 
   const handleAnonymousChange = (checked: boolean) => {
-    setIsAnonymous(checked);
-    if (onAnonymousChange) {
-      onAnonymousChange(checked);
-    }
+    setLocation({ ...location, isAnonymous: checked });
   };
 
   const handleTermsChange = (checked: boolean) => {
-    setAgreeToTerms(checked);
-    if (onTermsChange) {
-      onTermsChange(checked);
-    }
+    setLocation({ ...location, agreeToTerms: checked });
   };
-  // Expose submit function to parent via ref
-  React.useImperativeHandle(ref, () => ({
-    submit: async () => {
-      if (!agreeToTerms) {
-        toast.success('Please agree to the terms and conditions to continue');
-        return false;
-      }
 
-      const submissionData = {
-        ...formData,
-        isAnonymous,
-        agreeToTerms,
-        submittedAt: new Date().toISOString()
-      };
+  // This function can be called by the parent to submit the review
+  const handleFinalSubmit = async () => {
+    if (!agreeToTerms) {
+      toast.error('Please agree to the terms and conditions to continue');
+      return false;
+    }
+    // You can add any additional validation here
+    // Return the context data for final submission
+    return {
+      ...location,
+      submittedAt: new Date().toISOString(),
+    };
+  };
 
-      try {
-        if (onSubmit) {
-          await onSubmit(submissionData);
-        }
-        return true;
-      } catch (error) {
-        console.error('Error submitting review:', error);
-        return false;
-      }
-    },
-    canSubmit: agreeToTerms
-  }));
-  
+  useImperativeHandle(ref, () => ({ handleFinalSubmit }));
 
   return (
-    <div className={`space-y-6 ${className}`}>
+    <div className={`space-y-6`}>
       {/* Progress indicator */}
       <div className="flex items-center gap-2 mb-6">
         <Star className="w-5 h-5 text-orange-500 fill-orange-500" />
@@ -142,6 +108,5 @@ const SubmitReviewComponent = React.forwardRef(({
     </div>
   );
 });
-
 
 export default SubmitReviewComponent;

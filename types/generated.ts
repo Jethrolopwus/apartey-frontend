@@ -24,8 +24,6 @@ export interface useGetAllListingsQueryParams {
   byId?: number;
 }
 
-// Add these types to your types/generated.ts file
-
 export interface PropertyLocation {
   displayOnMap: boolean;
   country: string;
@@ -153,7 +151,7 @@ export interface UnlistedPropertyReview {
   stayDetails: {
     numberOfRooms: number;
     numberOfOccupants: number;
-    dateLeft: string; // ISO date string
+    dateLeft: string;
     furnished: boolean;
     appliancesFixtures: string[];
     buildingFacilities: string[];
@@ -162,8 +160,8 @@ export interface UnlistedPropertyReview {
 
   // Form-specific property fields
   apartmentNumber?: string;
-  numberOfRooms?: string; // Form uses string, converted to number for API
-  numberOfOccupants?: string; // Form uses string, converted to number for API
+  numberOfRooms?: string;
+  numberOfOccupants?: string;
   moveOutDate?: string;
   furnished?: boolean;
 
@@ -222,36 +220,32 @@ export interface UnlistedPropertyReview {
   };
 
   // Form-specific cost fields
-  rentType?: "actual" | "range"; // Form uses different enum
-  yearlyRent?: string; // Form uses string, converted to number for API
+  rentType?: "actual" | "range";
+  yearlyRent?: string;
   securityDepositRequired?: boolean;
   agentFeeRequired?: boolean;
   fixedUtilityCost?: boolean;
-  julyUtilities?: string; // Form uses string, converted to number for API
-  januaryUtilities?: string; // Form uses string, converted to number for API
+  julyUtilities?: string;
+  januaryUtilities?: string;
 
-  // Accessibility
   accessibility: {
     nearestGroceryStore: "Very Close" | "Close" | "Moderate" | "Far" | string;
     nearestPark: "Very Close" | "Close" | "Moderate" | "Far" | string;
     nearestRestaurant: "Very Close" | "Close" | "Moderate" | "Far" | string;
   };
 
-  // Form-specific accessibility fields
   nearestGroceryStore?: string;
   nearestPark?: string;
   nearestPublicTransport?: string;
 
-  // Ratings and reviews
   ratingsAndReviews: {
-    valueForMoney: number; // 1-5 scale
+    valueForMoney: number;
     costOfRepairsCoverage: "Landlord" | "Tenant" | "Shared" | string;
-    overallExperience: number; // 1-5 scale
-    overallRating: number; // 1-5 scale, could be float
+    overallExperience: number;
+    overallRating: number;
     detailedReview: string;
   };
 
-  // Form-specific rating fields
   valueForMoney?: number;
   costOfRepairs?: string;
   overallExperience?: number;
@@ -259,13 +253,21 @@ export interface UnlistedPropertyReview {
   detailedReview?: string;
   additionalComments?: string;
 
-  // Submission preferences
-
-  submitAnonymously?: boolean; // Optional for form state
+  submitAnonymously?: boolean;
   agreeToTerms?: boolean;
 }
+export interface LocationPayload {
+  country: string;
+  countryCode: string;
+  stateOrRegion: string;
+  district: string;
+  street: string;
+  streetNumber: string;
+  apartment: string;
+  postalCode: string;
+  fullAddress: string;
+}
 
-// Component-specific interfaces for better type safety
 export interface AddressInputProps {
   value?: string;
   onChange: (value: string) => void;
@@ -494,8 +496,6 @@ export interface OnboardingStatusResponse {
   message: string;
 }
 
-// Add these interfaces to your existing generated.ts file
-
 export interface SignInResponse {
   user: {
     _id: string;
@@ -503,7 +503,6 @@ export interface SignInResponse {
     email: string;
     role?: string;
     isOnboarded?: boolean;
-    // Add other user properties as needed
   };
   token?: string;
   accessToken?: string;

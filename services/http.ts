@@ -129,6 +129,28 @@ class BaseURL {
       throw error;
     }
   };
+  httpGetAuthStatus = async () => {
+    const token = TokenManager.getToken();
+    if (!token) throw new Error("No authentication token found.");
+
+    try {
+      const { data } = await AxiosInstance.get(endpoints.getAuthStatus, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
+
+      return data;
+    } catch (error: any) {
+      if (error.response?.status === 401) {
+        TokenManager.clearAllTokens();
+        window.location.href = "/signin";
+      }
+      throw error;
+    }
+  };
+
   httpGetProfileCompletionStat = async () => {
     try {
       const token =

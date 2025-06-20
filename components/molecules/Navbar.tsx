@@ -9,7 +9,7 @@ import ListingsDropdown from "@/components//molecules/ListingsDropdown";
 import Image from "next/image";
 import logo from "@/public/aparteyLogo.png";
 import { TokenManager } from "@/utils/tokenManager";
-import { useGetUserRoleQuery } from "@/Hooks/use-getUserRole.query";
+import { useAuthStatusQuery } from "@/Hooks/use-getAuthStatus.query";
 
 interface NavbarProps {}
 
@@ -22,15 +22,17 @@ const Navbar: React.FC<NavbarProps> = () => {
     useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
-  // Fetch user role data
-  const { data: userRoleData, isLoading, error } = useGetUserRoleQuery();
+  // Use auth status for authentication and role
+  const { data: authData, isLoading: isAuthLoading } = useAuthStatusQuery();
   const [selectedRole, setSelectedRole] = useState();
 
   useEffect(() => {
-    if (userRoleData) {
-      setSelectedRole(userRoleData?.currentUserRole?.role);
+    if (authData) {
+      setSelectedRole(
+        authData.user?.role || authData.role || authData.currentUserRole?.role
+      );
     }
-  }, [userRoleData]);
+  }, [authData]);
 
   const navItems = [
     { label: "Home", href: "/", active: pathname === "/", hasDropdown: false },
@@ -61,12 +63,22 @@ const Navbar: React.FC<NavbarProps> = () => {
   ];
 
   const handleUserIconClick = () => {
-    // validate if has token (is authenticated)
-    if (TokenManager.hasToken()) {
-      setIsUserDropdownOpen(true);
-    } else {
+    if (!authData || !authData.isVerified) {
       router.push("/signin");
+      return;
     }
+    // Authenticated: redirect to role homepage if not already there
+    const userRole =
+      authData.user?.role || authData.role || authData.currentUserRole?.role || "renter";
+    let homepage = "/";
+    if (userRole.toLowerCase() === "homeowner") homepage = "/landlord";
+    else if (userRole.toLowerCase() === "agent") homepage = "/agent";
+    else if (userRole.toLowerCase() === "renter") homepage = "/";
+    if (pathname !== homepage) {
+      router.push(homepage);
+      return;
+    }
+    setIsUserDropdownOpen(true);
   };
 
   const handleSwitchProfile = () => {
@@ -145,12 +157,6 @@ const Navbar: React.FC<NavbarProps> = () => {
             {/* Right Actions */}
             <div className="hidden md:flex items-center space-x-4">
               <div className="flex space-x-4 items-center">
-                <Link
-                  href="/signin"
-                  className="text-gray-700 hover:text-gray-900 font-medium text-sm"
-                >
-                  Login
-                </Link>
                 <Link
                   href="/contact"
                   className="text-gray-700 bg-[#FFF4F0] hover:bg-[#FFE8E0] flex justify-center items-center gap-2  rounded-lg font-medium text-md transition-colors"
@@ -232,12 +238,6 @@ const Navbar: React.FC<NavbarProps> = () => {
             <div className="px-3 py-4 space-y-3 border-t border-gray-200">
               <div className="flex items-center space-x-2">
                 <Link
-                  href="/signin"
-                  className="text-gray-700 hover:text-gray-900 font-medium text-sm"
-                >
-                  Login
-                </Link>
-                <Link
                   href="/contact"
                   className="flex-1 text-center text-white bg-orange-200 px-4 py-2 rounded-lg font-medium"
                   onClick={() => setIsMobileMenuOpen(false)}
@@ -256,8 +256,8 @@ const Navbar: React.FC<NavbarProps> = () => {
         isOpen={isSwitchProfileModalOpen}
         onClose={handleCloseSwitchProfileModal}
         userData={
-          userRoleData
-            ? { currentUserRole: { role: userRoleData.currentUserRole.role } }
+          authData && typeof selectedRole === "string"
+            ? { currentUserRole: { role: selectedRole } }
             : undefined
         }
       />

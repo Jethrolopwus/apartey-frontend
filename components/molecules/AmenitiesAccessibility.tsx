@@ -1,153 +1,90 @@
 "use client";
 import React from "react";
-import { UnlistedPropertyReview } from "@/types/generated";
-interface AmenitiesAccessibilityProps {
-  formData: UnlistedPropertyReview;
-  updateFormData: (field: string, value: any) => void;
-  updateNestedFormData: (
-    section: keyof UnlistedPropertyReview,
-    field: string,
-    value: any
-  ) => void;
-  getCurrentSubStepTitle: () => string;
-}
+import { useReviewForm } from "@/app/context/RevievFormContext";
 
-const AmenitiesAccessibility = ({
-  formData,
-  updateFormData,
-  updateNestedFormData,
-  getCurrentSubStepTitle,
-}: AmenitiesAccessibilityProps) => {
-  // Helper function to check if an appliance is selected
-  const isApplianceSelected = (appliance: string): boolean => {
-    return (
-      formData?.stayDetails?.appliancesFixtures?.includes(appliance) ?? false
-    );
-  };
+const AmenitiesAccessibility: React.FC = () => {
+  const { location, setLocation } = useReviewForm();
 
-  // Helper function to toggle appliance selection
+  // Appliances
+  const appliancesFixtures = location?.appliancesFixtures || [];
+  const isApplianceSelected = (appliance: string): boolean =>
+    appliancesFixtures.includes(appliance);
   const toggleAppliance = (appliance: string, checked: boolean) => {
-    const current = formData?.stayDetails?.appliancesFixtures ?? [];
     let updated: string[];
-
     if (checked) {
-      updated = [...current, appliance];
+      updated = [...appliancesFixtures, appliance];
     } else {
-      updated = current.filter((item) => item !== appliance);
+      updated = appliancesFixtures.filter((item) => item !== appliance);
     }
-
-    updateNestedFormData("stayDetails", "appliancesFixtures", updated);
+    setLocation({ ...location, appliancesFixtures: updated });
   };
 
-  // Helper function to check if a language is selected
-  const isLanguageSelected = (language: string): boolean => {
-    return (
-      formData?.stayDetails?.landlordLanguages?.includes(language) ?? false
-    );
-  };
-
-  // Helper function to toggle language selection
+  // Landlord Languages
+  const landlordLanguages = location?.landlordLanguages || [];
+  const isLanguageSelected = (language: string): boolean =>
+    landlordLanguages.includes(language);
   const toggleLanguage = (language: string, checked: boolean) => {
-    const current = formData?.stayDetails?.landlordLanguages ?? [];
     let updated: string[];
-
     if (checked) {
-      updated = [...current, language];
+      updated = [...landlordLanguages, language];
     } else {
-      updated = current.filter((item) => item !== language);
+      updated = landlordLanguages.filter((item) => item !== language);
     }
-
-    updateNestedFormData("stayDetails", "landlordLanguages", updated);
+    setLocation({ ...location, landlordLanguages: updated });
   };
 
-  // Helper function to check if a building facility is selected
-  const isFacilitySelected = (facility: string): boolean => {
-    return (
-      formData?.stayDetails?.buildingFacilities?.includes(facility) ?? false
-    );
-  };
-
-  // Helper function to toggle building facility selection
+  // Building Facilities
+  const buildingFacilities = location?.buildingFacilities || [];
+  const isFacilitySelected = (facility: string): boolean =>
+    buildingFacilities.includes(facility);
   const toggleFacility = (facility: string, checked: boolean) => {
-    const current = formData?.stayDetails?.buildingFacilities ?? [];
     let updated: string[];
-
     if (checked) {
-      updated = [...current, facility];
+      updated = [...buildingFacilities, facility];
     } else {
-      updated = current.filter((item) => item !== facility);
+      updated = buildingFacilities.filter((item) => item !== facility);
     }
-
-    updateNestedFormData("stayDetails", "buildingFacilities", updated);
+    setLocation({ ...location, buildingFacilities: updated });
   };
 
-  // Helper function to handle custom text input
+  // Custom Inputs
   const handleCustomInput = (type: "appliance" | "language", value: string) => {
     if (!value.trim()) return;
-
-    const fieldMap = {
-      appliance: "appliancesFixtures",
-      language: "landlordLanguages",
-    } as const;
-
-    const field = fieldMap[type];
-    const current = formData?.stayDetails?.[field] ?? [];
-
-    // Split the input by commas and clean up
+    const field = type === "appliance" ? "appliancesFixtures" : "landlordLanguages";
+    const current = location?.[field] || [];
     const newItems = value
       .split(",")
       .map((item) => item.trim().toLowerCase())
       .filter((item) => item.length > 0);
-
-    // Get predefined options for filtering
-    const predefinedOptions =
-      type === "appliance"
-        ? [
-            "oven",
-            "washingMachine",
-            "refrigerator",
-            "garbageDisposal",
-            "airConditioner",
-            "dryer",
-            "microwave",
-          ]
-        : ["english", "french", "spanish", "german", "chinese"];
-
-    // Keep all existing items (both predefined and custom)
-    // Only add new items that aren't already in the list
     const existingItems = [...current];
     const itemsToAdd = newItems.filter((item) => !existingItems.includes(item));
-
     const updated = [...existingItems, ...itemsToAdd];
-
-    updateNestedFormData("stayDetails", field, updated);
+    setLocation({ ...location, [field]: updated });
   };
 
-  // Helper function to handle custom facility input
   const handleCustomFacilityInput = (value: string) => {
     if (!value.trim()) return;
-
-    const current = formData?.stayDetails?.buildingFacilities ?? [];
-
+    const current = location?.buildingFacilities || [];
     const newItems = value
       .split(",")
       .map((item) => item.trim().toLowerCase())
       .filter((item) => item.length > 0);
-
-    // Keep all existing items and only add new ones that aren't already in the list
     const existingItems = [...current];
     const itemsToAdd = newItems.filter((item) => !existingItems.includes(item));
-
     const updated = [...existingItems, ...itemsToAdd];
-
-    updateNestedFormData("stayDetails", "buildingFacilities", updated);
+    setLocation({ ...location, buildingFacilities: updated });
   };
+
+  // Accessibility
+  const nearestGroceryStore = location?.nearestGroceryStore || "";
+  const nearestPark = location?.nearestPark || "";
+  const nearestRestaurant = location?.nearestRestaurant || "";
 
   return (
     <div>
       <div className="mb-6">
         <h2 className="text-xl font-semibold text-gray-900 mb-2">
-          {getCurrentSubStepTitle()}
+          Amenities & Accessibility
         </h2>
         <p className="text-gray-600">
           Tell us about the property's amenities and location
@@ -213,22 +150,20 @@ const AmenitiesAccessibility = ({
           </div>
 
           {/* Selected Appliances Display */}
-          {(formData?.stayDetails?.appliancesFixtures?.length ?? 0) > 0 && (
+          {(appliancesFixtures.length ?? 0) > 0 && (
             <div className="mt-4 p-3 bg-orange-50 border border-orange-200 rounded-md">
               <h4 className="text-sm font-medium text-orange-800 mb-2">
                 Selected Appliances:
               </h4>
               <div className="flex flex-wrap gap-2">
-                {formData.stayDetails.appliancesFixtures.map(
-                  (appliance, index) => (
-                    <span
-                      key={index}
-                      className="inline-flex items-center px-2 py-1 bg-orange-100 text-orange-800 text-xs font-medium rounded-full"
-                    >
-                      {appliance.replace(/([A-Z])/g, " $1")}
-                    </span>
-                  )
-                )}
+                {appliancesFixtures.map((appliance, index) => (
+                  <span
+                    key={index}
+                    className="inline-flex items-center px-2 py-1 bg-orange-100 text-orange-800 text-xs font-medium rounded-full"
+                  >
+                    {appliance.replace(/([A-Z])/g, " $1")}
+                  </span>
+                ))}
               </div>
             </div>
           )}
@@ -284,22 +219,20 @@ const AmenitiesAccessibility = ({
           </div>
 
           {/* Selected Languages Display */}
-          {(formData?.stayDetails?.landlordLanguages?.length ?? 0) > 0 && (
+          {(landlordLanguages.length ?? 0) > 0 && (
             <div className="mt-4 p-3 bg-orange-50 border border-orange-200 rounded-md">
               <h4 className="text-sm font-medium text-orange-800 mb-2">
                 Selected Languages:
               </h4>
               <div className="flex flex-wrap gap-2">
-                {formData.stayDetails.landlordLanguages.map(
-                  (language, index) => (
-                    <span
-                      key={index}
-                      className="inline-flex items-center px-2 py-1 bg-orange-100 text-orange-800 text-xs font-medium rounded-full capitalize"
-                    >
-                      {language}
-                    </span>
-                  )
-                )}
+                {landlordLanguages.map((language, index) => (
+                  <span
+                    key={index}
+                    className="inline-flex items-center px-2 py-1 bg-orange-100 text-orange-800 text-xs font-medium rounded-full capitalize"
+                  >
+                    {language}
+                  </span>
+                ))}
               </div>
             </div>
           )}
@@ -318,14 +251,8 @@ const AmenitiesAccessibility = ({
                 Nearest Grocery Store
               </label>
               <select
-                value={formData?.accessibility?.nearestGroceryStore ?? ""}
-                onChange={(e) =>
-                  updateNestedFormData(
-                    "accessibility",
-                    "nearestGroceryStore",
-                    e.target.value
-                  )
-                }
+                value={nearestGroceryStore}
+                onChange={(e) => setLocation({ ...location, nearestGroceryStore: e.target.value })}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
               >
                 <option value="">Select distance</option>
@@ -340,14 +267,8 @@ const AmenitiesAccessibility = ({
                 Nearest Park
               </label>
               <select
-                value={formData?.accessibility?.nearestPark ?? ""}
-                onChange={(e) =>
-                  updateNestedFormData(
-                    "accessibility",
-                    "nearestPark",
-                    e.target.value
-                  )
-                }
+                value={nearestPark}
+                onChange={(e) => setLocation({ ...location, nearestPark: e.target.value })}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
               >
                 <option value="">Select distance</option>
@@ -362,14 +283,8 @@ const AmenitiesAccessibility = ({
                 Nearest Restaurant
               </label>
               <select
-                value={formData?.accessibility?.nearestRestaurant ?? ""}
-                onChange={(e) =>
-                  updateNestedFormData(
-                    "accessibility",
-                    "nearestRestaurant",
-                    e.target.value
-                  )
-                }
+                value={nearestRestaurant}
+                onChange={(e) => setLocation({ ...location, nearestRestaurant: e.target.value })}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
               >
                 <option value="">Select distance</option>
@@ -441,22 +356,20 @@ const AmenitiesAccessibility = ({
           </div>
 
           {/* Selected Facilities Display */}
-          {(formData?.stayDetails?.buildingFacilities?.length ?? 0) > 0 && (
+          {(buildingFacilities.length ?? 0) > 0 && (
             <div className="mt-4 p-3 bg-orange-50 border border-orange-200 rounded-md">
               <h4 className="text-sm font-medium text-orange-800 mb-2">
                 Selected Facilities:
               </h4>
               <div className="flex flex-wrap gap-2">
-                {formData.stayDetails.buildingFacilities.map(
-                  (facility, index) => (
-                    <span
-                      key={index}
-                      className="inline-flex items-center px-2 py-1 bg-orange-100 text-orange-800 text-xs font-medium rounded-full"
-                    >
-                      {facility.replace(/([A-Z])/g, " $1")}
-                    </span>
-                  )
-                )}
+                {buildingFacilities.map((facility, index) => (
+                  <span
+                    key={index}
+                    className="inline-flex items-center px-2 py-1 bg-orange-100 text-orange-800 text-xs font-medium rounded-full"
+                  >
+                    {facility.replace(/([A-Z])/g, " $1")}
+                  </span>
+                ))}
               </div>
             </div>
           )}

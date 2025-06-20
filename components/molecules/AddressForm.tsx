@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
+import { useReviewForm } from "@/app/context/RevievFormContext";
 
-// Types
 interface AddressComponent {
   long_name: string;
   short_name: string;
@@ -12,6 +12,12 @@ interface AddressComponent {
 interface Place {
   address_components: AddressComponent[];
   formatted_address: string;
+  geometry?: {
+    location: {
+      lat: () => number;
+      lng: () => number;
+    };
+  };
 }
 
 interface Apartment {
@@ -29,6 +35,11 @@ interface ApiResponse {
   addresses: Building[];
 }
 
+interface Coordinates {
+  lat: number;
+  lng: number;
+}
+
 declare global {
   interface Window {
     google: any;
@@ -36,6 +47,7 @@ declare global {
 }
 
 const AddressForm: React.FC = () => {
+  const { setLocation } = useReviewForm();
   const inputRef = useRef<HTMLInputElement>(null);
   const autocompleteRef = useRef<any>(null);
 
@@ -48,7 +60,16 @@ const AddressForm: React.FC = () => {
   const [postalCode, setPostalCode] = useState<string>("");
   const [addressLine, setAddressLine] = useState<string>("");
   const [manualApartment, setManualApartment] = useState<string>("");
+  const [district, setDistrict] = useState<string>("");
+  const [coordinates, setCoordinates] = useState<Coordinates | null>(null);
   const [countryCode, setCountryCode] = useState<string>("ng");
+  const [streetName, setStreetName] = useState("");
+  const [streetNumber, setStreetNumber] = useState("");
+
+  // State for payload structure
+  const [street, setStreet] = useState("");
+  const [apartment, setApartment] = useState("");
+  const [city, setCity] = useState("");
 
   useEffect(() => {
     fetch("https://ipapi.co/json")
@@ -90,6 +111,9 @@ const AddressForm: React.FC = () => {
         components.find((c) => c.types.includes("administrative_area_level_1"))
           ?.long_name ||
         "";
+      const district =
+        components.find((c) => c.types.includes("sublocality"))?.long_name ||
+        "";
       const countryName =
         components.find((c) => c.types.includes("country"))?.long_name || "";
       console.log("iam here", countryName);
@@ -101,15 +125,46 @@ const AddressForm: React.FC = () => {
         "";
 
       const cleanedAddress = `${streetName} ${streetNumber}, ${city}`;
+      const fullStreetAddress = `${streetNumber} ${streetName}`.trim();
 
+      // Extract coordinates if available
+      const coordinates: Coordinates | null = place.geometry?.location
+        ? {
+            lat: place.geometry.location.lat(),
+            lng: place.geometry.location.lng(),
+          }
+        : null;
+
+      setCoordinates(coordinates);
       setCountry(countryName);
       setState(stateName);
+      setDistrict(district);
       setPostalCode(postal);
       setAddressLine(`${streetName} ${streetNumber}`);
+      setCity(city);
+      setStreet(fullStreetAddress);
+      setApartment("");
+      setStreetName(streetName);
+      setStreetNumber(streetNumber);
 
       await fetchApartments(cleanedAddress);
+      const apt = apartment || manualApartment;
+      const locationPayload = {
+        country: country,
+        countryCode: countryCode.toUpperCase(),
+        stateOrRegion: state,
+        district: district,
+        street: streetName,
+        streetNumber: streetNumber,
+        apartment: apt,
+        postalCode: postalCode,
+        fullAddress:
+          `${streetNumber} ${streetName}, ${apt}, ${district}, ${state}`
+            .trim()
+            .replace(/, ,/g, ","),
+      };
+      setLocation(locationPayload);
     });
-
     return () => {
       if (autocompleteRef.current) {
         window.google.maps.event.clearInstanceListeners(
@@ -118,6 +173,36 @@ const AddressForm: React.FC = () => {
       }
     };
   }, [countryCode]);
+  useEffect(() => {
+    const apt = apartment || manualApartment;
+    if (!street || !streetNumber || !state || !district) return;
+
+    const locationPayload = {
+      country,
+      countryCode: countryCode.toUpperCase(),
+      stateOrRegion: state,
+      district,
+      street,
+      streetNumber,
+      apartment: apt,
+      postalCode,
+      fullAddress: `${streetNumber} ${street}, ${apt}, ${district}, ${state}`
+        .trim()
+        .replace(/, ,/g, ","),
+    };
+
+    setLocation(locationPayload);
+  }, [
+    apartment,
+    manualApartment,
+    street,
+    streetNumber,
+    district,
+    state,
+    country,
+    postalCode,
+    countryCode,
+  ]);
 
   const handleManualSearch = async (
     e: React.KeyboardEvent<HTMLInputElement>
@@ -177,7 +262,7 @@ const AddressForm: React.FC = () => {
   const mark = addressIndicator[arrLength - 1];
 
   return (
-    <div className="flex justify-center  bg-gray-50 py-8">
+    <div className="flex justify-center bg-gray-50 py-8">
       <div className="w-full max-w-2xl bg-white border border-gray-100 rounded-lg p-6 shadow-sm">
         <div className="space-y-4">
           {/* Address Input */}
@@ -227,7 +312,7 @@ const AddressForm: React.FC = () => {
               <label className="block mb-2 text-sm font-medium text-gray-700">
                 Select Apartment:
               </label>
-              <select className="w-full p-3 border border-gray-300  rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 outline-none">
+              <select className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 outline-none">
                 {apartments.map((apt, idx) => (
                   <option key={idx} value={apt.adr_id}>
                     {mark}–{apt.kort_nr || `${idx + 1}`}
@@ -252,7 +337,7 @@ const AddressForm: React.FC = () => {
                 placeholder="e.g., Flat 2A, Room 3B, Left Wing"
                 value={manualApartment}
                 onChange={(e) => setManualApartment(e.target.value)}
-                className="w-full p-3 border border-gray-300  rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 outline-none"
+                className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 outline-none"
               />
             </div>
           )}
@@ -270,7 +355,7 @@ const AddressForm: React.FC = () => {
                     value={country}
                     onChange={(e) => setCountry(e.target.value)}
                     readOnly={!!country}
-                    className={`w-full p-3 border border-gray-300  rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 outline-none ${
+                    className={`w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 outline-none ${
                       country ? "bg-gray-50 cursor-not-allowed" : "bg-white"
                     }`}
                   />
@@ -285,7 +370,7 @@ const AddressForm: React.FC = () => {
                     value={state}
                     onChange={(e) => setState(e.target.value)}
                     readOnly={!!state}
-                    className={`w-full p-3 border border-gray-300  rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 outline-none ${
+                    className={`w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 outline-none ${
                       state ? "bg-gray-50 cursor-not-allowed" : "bg-white"
                     }`}
                   />
@@ -295,15 +380,15 @@ const AddressForm: React.FC = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block mb-2 text-sm font-medium text-gray-700">
-                    Address
+                    District
                   </label>
                   <input
                     type="text"
-                    value={addressLine}
-                    onChange={(e) => setAddressLine(e.target.value)}
-                    readOnly={!!addressLine}
-                    className={`w-full p-3 border border-gray-300  rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 outline-none ${
-                      addressLine ? "bg-gray-50 cursor-not-allowed" : "bg-white"
+                    value={district}
+                    onChange={(e) => setDistrict(e.target.value)}
+                    // readOnly={!!district}
+                    className={`w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 outline-none ${
+                      district ? "bg-gray-50 cursor-not-allowed" : "bg-white"
                     }`}
                   />
                 </div>
@@ -317,12 +402,41 @@ const AddressForm: React.FC = () => {
                     value={postalCode}
                     onChange={(e) => setPostalCode(e.target.value)}
                     readOnly={!!postalCode}
-                    className={`w-full p-3 border border-gray-300  rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 outline-none ${
+                    className={`w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 outline-none ${
                       postalCode ? "bg-gray-50 cursor-not-allowed" : "bg-white"
                     }`}
                   />
                 </div>
               </div>
+
+              <div>
+                <label className="block mb-2 text-sm font-medium text-gray-700">
+                  Address
+                </label>
+                <input
+                  type="text"
+                  value={addressLine}
+                  onChange={(e) => setAddressLine(e.target.value)}
+                  readOnly={!!addressLine}
+                  className={`w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 outline-none ${
+                    addressLine ? "bg-gray-50 cursor-not-allowed" : "bg-white"
+                  }`}
+                />
+              </div>
+            </div>
+          )}
+
+          {/* Map Preview */}
+          {coordinates && (
+            <div className="pt-4 border-t border-gray-200">
+              {/* <label className="block mb-2 text-sm font-medium text-gray-700">
+                Location Preview
+              </label> */}
+              {/* <img
+                className="w-full h-64 object-cover rounded-lg border border-gray-300"
+                alt="Map preview"
+                src={`https://maps.googleapis.com/maps/api/staticmap?center=${coordinates.lat},${coordinates.lng}&zoom=16&size=600x300&markers=color:red%7C${coordinates.lat},${coordinates.lng}&key=AIzaSyC_mwAjirr_vXt1xL1WlL-entKBwD7FkqY`}
+              /> */}
             </div>
           )}
         </div>
