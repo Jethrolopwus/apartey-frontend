@@ -11,6 +11,7 @@ import {
   UnlistedPropertyReview,
 } from "@/types/generated";
 import { TokenManager } from "@/utils/tokenManager";
+import { LocationPayload } from "@/app/context/RevievFormContext";
 
 const AxiosInstance = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_URL,
@@ -325,7 +326,7 @@ class BaseURL {
       throw error;
     }
   };
-  httpWriteUnlistedReview = async (data: UnlistedPropertyReview) => {
+  httpWriteUnlistedReview = async (data: LocationPayload) => {
     try {
       const token =
         localStorage.getItem("authToken") ||

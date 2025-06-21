@@ -114,9 +114,9 @@ const ReviewSearchContainer = () => {
                   <div className="w-[180px] h-[120px] flex-shrink-0 rounded-md overflow-hidden">
                     <img
                       src={
-                        review?.linkedProperty.media?.coverPhoto &&
-                        review.linkedProperty.media.coverPhoto.trim() !== ""
-                          ? review.linkedProperty.media.coverPhoto
+                        review?.linkedProperty?.media?.coverPhoto &&
+                        review.linkedProperty?.media?.coverPhoto.trim() !== ""
+                          ? review.linkedProperty?.media.coverPhoto
                           : "/placeholder.png"
                       }
                       alt="property image"

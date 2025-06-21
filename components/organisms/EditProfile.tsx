@@ -1,0 +1,514 @@
+"use client";
+
+import React, { useState } from "react";
+import { useForm, Controller } from "react-hook-form";
+import { Camera, Calendar } from "lucide-react";
+
+interface EditProfileProps {
+  userEmail?: string; // Auto-filled from signup
+  initialData?: {
+    firstName?: string;
+    lastName?: string;
+    phone?: string;
+    address?: string;
+    dateOfBirth?: string;
+    occupation?: string;
+    bio?: string;
+    website?: string;
+  };
+  onSave?: (data: FormData) => void;
+  onCancel?: () => void;
+}
+
+interface FormData {
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone: string;
+  address: string;
+  dateOfBirth: string;
+  occupation: string;
+  bio: string;
+  website: string;
+}
+
+const EditProfile: React.FC<EditProfileProps> = ({
+  userEmail = "example@email.com",
+  initialData = {},
+  onSave,
+  onCancel,
+}) => {
+  const [profileImage, setProfileImage] = useState<string | null>(null);
+
+  const {
+    control,
+    handleSubmit,
+    formState: { errors, isValid },
+    watch,
+  } = useForm<FormData>({
+    mode: "onChange",
+    defaultValues: {
+      firstName: initialData.firstName || "Andrew",
+      lastName: initialData.lastName || "Abba",
+      email: userEmail,
+      phone: initialData.phone || "234819999999",
+      address: initialData.address || "108 Ijebu-Ode Road, Ijebu-Igbo, Ogun",
+      dateOfBirth: initialData.dateOfBirth || "",
+      occupation: initialData.occupation || "Freelancer",
+      bio:
+        initialData.bio ||
+        "Extensive experience in rentals and a vast database means I can quickly find the service that are right for you. Looking for a seamless and exciting rental experience.",
+      website: initialData.website || "https://yourwebsite.com",
+    },
+  });
+
+  // Calculate completion percentage based on filled fields
+  const watchedFields = watch();
+  const calculateCompletion = () => {
+    const fields = Object.values(watchedFields);
+    const filledFields = fields.filter(
+      (field) => field && field.toString().trim() !== ""
+    ).length;
+    return Math.round((filledFields / fields.length) * 100);
+  };
+
+  const completionPercentage = calculateCompletion();
+
+  const onSubmit = (data: FormData) => {
+    onSave?.(data);
+  };
+
+  const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setProfileImage(e.target?.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  // Create SVG circle path for progress
+  const circumference = 2 * Math.PI * 45;
+  const strokeDasharray = circumference;
+  const strokeDashoffset =
+    circumference - (completionPercentage / 100) * circumference;
+
+  return (
+    <div className="max-w-4xl mx-auto p-6 bg-white rounded-lg shadow-md">
+      {/* Header */}
+      <div className="mb-8">
+        <h1 className="text-3xl font-semibold text-gray-900 mb-6">
+          My profile
+        </h1>
+
+        {/* Completion Status */}
+        <div className="flex items-center gap-4 mb-8 bg-[#FFF4EA] p-4 rounded-lg shadow-sm">
+          <div className="relative w-16 h-16">
+            {/* Background circle */}
+            <svg
+              className="w-16 h-16 transform -rotate-90"
+              viewBox="0 0 100 100"
+            >
+              <circle
+                cx="50"
+                cy="50"
+                r="45"
+                fill="none"
+                stroke="#f3f4f6"
+                strokeWidth="8"
+              />
+              <circle
+                cx="50"
+                cy="50"
+                r="45"
+                fill="none"
+                stroke="#f97316"
+                strokeWidth="8"
+                strokeDasharray={strokeDasharray}
+                strokeDashoffset={strokeDashoffset}
+                strokeLinecap="round"
+                className="transition-all duration-300 ease-in-out"
+              />
+            </svg>
+            <div className="absolute inset-0 flex items-center justify-center">
+              <span className="text-sm font-semibold text-orange-500">
+                {completionPercentage}%
+              </span>
+            </div>
+          </div>
+          <div>
+            <p className="text-gray-900 font-medium">Complete your profile</p>
+            <ul className="text-sm text-gray-600 mt-1">
+              <li>• Verify your email</li>
+              <li>• Add date of birth</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <form onSubmit={handleSubmit(onSubmit)}>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          {/* Left Column - Profile Photo and Basic Info */}
+          <div className="space-y-6">
+            {/* Profile Photo */}
+            <div className="flex flex-col items-center">
+              <div className="relative w-32 h-32 bg-gray-300 rounded-full mb-4 overflow-hidden group">
+                {profileImage ? (
+                  <img
+                    src={profileImage}
+                    alt="Profile"
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <div className="w-full h-full bg-gray-300 flex items-center justify-center">
+                    <Camera className="w-8 h-8 text-gray-500" />
+                  </div>
+                )}
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageUpload}
+                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                />
+              </div>
+              <button
+                type="button"
+                className="text-gray-400 hover:text-gray-700 font-medium border-b border-gray-300 hover:border-gray-500 transition-colors cursor-pointer"
+              >
+                Change photo
+              </button>
+              <p className="text-xs text-gray-500 mt-1">
+                JPG, PNG, or GIF. Max size 2MB
+              </p>
+            </div>
+
+            {/* Basic Info */}
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  First Name
+                </label>
+                <Controller
+                  name="firstName"
+                  control={control}
+                  rules={{
+                    required: "First name is required",
+                    minLength: {
+                      value: 2,
+                      message: "First name must be at least 2 characters",
+                    },
+                  }}
+                  render={({ field }) => (
+                    <>
+                      <input
+                        {...field}
+                        type="text"
+                        className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-[#C85212] focus:border-transparent ${
+                          errors.firstName
+                            ? "border-red-500"
+                            : "border-gray-300"
+                        }`}
+                      />
+                      {errors.firstName && (
+                        <p className="text-red-500 text-xs mt-1">
+                          {errors.firstName.message}
+                        </p>
+                      )}
+                    </>
+                  )}
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Last Name
+                </label>
+                <Controller
+                  name="lastName"
+                  control={control}
+                  rules={{
+                    required: "Last name is required",
+                    minLength: {
+                      value: 2,
+                      message: "Last name must be at least 2 characters",
+                    },
+                  }}
+                  render={({ field }) => (
+                    <>
+                      <input
+                        {...field}
+                        type="text"
+                        className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-[#C85212] focus:border-transparent ${
+                          errors.lastName ? "border-red-500" : "border-gray-300"
+                        }`}
+                      />
+                      {errors.lastName && (
+                        <p className="text-red-500 text-xs mt-1">
+                          {errors.lastName.message}
+                        </p>
+                      )}
+                    </>
+                  )}
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Email
+                </label>
+                <Controller
+                  name="email"
+                  control={control}
+                  rules={{
+                    required: "Email is required",
+                    pattern: {
+                      value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
+                      message: "Invalid email address",
+                    },
+                  }}
+                  render={({ field }) => (
+                    <>
+                      <input
+                        {...field}
+                        type="email"
+                        readOnly
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-600 cursor-not-allowed"
+                      />
+                      <p className="text-xs text-gray-500 mt-1">
+                        Email is auto-filled from signup and cannot be changed
+                        here
+                      </p>
+                    </>
+                  )}
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Phone
+                </label>
+                <Controller
+                  name="phone"
+                  control={control}
+                  rules={{
+                    required: "Phone number is required",
+                    pattern: {
+                      value: /^[\+]?[1-9][\d]{0,15}$/,
+                      message: "Invalid phone number",
+                    },
+                  }}
+                  render={({ field }) => (
+                    <>
+                      <input
+                        {...field}
+                        type="tel"
+                        className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-[#C85212] focus:border-transparent ${
+                          errors.phone ? "border-red-500" : "border-gray-300"
+                        }`}
+                      />
+                      {errors.phone && (
+                        <p className="text-red-500 text-xs mt-1">
+                          {errors.phone.message}
+                        </p>
+                      )}
+                    </>
+                  )}
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Right Column - Additional Info */}
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Address
+              </label>
+              <Controller
+                name="address"
+                control={control}
+                rules={{ required: "Address is required" }}
+                render={({ field }) => (
+                  <>
+                    <input
+                      {...field}
+                      type="text"
+                      className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                        errors.address ? "border-red-500" : "border-gray-300"
+                      }`}
+                    />
+                    {errors.address && (
+                      <p className="text-red-500 text-xs mt-1">
+                        {errors.address.message}
+                      </p>
+                    )}
+                  </>
+                )}
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Date of Birth
+              </label>
+              <Controller
+                name="dateOfBirth"
+                control={control}
+                rules={{
+                  required: "Date of birth is required",
+                  pattern: {
+                    value: /^(0[1-9]|1[0-2])\/(0[1-9]|[12][0-9]|3[01])\/\d{4}$/,
+                    message: "Please use MM/DD/YYYY format",
+                  },
+                }}
+                render={({ field }) => (
+                  <>
+                    <div className="relative">
+                      <input
+                        {...field}
+                        type="text"
+                        placeholder="mm/dd/yyyy"
+                        className={`w-full px-3 py-2 pr-10 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                          errors.dateOfBirth
+                            ? "border-red-500"
+                            : "border-gray-300"
+                        } ${!field.value ? "text-gray-500" : "text-gray-900"}`}
+                      />
+                      <Calendar className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                    </div>
+                    {errors.dateOfBirth && (
+                      <p className="text-red-500 text-xs mt-1">
+                        {errors.dateOfBirth.message}
+                      </p>
+                    )}
+                  </>
+                )}
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Occupation
+              </label>
+              <Controller
+                name="occupation"
+                control={control}
+                rules={{ required: "Occupation is required" }}
+                render={({ field }) => (
+                  <>
+                    <input
+                      {...field}
+                      type="text"
+                      className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                        errors.occupation ? "border-red-500" : "border-gray-300"
+                      }`}
+                    />
+                    {errors.occupation && (
+                      <p className="text-red-500 text-xs mt-1">
+                        {errors.occupation.message}
+                      </p>
+                    )}
+                  </>
+                )}
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Bio
+              </label>
+              <Controller
+                name="bio"
+                control={control}
+                rules={{
+                  required: "Bio is required",
+                  minLength: {
+                    value: 10,
+                    message: "Bio must be at least 10 characters",
+                  },
+                  maxLength: {
+                    value: 500,
+                    message: "Bio must not exceed 500 characters",
+                  },
+                }}
+                render={({ field }) => (
+                  <>
+                    <textarea
+                      {...field}
+                      rows={4}
+                      className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-[#C85212] focus:border-transparent resize-none ${
+                        errors.bio ? "border-red-500" : "border-gray-300"
+                      }`}
+                    />
+                    {errors.bio && (
+                      <p className="text-red-500 text-xs mt-1">
+                        {errors.bio.message}
+                      </p>
+                    )}
+                    <p className="text-xs text-gray-500 mt-1">
+                      {field.value?.length || 0}/500
+                    </p>
+                  </>
+                )}
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Website/Socials
+              </label>
+              <Controller
+                name="website"
+                control={control}
+                rules={{
+                  pattern: {
+                    value: /^https?:\/\/.+\..+/,
+                    message:
+                      "Please enter a valid URL (starting with http:// or https://)",
+                  },
+                }}
+                render={({ field }) => (
+                  <>
+                    <input
+                      {...field}
+                      type="url"
+                      className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                        errors.website ? "border-red-500" : "border-gray-300"
+                      }`}
+                    />
+                    {errors.website && (
+                      <p className="text-red-500 text-xs mt-1">
+                        {errors.website.message}
+                      </p>
+                    )}
+                  </>
+                )}
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Action Buttons */}
+        <div className="flex justify-end gap-4 mt-8">
+          <button
+            type="button"
+            onClick={onCancel}
+            className="px-6 py-2 text-gray-600 hover:text-gray-800 font-medium transition-colors"
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            className="px-6 py-2 bg-[#C85212] hover:bg-[#C85212] text-white font-medium rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            Save Changes
+          </button>
+        </div>
+      </form>
+    </div>
+  );
+};
+
+export default EditProfile;

@@ -9,6 +9,7 @@ import ResetPasswordForm from "@/components/molecules/ResetPasswordForm";
 import { useResetPasswordMutation } from "@/Hooks/use.resetPassword.mutation";
 import { FormData, FormValues } from "@/types/generated";
 
+
 const ResetPassword: React.FC = () => {
   const { mutate: resetPassword, isLoading, error } = useResetPasswordMutation();
 

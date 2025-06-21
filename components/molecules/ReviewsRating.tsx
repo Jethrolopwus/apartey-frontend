@@ -10,12 +10,25 @@ const RatingComponent: React.FC = () => {
   const overallExperience = location?.overallExperience || 0;
   const detailedReview = location?.detailedReview || "";
 
+  const COST_OF_REPAIRS_MAP: Record<string, string> = {
+    tenant: "Tenant (You)",
+    landlord: "Landlord",
+    split: "Split between both",
+    depends: "Depends on the issue",
+  };
+  const REVERSE_COST_OF_REPAIRS_MAP: Record<string, string> = {
+    "Tenant (You)": "tenant",
+    "Landlord": "landlord",
+    "Split between both": "split",
+    "Depends on the issue": "depends",
+  };
+
   const handleStarClick = (field: string, rating: number) => {
     setLocation({ ...location, [field]: rating });
   };
 
   const handleRadioChange = (field: string, value: string) => {
-    setLocation({ ...location, [field]: value });
+    setLocation({ ...location, [field]: COST_OF_REPAIRS_MAP[value] || value });
   };
 
   return (
@@ -47,11 +60,9 @@ const RatingComponent: React.FC = () => {
               >
                 <Star
                   size={24}
-                  className={`$ {
-                    star <= valueForMoney
-                      ? "fill-yellow-400 text-yellow-400"
-                      : "fill-gray-200 text-gray-200"
-                  } hover:fill-yellow-300 hover:text-yellow-300 transition-colors cursor-pointer`}
+                  className={
+                    `${star <= valueForMoney ? "fill-yellow-400 text-yellow-400" : "fill-gray-200 text-gray-200"} hover:fill-yellow-300 hover:text-yellow-300 transition-colors cursor-pointer`
+                  }
                 />
               </button>
             ))}
@@ -82,7 +93,7 @@ const RatingComponent: React.FC = () => {
                 id={option.value}
                 name="costOfRepairs"
                 value={option.value}
-                checked={costOfRepairs === option.value}
+                checked={REVERSE_COST_OF_REPAIRS_MAP[costOfRepairs] === option.value}
                 onChange={() => handleRadioChange("costOfRepairs", option.value)}
                 className="h-4 w-4 text-orange-600 focus:ring-orange-500 border-gray-300"
               />
@@ -118,11 +129,9 @@ const RatingComponent: React.FC = () => {
               >
                 <Star
                   size={24}
-                  className={`$ {
-                    star <= overallExperience
-                      ? "fill-yellow-400 text-yellow-400"
-                      : "fill-gray-200 text-gray-200"
-                  } hover:fill-yellow-300 hover:text-yellow-300 transition-colors cursor-pointer`}
+                  className={
+                    `${star <= overallExperience ? "fill-yellow-400 text-yellow-400" : "fill-gray-200 text-gray-200"} hover:fill-yellow-300 hover:text-yellow-300 transition-colors cursor-pointer`
+                  }
                 />
               </button>
             ))}

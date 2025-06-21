@@ -137,6 +137,8 @@ export interface UnlistedPropertyReview {
     district: string;
     postalCode: string;
     streetAddress: string;
+    apartment: string;
+    stateOrRegion: string;
   };
 
   // Form-specific location fields (for form state management)

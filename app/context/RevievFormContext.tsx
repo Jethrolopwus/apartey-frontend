@@ -31,6 +31,7 @@ export interface LocationPayload {
   detailedReview?: string;
   isAnonymous?: boolean;
   agreeToTerms?: boolean;
+  furnished?: boolean;
 }
 
 interface FormContextType {

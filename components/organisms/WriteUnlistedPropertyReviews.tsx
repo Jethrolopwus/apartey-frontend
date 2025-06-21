@@ -23,7 +23,46 @@ import AgentBrokerFeesToggle from "@/components/molecules/AgentBrokers";
 import { UnlistedPropertyReview } from "@/types/generated";
 import AmenitiesAccessibility from "@/components/molecules/AmenitiesAccessibility";
 import AddressForm from "../molecules/AddressForm";
-import { ReviewFormProvider, useReviewForm } from "@/app/context/RevievFormContext";
+import { ReviewFormProvider, useReviewForm, LocationPayload } from "@/app/context/RevievFormContext";
+import { ReviewFormData } from "@/types/generated";
+
+const APPLIANCE_OPTIONS = [
+  "Oven",
+  "Refrigerator",
+  "Washing machine",
+  "Dishwasher",
+  "Microwave",
+  "Air Conditioning",
+];
+const FACILITY_OPTIONS = [
+  "Elevator",
+  "Parking lot",
+  "Security system",
+  "Gym",
+  "Pool",
+  "Garden",
+];
+const REPAIR_COVERAGE_OPTIONS = ["Landlord", "Tenant", "Shared"];
+
+function sanitizeReviewPayload(data: any) {
+  // Sanitize appliancesFixtures
+  const appliancesFixtures = (data.appliancesFixtures as string[] || []).map((item: string) =>
+    APPLIANCE_OPTIONS.find((opt) => opt.toLowerCase().replace(/\s/g,"") === item.toLowerCase().replace(/\s/g, "")) || item
+  ).filter((item: string) => APPLIANCE_OPTIONS.includes(item));
+  // Sanitize buildingFacilities
+  const buildingFacilities = (data.buildingFacilities as string[] || []).map((item: string) =>
+    FACILITY_OPTIONS.find((opt) => opt.toLowerCase().replace(/\s/g,"") === item.toLowerCase().replace(/\s/g, "")) || item
+  ).filter((item: string) => FACILITY_OPTIONS.includes(item));
+  // Sanitize costOfRepairsCoverage
+  let costOfRepairsCoverage = data.costOfRepairsCoverage;
+  costOfRepairsCoverage = REPAIR_COVERAGE_OPTIONS.find((opt) => opt.toLowerCase() === costOfRepairsCoverage?.toLowerCase()) || costOfRepairsCoverage;
+  return {
+    ...data,
+    appliancesFixtures,
+    buildingFacilities,
+    costOfRepairsCoverage,
+  };
+}
 
 const WriteUnlistedPropertyReviews = () => {
   const [currentStep, setCurrentStep] = useState(1);
@@ -438,14 +477,45 @@ const WriteUnlistedPropertyReviews = () => {
       throw new Error("Invalid move out date");
     }
 
+    // Construct fullAddress and location fields using LocationPayload type
+    const location = {
+      country: data.location?.country || data.country || "",
+      countryCode: data.location?.countryCode || (data.country === "Nigeria" ? "NG" : data.country === "Estonia" ? "EE" : data.country?.slice(0,2).toUpperCase()) || "",
+      stateOrRegion: data.location?.stateOrRegion || data.state || "",
+      district: data.location?.district || data.district || "",
+      street: data.location?.street || data.street || data.location?.streetAddress || data.address || "",
+      streetNumber: data.location?.streetNumber || "",
+      apartment: data.location?.apartment || data.apartmentNumber || "",
+      postalCode: data.location?.postalCode || data.zipCode || "",
+      fullAddress: data.location?.fullAddress || "",
+      city: data.location?.city || data.city || "",
+      streetAddress: data.location?.streetAddress || data.address || "",
+    } as {
+      country: string;
+      countryCode: string;
+      stateOrRegion: string;
+      district: string;
+      street: string;
+      streetNumber: string;
+      apartment: string;
+      postalCode: string;
+      fullAddress: string;
+      city: string;
+      streetAddress: string;
+    };
+    // If fullAddress is not set, construct it
+    if (!location.fullAddress) {
+      const fullAddr = [
+        location.streetNumber && location.street ? `${location.streetNumber} ${location.street}` : location.street,
+        location.apartment,
+        location.district,
+        location.stateOrRegion
+      ].filter(Boolean).join(", ");
+      location.fullAddress = fullAddr;
+    }
+
     return {
-      location: {
-        country: data?.country || "",
-        city: "",
-        district: "",
-        postalCode: "",
-        streetAddress: data.address || "",
-      },
+      location,
       stayDetails: {
         numberOfRooms: parseInt(data.numberOfRooms ?? "1") || 1,
         numberOfOccupants: parseInt(data.numberOfOccupants ?? "1") || 1,
@@ -525,31 +595,149 @@ const WriteUnlistedPropertyReviews = () => {
   };
 
   const transformContextToApiData = (contextData: any): UnlistedPropertyReview & { submitAnonymously: boolean } => {
+    // Get selected appliances
+    const selectedAppliances = Object.entries(contextData.appliances || {})
+      .filter(([key, value]) => value && key !== "others")
+      .map(([key]) => {
+        const appliances: { [key: string]: string } = {
+          oven: "Oven",
+          washingMachine: "Washing Machine",
+          refrigerator: "Refrigerator",
+          garbageDisposal: "Garbage Disposal",
+          airConditioner: "Air Conditioner",
+          dryer: "Dryer",
+          microwave: "Microwave",
+        };
+        return appliances[key] || key;
+      });
+
+    // Add custom appliances if specified
+    if (contextData?.appliances?.others && contextData.appliances.otherText) {
+      selectedAppliances.push(contextData.appliances.otherText);
+    }
+
+    // Get selected building facilities
+    const selectedFacilities = Object.entries(contextData.buildingFacilities || {})
+      .filter(([key, value]) => value && key !== "others")
+      .map(([key]) => {
+        const facilities: { [key: string]: string } = {
+          parkingLot: "Parking Lot",
+          streetParking: "Street Parking",
+          gymFitness: "Gym/Fitness",
+          elevator: "Elevator",
+          storageSpace: "Storage Space",
+          childrenPlayArea: "Children Play Area",
+          roofTerrace: "Roof Terrace",
+          securitySystem: "Security System",
+          dedicatedParking: "Dedicated Parking",
+          swimmingPool: "Swimming Pool",
+          gardenCourtyard: "Garden/Courtyard",
+        };
+        return facilities[key] || key;
+      });
+
+    if (
+      contextData.buildingFacilities?.others &&
+      contextData?.buildingFacilities?.otherText
+    ) {
+      selectedFacilities.push(contextData.buildingFacilities.otherText);
+    }
+
+    // Get selected landlord languages
+    const selectedLanguages = Object.entries(contextData.landlordLanguages || {})
+      .filter(
+        ([key, value]) =>
+          value &&
+          key !== "others" &&
+          key !== "customLanguage" &&
+          key !== "otherText" &&
+          key !== "customLanguageText"
+      )
+      .map(([key]) => key.charAt(0).toUpperCase() + key.slice(1));
+
+    // Add custom languages if specified
+    if (contextData?.landlordLanguages?.others && contextData.landlordLanguages.otherText) {
+      selectedLanguages.push(contextData.landlordLanguages.otherText);
+    }
+    if (
+      contextData?.landlordLanguages?.customLanguage &&
+      contextData.landlordLanguages.customLanguageText
+    ) {
+      selectedLanguages.push(contextData.landlordLanguages.customLanguageText);
+    }
+
+    // Parse rent amount from string (remove currency symbols and commas)
+    const rentAmount =
+      parseFloat(contextData.yearlyRent ?? "".replace(/[^\d.]/g, "")) || 0;
+
+    // Parse utility costs
+    const julyUtilities =
+      parseFloat((contextData?.julyUtilities ?? "").replace(/[^\d.]/g, "")) || 0;
+    const januaryUtilities =
+      parseFloat((contextData?.januaryUtilities ?? "").replace(/[^\d.]/g, "")) || 0;
+
+    // Convert move out date to ISO string
+    const moveOutDate = new Date(contextData?.moveOutDate ?? "");
+    if (isNaN(moveOutDate.getTime())) {
+      throw new Error("Invalid move out date");
+    }
+
+    // Construct fullAddress and location fields using LocationPayload type
+    const location = {
+      country: contextData.location?.country || contextData.country || "",
+      countryCode: contextData.location?.countryCode || (contextData.country === "Nigeria" ? "NG" : contextData.country === "Estonia" ? "EE" : contextData.country?.slice(0,2).toUpperCase()) || "",
+      stateOrRegion: contextData.location?.stateOrRegion || contextData.state || contextData.stateOrRegion || "",
+      district: contextData.location?.district || contextData.district || "",
+      street: contextData.location?.street || contextData.street || contextData.location?.streetAddress || contextData.address || "",
+      streetNumber: contextData.location?.streetNumber || "",
+      apartment: contextData.location?.apartment || contextData.apartmentNumber || "",
+      postalCode: contextData.location?.postalCode || contextData.zipCode || "",
+      fullAddress: contextData.location?.fullAddress || "",
+      city: contextData.location?.city || contextData.city || "",
+      streetAddress: contextData.location?.streetAddress || contextData.address || "",
+    } as {
+      country: string;
+      countryCode: string;
+      stateOrRegion: string;
+      district: string;
+      street: string;
+      streetNumber: string;
+      apartment: string;
+      postalCode: string;
+      fullAddress: string;
+      city: string;
+      streetAddress: string;
+    };
+    // If fullAddress is not set, construct it
+    if (!location.fullAddress) {
+      const fullAddr = [
+        location.streetNumber && location.street ? `${location.streetNumber} ${location.street}` : location.street,
+        location.apartment,
+        location.district,
+        location.stateOrRegion
+      ].filter(Boolean).join(", ");
+      location.fullAddress = fullAddr;
+    }
+
     return {
-      location: {
-        country: contextData.country || "",
-        city: contextData.city || "",
-        district: contextData.district || "",
-        postalCode: contextData.postalCode || "",
-        streetAddress: contextData.street || "",
-      },
+      location,
       stayDetails: {
         numberOfRooms: Number(contextData.numberOfRooms) || 1,
         numberOfOccupants: Number(contextData.numberOfOccupants) || 1,
-        dateLeft: contextData.moveOutDate || "",
+        dateLeft: moveOutDate.toISOString(),
         furnished: !!contextData.furnished,
-        appliancesFixtures: contextData.appliancesFixtures || [],
-        buildingFacilities: contextData.buildingFacilities || [],
-        landlordLanguages: contextData.landlordLanguages || [],
+        appliancesFixtures: selectedAppliances,
+        buildingFacilities: selectedFacilities,
+        landlordLanguages: selectedLanguages,
       },
       costDetails: {
-        rent: Number(contextData.yearlyRent) || 0,
+        rent: rentAmount,
         rentType: contextData.rentType === "range" ? "Yearly" : "Monthly",
         securityDepositRequired: !!contextData.securityDepositRequired,
         agentBrokerFeeRequired: !!contextData.agentFeeRequired,
         fixedUtilityCost: !!contextData.fixedUtilityCost,
-        julySummerUtilities: Number(contextData.julyUtilities) || 0,
-        januaryWinterUtilities: Number(contextData.januaryUtilities) || 0,
+        julySummerUtilities: julyUtilities,
+        januaryWinterUtilities: januaryUtilities,
       },
       accessibility: {
         nearestGroceryStore: contextData.nearestGroceryStore || "",
@@ -594,8 +782,11 @@ const WriteUnlistedPropertyReviews = () => {
         return;
       }
 
-      writeReviewMutation.mutate(apiData, {
+      const sanitizedData = sanitizeReviewPayload(apiData);
+
+      writeReviewMutation.mutate(sanitizedData, {
         onSuccess: (response) => {
+          console.log("response",response);
           clearPendingData();
           toast.success("Review submitted successfully!");
           setTimeout(() => {
@@ -823,17 +1014,7 @@ const WriteUnlistedPropertyReviews = () => {
                     {getCurrentStepMessage()}
                   </p>
                 </div>
-                {/* <SearchInput
-                placeholder="Search by address, neighborhood, or city"
-                countryRestrictions={["ng", "ee"]}
-                onPlaceSelect={handlePlaceSelect}
-                onChange={(value) => setInputValue(value)}
-                onSubmit={(value) =>
-                  value &&
-                  router.push(`/searchReview?q=${encodeURIComponent(value)}`)
-                }
-                onLocationSelect={() => {}}
-              /> */}
+              
                 <div className="space-y-6">
                   <AddressForm />
                   {/* PropertyDetailsSections */}

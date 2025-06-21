@@ -13,6 +13,7 @@ import {
   InputOTPGroup,
   InputOTPSlot,
 } from "@/components/molecules/inputOtp";
+import { TokenManager } from "@/utils/tokenManager";
 
 interface FormValues {
   code: string;
@@ -38,9 +39,11 @@ export default function VerifyEmail() {
     mutate(
       { email: email as string, code: formData.code, password: "", confirmPassword: "" },
       {
-        onSuccess: () => {
-          //   toast.success("Email verified successfully!");
-          router.push("/emailVerified");
+        onSuccess: (response) => {
+          console.log("response",response);
+
+        TokenManager.setToken(response.token);
+        router.push("/onboarding");
         },
 
         onError: () => {

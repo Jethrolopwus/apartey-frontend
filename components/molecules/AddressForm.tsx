@@ -62,7 +62,7 @@ const AddressForm: React.FC = () => {
   const [manualApartment, setManualApartment] = useState<string>("");
   const [district, setDistrict] = useState<string>("");
   const [coordinates, setCoordinates] = useState<Coordinates | null>(null);
-  const [countryCode, setCountryCode] = useState<string>("ng");
+  const [countryCode, setCountryCode] = useState<string>("");
   const [streetName, setStreetName] = useState("");
   const [streetNumber, setStreetNumber] = useState("");
 
@@ -92,13 +92,12 @@ const AddressForm: React.FC = () => {
       inputRef.current,
       {
         types: ["address"],
-        componentRestrictions: { country: countryCode || "EE" },
+        componentRestrictions: { country: "EE" },
       }
     );
 
     autocompleteRef.current.addListener("place_changed", async () => {
       const place: Place = autocompleteRef.current.getPlace();
-
       const components = place.address_components;
 
       const streetNumber =
@@ -106,26 +105,23 @@ const AddressForm: React.FC = () => {
         "";
       const streetName =
         components.find((c) => c.types.includes("route"))?.long_name || "";
-      const city =
-        components.find((c) => c.types.includes("locality"))?.long_name ||
-        components.find((c) => c.types.includes("administrative_area_level_1"))
-          ?.long_name ||
-        "";
-      const district =
+      const districtRaw =
         components.find((c) => c.types.includes("sublocality"))?.long_name ||
         "";
       const countryName =
         components.find((c) => c.types.includes("country"))?.long_name || "";
-      console.log("iam here", countryName);
-      const stateName =
+      const stateRaw =
         components.find((c) => c.types.includes("administrative_area_level_1"))
           ?.long_name || "";
       const postal =
         components.find((c) => c.types.includes("postal_code"))?.long_name ||
         "";
 
-      const cleanedAddress = `${streetName} ${streetNumber}, ${city}`;
-      const fullStreetAddress = `${streetNumber} ${streetName}`.trim();
+      // Capitalize district and state
+      const capitalize = (str: string) =>
+        str ? str.charAt(0).toUpperCase() + str.slice(1).toLowerCase() : "";
+      const district = capitalize(districtRaw);
+      const state = capitalize(stateRaw);
 
       // Extract coordinates if available
       const coordinates: Coordinates | null = place.geometry?.location
@@ -137,31 +133,35 @@ const AddressForm: React.FC = () => {
 
       setCoordinates(coordinates);
       setCountry(countryName);
-      setState(stateName);
+      setState(state);
       setDistrict(district);
       setPostalCode(postal);
       setAddressLine(`${streetName} ${streetNumber}`);
-      setCity(city);
-      setStreet(fullStreetAddress);
+      setStreet(streetName); // Only street name
       setApartment("");
       setStreetName(streetName);
       setStreetNumber(streetNumber);
 
-      await fetchApartments(cleanedAddress);
+      await fetchApartments(`${streetName} ${streetNumber}`);
       const apt = apartment || manualApartment;
+      // Build fullAddress as required by backend
+      const fullAddress = [
+        streetNumber && streetName ? `${streetNumber} ${streetName}` : streetName,
+        apt,
+        district,
+        state,
+      ]
+        .filter(Boolean)
+        .join(", ");
       const locationPayload = {
-        country: country,
+        country: countryName,
         countryCode: countryCode.toUpperCase(),
         stateOrRegion: state,
-        district: district,
         street: streetName,
-        streetNumber: streetNumber,
+        district: district,
         apartment: apt,
-        postalCode: postalCode,
-        fullAddress:
-          `${streetNumber} ${streetName}, ${apt}, ${district}, ${state}`
-            .trim()
-            .replace(/, ,/g, ","),
+        postalCode: postal,
+        fullAddress,
       };
       setLocation(locationPayload);
     });
@@ -175,22 +175,26 @@ const AddressForm: React.FC = () => {
   }, [countryCode]);
   useEffect(() => {
     const apt = apartment || manualApartment;
-    if (!street || !streetNumber || !state || !district) return;
-
+    if (!street || !state || !district) return;
+    // Build fullAddress as required by backend
+    const fullAddress = [
+      streetNumber && street ? `${streetNumber} ${street}` : street,
+      apt,
+      district,
+      state,
+    ]
+      .filter(Boolean)
+      .join(", ");
     const locationPayload = {
       country,
       countryCode: countryCode.toUpperCase(),
       stateOrRegion: state,
-      district,
       street,
-      streetNumber,
+      district,
       apartment: apt,
       postalCode,
-      fullAddress: `${streetNumber} ${street}, ${apt}, ${district}, ${state}`
-        .trim()
-        .replace(/, ,/g, ","),
+      fullAddress,
     };
-
     setLocation(locationPayload);
   }, [
     apartment,
@@ -240,13 +244,13 @@ const AddressForm: React.FC = () => {
       const jsonStr = text.replace(/^callback\(|\);$/g, "");
       const data: ApiResponse = JSON.parse(jsonStr);
 
-      const buildings = data.addresses.filter(
+      const buildings = data.addresses?.filter(
         (b) => b.onkort === "1" && Array.isArray(b.appartments)
       );
 
       setMatchedAddresses(buildings);
 
-      if (buildings.length > 0) {
+      if (buildings?.length > 0) {
         setApartments(buildings[0].appartments);
         setSelectedAddress(buildings[0].pikkaadress);
       }
@@ -284,7 +288,7 @@ const AddressForm: React.FC = () => {
           )}
 
           {/* Multiple Addresses Dropdown */}
-          {!loading && matchedAddresses.length > 1 && (
+          {!loading && matchedAddresses?.length > 1 && (
             <div>
               <label className="block mb-2 text-sm font-medium text-gray-700">
                 Matched Addresses:

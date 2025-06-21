@@ -7,7 +7,7 @@ import { useUpdateOnboardingStatusMutation } from "@/Hooks/use.updateOnboardingS
 import { TokenManager } from "@/utils/tokenManager";
 import { toast } from "react-hot-toast";
 import { useGetUserRoleQuery } from "@/Hooks/use-getUserRole.query";
-import AuthGuard from "@/components/molecules/AuthStatus";
+// import AuthGuard from "@/components/molecules/AuthStatus";
 
 export default function RoleSelect() {
   const [selectedRole, setSelectedRole] = useState<
@@ -99,7 +99,7 @@ export default function RoleSelect() {
   const isLoading = isAddingRole || isUpdatingOnboarding;
 
   return (
-    <AuthGuard>
+    
       <div className="min-h-screen flex items-center justify-center px-4 bg-gray-50">
         <div className="w-full max-w-2xl text-center px-8 py-12 shadow-md border border-gray-100 bg-white rounded-lg">
           {/* Logo */}
@@ -282,6 +282,6 @@ export default function RoleSelect() {
           </button>
         </div>
       </div>
-    </AuthGuard>
+    
   );
 }

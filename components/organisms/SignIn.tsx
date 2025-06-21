@@ -11,6 +11,7 @@ import { FormData } from "@/types/generated";
 import { useSignInMutation } from "@/Hooks/use.login.mutation";
 import { useGetOnboardingStatusQuery } from "@/Hooks/get-onboardingStatus.query";
 import { toast } from "react-hot-toast";
+import { useReviewForm } from "@/app/context/RevievFormContext";
 
 const SignIn: React.FC = () => {
   const router = useRouter();
@@ -31,11 +32,21 @@ const SignIn: React.FC = () => {
     isLoading: isCheckingOnboarding,
   } = useGetOnboardingStatusQuery();
 
+  const { setLocation } = useReviewForm();
+
   // Handle NextAuth session (Google OAuth)
   useEffect(() => {
     if (session) {
-      router.push("/profile");
+      if (localStorage.getItem("pendingReviewData")) {
+        router.push("/write-reviews/unlisted");
+        // set location to context using data from local storage
+        const pendingReviewData = JSON.parse(localStorage.getItem("pendingReviewData") || "{}");
+        setLocation(pendingReviewData.LocationPayload);
+      } else {
+      // router.push("/profile");
     }
+    }
+    
   }, [session, router]);
 
   // Handle onboarding status check result
@@ -48,7 +59,11 @@ const SignIn: React.FC = () => {
       if (isOnboarded) {
         // User is onboarded, redirect to profile or dashboard
         toast.success("Welcome back!");
-        router.push("/profile");
+        if (localStorage.getItem("pendingReviewData")) {
+          router.push("/write-reviews/unlisted");
+        } else {
+          router.push("/profile");
+        }
       } else {
         // User is not onboarded, redirect to role selection
         toast.success("Please complete your setup");
@@ -125,9 +140,9 @@ const SignIn: React.FC = () => {
   }
 
   // Don't render if user is already authenticated via NextAuth
-  if (session) {
-    return null;
-  }
+  // if (session) {
+  //   return null;
+  // }
 
   // Combined loading state for both sign in and onboarding check
   const isProcessing = isLoading || isCheckingOnboarding;

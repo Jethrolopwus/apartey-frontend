@@ -7,42 +7,71 @@ const AmenitiesAccessibility: React.FC = () => {
 
   // Appliances
   const appliancesFixtures = location?.appliancesFixtures || [];
+  const APPLIANCE_MAP: Record<string, string> = {
+    oven: "Oven",
+    washingMachine: "Washing machine",
+    refrigerator: "Refrigerator",
+    garbageDisposal: "Garbage disposal",
+    airConditioner: "Air Conditioning",
+    dryer: "Dryer",
+    microwave: "Microwave",
+  };
   const isApplianceSelected = (appliance: string): boolean =>
-    appliancesFixtures.includes(appliance);
+    appliancesFixtures.includes(APPLIANCE_MAP[appliance] || appliance);
   const toggleAppliance = (appliance: string, checked: boolean) => {
     let updated: string[];
+    const mapped = APPLIANCE_MAP[appliance] || appliance;
     if (checked) {
-      updated = [...appliancesFixtures, appliance];
+      updated = [...appliancesFixtures, mapped];
     } else {
-      updated = appliancesFixtures.filter((item) => item !== appliance);
+      updated = appliancesFixtures.filter((item) => item !== mapped);
     }
     setLocation({ ...location, appliancesFixtures: updated });
   };
 
   // Landlord Languages
   const landlordLanguages = location?.landlordLanguages || [];
+  const LANGUAGE_MAP: Record<string, string> = {
+    english: "English",
+    french: "French",
+    spanish: "Spanish",
+    german: "German",
+    chinese: "Chinese",
+  };
   const isLanguageSelected = (language: string): boolean =>
-    landlordLanguages.includes(language);
+    landlordLanguages.includes(LANGUAGE_MAP[language] || language);
   const toggleLanguage = (language: string, checked: boolean) => {
     let updated: string[];
+    const mapped = LANGUAGE_MAP[language] || language;
     if (checked) {
-      updated = [...landlordLanguages, language];
+      updated = [...landlordLanguages, mapped];
     } else {
-      updated = landlordLanguages.filter((item) => item !== language);
+      updated = landlordLanguages.filter((item) => item !== mapped);
     }
     setLocation({ ...location, landlordLanguages: updated });
   };
 
   // Building Facilities
   const buildingFacilities = location?.buildingFacilities || [];
+  const FACILITY_MAP: Record<string, string> = {
+    wheelchairAccessible: "Wheelchair accessible",
+    elevator: "Elevator",
+    brailleSigns: "Braille signs",
+    audioAssistance: "Audio assistance",
+    gym: "Gym",
+    pool: "Pool",
+    parking: "Parking lot",
+    security: "Security system",
+  };
   const isFacilitySelected = (facility: string): boolean =>
-    buildingFacilities.includes(facility);
+    buildingFacilities.includes(FACILITY_MAP[facility] || facility);
   const toggleFacility = (facility: string, checked: boolean) => {
     let updated: string[];
+    const mapped = FACILITY_MAP[facility] || facility;
     if (checked) {
-      updated = [...buildingFacilities, facility];
+      updated = [...buildingFacilities, mapped];
     } else {
-      updated = buildingFacilities.filter((item) => item !== facility);
+      updated = buildingFacilities.filter((item) => item !== mapped);
     }
     setLocation({ ...location, buildingFacilities: updated });
   };
@@ -123,7 +152,7 @@ const AmenitiesAccessibility: React.FC = () => {
                   htmlFor={appliance}
                   className="text-sm text-gray-700 capitalize"
                 >
-                  {appliance.replace(/([A-Z])/g, " $1")}
+                  {APPLIANCE_MAP[appliance] || appliance}
                 </label>
               </div>
             ))}
@@ -161,7 +190,7 @@ const AmenitiesAccessibility: React.FC = () => {
                     key={index}
                     className="inline-flex items-center px-2 py-1 bg-orange-100 text-orange-800 text-xs font-medium rounded-full"
                   >
-                    {appliance.replace(/([A-Z])/g, " $1")}
+                    {APPLIANCE_MAP[appliance] || appliance}
                   </span>
                 ))}
               </div>
@@ -191,7 +220,7 @@ const AmenitiesAccessibility: React.FC = () => {
                     htmlFor={language}
                     className="text-sm text-gray-700 capitalize"
                   >
-                    {language}
+                    {LANGUAGE_MAP[language] || language}
                   </label>
                 </div>
               )
@@ -230,7 +259,7 @@ const AmenitiesAccessibility: React.FC = () => {
                     key={index}
                     className="inline-flex items-center px-2 py-1 bg-orange-100 text-orange-800 text-xs font-medium rounded-full capitalize"
                   >
-                    {language}
+                    {LANGUAGE_MAP[language] || language}
                   </span>
                 ))}
               </div>
@@ -329,7 +358,7 @@ const AmenitiesAccessibility: React.FC = () => {
                   htmlFor={facility}
                   className="text-sm text-gray-700 capitalize"
                 >
-                  {facility.replace(/([A-Z])/g, " $1")}
+                  {FACILITY_MAP[facility] || facility}
                 </label>
               </div>
             ))}
@@ -367,7 +396,7 @@ const AmenitiesAccessibility: React.FC = () => {
                     key={index}
                     className="inline-flex items-center px-2 py-1 bg-orange-100 text-orange-800 text-xs font-medium rounded-full"
                   >
-                    {facility.replace(/([A-Z])/g, " $1")}
+                    {FACILITY_MAP[facility] || facility}
                   </span>
                 ))}
               </div>

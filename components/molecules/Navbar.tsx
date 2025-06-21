@@ -8,7 +8,7 @@ import SwitchProfileModal from "@/components/molecules/ProfileModal";
 import ListingsDropdown from "@/components//molecules/ListingsDropdown";
 import Image from "next/image";
 import logo from "@/public/aparteyLogo.png";
-import { TokenManager } from "@/utils/tokenManager";
+// import { TokenManager } from "@/utils/tokenManager";
 import { useAuthStatusQuery } from "@/Hooks/use-getAuthStatus.query";
 
 interface NavbarProps {}
@@ -63,7 +63,8 @@ const Navbar: React.FC<NavbarProps> = () => {
   ];
 
   const handleUserIconClick = () => {
-    if (!authData || !authData.isVerified) {
+    if (!authData ) {
+      console.log("authData", authData);
       router.push("/signin");
       return;
     }
@@ -176,14 +177,16 @@ const Navbar: React.FC<NavbarProps> = () => {
                 </button>
               </div>
             </div>
-            <UserDropdownMenu
-              isOpen={isUserDropdownOpen}
-              onClose={handleCloseUserDropdown}
-              onSwitchProfile={handleSwitchProfile}
-              userName="John Doe"
-              userEmail="john@example.com"
-              favoriteCount={3}
-            />
+            {authData && (
+              <UserDropdownMenu
+                isOpen={isUserDropdownOpen}
+                onClose={handleCloseUserDropdown}
+                onSwitchProfile={handleSwitchProfile}
+                userName="John Doe"
+                userEmail="john@example.com"
+                favoriteCount={3}
+              />
+            )}
 
             <div className="flex md:hidden items-center space-x-2">
               <div className="relative">
