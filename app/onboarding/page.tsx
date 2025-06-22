@@ -65,8 +65,12 @@ export default function RoleSelect() {
 
               toast.success("Setup completed successfully!");
 
-              // Navigate to profile regardless of role
-              router.push("/profile");
+              // Check if there's pending review data and redirect accordingly
+              if (localStorage.getItem("pendingReviewData")) {
+                router.push("/write-reviews/unlisted");
+              } else {
+                router.push("/profile");
+              }
             },
             onError: (onboardingError: any) => {
               console.error("Onboarding status update error:", onboardingError);
@@ -74,7 +78,13 @@ export default function RoleSelect() {
               // Even if onboarding status update fails, we can still navigate
               // since the role was successfully set
               toast.success("Role selected successfully!");
-              router.push("/profile");
+              
+              // Check if there's pending review data and redirect accordingly
+              if (localStorage.getItem("pendingReviewData")) {
+                router.push("/write-reviews/unlisted");
+              } else {
+                router.push("/profile");
+              }
             },
           });
         },

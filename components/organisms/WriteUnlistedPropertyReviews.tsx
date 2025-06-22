@@ -1,7 +1,7 @@
 "use client";
 import * as React from "react";
 import { useRef, useState, useEffect } from "react";
-import { ChevronDown, Calendar, Home, Star, MessageSquare } from "lucide-react";
+import { Home, Star } from "lucide-react";
 import RatingComponent from "@/components/molecules/ReviewsRating";
 import SubmitReviewComponent from "@/components/organisms/SubmitReviews";
 import { useAuthRedirect } from "@/Hooks/useAuthRedirect";
@@ -12,10 +12,10 @@ import PropertyDetailsSection from "@/components/molecules/PropertyDetailsSectio
 import MoveOutDatePicker from "@/components/atoms/MoveOutDatePicker";
 import RentInput from "@/components/molecules/RentInput";
 import SecurityDepositToggle from "@/components/molecules/SecurityDepositToggle";
-import SearchInput, {
+import {
   PlacePrediction,
 } from "@/components/atoms/Buttons/SearchInput";
-import LocationForm, {
+import  {
   LocationFormRef,
   LocationFields,
 } from "../molecules/LocationForm";
@@ -23,8 +23,13 @@ import AgentBrokerFeesToggle from "@/components/molecules/AgentBrokers";
 import { UnlistedPropertyReview } from "@/types/generated";
 import AmenitiesAccessibility from "@/components/molecules/AmenitiesAccessibility";
 import AddressForm from "../molecules/AddressForm";
-import { ReviewFormProvider, useReviewForm, LocationPayload } from "@/app/context/RevievFormContext";
+import {
+  ReviewFormProvider,
+  useReviewForm,
+  LocationPayload,
+} from "@/app/context/RevievFormContext";
 import { ReviewFormData } from "@/types/generated";
+import FixedUtilityCostsToggle from "../molecules/FixUtilityCost";
 
 const APPLIANCE_OPTIONS = [
   "Oven",
@@ -46,16 +51,33 @@ const REPAIR_COVERAGE_OPTIONS = ["Landlord", "Tenant", "Shared"];
 
 function sanitizeReviewPayload(data: any) {
   // Sanitize appliancesFixtures
-  const appliancesFixtures = (data.appliancesFixtures as string[] || []).map((item: string) =>
-    APPLIANCE_OPTIONS.find((opt) => opt.toLowerCase().replace(/\s/g,"") === item.toLowerCase().replace(/\s/g, "")) || item
-  ).filter((item: string) => APPLIANCE_OPTIONS.includes(item));
+  const appliancesFixtures = ((data.appliancesFixtures as string[]) || [])
+    .map(
+      (item: string) =>
+        APPLIANCE_OPTIONS.find(
+          (opt) =>
+            opt.toLowerCase().replace(/\s/g, "") ===
+            item.toLowerCase().replace(/\s/g, "")
+        ) || item
+    )
+    .filter((item: string) => APPLIANCE_OPTIONS.includes(item));
   // Sanitize buildingFacilities
-  const buildingFacilities = (data.buildingFacilities as string[] || []).map((item: string) =>
-    FACILITY_OPTIONS.find((opt) => opt.toLowerCase().replace(/\s/g,"") === item.toLowerCase().replace(/\s/g, "")) || item
-  ).filter((item: string) => FACILITY_OPTIONS.includes(item));
+  const buildingFacilities = ((data.buildingFacilities as string[]) || [])
+    .map(
+      (item: string) =>
+        FACILITY_OPTIONS.find(
+          (opt) =>
+            opt.toLowerCase().replace(/\s/g, "") ===
+            item.toLowerCase().replace(/\s/g, "")
+        ) || item
+    )
+    .filter((item: string) => FACILITY_OPTIONS.includes(item));
   // Sanitize costOfRepairsCoverage
   let costOfRepairsCoverage = data.costOfRepairsCoverage;
-  costOfRepairsCoverage = REPAIR_COVERAGE_OPTIONS.find((opt) => opt.toLowerCase() === costOfRepairsCoverage?.toLowerCase()) || costOfRepairsCoverage;
+  costOfRepairsCoverage =
+    REPAIR_COVERAGE_OPTIONS.find(
+      (opt) => opt.toLowerCase() === costOfRepairsCoverage?.toLowerCase()
+    ) || costOfRepairsCoverage;
   return {
     ...data,
     appliancesFixtures,
@@ -69,7 +91,6 @@ const WriteUnlistedPropertyReviews = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [canSubmit, setCanSubmit] = useState(true);
   const [currentSubStep, setCurrentSubStep] = useState(1);
-  const [inputValue, setInputValue] = useState("");
 
   interface SubmitReviewRef {
     validate: () => boolean;
@@ -77,7 +98,9 @@ const WriteUnlistedPropertyReviews = () => {
 
   const locationFormRef = useRef<LocationFormRef>(null);
   const { location } = useReviewForm();
-  const submitReviewRef = useRef<{ handleFinalSubmit: () => Promise<any> }>(null);
+  const submitReviewRef = useRef<{ handleFinalSubmit: () => Promise<any> }>(
+    null
+  );
 
   /* -- helper to fetch full place details -- */
   const getPlaceDetails = (
@@ -282,6 +305,8 @@ const WriteUnlistedPropertyReviews = () => {
       district: "",
       postalCode: "",
       streetAddress: "",
+      apartment: "",
+      stateOrRegion: "",
     },
     stayDetails: {
       numberOfRooms: 0,
@@ -480,14 +505,23 @@ const WriteUnlistedPropertyReviews = () => {
     // Construct fullAddress and location fields using LocationPayload type
     const location = {
       country: data.location?.country || data.country || "",
-      countryCode: data.location?.countryCode || (data.country === "Nigeria" ? "NG" : data.country === "Estonia" ? "EE" : data.country?.slice(0,2).toUpperCase()) || "",
+      countryCode: (data.location && "countryCode" in data.location ? data.location.countryCode : "") ||
+        (data.country === "Nigeria"
+          ? "NG"
+          : data.country === "Estonia"
+          ? "EE"
+          : data.country?.slice(0, 2).toUpperCase()) ||
+        "",
       stateOrRegion: data.location?.stateOrRegion || data.state || "",
       district: data.location?.district || data.district || "",
-      street: data.location?.street || data.street || data.location?.streetAddress || data.address || "",
-      streetNumber: data.location?.streetNumber || "",
+      street: (data.location && "street" in data.location ? data.location.street : "") ||
+        data.location?.streetAddress ||
+        data.address ||
+        "",
+      streetNumber: (data.location && "streetNumber" in data.location ? data.location.streetNumber : "") || "",
       apartment: data.location?.apartment || data.apartmentNumber || "",
       postalCode: data.location?.postalCode || data.zipCode || "",
-      fullAddress: data.location?.fullAddress || "",
+      fullAddress: (data.location && "fullAddress" in data.location ? data.location.fullAddress : "") || "",
       city: data.location?.city || data.city || "",
       streetAddress: data.location?.streetAddress || data.address || "",
     } as {
@@ -506,11 +540,15 @@ const WriteUnlistedPropertyReviews = () => {
     // If fullAddress is not set, construct it
     if (!location.fullAddress) {
       const fullAddr = [
-        location.streetNumber && location.street ? `${location.streetNumber} ${location.street}` : location.street,
+        location.streetNumber && location.street
+          ? `${location.streetNumber} ${location.street}`
+          : location.street,
         location.apartment,
         location.district,
-        location.stateOrRegion
-      ].filter(Boolean).join(", ");
+        location.stateOrRegion,
+      ]
+        .filter(Boolean)
+        .join(", ");
       location.fullAddress = fullAddr;
     }
 
@@ -594,7 +632,9 @@ const WriteUnlistedPropertyReviews = () => {
     return errors;
   };
 
-  const transformContextToApiData = (contextData: any): UnlistedPropertyReview & { submitAnonymously: boolean } => {
+  const transformContextToApiData = (
+    contextData: any
+  ): UnlistedPropertyReview & { submitAnonymously: boolean } => {
     // Get selected appliances
     const selectedAppliances = Object.entries(contextData.appliances || {})
       .filter(([key, value]) => value && key !== "others")
@@ -617,7 +657,9 @@ const WriteUnlistedPropertyReviews = () => {
     }
 
     // Get selected building facilities
-    const selectedFacilities = Object.entries(contextData.buildingFacilities || {})
+    const selectedFacilities = Object.entries(
+      contextData.buildingFacilities || {}
+    )
       .filter(([key, value]) => value && key !== "others")
       .map(([key]) => {
         const facilities: { [key: string]: string } = {
@@ -644,7 +686,9 @@ const WriteUnlistedPropertyReviews = () => {
     }
 
     // Get selected landlord languages
-    const selectedLanguages = Object.entries(contextData.landlordLanguages || {})
+    const selectedLanguages = Object.entries(
+      contextData.landlordLanguages || {}
+    )
       .filter(
         ([key, value]) =>
           value &&
@@ -656,7 +700,10 @@ const WriteUnlistedPropertyReviews = () => {
       .map(([key]) => key.charAt(0).toUpperCase() + key.slice(1));
 
     // Add custom languages if specified
-    if (contextData?.landlordLanguages?.others && contextData.landlordLanguages.otherText) {
+    if (
+      contextData?.landlordLanguages?.others &&
+      contextData.landlordLanguages.otherText
+    ) {
       selectedLanguages.push(contextData.landlordLanguages.otherText);
     }
     if (
@@ -672,9 +719,12 @@ const WriteUnlistedPropertyReviews = () => {
 
     // Parse utility costs
     const julyUtilities =
-      parseFloat((contextData?.julyUtilities ?? "").replace(/[^\d.]/g, "")) || 0;
+      parseFloat((contextData?.julyUtilities ?? "").replace(/[^\d.]/g, "")) ||
+      0;
     const januaryUtilities =
-      parseFloat((contextData?.januaryUtilities ?? "").replace(/[^\d.]/g, "")) || 0;
+      parseFloat(
+        (contextData?.januaryUtilities ?? "").replace(/[^\d.]/g, "")
+      ) || 0;
 
     // Convert move out date to ISO string
     const moveOutDate = new Date(contextData?.moveOutDate ?? "");
@@ -685,14 +735,23 @@ const WriteUnlistedPropertyReviews = () => {
     // Construct fullAddress and location fields using LocationPayload type
     const location = {
       country: contextData.location?.country || contextData.country || "",
-      countryCode: contextData.location?.countryCode || (contextData.country === "Nigeria" ? "NG" : contextData.country === "Estonia" ? "EE" : contextData.country?.slice(0,2).toUpperCase()) || "",
-      stateOrRegion: contextData.location?.stateOrRegion || contextData.state || contextData.stateOrRegion || "",
+      countryCode: (contextData.location && "countryCode" in contextData.location ? contextData.location.countryCode : "") ||
+        (contextData.country === "Nigeria"
+          ? "NG"
+          : contextData.country === "Estonia"
+          ? "EE"
+          : contextData.country?.slice(0, 2).toUpperCase()) ||
+        "",
+      stateOrRegion: contextData.location?.stateOrRegion || contextData.state || "",
       district: contextData.location?.district || contextData.district || "",
-      street: contextData.location?.street || contextData.street || contextData.location?.streetAddress || contextData.address || "",
-      streetNumber: contextData.location?.streetNumber || "",
+      street: (contextData.location && "street" in contextData.location ? contextData.location.street : "") ||
+        contextData.location?.streetAddress ||
+        contextData.address ||
+        "",
+      streetNumber: (contextData.location && "streetNumber" in contextData.location ? contextData.location.streetNumber : "") || "",
       apartment: contextData.location?.apartment || contextData.apartmentNumber || "",
       postalCode: contextData.location?.postalCode || contextData.zipCode || "",
-      fullAddress: contextData.location?.fullAddress || "",
+      fullAddress: (contextData.location && "fullAddress" in contextData.location ? contextData.location.fullAddress : "") || "",
       city: contextData.location?.city || contextData.city || "",
       streetAddress: contextData.location?.streetAddress || contextData.address || "",
     } as {
@@ -711,11 +770,15 @@ const WriteUnlistedPropertyReviews = () => {
     // If fullAddress is not set, construct it
     if (!location.fullAddress) {
       const fullAddr = [
-        location.streetNumber && location.street ? `${location.streetNumber} ${location.street}` : location.street,
+        location.streetNumber && location.street
+          ? `${location.streetNumber} ${location.street}`
+          : location.street,
         location.apartment,
         location.district,
-        location.stateOrRegion
-      ].filter(Boolean).join(", ");
+        location.stateOrRegion,
+      ]
+        .filter(Boolean)
+        .join(", ");
       location.fullAddress = fullAddr;
     }
 
@@ -749,7 +812,9 @@ const WriteUnlistedPropertyReviews = () => {
         costOfRepairsCoverage: contextData.costOfRepairs || "",
         overallExperience: contextData.overallExperience || 0,
         overallRating: Math.round(
-          ((contextData.valueForMoney || 0) + (contextData.overallExperience || 0)) / 2
+          ((contextData.valueForMoney || 0) +
+            (contextData.overallExperience || 0)) /
+            2
         ),
         detailedReview: contextData.detailedReview || "",
       },
@@ -786,7 +851,7 @@ const WriteUnlistedPropertyReviews = () => {
 
       writeReviewMutation.mutate(sanitizedData, {
         onSuccess: (response) => {
-          console.log("response",response);
+          console.log("response", response);
           clearPendingData();
           toast.success("Review submitted successfully!");
           setTimeout(() => {
@@ -874,6 +939,20 @@ const WriteUnlistedPropertyReviews = () => {
     console.log("Form submitted:", formData);
     toast.success("Review submitted successfully!");
   };
+
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem("unlistedReviewData");
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (parsed && typeof parsed === "object") {
+          setFormData(parsed);
+        }
+      }
+    } catch (err) {
+      console.error("Failed to load unlistedReviewData from localStorage", err);
+    }
+  }, []);
 
   if (authLoading) {
     return (
@@ -1014,7 +1093,7 @@ const WriteUnlistedPropertyReviews = () => {
                     {getCurrentStepMessage()}
                   </p>
                 </div>
-              
+
                 <div className="space-y-6">
                   <AddressForm />
                   {/* PropertyDetailsSections */}
@@ -1026,8 +1105,7 @@ const WriteUnlistedPropertyReviews = () => {
                   />
 
                   {/* Move data */}
-                  <MoveOutDatePicker
-                  />
+                  <MoveOutDatePicker />
                 </div>
               </div>
             )}
@@ -1049,35 +1127,28 @@ const WriteUnlistedPropertyReviews = () => {
 
                     <div className="space-y-6">
                       {/* Rent */}
-                      <RentInput
-                    
-                      />
+                      <RentInput />
                       {/* Security Deposit */}
-                      <SecurityDepositToggle
-                      />
+                      <SecurityDepositToggle />
 
                       {/* Agent/Broker Fees */}
-                      <AgentBrokerFeesToggle
-                      />
+                      <AgentBrokerFeesToggle />
+                      {/* Fixed Utility Costs */}
+                      <FixedUtilityCostsToggle />
                     </div>
                   </div>
                 )}
                 {/* Step 2B: Amenities & Accessibility */}
-                {currentSubStep === 2 && (
-                  <AmenitiesAccessibility
-                  
-                  />
-                )}
+                {currentSubStep === 2 && <AmenitiesAccessibility />}
                 {/* Step 2C: Ratings & Reviews */}
-                {currentSubStep === 3 && (
-                  <RatingComponent
-                  />
-                )}
+                {currentSubStep === 3 && <RatingComponent />}
               </div>
             )}
 
             {/* Step 3: Submit Review */}
-            {currentStep === 3 && <SubmitReviewComponent ref={submitReviewRef} />}
+            {currentStep === 3 && (
+              <SubmitReviewComponent ref={submitReviewRef} />
+            )}
 
             {/* Navigation Buttons */}
             <div className="flex justify-between mt-8">
@@ -1092,7 +1163,7 @@ const WriteUnlistedPropertyReviews = () => {
               {currentStep < 3 && (
                 <button
                   onClick={nextStep}
-                  className="bg-orange-600 text-white px-6 py-2 rounded-md hover:bg-orange-700 transition duration-200"
+                  className="bg-[#C85212] text-white px-6 py-2 rounded-md hover:bg-orange-800 transition duration-200"
                 >
                   Continue
                 </button>
@@ -1101,7 +1172,7 @@ const WriteUnlistedPropertyReviews = () => {
                 <button
                   onClick={handleFinalSubmitWithValidation}
                   disabled={!canSubmit || isSubmitting}
-                  className="bg-orange-600 text-white px-6 py-2 rounded-md hover:bg-orange-700 transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="bg-[#C85212] text-white px-6 py-2 rounded-md hover:bg-orange-800 transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {isSubmitting ? "Submitting..." : "Submit Review"}
                 </button>

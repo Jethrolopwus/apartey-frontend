@@ -3,13 +3,13 @@ import React, { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import {
   User,
-  ShoppingBag,
   Heart,
   Award,
   Settings,
   HelpCircle,
   UserCheck,
   LogOut,
+  HistoryIcon,
 } from "lucide-react";
 
 interface UserDropdownMenuProps {
@@ -40,17 +40,17 @@ const UserDropdownMenu: React.FC<UserDropdownMenuProps> = ({
       hasNotification: false,
     },
     {
-      id: "orders",
-      label: "Orders",
-      icon: ShoppingBag,
-      route: "/orders",
+      id: "activity",
+      label: "Activity",
+      icon: HistoryIcon,
+      route: "/activity",
       hasNotification: false,
     },
     {
       id: "favorites",
       label: "Favorites",
       icon: Heart,
-      route: "/favorites",
+      route: "/profile-favorites",
       hasNotification: true,
       notificationCount: favoriteCount,
     },
@@ -72,7 +72,7 @@ const UserDropdownMenu: React.FC<UserDropdownMenuProps> = ({
       id: "help",
       label: "Help center",
       icon: HelpCircle,
-      route: "/help",
+      route: "/help-center",
       hasNotification: false,
     },
   ];

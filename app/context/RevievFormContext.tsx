@@ -1,4 +1,3 @@
-
 "use client";
 import { createContext, useContext, useState, ReactNode } from "react";
 
@@ -32,6 +31,10 @@ export interface LocationPayload {
   isAnonymous?: boolean;
   agreeToTerms?: boolean;
   furnished?: boolean;
+  fixedUtilityCost?: boolean;
+  centralHeating?: boolean;
+  julySummerUtilities?: string;
+  januaryWinterUtilities?: string;
 }
 
 interface FormContextType {
@@ -43,20 +46,6 @@ const ReviewFormContext = createContext<FormContextType | null>(null);
 
 export const ReviewFormProvider = ({ children }: { children: ReactNode }) => {
   const [location, setLocationState] = useState<LocationPayload | null>(null);
-
-  // const [location, setLocationState] = useState<LocationPayload>({
-  //   country: "",
-  //   countryCode: "",
-  //   stateOrRegion: "",
-  //   district: "",
-  //   street: "",
-  //   streetNumber: "",
-  //   apartment: "",
-  //   postalCode: "",
-  //   fullAddress: "",
-  //   numberOfRooms: "",
-  //   numberOfOccupants: "",
-  // });
 
   const setLocation = (loc: LocationPayload) => {
     setLocationState(loc);

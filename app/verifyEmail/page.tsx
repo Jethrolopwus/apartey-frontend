@@ -1,4 +1,3 @@
-
 "use client";
 import { useForm, Controller } from "react-hook-form";
 import Image from "next/image";
@@ -30,6 +29,7 @@ export default function VerifyEmail() {
   const [timeLeft, setTimeLeft] = useState(10);
   const [canResend, setCanResend] = useState(false);
   const router = useRouter();
+  const [userEmail, setUserEmail] = useState("");
 
   const { mutate, data, error, isLoading } = useVerifyEmailMutation();
 
@@ -63,6 +63,8 @@ export default function VerifyEmail() {
 
     if (!email || !token) {
       router.push("/signup");
+    } else {
+      setUserEmail(email);
     }
   }, [router]);
 
@@ -164,7 +166,7 @@ export default function VerifyEmail() {
                 Code expires in {timeLeft} second{timeLeft !== 1 ? "s" : ""}
               </p>
             )}
-            <ResendCodeButton disabled={!canResend} />
+            <ResendCodeButton disabled={!canResend} email={userEmail} />
           </div>
         </form>
       </div>

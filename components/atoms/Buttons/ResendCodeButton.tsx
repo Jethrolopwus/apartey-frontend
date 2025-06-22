@@ -1,17 +1,28 @@
-
 "use client";
-import { useRouter } from "next/navigation";
+import { useResendCodeMutation } from "@/Hooks/use.resendCode.mutation";
+import { toast } from "react-hot-toast";
 
 interface Props {
   disabled?: boolean;
+  email: string;
 }
 
-export default function ResendCodeButton({ disabled }: Props) {
-  const router = useRouter();
+export default function ResendCodeButton({ disabled, email }: Props) {
+  const { mutate, isLoading } = useResendCodeMutation();
 
   const handleResend = () => {
-    if (!disabled) {
-      router.push("/resendCode");
+    if (!disabled && !isLoading) {
+      mutate(
+        { email, password: "", confirmPassword: "", code: "" },
+        {
+          onSuccess: () => {
+            toast.success("A new code has been sent to your email.");
+          },
+          onError: (error) => {
+            toast.error(error.message || "Failed to resend code. Please try again.");
+          },
+        }
+      );
     }
   };
 
@@ -19,12 +30,14 @@ export default function ResendCodeButton({ disabled }: Props) {
     <button
       onClick={handleResend}
       type="button"
-      disabled={disabled}
+      disabled={disabled || isLoading}
       className={`text-sm mt-4 mb-3 cursor-pointer hover:underline transition-opacity ${
-        disabled ? "text-black  cursor-not-allowed" : "text-black hover:text-[#C85212] "
+        disabled || isLoading
+          ? "text-black cursor-not-allowed opacity-50"
+          : "text-black hover:text-[#C85212]"
       }`}
     >
-      Resend code
+      {isLoading ? "Sending..." : "Resend code"}
     </button>
   );
 }

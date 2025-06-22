@@ -62,7 +62,7 @@ const AddressForm: React.FC = () => {
   const [manualApartment, setManualApartment] = useState<string>("");
   const [district, setDistrict] = useState<string>("");
   const [coordinates, setCoordinates] = useState<Coordinates | null>(null);
-  const [countryCode, setCountryCode] = useState<string>("");
+  const [countryCode, setCountryCode] = useState<string>("ng");
   const [streetName, setStreetName] = useState("");
   const [streetNumber, setStreetNumber] = useState("");
 
@@ -92,7 +92,7 @@ const AddressForm: React.FC = () => {
       inputRef.current,
       {
         types: ["address"],
-        componentRestrictions: { country: "EE" },
+        componentRestrictions: { country: "ng" },
       }
     );
 
@@ -431,18 +431,18 @@ const AddressForm: React.FC = () => {
           )}
 
           {/* Map Preview */}
-          {coordinates && (
+          {/* {coordinates && (
             <div className="pt-4 border-t border-gray-200">
-              {/* <label className="block mb-2 text-sm font-medium text-gray-700">
+               <label className="block mb-2 text-sm font-medium text-gray-700">
                 Location Preview
-              </label> */}
-              {/* <img
+              </label> *
+               <img
                 className="w-full h-64 object-cover rounded-lg border border-gray-300"
                 alt="Map preview"
                 src={`https://maps.googleapis.com/maps/api/staticmap?center=${coordinates.lat},${coordinates.lng}&zoom=16&size=600x300&markers=color:red%7C${coordinates.lat},${coordinates.lng}&key=AIzaSyC_mwAjirr_vXt1xL1WlL-entKBwD7FkqY`}
-              /> */}
+              /> 
             </div>
-          )}
+          )} */}
         </div>
       </div>
     </div>

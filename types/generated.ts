@@ -615,3 +615,13 @@ export interface SearchProps {
   onSearch: (query: string) => void;
   placeholder?: string;
 }
+
+export interface StepProps {
+  onNext: () => void;
+  onBack: () => void;
+  onSubmit?: () => void;
+  formData?: any;
+  setFormData?: (data: any) => void;
+  currentStep?: number;
+  totalSteps?: number;
+}

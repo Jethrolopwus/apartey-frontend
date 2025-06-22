@@ -12,6 +12,7 @@ import { useSignInMutation } from "@/Hooks/use.login.mutation";
 import { useGetOnboardingStatusQuery } from "@/Hooks/get-onboardingStatus.query";
 import { toast } from "react-hot-toast";
 import { useReviewForm } from "@/app/context/RevievFormContext";
+import { useAuthStatusQuery } from '@/Hooks/use-getAuthStatus.query';
 
 const SignIn: React.FC = () => {
   const router = useRouter();
@@ -33,6 +34,8 @@ const SignIn: React.FC = () => {
   } = useGetOnboardingStatusQuery();
 
   const { setLocation } = useReviewForm();
+
+  const { refetch: refetchAuthStatus } = useAuthStatusQuery();
 
   // Handle NextAuth session (Google OAuth)
   useEffect(() => {
@@ -90,13 +93,14 @@ const SignIn: React.FC = () => {
 
       toast.success("Signed in successfully!");
       reset();
+      refetchAuthStatus();
 
       // Check onboarding status after successful login
       setTimeout(() => {
         checkOnboardingStatus();
       }, 500); // Small delay to ensure token is stored
     }
-  }, [data, reset, checkOnboardingStatus]);
+  }, [data, reset, checkOnboardingStatus, refetchAuthStatus]);
 
   // Handle signin error
   useEffect(() => {

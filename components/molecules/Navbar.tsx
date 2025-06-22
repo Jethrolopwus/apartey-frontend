@@ -23,7 +23,7 @@ const Navbar: React.FC<NavbarProps> = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   // Use auth status for authentication and role
-  const { data: authData, isLoading: isAuthLoading } = useAuthStatusQuery();
+  const { data: authData, isLoading: isAuthLoading, refetch } = useAuthStatusQuery();
   const [selectedRole, setSelectedRole] = useState();
 
   useEffect(() => {

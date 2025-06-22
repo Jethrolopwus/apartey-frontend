@@ -79,7 +79,8 @@ const AmenitiesAccessibility: React.FC = () => {
   // Custom Inputs
   const handleCustomInput = (type: "appliance" | "language", value: string) => {
     if (!value.trim()) return;
-    const field = type === "appliance" ? "appliancesFixtures" : "landlordLanguages";
+    const field =
+      type === "appliance" ? "appliancesFixtures" : "landlordLanguages";
     const current = location?.[field] || [];
     const newItems = value
       .split(",")
@@ -146,7 +147,7 @@ const AmenitiesAccessibility: React.FC = () => {
                   id={appliance}
                   checked={isApplianceSelected(appliance)}
                   onChange={(e) => toggleAppliance(appliance, e.target.checked)}
-                  className="w-4 h-4 text-orange-600 bg-gray-100 border-gray-300 rounded focus:ring-orange-500 focus:ring-2"
+                  className="w-4 h-4 text-[#C85212] bg-gray-100 border-gray-300 rounded focus:ring-[#C85212] focus:ring-2"
                 />
                 <label
                   htmlFor={appliance}
@@ -172,23 +173,23 @@ const AmenitiesAccessibility: React.FC = () => {
               placeholder="Enter other appliances"
               onBlur={(e) => {
                 handleCustomInput("appliance", e.target.value);
-                e.target.value = ""; // Clear input after processing
+                e.target.value = "";
               }}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#C85212] focus:border-transparent"
             />
           </div>
 
           {/* Selected Appliances Display */}
           {(appliancesFixtures.length ?? 0) > 0 && (
             <div className="mt-4 p-3 bg-orange-50 border border-orange-200 rounded-md">
-              <h4 className="text-sm font-medium text-orange-800 mb-2">
+              <h4 className="text-sm font-medium text-[#C85212] mb-2">
                 Selected Appliances:
               </h4>
               <div className="flex flex-wrap gap-2">
                 {appliancesFixtures.map((appliance, index) => (
                   <span
                     key={index}
-                    className="inline-flex items-center px-2 py-1 bg-orange-100 text-orange-800 text-xs font-medium rounded-full"
+                    className="inline-flex items-center px-2 py-1 bg-orange-100 text-[#C85212] text-xs font-medium rounded-full"
                   >
                     {APPLIANCE_MAP[appliance] || appliance}
                   </span>
@@ -214,7 +215,7 @@ const AmenitiesAccessibility: React.FC = () => {
                     id={language}
                     checked={isLanguageSelected(language)}
                     onChange={(e) => toggleLanguage(language, e.target.checked)}
-                    className="w-4 h-4 text-orange-600 bg-gray-100 border-gray-300 rounded focus:ring-orange-500 focus:ring-2"
+                    className="w-4 h-4 text-[#C85212] bg-gray-100 border-gray-300 rounded focus:ring-orange-500 focus:ring-2"
                   />
                   <label
                     htmlFor={language}
@@ -243,21 +244,21 @@ const AmenitiesAccessibility: React.FC = () => {
                 handleCustomInput("language", e.target.value);
                 e.target.value = "";
               }}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#C85212] focus:border-transparent"
             />
           </div>
 
           {/* Selected Languages Display */}
           {(landlordLanguages.length ?? 0) > 0 && (
             <div className="mt-4 p-3 bg-orange-50 border border-orange-200 rounded-md">
-              <h4 className="text-sm font-medium text-orange-800 mb-2">
+              <h4 className="text-sm font-medium text-[#C85212] mb-2">
                 Selected Languages:
               </h4>
               <div className="flex flex-wrap gap-2">
                 {landlordLanguages.map((language, index) => (
                   <span
                     key={index}
-                    className="inline-flex items-center px-2 py-1 bg-orange-100 text-orange-800 text-xs font-medium rounded-full capitalize"
+                    className="inline-flex items-center px-2 py-1 bg-orange-100 text-[#C85212] text-xs font-medium rounded-full capitalize"
                   >
                     {LANGUAGE_MAP[language] || language}
                   </span>
@@ -281,14 +282,19 @@ const AmenitiesAccessibility: React.FC = () => {
               </label>
               <select
                 value={nearestGroceryStore}
-                onChange={(e) => setLocation({ ...location, nearestGroceryStore: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                onChange={(e) =>
+                  setLocation({
+                    ...location,
+                    nearestGroceryStore: e.target.value,
+                  })
+                }
+                className="w-full  px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#C85212] focus:border-transparent"
               >
                 <option value="">Select distance</option>
-                <option value="Very Close">Very Close</option>
-                <option value="Close">Close</option>
-                <option value="Moderate">Moderate</option>
-                <option value="Far">Far</option>
+                <option value="0-5 walk">0-5 walk</option>
+                <option value="0-10 walk">0-10 walk</option>
+                <option value="0-15 walk">0-15 walk</option>
+                <option value="0-20 walk">0-20 walk</option>
               </select>
             </div>
             <div>
@@ -297,14 +303,16 @@ const AmenitiesAccessibility: React.FC = () => {
               </label>
               <select
                 value={nearestPark}
-                onChange={(e) => setLocation({ ...location, nearestPark: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                onChange={(e) =>
+                  setLocation({ ...location, nearestPark: e.target.value })
+                }
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#C85212] focus:border-transparent"
               >
                 <option value="">Select distance</option>
-                <option value="Very Close">Very Close</option>
-                <option value="Close">Close</option>
-                <option value="Moderate">Moderate</option>
-                <option value="Far">Far</option>
+                <option value="0-5 walk">0-5 walk</option>
+                <option value="0-10 walk">0-10 walk</option>
+                <option value="0-15 walk">0-15 walk</option>
+                <option value="0-20 walk">0-20 walk</option>
               </select>
             </div>
             <div>
@@ -313,14 +321,19 @@ const AmenitiesAccessibility: React.FC = () => {
               </label>
               <select
                 value={nearestRestaurant}
-                onChange={(e) => setLocation({ ...location, nearestRestaurant: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                onChange={(e) =>
+                  setLocation({
+                    ...location,
+                    nearestRestaurant: e.target.value,
+                  })
+                }
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#C85212] focus:border-transparent"
               >
                 <option value="">Select distance</option>
-                <option value="Very Close">Very Close</option>
-                <option value="Close">Close</option>
-                <option value="Moderate">Moderate</option>
-                <option value="Far">Far</option>
+                <option value="0-5 walk">0-5 walk</option>
+                <option value="0-10 walk">0-10 walk</option>
+                <option value="0-15 walk">0-15 walk</option>
+                <option value="0-20 walk">0-20 walk</option>
               </select>
             </div>
           </div>
@@ -352,7 +365,7 @@ const AmenitiesAccessibility: React.FC = () => {
                   id={facility}
                   checked={isFacilitySelected(facility)}
                   onChange={(e) => toggleFacility(facility, e.target.checked)}
-                  className="w-4 h-4 text-orange-600 bg-gray-100 border-gray-300 rounded focus:ring-orange-500 focus:ring-2"
+                  className="w-4 h-4 text-[#C85212] bg-gray-100 border-gray-300 rounded focus:ring-orange-500 focus:ring-2"
                 />
                 <label
                   htmlFor={facility}
@@ -378,7 +391,7 @@ const AmenitiesAccessibility: React.FC = () => {
               placeholder="Enter other facilities"
               onBlur={(e) => {
                 handleCustomFacilityInput(e.target.value);
-                e.target.value = ""; // Clear input after processing
+                e.target.value = "";
               }}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
             />
@@ -387,14 +400,14 @@ const AmenitiesAccessibility: React.FC = () => {
           {/* Selected Facilities Display */}
           {(buildingFacilities.length ?? 0) > 0 && (
             <div className="mt-4 p-3 bg-orange-50 border border-orange-200 rounded-md">
-              <h4 className="text-sm font-medium text-orange-800 mb-2">
+              <h4 className="text-sm font-medium text-[#C85212] mb-2">
                 Selected Facilities:
               </h4>
               <div className="flex flex-wrap gap-2">
                 {buildingFacilities.map((facility, index) => (
                   <span
                     key={index}
-                    className="inline-flex items-center px-2 py-1 bg-orange-100 text-orange-800 text-xs font-medium rounded-full"
+                    className="inline-flex items-center px-2 py-1 bg-orange-100 text-[#C85212] text-xs font-medium rounded-full"
                   >
                     {FACILITY_MAP[facility] || facility}
                   </span>

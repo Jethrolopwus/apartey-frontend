@@ -334,6 +334,8 @@ class BaseURL {
         localStorage.getItem("accessToken");
 
       if (!token) {
+        localStorage.setItem("unlistedReviewData", JSON.stringify(data));
+        window.location.href = "/signin";
         throw new Error("No authentication token found. Please login again.");
       }
 

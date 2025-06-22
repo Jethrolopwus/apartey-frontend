@@ -7,24 +7,30 @@ import { useReviewForm } from "@/app/context/RevievFormContext";
 
 const MoveOutDatePicker: React.FC = () => {
   const { location, setLocation } = useReviewForm();
-  const parsedDate = location?.moveOutDate ? new Date(location.moveOutDate) : null;
+  const parsedDate = location?.moveOutDate
+    ? new Date(location.moveOutDate)
+    : null;
 
   return (
     <div>
-      <label className="block text-sm font-medium text-gray-700 mb-2">
+      <label className="block text-sm font-medium text-gray-700 mb-2 ">
         When did you leave this property?
       </label>
-      <div className="relative">
+      <div className="relative  ">
         <DatePicker
           selected={parsedDate}
           onChange={(date: Date | null) => {
-            if (date) setLocation({ ...location, moveOutDate: date.toISOString().split("T")[0] });
+            if (date)
+              setLocation({
+                ...location,
+                moveOutDate: date.toISOString().split("T")[0],
+              });
           }}
           dateFormat="yyyy-MM-dd"
           placeholderText="Select date"
-          className="w-full px-3 py-2 pl-10 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+          className="w-full cursor-pointer px-3 py-2 pl-10 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
         />
-        <Calendar className="absolute left-3 top-3 h-4 w-4 text-gray-400 pointer-events-none" />
+        <Calendar className="absolute left-3 top-3 h-4 w-4 cursor-pointer text-gray-400 pointer-events-none" />
       </div>
     </div>
   );
