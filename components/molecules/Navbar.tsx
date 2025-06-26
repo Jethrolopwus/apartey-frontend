@@ -10,6 +10,7 @@ import Image from "next/image";
 import logo from "@/public/aparteyLogo.png";
 // import { TokenManager } from "@/utils/tokenManager";
 import { useAuthStatusQuery } from "@/Hooks/use-getAuthStatus.query";
+import { useGetUserProfileQuery } from "@/Hooks/use-getuserProfile.query";
 
 interface NavbarProps {}
 
@@ -24,6 +25,7 @@ const Navbar: React.FC<NavbarProps> = () => {
 
   // Use auth status for authentication and role
   const { data: authData, isLoading: isAuthLoading, refetch } = useAuthStatusQuery();
+  const { data: userProfileData } = useGetUserProfileQuery();
   const [selectedRole, setSelectedRole] = useState();
 
   useEffect(() => {
@@ -62,9 +64,22 @@ const Navbar: React.FC<NavbarProps> = () => {
     },
   ];
 
+  const handleLogoOrHomeClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    if (!authData) {
+      router.push("/");
+      return;
+    }
+    const userRole =
+      authData.user?.role || authData.role || authData.currentUserRole?.role || "renter";
+    let homepage = "/";
+    if (userRole.toLowerCase() === "homeowner") homepage = "/landlord";
+    else if (userRole.toLowerCase() === "agent") homepage = "/agent";
+    router.push(homepage);
+  };
+
   const handleUserIconClick = () => {
     if (!authData ) {
-      console.log("authData", authData);
       router.push("/signin");
       return;
     }
@@ -74,7 +89,6 @@ const Navbar: React.FC<NavbarProps> = () => {
     let homepage = "/";
     if (userRole.toLowerCase() === "homeowner") homepage = "/landlord";
     else if (userRole.toLowerCase() === "agent") homepage = "/agent";
-    else if (userRole.toLowerCase() === "renter") homepage = "/";
     if (pathname !== homepage) {
       router.push(homepage);
       return;
@@ -98,14 +112,14 @@ const Navbar: React.FC<NavbarProps> = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             {/* Logo */}
-            <Link href="/" className="flex items-center">
+            <a href="#" className="flex items-center" onClick={handleLogoOrHomeClick}>
               <Image
                 src={logo}
                 alt="Logo"
                 className="object-cover"
                 sizes="(max-width: 768px) 100vw, (min-width: 769px) 50vw"
               />
-            </Link>
+            </a>
 
             {/* Navigation Links */}
             <div className="hidden md:flex items-center space-x-8">
@@ -124,8 +138,9 @@ const Navbar: React.FC<NavbarProps> = () => {
                     }
                   }}
                 >
-                  <Link
-                    href={item.href}
+                  <a
+                    href="#"
+                    onClick={handleLogoOrHomeClick}
                     className={`flex items-center space-x-1 px-3 py-2 text-sm font-medium transition-colors ${
                       item.active
                         ? "text-[#C85212]"
@@ -142,7 +157,7 @@ const Navbar: React.FC<NavbarProps> = () => {
                         }`}
                       />
                     )}
-                  </Link>
+                  </a>
 
                   {/* Listings Dropdown */}
                   {item.label === "Listings" && (
@@ -171,9 +186,17 @@ const Navbar: React.FC<NavbarProps> = () => {
               <div className="">
                 <button
                   onClick={handleUserIconClick}
-                  className="w-10 h-10 bg-gray-200 hover:bg-gray-300 rounded-full flex items-center justify-center transition-colors"
+                  className="w-10 h-10 bg-gray-200 hover:bg-gray-300 rounded-full flex items-center justify-center transition-colors overflow-hidden"
                 >
-                  <User className="w-5 h-5 text-gray-600" />
+                  {userProfileData?.currentUser?.profilePicture ? (
+                    <img
+                      src={userProfileData.currentUser.profilePicture}
+                      alt="Profile"
+                      className="w-10 h-10 object-cover rounded-full"
+                    />
+                  ) : (
+                    <User className="w-5 h-5 text-gray-600" />
+                  )}
                 </button>
               </div>
             </div>

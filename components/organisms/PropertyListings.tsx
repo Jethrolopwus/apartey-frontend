@@ -20,6 +20,9 @@ import {
   User,
   Award
 } from 'lucide-react';
+import { useRouter } from "next/navigation";
+import { useCreateListingsMutation } from "@/Hooks/use.createListings.mutation";
+import { PropertyListingPayload, CategoryType, PropertyTypeType, ConditionType, PetPolicyType } from "@/types/propertyListing";
 
 import PropertyTypeStep from '@/components/organisms/PropertyTypeStep';
 import LocationStep from '@/components/organisms/LocationStep';
@@ -28,11 +31,14 @@ import PropertyDetailsStep from '@/components/organisms/PropertyDetailsStep';
 import PriceStep from '@/components/organisms/PriceStep';
 import ContactInfoStep from '@/components/organisms/ContactInfoStep';
 import AdPromotionStep from '@/components/organisms/AdPromotionStep';
+import toast from 'react-hot-toast';
 
 // Main Wizard Component
 const PropertyListings = () => {
   const [currentStep, setCurrentStep] = useState(0);
-  const [formData, setFormData] = useState({});
+  const [formData, setFormData] = useState<PropertyListingPayload | Partial<PropertyListingPayload>>({});
+  const router = useRouter();
+  const { mutate, isLoading } = useCreateListingsMutation();
 
   const steps = [
     { id: 'property-type', label: 'Property type', icon: Building2, component: PropertyTypeStep },
@@ -57,8 +63,96 @@ const PropertyListings = () => {
   };
 
   const handleSubmit = () => {
-    console.log('Final form data:', formData);
-    alert('Property listing submitted successfully!');
+    // 1. Validate required fields
+    if (!formData.firstName || !formData.lastName || !formData.email || !formData.typeOfOffer || !formData.description || !formData.petPolicy) {
+      toast.error('Please fill all required fields.');
+      return;
+    }
+    if (!formData.media?.coverPhoto) {
+      toast.error('Please upload a cover photo.');
+      return;
+    }
+    const loc = formData.location || {};
+    if (!loc || typeof loc !== 'object' || 
+        !('fullAddress' in loc) || !('apartment' in loc) || !('countryCode' in loc) || 
+        !('state' in loc) || !('streetAddress' in loc) || !('country' in loc) || 
+        !('city' in loc) || !('district' in loc) || !('zipCode' in loc) ||
+        !loc.fullAddress || !loc.apartment || !loc.countryCode || !loc.state || 
+        !loc.streetAddress || !loc.country || !loc.city || !loc.district || !loc.zipCode) {
+      toast.error('Please complete all location fields.');
+      return;
+    }
+
+    // 2. Map values to backend enums with proper typing
+    const categoryMap: Record<CategoryType, string> = { 
+      rent: "RENT", 
+      sell: "SALE", 
+      swap: "SWAP" 
+    };
+    const propertyTypeMap: Record<PropertyTypeType, string> = { 
+      apartment: "APARTMENT", 
+      house: "HOUSE", 
+      commercial: "COMMERCIAL", 
+      room: "ROOM", 
+      garage: "GARAGE" 
+    };
+    const conditionMap: Record<ConditionType, string> = { 
+      good: "GOOD", 
+      new: "NEW", 
+      renovated: "RENOVATED" 
+    };
+    const petPolicyMap: Record<PetPolicyType, string> = { 
+      "pet-friendly": "PET_FRIENDLY", 
+      "cats-only": "CATS_ONLY", 
+      "dogs-only": "DOGS_ONLY", 
+      "small-pets": "SMALL_PETS", 
+      "no-pets": "NO_PETS" 
+    };
+
+    // 3. Build FormData with type safety
+    const apiFormData = new window.FormData();
+    apiFormData.append('firstName', formData.firstName || '');
+    apiFormData.append('lastName', formData.lastName || '');
+    apiFormData.append('email', formData.email || '');
+    apiFormData.append('typeOfOffer', formData.typeOfOffer || '');
+    apiFormData.append('description', formData.description || '');
+    
+    // Type-safe mapping with fallbacks
+    const category = formData.category as CategoryType;
+    const propertyType = formData.propertyType as PropertyTypeType;
+    const condition = formData.condition as ConditionType;
+    const petPolicy = formData.petPolicy as PetPolicyType;
+    
+    apiFormData.append('petPolicy', petPolicyMap[petPolicy] || petPolicy);
+    apiFormData.append('category', categoryMap[category] || category);
+    apiFormData.append('propertyType', propertyTypeMap[propertyType] || propertyType);
+    apiFormData.append('condition', conditionMap[condition] || condition);
+
+    // Handle cover photo
+    if (formData.media?.coverPhoto) {
+      apiFormData.append('coverPhoto', formData.media.coverPhoto);
+    }
+
+    // Handle location object
+    apiFormData.append('location', JSON.stringify(loc));
+    
+    // Handle ad promotion
+    if (formData.adPromotion) {
+      apiFormData.append('adPromotion', JSON.stringify(formData.adPromotion));
+    }
+
+    // 4. Submit
+    mutate(apiFormData, {
+      onSuccess: (data) => {
+        toast.success("Property listing submitted successfully!");
+        setTimeout(() => {
+          router.push("/listings");
+        }, 1200);
+      },
+      onError: (error: any) => {
+        toast.error(error?.message || "Failed to submit property listing");
+      },
+    });
   };
 
   const CurrentStepComponent = steps[currentStep].component;

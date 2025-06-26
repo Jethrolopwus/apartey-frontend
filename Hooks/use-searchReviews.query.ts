@@ -1,10 +1,10 @@
 import { useQuery } from "@tanstack/react-query";
 import http from "@/services/http";
 
-export const useSearchReviewsQuery = (searchTerm: string) => {
+export const useSearchReviewsQuery = (fullAddress: string, apartment?: string) => {
   return useQuery({
-    queryKey: ["searchReviews", searchTerm],
-    queryFn: () => http.httpSearchReviews(searchTerm),
-    enabled: !!searchTerm, 
+    queryKey: ["searchReviews", fullAddress, apartment],
+    queryFn: () => http.httpSearchReviews(fullAddress, apartment),
+    enabled: !!fullAddress,
   });
 };

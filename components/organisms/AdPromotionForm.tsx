@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Check, Rocket, Zap, ShieldCheck, TrendingUp, BarChart2 } from 'lucide-react';
+import { PropertyListingPayload } from "@/types/propertyListing";
 
 const promotionTiers = [
   {
@@ -34,7 +35,12 @@ const otherServices = [
   { name: 'Detailed user engagement analytics', price: 20000, icon: BarChart2, description: 'Benefit from comprehensive data analysis, including demographic insights and engagement trends.' }
 ];
 
-const AdPromotionForm = () => {
+type AdPromotionFormProps = {
+  formData: PropertyListingPayload | Partial<PropertyListingPayload>;
+  setFormData: React.Dispatch<React.SetStateAction<PropertyListingPayload | Partial<PropertyListingPayload>>>;
+};
+
+const AdPromotionForm: React.FC<AdPromotionFormProps> = ({ formData, setFormData }) => {
   const [selectedTier, setSelectedTier] = useState('Fast Sale');
   const [selectedServices, setSelectedServices] = useState<string[]>(['10 lifts to the top of the list (daily, 7 days)']);
   
@@ -55,6 +61,19 @@ const AdPromotionForm = () => {
     .filter(s => selectedServices.includes(s.name))
     .reduce((total, s) => total + s.price, 0);
   const totalPrice = totalTierPrice + totalServicesPrice;
+
+  useEffect(() => {
+    if (setFormData) {
+      setFormData({
+        ...formData,
+        adPromotion: {
+          selectedTier,
+          selectedServices,
+          totalPrice,
+        },
+      });
+    }
+  }, [selectedTier, selectedServices, totalPrice]);
 
   return (
     <div className="w-full">

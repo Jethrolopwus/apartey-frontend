@@ -291,10 +291,10 @@ const AmenitiesAccessibility: React.FC = () => {
                 className="w-full  px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#C85212] focus:border-transparent"
               >
                 <option value="">Select distance</option>
-                <option value="0-5 walk">0-5 walk</option>
-                <option value="0-10 walk">0-10 walk</option>
-                <option value="0-15 walk">0-15 walk</option>
-                <option value="0-20 walk">0-20 walk</option>
+                <option value="0-5 min walk">0-5 min walk</option>
+                <option value="6-10 min walk">6-10 min walk</option>
+                <option value="11-20 min walk">11-20 min walk</option>
+                <option value="21-30 min walk'">21-30 min walk'</option>
               </select>
             </div>
             <div>
@@ -309,10 +309,10 @@ const AmenitiesAccessibility: React.FC = () => {
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#C85212] focus:border-transparent"
               >
                 <option value="">Select distance</option>
-                <option value="0-5 walk">0-5 walk</option>
-                <option value="0-10 walk">0-10 walk</option>
-                <option value="0-15 walk">0-15 walk</option>
-                <option value="0-20 walk">0-20 walk</option>
+                <option value="0-5 min walk">0-5 min walk</option>
+                <option value="6-10 min walk">6-10 min walk</option>
+                <option value="11-20 min walk">11-20 min walk</option>
+                <option value="21-30 min walk'">21-30 min walk'</option>
               </select>
             </div>
             <div>
@@ -330,10 +330,10 @@ const AmenitiesAccessibility: React.FC = () => {
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#C85212] focus:border-transparent"
               >
                 <option value="">Select distance</option>
-                <option value="0-5 walk">0-5 walk</option>
-                <option value="0-10 walk">0-10 walk</option>
-                <option value="0-15 walk">0-15 walk</option>
-                <option value="0-20 walk">0-20 walk</option>
+                <option value="0-5 min walk">0-5 min walk</option>
+                <option value="6-10 min walk">6-10 min walk</option>
+                <option value="11-20 min walk">11-20 min walk</option>
+                <option value="21-30 min walk'">21-30 min walk'</option>
               </select>
             </div>
           </div>

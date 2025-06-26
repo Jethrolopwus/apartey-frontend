@@ -12,6 +12,10 @@ import {
 } from "lucide-react";
 import { useGetListingsByIdQuery } from "@/Hooks/use-getAllListingsById.query";
 import Link from "next/link";
+import { useUpdatePropertyToggleLikeMutation } from '@/Hooks/use.propertyLikeToggle.mutation';
+import { useGetUserFavoriteQuery } from '@/Hooks/use-getUsersFavorites.query';
+import { toast } from 'react-hot-toast';
+import React from 'react';
 
 interface Props {
   id: string;
@@ -19,6 +23,15 @@ interface Props {
 
 export default function ListingDetail({ id }: Props) {
   const { data: property, isLoading, error } = useGetListingsByIdQuery(id);
+  const { toggleLike, isLoading: isToggling } = useUpdatePropertyToggleLikeMutation();
+  const { refetch: refetchFavorites } = useGetUserFavoriteQuery();
+  const [isLiked, setIsLiked] = React.useState(false);
+
+  React.useEffect(() => {
+    // Optionally, set isLiked based on whether this property is in favorites
+    // This requires the favorites list to be available in context or via another query
+    // For now, default to false
+  }, [property]);
 
   if (isLoading) {
     return (
@@ -48,9 +61,29 @@ export default function ListingDetail({ id }: Props) {
           {location?.district} {location?.city} {location?.state}
         </h2>
         <div className="flex gap-2">
-          <ListingsButtons icon={Heart} variant="outline">
-            Save
-          </ListingsButtons>
+          <button
+            className={`p-2 rounded-full border ${isLiked ? 'bg-red-100 border-red-300' : 'bg-white border-gray-300'} transition-colors`}
+            onClick={() => {
+              setIsLiked((prev) => !prev);
+              toggleLike(property?._id, {
+                onSuccess: () => {
+                  console.log("The property",property);
+                  
+                  toast.success('Favorite updated!');
+                  refetchFavorites();
+                },
+                onError: () => {
+                  console.log("The property",property);
+                  toast.error('Failed to update favorite.');
+                  setIsLiked((prev) => !prev); // revert
+                },
+              });
+            }}
+            title={isLiked ? 'Remove from favorites' : 'Add to favorites'}
+            disabled={isToggling}
+          >
+            <Heart className={`w-5 h-5 ${isLiked ? 'fill-red-500 text-red-500' : 'text-gray-400'}`} />
+          </button>
           <ListingsButtons icon={Share2} variant="outline">
             Share
           </ListingsButtons>

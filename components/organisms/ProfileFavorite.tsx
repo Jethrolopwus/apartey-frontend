@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import {
   Heart,
   Star,
@@ -14,6 +14,9 @@ import {
   Twitter,
   Linkedin,
 } from "lucide-react";
+import { useGetUserFavoriteQuery } from "@/Hooks/use-getUsersFavorites.query";
+import { useUpdatePropertyToggleLikeMutation } from "@/Hooks/use.propertyLikeToggle.mutation";
+import { toast } from "react-hot-toast";
 
 interface PropertyCardProps {
   id: string;
@@ -65,12 +68,11 @@ const PropertyCard: React.FC<PropertyCardProps> = ({
         {/* Heart Icon */}
         <button
           onClick={() => onToggleFavorite?.(id)}
-          className="absolute top-3 right-3 p-2 bg-white rounded-full shadow-sm hover:shadow-md transition-shadow"
+          className={`absolute top-3 right-3 p-2 bg-white rounded-full shadow-sm hover:shadow-md transition-shadow ${isFavorited ? 'fill-red-500 text-red-500' : 'text-gray-400'}`}
+          title={isFavorited ? 'Remove from favorites' : 'Add to favorites'}
         >
           <Heart
-            className={`w-4 h-4 ${
-              isFavorited ? "fill-red-500 text-red-500" : "text-gray-400"
-            }`}
+            className={`w-4 h-4 ${isFavorited ? 'fill-red-500 text-red-500' : 'text-gray-400'}`}
           />
         </button>
         {/* Image Dots Indicator */}
@@ -144,39 +146,47 @@ const PropertyCard: React.FC<PropertyCardProps> = ({
 };
 
 const FavoritesPage: React.FC<FavoritesPageProps> = ({
-  properties = [
-    {
-      id: "1",
-      title: "Suite 2, Alpha Center...",
-      location: "Lagos, Nigertia",
-      rating: 3.5,
-      reviewCount: 15,
-      bedrooms: 5,
-      bathrooms: 3,
-      area: 30,
-      priceOriginal: "NGN450,000/Year",
-      priceDiscounted: "NGN350,000/Year",
-      image: "/Estate2.png",
-    },
-    {
-      id: "2",
-      title: "Suite 2, Alpha Center...",
-      location: "Lagos, Nigertia",
-      rating: 3.5,
-      reviewCount: 15,
-      bedrooms: 5,
-      bathrooms: 3,
-      area: 30,
-      priceOriginal: "NGN450,000/Year",
-      priceDiscounted: "NGN350,000/Year",
-      image: "/Estate2.png",
-    },
-  ],
+  properties: _props,
   onViewAll,
 }) => {
+  const { data, isLoading, isError, error } = useGetUserFavoriteQuery();
+  const { toggleLike, isLoading: isToggling } = useUpdatePropertyToggleLikeMutation();
+  const { refetch } = useGetUserFavoriteQuery();
+
+  // Map API data to PropertyCardProps
+  const apiProperties = (data?.favorites || []).map((item: any) => ({
+    id: item._id,
+    title: item.propertyDetails?.description || `${item.location?.street || ""}, ${item.location?.district || ""}`,
+    location: item.location?.fullAddress || `${item.location?.district || ""}, ${item.location?.stateOrRegion || ""}, ${item.location?.country || ""}`,
+    rating: 0,
+    reviewCount: 0,
+    bedrooms: item.propertyDetails?.bedrooms || 0,
+    bathrooms: item.propertyDetails?.bathrooms || 0,
+    area: item.propertyDetails?.totalAreaSqM || 0,
+    priceOriginal: item.propertyDetails?.price ? `₦${item.propertyDetails.price.toLocaleString()}` : "",
+    priceDiscounted: item.propertyDetails?.price ? `₦${item.propertyDetails.price.toLocaleString()}` : "",
+    image: item.media?.coverPhoto || "/Estate2.png",
+    isFavorited: true,
+  }));
+
   const handleToggleFavorite = (id: string) => {
-    console.log(`Toggle favorite for property ${id}`);
+    toggleLike(id, {
+      onSuccess: () => {
+        toast.success('Favorite updated!');
+        refetch();
+      },
+      onError: () => {
+        toast.error('Failed to update favorite.');
+      },
+    });
   };
+
+  if (isLoading) {
+    return <div className="min-h-screen flex items-center justify-center text-gray-500">Loading favorites...</div>;
+  }
+  if (isError) {
+    return <div className="min-h-screen flex items-center justify-center text-red-500">{(error as any)?.message || "Failed to load favorites."}</div>;
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 py-12">
@@ -197,13 +207,17 @@ const FavoritesPage: React.FC<FavoritesPageProps> = ({
 
         {/* Property Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6 mb-16">
-          {properties.map((property) => (
-            <PropertyCard
-              key={property.id}
-              {...property}
-              onToggleFavorite={handleToggleFavorite}
-            />
-          ))}
+          {apiProperties.length > 0 ? (
+            apiProperties.map((property: PropertyCardProps) => (
+              <PropertyCard
+                key={property?.id}
+                {...property}
+                onToggleFavorite={handleToggleFavorite}
+              />
+            ))
+          ) : (
+            <div className="col-span-full text-center text-gray-500 py-12">No favorites found.</div>
+          )}
         </div>
       </main>
     </div>

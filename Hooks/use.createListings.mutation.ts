@@ -1,11 +1,10 @@
 import { useMutation } from "@tanstack/react-query";
 import http from "@/services/http";
-import { ReviewFormData } from "@/types/generated";
 
 export const useCreateListingsMutation = () => {
-  const { data, isPending, error, mutate } = useMutation({
-    mutationFn: (variables: { id: string; data: ReviewFormData }) =>
-      http.httpCreateListings( variables.data),
+  const { data, isPending, error, mutate } = useMutation<any, Error, globalThis.FormData>({
+    mutationFn: (formData: globalThis.FormData) =>
+      http.httpCreateListings(formData),
   });
 
   return {

@@ -1,12 +1,13 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useRef } from "react";
 import SearchInput from "@/components/atoms/Buttons/SearchInput";
 import { useSearchParams } from "next/navigation";
 import { useSearchReviewsQuery } from "@/Hooks/use-searchReviews.query";
-import { ChevronDown, Maximize, Navigation, Star } from "lucide-react";
+import { ChevronDown, Maximize, Navigation, Star, Filter } from "lucide-react";
 import { ReviewData, ReviewsSectionProps, SortOption } from "@/types/generated";
 import { useRouter } from "next/navigation";
+import { toast } from 'react-hot-toast';
 
 // Add Google Maps types
 declare global {
@@ -27,26 +28,18 @@ const ReviewSearchContainer = () => {
   const [mapMarkers, setMapMarkers] = useState<
     { id: string; top: string; left: string; coordinates: Coordinates }[]
   >([]);
-  const [mapCenter, setMapCenter] = useState<Coordinates>({ lat: 6.5244, lng: 3.3792 }); // Default to Lagos
+  const [mapCenter, setMapCenter] = useState<Coordinates>({ lat: 6.5244, lng: 3.3792 }); 
+  const [inputValue, setInputValue] = useState<string>("");
+  const [apartment, setApartment] = useState<string>(searchParams.get("apartment") || "all");
   const router = useRouter();
 
-  const search = searchParams.get("q") || "";
-  const { data, isLoading, error } = useSearchReviewsQuery(search);
+  const fullAddress = searchParams.get("q") || "";
+  // Use both fullAddress and apartment for filtering
+  const { data, isLoading, error } = useSearchReviewsQuery(fullAddress, apartment !== "all" ? apartment : undefined);
   const reviews = data?.reviews || [];
 
-  const handleLocationSelect = (location: string) => {
-    // Encode and push to URL
-    const encoded = encodeURIComponent(location);
-    router.push(`/reviews?q=${encoded}`);
-  };
-
-  // Handle search input changes
-  const handleSearchChange = (searchTerm: string) => {
-    if (searchTerm.trim()) {
-      const encoded = encodeURIComponent(searchTerm.trim());
-      router.push(`/reviews?q=${encoded}`);
-    }
-  };
+  // Use a ref to track last successful search to avoid infinite loop
+  const lastValidQuery = useRef({ fullAddress, apartment });
 
   // Memoize marker positions to prevent infinite re-renders
   const markerPositions = useMemo(() => {
@@ -70,9 +63,12 @@ const ReviewSearchContainer = () => {
         const centerLat = totalLat / validReviews.length;
         const centerLng = totalLng / validReviews.length;
         
-        setMapCenter({
-          lat: centerLat,
-          lng: centerLng
+        // Use functional update to avoid stale closure and unnecessary updates
+        setMapCenter(prev => {
+          if (prev.lat !== centerLat || prev.lng !== centerLng) {
+            return { lat: centerLat, lng: centerLng };
+          }
+          return prev;
         });
 
         // Create markers for all reviews with coordinates
@@ -88,14 +84,17 @@ const ReviewSearchContainer = () => {
         
         setMapMarkers(markers);
       } else {
-        // Fallback to default markers if no coordinates
-        const markers = Array.from({ length: 12 }).map((_, i) => ({
+        // Default markers when no reviews
+        const markers = Array.from({ length: 10 }).map((_, i) => ({
           id: `marker-${i + 1}`,
           top: markerPositions[i].top,
           left: markerPositions[i].left,
           coordinates: { lat: 0, lng: 0 }
         }));
-        setMapMarkers(markers);
+        // Only update if different
+        if (JSON.stringify(mapMarkers) !== JSON.stringify(markers)) {
+          setMapMarkers(markers);
+        }
       }
     } else {
       // Default markers when no reviews
@@ -105,7 +104,10 @@ const ReviewSearchContainer = () => {
         left: markerPositions[i].left,
         coordinates: { lat: 0, lng: 0 }
       }));
-      setMapMarkers(markers);
+      // Only update if different
+      if (JSON.stringify(mapMarkers) !== JSON.stringify(markers)) {
+        setMapMarkers(markers);
+      }
     }
   }, [reviews, markerPositions]);
 
@@ -113,7 +115,7 @@ const ReviewSearchContainer = () => {
   const generateMapUrl = () => {
     if (mapCenter.lat === 0 && mapCenter.lng === 0) return '';
     
-    const validMarkers = mapMarkers.filter(marker => 
+    const validMarkers = mapMarkers.filter((marker: { id: string; top: string; left: string; coordinates: Coordinates }) => 
       marker.coordinates.lat !== 0 && marker.coordinates.lng !== 0
     );
     
@@ -124,7 +126,7 @@ const ReviewSearchContainer = () => {
     
     // Multiple markers (limit to 10 to avoid URL length issues)
     const limitedMarkers = validMarkers.slice(0, 10);
-    const markersParam = limitedMarkers.map(marker => 
+    const markersParam = limitedMarkers.map((marker: { id: string; top: string; left: string; coordinates: Coordinates }) => 
       `markers=color:orange%7C${marker.coordinates.lat},${marker.coordinates.lng}`
     ).join('&');
     
@@ -171,6 +173,20 @@ const ReviewSearchContainer = () => {
     setIsDropdownOpen(false);
   };
 
+  useEffect(() => {
+    if (!isLoading && (fullAddress || apartment !== 'all')) {
+      if (reviews.length === 0) {
+        toast.error('No reviews found for this address or apartment.');
+        // Revert to last valid query if not already there
+        if (lastValidQuery.current.fullAddress !== fullAddress || lastValidQuery.current.apartment !== apartment) {
+          router.replace(`/reviews?q=${encodeURIComponent(lastValidQuery.current.fullAddress)}${lastValidQuery.current.apartment && lastValidQuery.current.apartment !== 'all' ? `&apartment=${encodeURIComponent(lastValidQuery.current.apartment)}` : ''}`);
+        }
+      } else {
+        lastValidQuery.current = { fullAddress, apartment };
+      }
+    }
+  }, [isLoading, reviews, fullAddress, apartment, router]);
+
   return (
     <section
       className="w-full h-screen max-w-7xl mx-auto px-4 py-8"
@@ -188,9 +204,65 @@ const ReviewSearchContainer = () => {
           </div>
           <h3 className="text-gray-700 text-2xl font-medium"> Reviews</h3>
           <SearchInput
-            onPlaceSelect={(place) => handleLocationSelect(place.description)}
-            onLocationSelect={handleSearchChange}
+            placeholder="Search by address, neighborhood, or city"
+            onPlaceSelect={(place) => {
+              setInputValue(place.description);
+              router.push(`/reviews?q=${encodeURIComponent(place.description)}${apartment && apartment !== 'all' ? `&apartment=${encodeURIComponent(apartment)}` : ''}`);
+            }}
+            onChange={(value) => setInputValue(value)}
+            onSubmit={(value) => {
+              if (value) {
+                router.push(`/reviews?q=${encodeURIComponent(value)}${apartment && apartment !== 'all' ? `&apartment=${encodeURIComponent(apartment)}` : ''}`);
+              }
+            }}
+            onLocationSelect={() => {}}
           />
+          {/* Filter Bar - below SearchInput */}
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8 mt-4">
+            <div className="flex items-center gap-3">
+              {/* Filter Icon */}
+              <span className="inline-flex items-center cursor-pointer justify-center w-10 h-10 rounded-md bg-gray-100 border border-gray-200">
+                <Filter size={20} className="text-gray-500" />
+              </span>
+              <span className="font-medium text-gray-700 text-base">Filter Reviews:</span>
+            </div>
+            <div className="flex flex-1 items-center gap-3">
+              {/* Filter Input */}
+              <input
+                type="text"
+                value={inputValue}
+                onChange={e => setInputValue(e.target.value)}
+                onKeyDown={e => {
+                  if (e.key === 'Enter') {
+                    router.push(`/reviews?q=${encodeURIComponent(inputValue)}${apartment && apartment !== 'all' ? `&apartment=${encodeURIComponent(apartment)}` : ''}`);
+                  }
+                }}
+                className="flex-1 px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500 text-gray-700 bg-white min-w-[260px]"
+                placeholder="Search by home address e.g 62 Patigi-Ejebje Road, Patigi, Kwara"
+                aria-label="Search reviews by address"
+              />
+              {/* Apartments Dropdown */}
+              <div className="relative">
+                <select
+                  className="block w-full px-4 py-2 border border-gray-300 rounded-md bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-teal-500 min-w-[160px]"
+                  aria-label="Select apartment type"
+                  value={apartment}
+                  onChange={e => {
+                    setApartment(e.target.value);
+                    router.push(`/reviews?q=${encodeURIComponent(inputValue || fullAddress)}${e.target.value !== 'all' ? `&apartment=${encodeURIComponent(e.target.value)}` : ''}`);
+                  }}
+                >
+                  <option value="all">All Apartments</option>
+                  <option value="studio">Studio</option>
+                  <option value="1bed">1 Bedroom</option>
+                  <option value="2bed">2 Bedroom</option>
+                  <option value="3bed">3 Bedroom</option>
+                  <option value="penthouse">Penthouse</option>
+                  <option value="Flat 2A">Flat 2A</option>
+                </select>
+              </div>
+            </div>
+          </div>
           <div>
             {!isLoading && reviews.length === 0 && (
               <p className="text-gray-500">

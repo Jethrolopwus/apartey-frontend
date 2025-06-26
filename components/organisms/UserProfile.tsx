@@ -5,15 +5,60 @@ import { useGetUserProfileQuery } from "@/Hooks/use-getuserProfile.query";
 import { useGetProfileCompletionQuery } from "@/Hooks/use-getProfileCompletionStat.query";
 import { Mail, MapPin, Edit3 } from "lucide-react";
 import ProfileCompletionCard from "@/components/molecules/ProfileCompletionCard";
+import { useUpdateProfileMutation } from "@/Hooks/use.updateProfile.mutation";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
 
 const ProfilePage = () => {
-  const { data, isLoading, isError, error } = useGetUserProfileQuery();
+  const { data, isLoading, isError, error, refetch } = useGetUserProfileQuery();
   const {
     data: completionData,
     isLoading: isLoadingCompletion,
     isError: isErrorCompletion,
     error: completionError,
   } = useGetProfileCompletionQuery();
+  const { mutate, isLoading: isUpdating, error: updateError, data: updateData } = useUpdateProfileMutation();
+  const router = useRouter();
+  const user = data?.currentUser;
+  const [form, setForm] = useState<any>(user);
+
+  // Update form state when user data changes
+  React.useEffect(() => {
+    setForm(user);
+  }, [user]);
+
+  const handleEditProfile = () => {
+    router.push("/edit-profile");
+  };
+
+  const handleCancel = () => {
+    setForm(user);
+  };
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setForm((prev: any) => ({ ...prev, [name]: value }));
+  };
+
+  const handleAddressChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setForm((prev: any) => ({
+      ...prev,
+      address: {
+        ...prev.address,
+        [name]: value,
+      },
+    }));
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    mutate(form, {
+      onSuccess: () => {
+        refetch();
+      },
+    });
+  };
 
   if (isLoading) {
     return <p className="p-4 text-gray-500">Loading profile...</p>;
@@ -26,13 +71,6 @@ const ProfilePage = () => {
       </p>
     );
   }
-
-  const user = data?.currentUser;
-
-  const handleEditProfile = () => {
-    // Add your edit profile logic here
-    console.log("Edit profile clicked");
-  };
 
   return (
     <div className="min-h-screen bg-gray-50 px-4 py-8 sm:px-6 lg:px-8">
@@ -70,11 +108,10 @@ const ProfilePage = () => {
             {/* Profile Image */}
             <div className="mb-4 flex justify-center sm:mb-0 sm:justify-start">
               <div className="relative h-20 w-20 overflow-hidden rounded-full">
-                <Image
-                  src="/Ellipse-1.png"
-                  alt={`${user?.firstName}'s avatar`}
-                  fill
-                  className="object-cover"
+                <img
+                  src={user?.profilePicture || "/Ellipse-1.png"}
+                  alt={`${user?.firstName || "User"}'s avatar`}
+                  className="object-cover w-full h-full"
                 />
               </div>
             </div>
@@ -84,7 +121,7 @@ const ProfilePage = () => {
               <div className="mb-4 flex flex-col items-center justify-between sm:flex-row sm:items-start">
                 <div>
                   <h2 className="mb-2 text-xl font-semibold text-gray-900">
-                    {user?.firstName || "N/A"}
+                    {user?.firstName || "N/A"} {user?.lastName || ""}
                   </h2>
                   <div className="space-y-1 text-sm text-gray-600">
                     <div className="flex items-center justify-center sm:justify-start">
@@ -93,7 +130,12 @@ const ProfilePage = () => {
                     </div>
                     <div className="flex items-center justify-center sm:justify-start">
                       <MapPin className="mr-2 h-4 w-4" />
-                      <span>{user?.location || "Not specified"}</span>
+                      <span>
+                        {user?.address?.street ? user.address.street + ", " : ""}
+                        {user?.address?.district ? user.address.district + ", " : ""}
+                        {user?.address?.stateOrRegion ? user.address.stateOrRegion + ", " : ""}
+                        {user?.address?.country || "Not specified"}
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -118,7 +160,7 @@ const ProfilePage = () => {
               {/* Edit Profile Button */}
               <button
                 onClick={handleEditProfile}
-                className="inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                className="inline-flex items-center  rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
               >
                 <Edit3 className="mr-2 h-4 w-4" />
                 Edit profile
@@ -147,6 +189,22 @@ const ProfilePage = () => {
                 {user?.createdAt
                   ? new Date(user.createdAt).toLocaleDateString()
                   : "N/A"}
+              </p>
+            </div>
+            <div>
+              <p className="text-gray-500">Phone</p>
+              <p className="font-medium">{user?.phone || "N/A"}</p>
+            </div>
+            <div>
+              <p className="text-gray-500">Date of Birth</p>
+              <p className="font-medium">{user?.dateOfBirth ? new Date(user.dateOfBirth).toLocaleDateString() : "N/A"}</p>
+            </div>
+            <div>
+              <p className="text-gray-500">Website</p>
+              <p className="font-medium">
+                {user?.website ? (
+                  <a href={user.website} target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">{user.website}</a>
+                ) : "N/A"}
               </p>
             </div>
           </div>

@@ -5,22 +5,30 @@ import { useForm, Controller } from "react-hook-form";
 import { Camera, Calendar } from "lucide-react";
 
 interface EditProfileProps {
-  userEmail?: string; // Auto-filled from signup
+  userEmail?: string;
   initialData?: {
     firstName?: string;
     lastName?: string;
     phone?: string;
-    address?: string;
+    address?: {
+      country?: string;
+      stateOrRegion?: string;
+      district?: string;
+      street?: string;
+    };
     dateOfBirth?: string;
     occupation?: string;
     bio?: string;
     website?: string;
+    avatar?: string;
+    profilePicture?: string;
   };
   onSave?: (data: FormData) => void;
   onCancel?: () => void;
 }
 
-interface FormData {
+// Define a local interface for the form values
+interface ProfileFormValues {
   firstName: string;
   lastName: string;
   email: string;
@@ -30,6 +38,11 @@ interface FormData {
   occupation: string;
   bio: string;
   website: string;
+  avatar?: string;
+  country?: string;
+  stateOrRegion?: string;
+  district?: string;
+  street?: string;
 }
 
 const EditProfile: React.FC<EditProfileProps> = ({
@@ -38,27 +51,34 @@ const EditProfile: React.FC<EditProfileProps> = ({
   onSave,
   onCancel,
 }) => {
-  const [profileImage, setProfileImage] = useState<string | null>(null);
+  // State for file and url
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [avatarUrl, setAvatarUrl] = useState<string>(initialData.profilePicture || "");
 
   const {
     control,
     handleSubmit,
     formState: { errors, isValid },
     watch,
-  } = useForm<FormData>({
+    setValue,
+  } = useForm<ProfileFormValues>({
     mode: "onChange",
     defaultValues: {
       firstName: initialData.firstName || "Andrew",
       lastName: initialData.lastName || "Abba",
       email: userEmail,
       phone: initialData.phone || "234819999999",
-      address: initialData.address || "108 Ijebu-Ode Road, Ijebu-Igbo, Ogun",
-      dateOfBirth: initialData.dateOfBirth || "",
+      dateOfBirth: initialData.dateOfBirth ? initialData.dateOfBirth.slice(0, 10) : "",
       occupation: initialData.occupation || "Freelancer",
       bio:
         initialData.bio ||
         "Extensive experience in rentals and a vast database means I can quickly find the service that are right for you. Looking for a seamless and exciting rental experience.",
       website: initialData.website || "https://yourwebsite.com",
+      avatar: initialData.profilePicture || "",
+      country: initialData.address?.country || "",
+      stateOrRegion: initialData.address?.stateOrRegion || "",
+      district: initialData.address?.district || "",
+      street: initialData.address?.street || "",
     },
   });
 
@@ -74,19 +94,58 @@ const EditProfile: React.FC<EditProfileProps> = ({
 
   const completionPercentage = calculateCompletion();
 
-  const onSubmit = (data: FormData) => {
-    onSave?.(data);
+  // File upload handler
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file && file.type.startsWith("image/")) {
+      const imageUrl = URL.createObjectURL(file);
+      setSelectedFile(file);
+      console.log(file)
+      setAvatarUrl(imageUrl);
+      setValue("avatar", "");
+    }
   };
 
-  const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        setProfileImage(e.target?.result as string);
-      };
-      reader.readAsDataURL(file);
+  // URL input handler
+  const handleUrlChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setAvatarUrl(e.target.value);
+    setSelectedFile(null);
+    setValue("avatar", e.target.value);
+  };
+
+  // On submit, send avatar as file or string
+  const onSubmit = (data: any) => {
+    const address = {
+      country: data.country || "",
+      stateOrRegion: data.stateOrRegion || "",
+      district: data.district || "",
+      street: data.street || "",
+    };
+    // Build FormData object
+    const formDataObject = new FormData();
+    formDataObject.append("firstName", data.firstName);
+    formDataObject.append("lastName", data.lastName);
+    formDataObject.append("email", data.email);
+    formDataObject.append("phone", data.phone);
+    formDataObject.append("dateOfBirth", data.dateOfBirth);
+    formDataObject.append("occupation", data.occupation);
+    formDataObject.append("bio", data.bio);
+    formDataObject.append("website", data.website);
+    formDataObject.append("country", address.country);
+    formDataObject.append("stateOrRegion", address.stateOrRegion);
+    formDataObject.append("district", address.district);
+    formDataObject.append("street", address.street);
+    // Always append avatar as file if present, else as string
+    if (selectedFile) {
+      formDataObject.append("avatar", selectedFile);
+      console.log("File", selectedFile)
     }
+    
+    // Log all FormData entries
+    for (let pair of formDataObject.entries()) {
+      console.log('Data', pair[0], pair[1]);
+    }
+    onSave?.(formDataObject);
   };
 
   // Create SVG circle path for progress
@@ -155,33 +214,29 @@ const EditProfile: React.FC<EditProfileProps> = ({
             {/* Profile Photo */}
             <div className="flex flex-col items-center">
               <div className="relative w-32 h-32 bg-gray-300 rounded-full mb-4 overflow-hidden group">
-                {profileImage ? (
+                {avatarUrl ? (
                   <img
-                    src={profileImage}
+                    src={avatarUrl}
                     alt="Profile"
                     className="w-full h-full object-cover"
+                    onError={e => (e.currentTarget.src = '/Ellipse-2.png')}
                   />
                 ) : (
                   <div className="w-full h-full bg-gray-300 flex items-center justify-center">
                     <Camera className="w-8 h-8 text-gray-500" />
                   </div>
                 )}
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={handleImageUpload}
-                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                />
+                {/* File upload button overlay */}
+                <label className="absolute bottom-2 right-2 bg-white bg-opacity-80 rounded-full p-2 cursor-pointer shadow hover:bg-gray-100 transition-all border border-gray-200">
+                  <Camera className="w-5 h-5 text-gray-600" />
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleFileChange}
+                    className="hidden"
+                  />
+                </label>
               </div>
-              <button
-                type="button"
-                className="text-gray-400 hover:text-gray-700 font-medium border-b border-gray-300 hover:border-gray-500 transition-colors cursor-pointer"
-              >
-                Change photo
-              </button>
-              <p className="text-xs text-gray-500 mt-1">
-                JPG, PNG, or GIF. Max size 2MB
-              </p>
             </div>
 
             {/* Basic Info */}
@@ -322,31 +377,44 @@ const EditProfile: React.FC<EditProfileProps> = ({
 
           {/* Right Column - Additional Info */}
           <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Address
-              </label>
-              <Controller
-                name="address"
-                control={control}
-                rules={{ required: "Address is required" }}
-                render={({ field }) => (
-                  <>
-                    <input
-                      {...field}
-                      type="text"
-                      className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                        errors.address ? "border-red-500" : "border-gray-300"
-                      }`}
-                    />
-                    {errors.address && (
-                      <p className="text-red-500 text-xs mt-1">
-                        {errors.address.message}
-                      </p>
-                    )}
-                  </>
-                )}
-              />
+            {/* Address Fields */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Country</label>
+                <input
+                  type="text"
+                  {...control.register("country")}
+                  className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  defaultValue={initialData.address?.country || ""}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">State/Region</label>
+                <input
+                  type="text"
+                  {...control.register("stateOrRegion")}
+                  className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  defaultValue={initialData.address?.stateOrRegion || ""}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">District</label>
+                <input
+                  type="text"
+                  {...control.register("district")}
+                  className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  defaultValue={initialData.address?.district || ""}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Street</label>
+                <input
+                  type="text"
+                  {...control.register("street")}
+                  className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  defaultValue={initialData.address?.street || ""}
+                />
+              </div>
             </div>
 
             <div>
@@ -501,7 +569,7 @@ const EditProfile: React.FC<EditProfileProps> = ({
           </button>
           <button
             type="submit"
-            className="px-6 py-2 bg-[#C85212] hover:bg-[#C85212] text-white font-medium rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="px-6 py-2 bg-[#C85212] cursor-pointer hover:bg-[#C85212] text-white font-medium rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Save Changes
           </button>

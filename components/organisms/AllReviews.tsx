@@ -1,6 +1,6 @@
 "use client";
 import Image from "next/image";
-import { Star, ChevronDown } from "lucide-react";
+import { Star, ChevronDown, Filter } from "lucide-react";
 import { useGetAllReviewsQuery } from "@/Hooks/use-GetAllReviews.query";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
@@ -119,37 +119,12 @@ const AllReviews: React.FC<AllReviewsProps> = ({
         {/* Header with Sorting */}
         {showHeader && (
           <div className="mb-8">
-            <div className="flex items-center justify-between">
-              <div>
-                <h1 className="text-3xl font-bold text-gray-900 mb-2">
-                  Find Your Perfect Property
-                </h1>
-                <div className="flex items-center gap-4">
-                  <p className="text-gray-600">
-                    Page 1 of {data?.totalPages || 1}
-                  </p>
-                  {/* Display current sort status */}
-                  {sortBy && (
-                    <p className="text-sm text-teal-600 bg-teal-50 px-3 py-1 rounded-full">
-                      Sorted by:{" "}
-                      {sortBy === "mostRecent"
-                        ? "Most Recent"
-                        : "Highest Rating"}
-                    </p>
-                  )}
-                </div>
-              </div>
-
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+              <h1 className="text-2xl md:text-3xl font-semibold text-teal-800 mb-2 md:mb-0">
+                Read Trusted Reviews from Verified Tenants
+              </h1>
+              {/* Sort Dropdown */}
               <div className="flex items-center gap-4">
-                {/* Total Reviews */}
-                <div className="text-right">
-                  <p className="text-sm text-gray-500">Total Reviews</p>
-                  <p className="text-2xl mr-10 font-semibold text-gray-900">
-                    {data?.totalReviews || reviews.length}
-                  </p>
-                </div>
-
-                {/* Sort Dropdown */}
                 <div className="relative">
                   <div className="flex items-center gap-2 bg-white rounded-md shadow px-4 py-2">
                     <span className="text-gray-600 text-sm">Sort by</span>
@@ -168,7 +143,6 @@ const AllReviews: React.FC<AllReviewsProps> = ({
                           }`}
                         />
                       </button>
-
                       {isDropdownOpen && (
                         <ul
                           className="absolute right-0 mt-1 w-40 bg-white shadow-lg rounded-md py-1 z-20 border"
@@ -196,6 +170,15 @@ const AllReviews: React.FC<AllReviewsProps> = ({
                 </div>
               </div>
             </div>
+            {/* Filter Bar - below title and sort */}
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mt-6 mb-8">
+              <div className="flex items-center gap-3">
+                <span className="inline-flex items-center cursor-pointer justify-center w-10 h-10 rounded-md bg-gray-100 border border-gray-200">
+                  <Filter size={20} className="text-gray-500" />
+                </span>
+                <span className="font-medium text-gray-700 text-base">Filter Reviews:</span>
+              </div>
+            </div>
           </div>
         )}
 
@@ -214,7 +197,8 @@ const AllReviews: React.FC<AllReviewsProps> = ({
               <article
                 key={review._id}
                 onClick={() => router.push(`/reviewsPage/${review._id}`)}
-                className=" cursor-pointer bg-white rounded-xl shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden border border-gray-100 group"
+                className="cursor-pointer bg-white rounded-xl shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden border border-gray-100 group flex flex-col"
+                style={{ minHeight: '370px', boxSizing: 'border-box' }}
               >
                 <div className="relative w-full h-48 overflow-hidden">
                   {review.linkedProperty?.media?.coverPhoto ? (
@@ -242,20 +226,8 @@ const AllReviews: React.FC<AllReviewsProps> = ({
                       </div>
                     </div>
                   )}
-
                   {/* Status and Verification Badges */}
                   <div className="absolute top-3 left-3 right-3 flex justify-between">
-                    {/* <span
-                      className={`text-xs font-semibold px-2 py-1 rounded-full backdrop-blur-sm ${
-                        review.status === ""
-                          ? "bg-yellow-100/90 text-yellow-800"
-                          : "bg-green-100/90 text-green-800"
-                      }`}
-                    >
-                      {review.status.charAt(0).toUpperCase() +
-                        review.status.slice(1)}
-                    </span> */}
-
                     {review.isLinkedToDatabaseProperty && (
                       <span className="bg-teal-600/90 backdrop-blur-sm text-white text-xs font-semibold px-3 py-1 rounded-full">
                         Verified
@@ -263,45 +235,43 @@ const AllReviews: React.FC<AllReviewsProps> = ({
                     )}
                   </div>
                 </div>
-
-                <div className="p-4 space-y-3">
-                  <h3 className="font-medium text-gray-800 text-base line-clamp-2">
-                    {review.location.streetAddress}
-                    {review.location.apartmentUnitNumber &&
-                      `, ${review.location.apartmentUnitNumber}`}
-                    {review.location.district &&
-                      `, ${review.location.district}`}
-                    , {review.location.city}
-                  </h3>
-
-                  <div className="flex items-center gap-2">
-                    <div className="flex gap-0.5">
-                      {[...Array(5)].map((_, i) => (
-                        <Star
-                          key={i}
-                          size={14}
-                          className={
-                            i < Math.floor(review.overallRating)
-                              ? "fill-yellow-400 text-yellow-400"
-                              : "text-gray-300"
-                          }
-                        />
-                      ))}
+                <div className="p-4 space-y-3 flex-1 flex flex-col justify-between">
+                  <div>
+                    <h3 className="font-medium text-gray-800 text-base line-clamp-2 mb-1">
+                      {review.location.streetAddress}
+                      {review.location.apartmentUnitNumber &&
+                        `, ${review.location.apartmentUnitNumber}`}
+                      {review.location.district &&
+                        `, ${review.location.district}`}
+                      , {review.location.city}
+                    </h3>
+                    <div className="flex items-center gap-2 mb-1">
+                      <div className="flex gap-0.5">
+                        {[...Array(5)].map((_, i) => (
+                          <Star
+                            key={i}
+                            size={14}
+                            className={
+                              i < Math.floor(review.overallRating)
+                                ? "fill-yellow-400 text-yellow-400"
+                                : "text-gray-300"
+                            }
+                          />
+                        ))}
+                      </div>
+                      <span className="text-sm font-medium text-gray-700">
+                        {review.overallRating.toFixed(1)}
+                      </span>
+                      <span className="text-xs text-gray-500">
+                        ({review.overallRating.toFixed(0)} reviews)
+                      </span>
                     </div>
-                    <span className="text-sm font-medium text-gray-700">
-                      {review.overallRating.toFixed(1)}
-                    </span>
-                    <span className="text-xs text-gray-500">
-                      ({review.overallRating.toFixed(0)} reviews)
-                    </span>
+                    <p className="text-gray-600 text-sm line-clamp-3 leading-relaxed mb-2">
+                      {review.detailedReview}
+                    </p>
                   </div>
-
-                  <p className="text-gray-600 text-sm line-clamp-3 leading-relaxed">
-                    {review.detailedReview}
-                  </p>
-
                   {/* Rating Details */}
-                  <div className="flex items-center justify-between text-xs text-gray-500 pt-2 border-t border-gray-100">
+                  <div className="flex items-center justify-between text-xs text-gray-500 pt-2 border-t border-gray-100 mb-2">
                     <div className="flex items-center gap-1">
                       <span className="font-medium">Value:</span>
                       <span>{review.valueForMoney}/5</span>
@@ -311,7 +281,6 @@ const AllReviews: React.FC<AllReviewsProps> = ({
                       <span>{review.overallExperience}/5</span>
                     </div>
                   </div>
-
                   {/* Footer */}
                   <div className="flex items-center justify-between pt-2">
                     <div className="flex items-center gap-2">
@@ -321,7 +290,6 @@ const AllReviews: React.FC<AllReviewsProps> = ({
                         </span>
                       </div>
                       <span className="text-sm font-medium text-gray-800">
-                       
                         <p className="font-semibold text-gray-900">
                           {review?.submitAnonymously
                             ? "Anonymous Reviewer"

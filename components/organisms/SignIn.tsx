@@ -62,11 +62,7 @@ const SignIn: React.FC = () => {
       if (isOnboarded) {
         // User is onboarded, redirect to profile or dashboard
         toast.success("Welcome back!");
-        if (localStorage.getItem("pendingReviewData")) {
-          router.push("/write-reviews/unlisted");
-        } else {
-          router.push("/profile");
-        }
+        router.push("/profile");
       } else {
         // User is not onboarded, redirect to role selection
         toast.success("Please complete your setup");
@@ -95,12 +91,10 @@ const SignIn: React.FC = () => {
       reset();
       refetchAuthStatus();
 
-      // Check onboarding status after successful login
-      setTimeout(() => {
-        checkOnboardingStatus();
-      }, 500); // Small delay to ensure token is stored
+      // Always redirect to profile after sign in
+      router.push("/profile");
     }
-  }, [data, reset, checkOnboardingStatus, refetchAuthStatus]);
+  }, [data, reset, refetchAuthStatus, router]);
 
   // Handle signin error
   useEffect(() => {

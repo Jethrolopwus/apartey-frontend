@@ -4,10 +4,18 @@ import React from 'react';
 import { ChevronLeft } from 'lucide-react';
 import { StepProps } from '@/types/generated';
 import AdPromotionForm from "@/components/organisms/AdPromotionForm";
+import { PropertyListingPayload } from "@/types/propertyListing";
 
-const AdPromotionStep: React.FC<StepProps> = ({ onBack, onSubmit }) => (
+type AdPromotionStepProps = {
+  onBack: () => void;
+  onSubmit: () => void;
+  formData: PropertyListingPayload | Partial<PropertyListingPayload>;
+  setFormData: React.Dispatch<React.SetStateAction<PropertyListingPayload | Partial<PropertyListingPayload>>>;
+};
+
+const AdPromotionStep: React.FC<AdPromotionStepProps> = ({ onBack, onSubmit, formData, setFormData }) => (
   <div className="max-w-4xl w-full">
-    <AdPromotionForm />
+    <AdPromotionForm formData={formData} setFormData={setFormData} />
     <div className="flex justify-between mt-8">
        <button onClick={onBack} className="flex items-center px-6 py-3 border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-colors">
         <ChevronLeft className="w-4 h-4 mr-2" />Back

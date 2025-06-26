@@ -1,7 +1,7 @@
 "use client";
 import { useState, useMemo, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Star, ChevronDown, Maximize, Navigation } from "lucide-react";
+import { Star, ChevronDown, Maximize, Navigation, Filter } from "lucide-react";
 import { ReviewData, ReviewsSectionProps, SortOption } from "@/types/generated";
 import { useGetAllReviewsQuery } from "@/Hooks/use-GetAllReviews.query";
 import { Review , SortComponentProps} from "@/types/generated";
@@ -35,7 +35,7 @@ const SortComponent: React.FC<SortComponentProps> = ({
   };
 
   return (
-    <div className="absolute top-0 right-0 flex justify-end mb-4 z-10">
+    <div className="flex justify-end mb-4 z-10">
       <div className="relative">
         <div className="flex items-center gap-2 bg-white rounded-md shadow px-4 py-2">
           <span className="text-gray-600 text-sm">Sort by</span>
@@ -82,7 +82,7 @@ const ReviewsSection: React.FC<ReviewsSectionProps> = ({
   const [mapMarkers, setMapMarkers] = useState<
     { id: string; top: string; left: string; coordinates: Coordinates }[]
   >([]);
-  const [mapCenter, setMapCenter] = useState<Coordinates>({ lat: 6.5244, lng: 3.3792 }); // Default to Lagos
+  const [mapCenter, setMapCenter] = useState<Coordinates>({ lat: 6.5244, lng: 3.3792 }); 
   const router = useRouter();
 
   const sortOptions: SortOption[] = useMemo(
@@ -123,9 +123,12 @@ const ReviewsSection: React.FC<ReviewsSectionProps> = ({
         const centerLat = totalLat / validReviews.length;
         const centerLng = totalLng / validReviews.length;
         
-        setMapCenter({
-          lat: centerLat,
-          lng: centerLng
+        // Only update mapCenter if it has changed
+        setMapCenter(prev => {
+          if (prev.lat !== centerLat || prev.lng !== centerLng) {
+            return { lat: centerLat, lng: centerLng };
+          }
+          return prev;
         });
 
         // Create markers for all reviews with coordinates
@@ -138,8 +141,13 @@ const ReviewsSection: React.FC<ReviewsSectionProps> = ({
             lng: review.location.lng
           }
         }));
-        
-        setMapMarkers(markers);
+        // Only update mapMarkers if different
+        setMapMarkers(prev => {
+          if (JSON.stringify(prev) !== JSON.stringify(markers)) {
+            return markers;
+          }
+          return prev;
+        });
       } else {
         // Fallback to default markers if no coordinates
         const markers = Array.from({ length: 10 }).map((_, i) => ({
@@ -148,7 +156,12 @@ const ReviewsSection: React.FC<ReviewsSectionProps> = ({
           left: markerPositions[i].left,
           coordinates: { lat: 0, lng: 0 }
         }));
-        setMapMarkers(markers);
+        setMapMarkers(prev => {
+          if (JSON.stringify(prev) !== JSON.stringify(markers)) {
+            return markers;
+          }
+          return prev;
+        });
       }
     } else {
       // Default markers when no reviews
@@ -158,7 +171,12 @@ const ReviewsSection: React.FC<ReviewsSectionProps> = ({
         left: markerPositions[i].left,
         coordinates: { lat: 0, lng: 0 }
       }));
-      // setMapMarkers(markers);
+      setMapMarkers(prev => {
+        if (JSON.stringify(prev) !== JSON.stringify(markers)) {
+          return markers;
+        }
+        return prev;
+      });
     }
   }, [reviews, markerPositions]);
 
@@ -256,6 +274,27 @@ const ReviewsSection: React.FC<ReviewsSectionProps> = ({
       className="w-full max-w-7xl mx-auto px-4 py-8"
       aria-label="Property reviews"
     >
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div>
+          <p className="text-teal-700 uppercase text-sm font-medium tracking-wide">
+            REVIEWS
+          </p>
+          <h2 className="text-teal-700 text-3xl font-medium">
+            Explore Reviews Near You
+          </h2>
+        </div>
+        {/* SortComponent at top right, same line as heading */}
+        <div className="mt-4 md:mt-0">
+          <SortComponent
+            sortOptions={sortOptions}
+            currentSort={sortOption}
+            onSortChange={handleSortChange}
+          />
+        </div>
+      </div>
+
+      {/* Filter Bar - below heading and sort */}
+      {/* REMOVED FILTER BAR (input and apartments dropdown) */}
       <div className="flex flex-col lg:flex-row gap-8">
         {/* Left Side - Reviews List */}
         <div className="lg:w-1/2 space-y-6">
@@ -263,12 +302,8 @@ const ReviewsSection: React.FC<ReviewsSectionProps> = ({
             <p className="text-teal-700 uppercase text-sm font-medium tracking-wide">
               REVIEWS
             </p>
-            <h2 className="text-teal-700 text-3xl font-medium">
-              Explore Reviews Near You
-            </h2>
+            <h3 className="text-gray-700 text-2xl font-medium">Recent Reviews</h3>
           </div>
-
-          <h3 className="text-gray-700 text-2xl font-medium">Recent Reviews</h3>
 
           <div className="space-y-6">
             {reviews.length > 0 ? (
@@ -321,13 +356,6 @@ const ReviewsSection: React.FC<ReviewsSectionProps> = ({
 
         {/* Right Side - Map */}
         <div className="lg:w-1/2 relative">
-          {/* Sort Component */}
-          <SortComponent
-            sortOptions={sortOptions}
-            currentSort={sortOption}
-            onSortChange={handleSortChange}
-          />
-
           {/* Map Info */}
           {!isLoading && reviews.length > 0 && (
             <div className="absolute top-4 left-4 z-10 bg-white bg-opacity-90 rounded-md px-3 py-2 shadow-md">

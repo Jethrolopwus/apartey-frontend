@@ -50,7 +50,7 @@ const UserDropdownMenu: React.FC<UserDropdownMenuProps> = ({
       id: "favorites",
       label: "Favorites",
       icon: Heart,
-      route: "/profile-favorites",
+      route: "/profile-favorite",
       hasNotification: true,
       notificationCount: favoriteCount,
     },

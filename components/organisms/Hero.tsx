@@ -45,7 +45,7 @@ export default function Hero() {
       <div className="relative z-10 max-w-5xl mx-auto px-4">
         <div className="text-center px-6 sm:px-16 mb-8">
           <h1 className="text-3xl md:text-5xl font-bold text-teal-800 mb-4">
-            Real People, Real Experience
+            Real People... Real Experience
           </h1>
           <p className="text-gray-500 text-lg mb-8">
             Discover what real tenants and homeowners are saying about local
