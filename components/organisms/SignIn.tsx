@@ -204,7 +204,7 @@ const SignIn: React.FC = () => {
           {/* Google Auth Button */}
           <GoogleAuthButton
             mode="signin"
-            callbackUrl="/profile"
+            callbackUrl="/onboarding"
             onClick={handleGoogleSignIn}
           />
         </div>

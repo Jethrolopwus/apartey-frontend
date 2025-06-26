@@ -5,7 +5,7 @@ import SearchInput from "@/components/atoms/Buttons/SearchInput";
 import { useSearchParams } from "next/navigation";
 import { useSearchReviewsQuery } from "@/Hooks/use-searchReviews.query";
 import { ChevronDown, Maximize, Navigation, Star, Filter } from "lucide-react";
-import { ReviewData, ReviewsSectionProps, SortOption } from "@/types/generated";
+import { SortOption } from "@/types/generated";
 import { useRouter } from "next/navigation";
 import { toast } from 'react-hot-toast';
 
@@ -187,9 +187,32 @@ const ReviewSearchContainer = () => {
     }
   }, [isLoading, reviews, fullAddress, apartment, router]);
 
+  // Add state for filtered reviews
+  const [filteredReviews, setFilteredReviews] = useState<any[]>([]);
+
+  const handleDropdownFilter = (selectedApartment: string) => {
+    setApartment(selectedApartment);
+    if (selectedApartment === 'all') {
+      setFilteredReviews(reviews);
+    } else {
+      const filtered = reviews.filter((review: any) =>
+        (review.location?.apartment || review.location?.apartmentUnitNumber || '').toLowerCase() === selectedApartment.toLowerCase()
+      );
+      setFilteredReviews(filtered);
+      if (filtered.length === 0) {
+        toast.error('No reviews found for this apartment.');
+      }
+    }
+  };
+
+  useEffect(() => {
+    setFilteredReviews(reviews);
+  }, [reviews]);
+
   return (
     <section
-      className="w-full h-screen max-w-7xl mx-auto px-4 py-8"
+      className="w-full h-screen max-w-7xl bg-white mx-auto px-4 py-8 overflow-y-auto"
+      style={{ maxHeight: '100vh' }}
       aria-label="Property reviews"
     >
       <div className="flex flex-col lg:flex-row gap-8">
@@ -218,39 +241,26 @@ const ReviewSearchContainer = () => {
             onLocationSelect={() => {}}
           />
           {/* Filter Bar - below SearchInput */}
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8 mt-4">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-32 mb-8 mt-4">
             <div className="flex items-center gap-3">
               {/* Filter Icon */}
-              <span className="inline-flex items-center cursor-pointer justify-center w-10 h-10 rounded-md bg-gray-100 border border-gray-200">
+              <span
+                className="inline-flex items-center cursor-pointer justify-center w-10 h-10 rounded-md bg-gray-100 border border-gray-200"
+                onClick={() => {}}
+                title="Apply filter"
+              >
                 <Filter size={20} className="text-gray-500" />
               </span>
               <span className="font-medium text-gray-700 text-base">Filter Reviews:</span>
             </div>
             <div className="flex flex-1 items-center gap-3">
-              {/* Filter Input */}
-              <input
-                type="text"
-                value={inputValue}
-                onChange={e => setInputValue(e.target.value)}
-                onKeyDown={e => {
-                  if (e.key === 'Enter') {
-                    router.push(`/reviews?q=${encodeURIComponent(inputValue)}${apartment && apartment !== 'all' ? `&apartment=${encodeURIComponent(apartment)}` : ''}`);
-                  }
-                }}
-                className="flex-1 px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500 text-gray-700 bg-white min-w-[260px]"
-                placeholder="Search by home address e.g 62 Patigi-Ejebje Road, Patigi, Kwara"
-                aria-label="Search reviews by address"
-              />
-              {/* Apartments Dropdown */}
+              {/* Apartments Dropdown Only */}
               <div className="relative">
                 <select
                   className="block w-full px-4 py-2 border border-gray-300 rounded-md bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-teal-500 min-w-[160px]"
                   aria-label="Select apartment type"
                   value={apartment}
-                  onChange={e => {
-                    setApartment(e.target.value);
-                    router.push(`/reviews?q=${encodeURIComponent(inputValue || fullAddress)}${e.target.value !== 'all' ? `&apartment=${encodeURIComponent(e.target.value)}` : ''}`);
-                  }}
+                  onChange={e => handleDropdownFilter(e.target.value)}
                 >
                   <option value="all">All Apartments</option>
                   <option value="studio">Studio</option>
@@ -264,15 +274,15 @@ const ReviewSearchContainer = () => {
             </div>
           </div>
           <div>
-            {!isLoading && reviews.length === 0 && (
+            {!isLoading && filteredReviews.length === 0 && (
               <p className="text-gray-500">
-                No reviews found for this location.
+                No reviews found for this filter.
               </p>
             )}
             {isLoading ? (
               <p>Loading reviews...</p>
             ) : (
-              reviews?.map((review: any, index: number) => (
+              filteredReviews?.map((review: any, index: number) => (
                 <article
                   key={index}
                   className="flex gap-4 group cursor-pointer hover:bg-gray-50 p-2 rounded-lg transition-colors"
@@ -370,7 +380,7 @@ const ReviewSearchContainer = () => {
           )}
 
           {/* Google Maps Container */}
-          <div className="w-full h-[500px] bg-gray-200 mt-20 rounded-lg overflow-hidden relative">
+          <div className="w-full h-[500px] bg-gray-200 mt-70 rounded-lg overflow-hidden relative">
             {isLoading ? (
               <div className="w-full h-full flex items-center justify-center bg-gray-200">
                 <div className="text-center">
