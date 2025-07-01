@@ -15,6 +15,9 @@ import AmenitiesAccessibility from "../molecules/AmenitiesAccessibility";
 import RatingComponent from "../molecules/ReviewsRating";
 import SubmitReviewComponent from "./SubmitReviews";
 import Accessibility from "../molecules/Accessibility";
+import { useSelector, useDispatch } from 'react-redux';
+import { RootState } from '../../store';
+import { setField, setMultipleFields, resetForm } from '../../store/propertyReviewFormSlice';
 
 // Define the form data structure
 interface FormData {
@@ -76,126 +79,27 @@ const WriteUnlistedPropertyReviews: React.FC = () => {
     clearPendingData,
   } = useAuthRedirect();
 
-  const { location: addressLocation, setLocation } = useReviewForm();
-
-  // Parent-managed form state for prop-based components
-  const [formData, setFormData] = useState<FormData>(() => {
-    // Try to restore from localStorage on first render
-    if (typeof window !== 'undefined') {
-      const stored = localStorage.getItem('pendingReviewData');
-      if (stored) {
-        try {
-          const parsed = JSON.parse(stored);
-          // If the structure is correct, use it
-          if (parsed && parsed.location) {
-            return {
-              ...parsed.location,
-              landlordLanguages: parsed.location.landlordLanguages || [],
-            };
-          }
-        } catch {}
-      }
-    }
-    // Default initial state
-    return {
-      propertyType: "",
-      propertyName: "",
-      propertyDescription: "",
-      rentType: "actual",
-      yearlyRent: "",
-      securityDepositRequired: false,
-      agentFeeRequired: false,
-      fixedUtilityCost: false,
-      centralHeating: false,
-      furnished: false,
-      julySummerUtilities: "",
-      januaryWinterUtilities: "",
-      appliances: [],
-      buildingFacilities: [],
-      costOfRepairsCoverage: [],
-      isAnonymous: false,
-      agreeToTerms: false,
-      numberOfRooms: 1,
-      numberOfOccupants: 1,
-      nearestGroceryStore: "",
-      nearestPark: "",
-      nearestRestaurant: "",
-      landlordLanguages: [],
-    };
-  });
+  const dispatch = useDispatch();
+  const formData = useSelector((state: RootState) => state.propertyReviewForm);
 
   // Restore pending data on mount (if redirected after login)
   useEffect(() => {
     if (restoredRef.current) return;
     const pending: PendingReviewData | null = pendingReviewData as PendingReviewData;
-    if (pending) {
-      // Restore formData
-      if (pending.location) {
-        setFormData({
-          ...pending.location,
-          landlordLanguages: pending.location.landlordLanguages || [],
-        });
-      }
-      // Merge all fields for context restore
-      const mergedContext = {
-        ...(pending.contextLocation || {}),
-        ...(pending.location || {}),
-        ...(pending.ratingsAndReviews || {}),
-      };
-      if (Object.keys(mergedContext).length > 0) {
-        setLocation(mergedContext);
-      }
+    if (pending && pending.location) {
+      dispatch(setMultipleFields({
+        ...pending.location,
+        landlordLanguages: pending.location.landlordLanguages || [],
+        ...pending.ratingsAndReviews,
+        ...pending.stayDetails,
+        ...pending.costDetails,
+        ...pending.accessibility,
+        isAnonymous: pending.submitAnonymously,
+      }));
     }
     restoredRef.current = true;
     setRestoring(false);
-  }, [pendingReviewData, setLocation]);
-
-  // Persist form data and context data to localStorage on every change
-  useEffect(() => {
-    // Merge formData and addressLocation for the most up-to-date location
-    const { propertyType, propertyName, propertyDescription, ...locationRest } = {
-      ...formData,
-      ...addressLocation,
-    };
-    console.log("locationRest", locationRest);
-    console.log("formData", formData);
-    console.log("addressLocation", addressLocation);
-    // Merge all context fields for ratingsAndReviews
-    const ratingsAndReviews = {
-      valueForMoney: addressLocation?.valueForMoney ?? 0,
-      costOfRepairs: addressLocation?.costOfRepairs ?? "",
-      overallExperience: addressLocation?.overallExperience ?? 0,
-      detailedReview: addressLocation?.detailedReview ?? "",
-    };
-    // Always include all context fields in location
-    const pendingData = {
-      stayDetails: {
-        numberOfRooms: formData.numberOfRooms,
-        numberOfOccupants: formData.numberOfOccupants,
-      },
-      costDetails: {
-        rentType: formData.rentType,
-        rent: formData.yearlyRent,
-        securityDepositRequired: formData.securityDepositRequired,
-        agentBrokerFeeRequired: formData.agentFeeRequired,
-        fixedUtilityCost: formData.fixedUtilityCost,
-        centralHeating: formData.centralHeating,
-        furnished: formData.furnished,
-        julySummerUtilities: formData.julySummerUtilities,
-        januaryWinterUtilities: formData.januaryWinterUtilities,
-      },
-      accessibility: {
-        nearestGroceryStore: formData.nearestGroceryStore,
-        nearestPark: formData.nearestPark,
-        nearestRestaurant: formData.nearestRestaurant,
-      },
-      ratingsAndReviews: ratingsAndReviews,
-      submitAnonymously: formData.isAnonymous,
-      location: { ...locationRest, ...ratingsAndReviews }, // include all context fields
-      contextLocation: { ...addressLocation, ...ratingsAndReviews },
-    };
-    localStorage.setItem('pendingReviewData', JSON.stringify(pendingData));
-  }, [formData, addressLocation]);
+  }, [pendingReviewData, dispatch]);
 
   // Navigation logic
   const nextStep = () => {
@@ -272,15 +176,14 @@ const WriteUnlistedPropertyReviews: React.FC = () => {
       };
       // Build ratingsAndReviews from context (addressLocation) and formData
       const ratingsAndReviews = {
-        valueForMoney: addressLocation?.valueForMoney ?? 0,
-        costOfRepairs: addressLocation?.costOfRepairs ?? "",
-        overallExperience: addressLocation?.overallExperience ?? 0,
-        detailedReview: addressLocation?.detailedReview ?? "",
+        valueForMoney: formData.valueForMoney,
+        costOfRepairs: formData.costOfRepairs,
+        overallExperience: formData.overallExperience,
+        detailedReview: formData.detailedReview,
       };
       // Build location from addressLocation, removing propertyType, propertyName, propertyDescription
       const { propertyType, propertyName, propertyDescription, ...locationRest } = {
         ...formData,
-        ...addressLocation,
       };
       // Build pendingData
       const pendingData = {
@@ -441,7 +344,7 @@ const WriteUnlistedPropertyReviews: React.FC = () => {
                         value={formData.numberOfRooms}
                         onChange={(e) => {
                           const value = parseInt(e.target.value) || 1;
-                          setFormData(f => ({ ...f, numberOfRooms: value }));
+                          dispatch(setField({ key: 'numberOfRooms', value }));
                           console.log('Number of Rooms:', value);
                         }}
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
@@ -457,7 +360,7 @@ const WriteUnlistedPropertyReviews: React.FC = () => {
                         value={formData.numberOfOccupants}
                         onChange={(e) => {
                           const value = parseInt(e.target.value) || 1;
-                          setFormData(f => ({ ...f, numberOfOccupants: value }));
+                          dispatch(setField({ key: 'numberOfOccupants', value }));
                           console.log('Number of Occupants:', value);
                         }}
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
@@ -490,16 +393,16 @@ const WriteUnlistedPropertyReviews: React.FC = () => {
                     <RentInput
                       rentType={formData.rentType}
                       yearlyRent={formData.yearlyRent}
-                      onRentTypeChange={val => setFormData(f => ({ ...f, rentType: val }))}
-                      onYearlyRentChange={val => setFormData(f => ({ ...f, yearlyRent: val }))}
+                      onRentTypeChange={val => dispatch(setField({ key: 'rentType', value: val }))}
+                      onYearlyRentChange={val => dispatch(setField({ key: 'yearlyRent', value: val }))}
                     />
                     <SecurityDepositToggle
                       securityDepositRequired={formData.securityDepositRequired}
-                      onSecurityDepositChange={val => setFormData(f => ({ ...f, securityDepositRequired: val }))}
+                      onSecurityDepositChange={val => dispatch(setField({ key: 'securityDepositRequired', value: val }))}
                     />
                     <AgentBrokerFeesToggle
                       agentFeeRequired={formData.agentFeeRequired}
-                      onAgentFeeChange={val => setFormData(f => ({ ...f, agentFeeRequired: val }))}
+                      onAgentFeeChange={val => dispatch(setField({ key: 'agentFeeRequired', value: val }))}
                     />
                     <FixedUtilityCostsToggle
                       fixedUtilityCost={formData.fixedUtilityCost}
@@ -507,11 +410,11 @@ const WriteUnlistedPropertyReviews: React.FC = () => {
                       furnished={formData.furnished}
                       julySummerUtilities={formData.julySummerUtilities}
                       januaryWinterUtilities={formData.januaryWinterUtilities}
-                      onFixedUtilityCostChange={val => setFormData(f => ({ ...f, fixedUtilityCost: val }))}
-                      onCentralHeatingChange={val => setFormData(f => ({ ...f, centralHeating: val }))}
-                      onFurnishedChange={val => setFormData(f => ({ ...f, furnished: val }))}
-                      onJulySummerUtilitiesChange={val => setFormData(f => ({ ...f, julySummerUtilities: val }))}
-                      onJanuaryWinterUtilitiesChange={val => setFormData(f => ({ ...f, januaryWinterUtilities: val }))}
+                      onFixedUtilityCostChange={val => dispatch(setField({ key: 'fixedUtilityCost', value: val }))}
+                      onCentralHeatingChange={val => dispatch(setField({ key: 'centralHeating', value: val }))}
+                      onFurnishedChange={val => dispatch(setField({ key: 'furnished', value: val }))}
+                      onJulySummerUtilitiesChange={val => dispatch(setField({ key: 'julySummerUtilities', value: val }))}
+                      onJanuaryWinterUtilitiesChange={val => dispatch(setField({ key: 'januaryWinterUtilities', value: val }))}
                     />
                   </div>
                 </div>
@@ -532,11 +435,11 @@ const WriteUnlistedPropertyReviews: React.FC = () => {
                       appliances={formData.appliances}
                       buildingFacilities={formData.buildingFacilities}
                       costOfRepairsCoverage={formData.costOfRepairsCoverage}
-                      onAppliancesChange={val => setFormData(f => ({ ...f, appliances: val }))}
-                      onBuildingFacilitiesChange={val => setFormData(f => ({ ...f, buildingFacilities: val }))}
-                      onCostOfRepairsCoverageChange={val => setFormData(f => ({ ...f, costOfRepairsCoverage: val }))}
+                      onAppliancesChange={val => dispatch(setField({ key: 'appliances', value: val }))}
+                      onBuildingFacilitiesChange={val => dispatch(setField({ key: 'buildingFacilities', value: val }))}
+                      onCostOfRepairsCoverageChange={val => dispatch(setField({ key: 'costOfRepairsCoverage', value: val }))}
                       landlordLanguages={formData.landlordLanguages}
-                      onLandlordLanguagesChange={val => setFormData(f => ({ ...f, landlordLanguages: val }))}
+                      onLandlordLanguagesChange={val => dispatch(setField({ key: 'landlordLanguages', value: val }))}
                     />
                     <Accessibility
                       accessibility={{
@@ -544,7 +447,7 @@ const WriteUnlistedPropertyReviews: React.FC = () => {
                         nearestPark: formData.nearestPark,
                         nearestRestaurant: formData.nearestRestaurant,
                       }}
-                      onInputChange={(field, value) => setFormData(f => ({ ...f, [field]: value }))}
+                      onInputChange={(field, value) => dispatch(setField({ key: field, value }))}
                     />
                   </div>
                 </div>
@@ -559,8 +462,8 @@ const WriteUnlistedPropertyReviews: React.FC = () => {
             <SubmitReviewComponent
               isAnonymous={formData.isAnonymous}
               agreeToTerms={formData.agreeToTerms}
-              onAnonymousChange={val => setFormData(f => ({ ...f, isAnonymous: val }))}
-              onTermsChange={val => setFormData(f => ({ ...f, agreeToTerms: val }))}
+              onAnonymousChange={val => dispatch(setField({ key: 'isAnonymous', value: val }))}
+              onTermsChange={val => dispatch(setField({ key: 'agreeToTerms', value: val }))}
               ref={submitReviewRef}
             />
           )}

@@ -1,7 +1,9 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
-import { useReviewForm } from "@/app/context/RevievFormContext";
+import { useSelector, useDispatch } from 'react-redux';
+import { RootState } from '../../store';
+import { setField, setMultipleFields } from '../../store/propertyReviewFormSlice';
 
 interface AddressComponent {
   long_name: string;
@@ -47,31 +49,30 @@ declare global {
 }
 
 const AddressForm: React.FC = () => {
-  const { location, setLocation } = useReviewForm();
+  const dispatch = useDispatch();
+  const location = useSelector((state: RootState) => state.propertyReviewForm);
   const inputRef = useRef<HTMLInputElement>(null);
   const autocompleteRef = useRef<any>(null);
 
+  // Local state for UI only, but always sync with Redux
   const [selectedAddress, setSelectedAddress] = useState<string>("");
   const [matchedAddresses, setMatchedAddresses] = useState<Building[]>([]);
   const [apartments, setApartments] = useState<Apartment[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
-  const [country, setCountry] = useState<string>("");
-  const [state, setState] = useState<string>("");
-  const [postalCode, setPostalCode] = useState<string>("");
-  const [addressLine, setAddressLine] = useState<string>("");
-  const [manualApartment, setManualApartment] = useState<string>("");
-  const [district, setDistrict] = useState<string>("");
-  const [coordinates, setCoordinates] = useState<Coordinates | null>(null);
-  const [countryCode, setCountryCode] = useState<string>("ng");
-  const [streetName, setStreetName] = useState("");
+  const [countryCode, setCountryCode] = useState<string>(location.countryCode?.toLowerCase() || "ng");
+  const [streetName, setStreetName] = useState(location.street || "");
   const [streetNumber, setStreetNumber] = useState("");
-
-  // State for payload structure
-  const [street, setStreet] = useState("");
-  const [apartment, setApartment] = useState("");
+  const [manualApartment, setManualApartment] = useState(location.apartment || "");
+  const [apartment, setApartment] = useState(location.apartment || "");
+  const [addressLine, setAddressLine] = useState(location.street ? `${location.street}` : "");
+  const [district, setDistrict] = useState(location.district || "");
+  const [state, setState] = useState(location.stateOrRegion || "");
+  const [country, setCountry] = useState(location.country || "");
+  const [postalCode, setPostalCode] = useState(location.postalCode || "");
+  const [coordinates, setCoordinates] = useState<Coordinates | null>(location.coordinates || null);
   const [city, setCity] = useState("");
 
-  // Only prefill from context on first mount/restore
+  // Only prefill from Redux on first mount/restore
   const didPrefillRef = useRef(false);
   useEffect(() => {
     if (location && !didPrefillRef.current) {
@@ -80,10 +81,11 @@ const AddressForm: React.FC = () => {
       setDistrict(location.district || "");
       setPostalCode(location.postalCode || "");
       setAddressLine(location.street ? `${location.street}` : "");
-      setStreet(location.street || "");
+      setStreetName(location.street || "");
       setApartment(location.apartment || "");
       setManualApartment(location.apartment || "");
       setCountryCode(location.countryCode?.toLowerCase() || "ng");
+      setCoordinates(location.coordinates || null);
       didPrefillRef.current = true;
     }
   }, [location]);
@@ -93,34 +95,28 @@ const AddressForm: React.FC = () => {
       .then((res) => res.json())
       .then((data) => {
         if (data.country === "EE" || data.country === "NG") {
-          console.log("my country", data.country);
           setCountryCode(data.country.toLowerCase());
         } else {
           setCountryCode("ng"); // fallback
         }
       })
-      .catch((error) => {
-        console.error("Failed to fetch country:", error);
+      .catch(() => {
         setCountryCode("ng"); // fallback
-        // Optionally, show a message or allow manual country selection
       });
   }, []);
 
   useEffect(() => {
     if (!window.google) return;
-
     autocompleteRef.current = new window.google.maps.places.Autocomplete(
       inputRef.current,
       {
         types: ["address"],
-        componentRestrictions: { country: "ng" },
+        componentRestrictions: { country: countryCode },
       }
     );
-
     autocompleteRef.current.addListener("place_changed", async () => {
       const place: Place = autocompleteRef.current.getPlace();
       const components = place.address_components;
-
       const streetNumber =
         components.find((c) => c.types.includes("street_number"))?.long_name ||
         "";
@@ -137,36 +133,27 @@ const AddressForm: React.FC = () => {
       const postal =
         components.find((c) => c.types.includes("postal_code"))?.long_name ||
         "";
-
-      // Capitalize district and state
       const capitalize = (str: string) =>
         str ? str.charAt(0).toUpperCase() + str.slice(1).toLowerCase() : "";
       const district = capitalize(districtRaw);
       const state = capitalize(stateRaw);
-
-      // Extract coordinates if available
       const coordinates: Coordinates | null = place.geometry?.location
         ? {
             lat: place.geometry.location.lat(),
             lng: place.geometry.location.lng(),
           }
         : null;
-
       setCoordinates(coordinates);
       setCountry(countryName);
       setState(state);
       setDistrict(district);
       setPostalCode(postal);
       setAddressLine(`${streetName} ${streetNumber}`);
-      setStreet(streetName); // Only street name
-      setApartment("");
       setStreetName(streetName);
       setStreetNumber(streetNumber);
-
+      setApartment("");
       await fetchApartments(`${streetName} ${streetNumber}`);
       const apt = apartment || manualApartment;
-      console.log(apt)
-      // Build fullAddress as required by backend: streetNumber + street + apartment + district + stateOrRegion
       const fullAddress = [
         streetNumber && streetName ? `${streetNumber} ${streetName}` : streetName,
         apt,
@@ -176,8 +163,6 @@ const AddressForm: React.FC = () => {
         .filter(Boolean)
         .join(", ");
       const locationPayload = {
-      
-        
         country: countryName,
         countryCode: countryCode.toUpperCase(),
         stateOrRegion: state,
@@ -186,10 +171,10 @@ const AddressForm: React.FC = () => {
         apartment: apt,
         postalCode: postal,
         fullAddress,
+        coordinates,
       };
-      setLocation(locationPayload);
-      console.log("the Payload",locationPayload);
-      
+      dispatch(setMultipleFields(locationPayload));
+      console.log("the Payload", locationPayload);
     });
     return () => {
       if (autocompleteRef.current) {
@@ -198,14 +183,13 @@ const AddressForm: React.FC = () => {
         );
       }
     };
-  }, [countryCode]);
+  }, [countryCode, dispatch, apartment, manualApartment]);
+
   useEffect(() => {
-    // Only update if addressLine is set (i.e., after address selection)
     if (!addressLine) return;
     const apt = apartment || manualApartment;
-    // Build fullAddress as required by backend: streetNumber + street + apartment + district + stateOrRegion
     const fullAddress = [
-      streetNumber && street ? `${streetNumber} ${street}` : street,
+      streetNumber && streetName ? `${streetNumber} ${streetName}` : streetName,
       apt,
       district,
       state,
@@ -216,16 +200,16 @@ const AddressForm: React.FC = () => {
       country,
       countryCode: countryCode.toUpperCase(),
       stateOrRegion: state,
-      street,
+      street: streetName,
       district,
       apartment: apt,
       postalCode,
       fullAddress,
+      coordinates,
     };
-    setLocation(locationPayload);
-    // For debugging
+    dispatch(setMultipleFields(locationPayload));
     console.log("the Payload", locationPayload);
-  }, [apartment, manualApartment, district]);
+  }, [apartment, manualApartment, district, addressLine, country, countryCode, state, streetName, streetNumber, postalCode, coordinates, dispatch]);
 
   const handleManualSearch = async (
     e: React.KeyboardEvent<HTMLInputElement>

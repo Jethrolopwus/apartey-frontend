@@ -3,13 +3,14 @@ import React from "react";
 import DatePicker from "react-datepicker";
 import { Calendar } from "lucide-react";
 import "react-datepicker/dist/react-datepicker.css";
-import { useReviewForm } from "@/app/context/RevievFormContext";
+import { useSelector, useDispatch } from 'react-redux';
+import { RootState } from '../../store';
+import { setField } from '../../store/propertyReviewFormSlice';
 
 const MoveOutDatePicker: React.FC = () => {
-  const { location, setLocation } = useReviewForm();
-  const parsedDate = location?.moveOutDate
-    ? new Date(location.moveOutDate)
-    : null;
+  const dispatch = useDispatch();
+  const moveOutDate = useSelector((state: RootState) => state.propertyReviewForm.moveOutDate);
+  const parsedDate = moveOutDate ? new Date(moveOutDate) : null;
 
   return (
     <div>
@@ -19,13 +20,10 @@ const MoveOutDatePicker: React.FC = () => {
       <div className="relative  ">
         <DatePicker
           selected={parsedDate}
-          key={location?.moveOutDate || ''}
+          key={moveOutDate || ''}
           onChange={(date: Date | null) => {
             if (date) {
-              setLocation({
-                ...location,
-                moveOutDate: date.toISOString().split("T")[0],
-              });
+              dispatch(setField({ key: 'moveOutDate', value: date.toISOString().split("T")[0] }));
               console.log('Move Out Date:', date.toISOString().split("T")[0]);
             }
           }}

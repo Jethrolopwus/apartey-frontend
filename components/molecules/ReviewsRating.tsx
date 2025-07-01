@@ -1,34 +1,33 @@
 "use client";
-import React, { useState, useEffect, useRef } from "react";
+import React from "react";
 import { Star } from "lucide-react";
-import { useReviewForm } from "@/app/context/RevievFormContext";
+import { useSelector, useDispatch } from 'react-redux';
+import { RootState } from '../../store';
+import { setField } from '../../store/propertyReviewFormSlice';
+
+const COST_OF_REPAIRS_MAP: Record<string, string> = {
+  tenant: "Tenant (You)",
+  landlord: "Landlord",
+  split: "Split between both",
+  depends: "Depends on the issue",
+};
+const REVERSE_COST_OF_REPAIRS_MAP: Record<string, string> = {
+  "Tenant (You)": "tenant",
+  "Landlord": "landlord",
+  "Split between both": "split",
+  "Depends on the issue": "depends",
+};
 
 const RatingComponent: React.FC = () => {
-  const { location, setLocation } = useReviewForm();
-  const valueForMoney = location?.valueForMoney || 0;
-  const costOfRepairs = location?.costOfRepairs || "";
-  const overallExperience = location?.overallExperience || 0;
-  const detailedReview = location?.detailedReview || "";
+  const dispatch = useDispatch();
+  const { valueForMoney, costOfRepairs, overallExperience, detailedReview } = useSelector((state: RootState) => state.propertyReviewForm);
 
-  const COST_OF_REPAIRS_MAP: Record<string, string> = {
-    tenant: "Tenant (You)",
-    landlord: "Landlord",
-    split: "Split between both",
-    depends: "Depends on the issue",
-  };
-  const REVERSE_COST_OF_REPAIRS_MAP: Record<string, string> = {
-    "Tenant (You)": "tenant",
-    "Landlord": "landlord",
-    "Split between both": "split",
-    "Depends on the issue": "depends",
+  const handleStarClick = (field: 'valueForMoney' | 'overallExperience', rating: number) => {
+    dispatch(setField({ key: field, value: rating }));
   };
 
-  const handleStarClick = (field: string, rating: number) => {
-    setLocation({ ...location, [field]: rating });
-  };
-
-  const handleRadioChange = (field: string, value: string) => {
-    setLocation({ ...location, [field]: COST_OF_REPAIRS_MAP[value] || value });
+  const handleRadioChange = (field: 'costOfRepairs', value: string) => {
+    dispatch(setField({ key: field, value: COST_OF_REPAIRS_MAP[value] || value }));
   };
 
   return (
@@ -154,7 +153,7 @@ const RatingComponent: React.FC = () => {
         <textarea
           value={detailedReview}
           onChange={(e) => {
-            setLocation({ ...location, detailedReview: e.target.value });
+            dispatch(setField({ key: 'detailedReview', value: e.target.value }));
             console.log('Detailed Review:', e.target.value);
           }}
           placeholder="Share the details of your experience, what you liked and what you didn't like etc."

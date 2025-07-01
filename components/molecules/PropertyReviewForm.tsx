@@ -16,6 +16,14 @@ import RatingsAndReviews, { RatingsAndReviewsData } from "./RatingsAndReviews";
 import  { forwardRef, useImperativeHandle } from 'react';
 import { Star } from 'lucide-react';
 import { useReviewForm } from '@/app/context/RevievFormContext';
+import { useSelector, useDispatch } from 'react-redux';
+import { RootState } from '../../store';
+import {
+  setAddress,
+  setMoveOutDate,
+  setRatings,
+  setCostDetails,
+} from '../../store/propertyReviewFormSlice';
 
 interface Props {
   id: string;
@@ -183,6 +191,9 @@ const PropertyReviewForm: React.FC<Props> = ({ id }) => {
     clearPendingData,
     submitPendingReview,
   } = useAuthRedirect();
+
+  const dispatch = useDispatch();
+  const { address, moveOutDate, ratings, costDetails } = useSelector((state: RootState) => state.propertyReviewForm);
 
   const [formData, setFormData] = useState<ReviewFormData>({
     stayDetails: {
@@ -386,6 +397,20 @@ const PropertyReviewForm: React.FC<Props> = ({ id }) => {
       console.error("Error in handleSubmit:", error);
       toast.error("An unexpected error occurred. Please try again.");
     }
+  };
+
+  // Example handlers:
+  const handleAddressChange = (val: string) => {
+    dispatch(setAddress(val));
+  };
+  const handleMoveOutDateChange = (val: string | null) => {
+    dispatch(setMoveOutDate(val));
+  };
+  const handleRatingsChange = (val: number | null) => {
+    dispatch(setRatings(val));
+  };
+  const handleCostDetailsChange = (val: string) => {
+    dispatch(setCostDetails(val));
   };
 
   return (
