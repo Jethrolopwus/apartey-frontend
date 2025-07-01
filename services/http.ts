@@ -448,7 +448,7 @@ class BaseURL {
       throw error;
     }
   };
-  httpWriteUnlistedReview = async (data: LocationPayload) => {
+  httpWriteUnlistedReview = async (data: UnlistedPropertyReview) => {
     try {
       const token =
         localStorage.getItem("authToken") ||

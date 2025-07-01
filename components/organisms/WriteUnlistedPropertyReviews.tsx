@@ -18,6 +18,8 @@ import Accessibility from "../molecules/Accessibility";
 import { useSelector, useDispatch } from 'react-redux';
 import { RootState } from '../../store';
 import { setField, setMultipleFields, resetForm } from '../../store/propertyReviewFormSlice';
+import { useWriteUnlistedReviewMutation } from '@/Hooks/use.writeUnlistedReviews.mutation';
+import { UnlistedPropertyReview } from '@/types/generated';
 
 // Define the form data structure
 interface FormData {
@@ -45,6 +47,15 @@ interface FormData {
   nearestPark: string;
   nearestRestaurant: string;
   landlordLanguages: string[];
+  city?: string;
+  country: string;
+  countryCode: string;
+  street: string;
+  streetNumber: string;
+  apartment: string;
+  district: string;
+  stateOrRegion: string;
+  postalCode: string;
 }
 
 // If PendingReviewData type exists, extend it. Otherwise, use type assertion for pendingReviewData.
@@ -60,6 +71,17 @@ type PendingReviewData = {
 
 // NOTE: This component must be wrapped in <ReviewFormProvider> at a higher level (e.g., in layout.tsx or _app.tsx)
 // Do NOT wrap it here, or context will reset on every render.
+
+// Allowed building facilities for backend
+const ALLOWED_BUILDING_FACILITIES = [
+  "Parking lot",
+  "Elevator",
+  "Security system"
+];
+
+function mapValidBuildingFacilities(facilities: string[]): string[] {
+  return facilities.filter(facility => ALLOWED_BUILDING_FACILITIES.includes(facility));
+}
 
 const WriteUnlistedPropertyReviews: React.FC = () => {
   const [currentStep, setCurrentStep] = useState(1);
@@ -81,6 +103,7 @@ const WriteUnlistedPropertyReviews: React.FC = () => {
 
   const dispatch = useDispatch();
   const formData = useSelector((state: RootState) => state.propertyReviewForm);
+  const { mutate, isLoading, error, data } = useWriteUnlistedReviewMutation();
 
   // Restore pending data on mount (if redirected after login)
   useEffect(() => {
@@ -162,61 +185,103 @@ const WriteUnlistedPropertyReviews: React.FC = () => {
   const handleFinalSubmitWithValidation = async () => {
     setIsSubmitting(true);
     try {
-      // Build costDetails from formData
-      const costDetails = {
-        rentType: formData.rentType,
-        rent: formData.yearlyRent,
-        securityDepositRequired: formData.securityDepositRequired,
-        agentBrokerFeeRequired: formData.agentFeeRequired,
-        fixedUtilityCost: formData.fixedUtilityCost,
-        centralHeating: formData.centralHeating,
-        furnished: formData.furnished,
-        julySummerUtilities: formData.julySummerUtilities,
-        januaryWinterUtilities: formData.januaryWinterUtilities,
-      };
-      // Build ratingsAndReviews from context (addressLocation) and formData
-      const ratingsAndReviews = {
-        valueForMoney: formData.valueForMoney,
-        costOfRepairs: formData.costOfRepairs,
-        overallExperience: formData.overallExperience,
-        detailedReview: formData.detailedReview,
-      };
-      // Build location from addressLocation, removing propertyType, propertyName, propertyDescription
-      const { propertyType, propertyName, propertyDescription, ...locationRest } = {
-        ...formData,
-      };
-      // Build pendingData
-      const pendingData = {
+      // Build fullAddress as required by backend
+      const fullAddress = [
+        '',
+        formData.street,
+        formData.apartment,
+        formData.district,
+        formData.stateOrRegion
+      ].filter(Boolean).join(", ");
+      // Build API payload matching backend requirements
+      const payload = {
+        location: {
+          country: formData.country,
+          countryCode: formData.countryCode || 'NG',
+          stateOrRegion: formData.stateOrRegion,
+          street: formData.street,
+          streetNumber: '',
+          apartment: formData.apartment,
+          district: formData.district,
+          postalCode: formData.postalCode,
+          fullAddress,
+          city: '',
+          streetAddress: formData.street,
+        },
         stayDetails: {
           numberOfRooms: formData.numberOfRooms,
           numberOfOccupants: formData.numberOfOccupants,
+          dateLeft: formData.moveOutDate || '',
+          furnished: formData.furnished,
+          appliancesFixtures: Array.isArray(formData.appliances) ? formData.appliances : [],
+          buildingFacilities: mapValidBuildingFacilities(Array.isArray(formData.buildingFacilities) ? formData.buildingFacilities : []),
+          landlordLanguages: Array.isArray(formData.landlordLanguages) ? formData.landlordLanguages : [],
         },
-        costDetails,
+        costDetails: {
+          rentType: (formData.rentType === 'actual'
+            ? 'Monthly'
+            : formData.rentType === 'range'
+              ? 'Yearly'
+              : 'Monthly') as 'Monthly' | 'Yearly',
+          rent: Number(formData.yearlyRent),
+          securityDepositRequired: formData.securityDepositRequired,
+          agentBrokerFeeRequired: formData.agentFeeRequired,
+          fixedUtilityCost: formData.fixedUtilityCost,
+          julySummerUtilities: Number(formData.julySummerUtilities),
+          januaryWinterUtilities: Number(formData.januaryWinterUtilities),
+        },
         accessibility: {
           nearestGroceryStore: formData.nearestGroceryStore,
           nearestPark: formData.nearestPark,
           nearestRestaurant: formData.nearestRestaurant,
         },
-        ratingsAndReviews,
-        submitAnonymously: formData.isAnonymous,
-        location: locationRest,
+        ratingsAndReviews: {
+          valueForMoney: formData.valueForMoney,
+          costOfRepairsCoverage: formData.costOfRepairs,
+          overallExperience: formData.overallExperience,
+          overallRating: formData.overallExperience,
+          detailedReview: formData.detailedReview,
+        },
+        submitAnonymously: !!formData.isAnonymous,
       };
       // If not authenticated, save to localStorage and redirect
       if (!isAuthenticated) {
+        const pendingData = {
+          ...payload,
+          submitAnonymously: !!formData.isAnonymous,
+          stayDetails: {
+            ...payload.stayDetails,
+            appliancesFixtures: Array.isArray(formData.appliances) ? formData.appliances : [],
+            buildingFacilities: mapValidBuildingFacilities(Array.isArray(formData.buildingFacilities) ? formData.buildingFacilities : []),
+            landlordLanguages: Array.isArray(formData.landlordLanguages) ? formData.landlordLanguages : [],
+          },
+        };
         localStorage.setItem('pendingReviewData', JSON.stringify(pendingData));
-        handleAuthRedirect(pendingData);
+        handleAuthRedirect(pendingData as any);
         return;
       }
-      // Simulate mutation (replace with real API call in production)
-      setTimeout(() => {
-        clearPendingData();
-        localStorage.removeItem('pendingReviewData');
-        toast.success("Review submitted successfully!");
-        router.push("/reviewsPage");
-      }, 1000);
-    } catch {
-      toast.error("An unexpected error occurred. Please try again.");
-    } finally {
+      // Submit to API
+      mutate(payload, {
+        onSuccess: (response) => {
+          clearPendingData();
+          localStorage.removeItem('pendingReviewData');
+          toast.success(response?.message || 'Review submitted successfully!');
+          router.push('/reviewsPage');
+        },
+        onError: (err: any) => {
+          if (err?.message?.includes('login')) {
+            toast.error('Session expired. Please log in again.');
+            handleAuthRedirect(payload as any);
+          } else {
+            toast.error(err?.message || 'Failed to submit review. Please try again.');
+          }
+        },
+        onSettled: () => {
+          setIsSubmitting(false);
+        },
+      });
+    } catch (e) {
+      toast.error('An unexpected error occurred. Please try again.');
       setIsSubmitting(false);
     }
   };
