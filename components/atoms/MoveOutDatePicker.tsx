@@ -19,12 +19,15 @@ const MoveOutDatePicker: React.FC = () => {
       <div className="relative  ">
         <DatePicker
           selected={parsedDate}
+          key={location?.moveOutDate || ''}
           onChange={(date: Date | null) => {
-            if (date)
+            if (date) {
               setLocation({
                 ...location,
                 moveOutDate: date.toISOString().split("T")[0],
               });
+              console.log('Move Out Date:', date.toISOString().split("T")[0]);
+            }
           }}
           dateFormat="yyyy-MM-dd"
           placeholderText="Select date"

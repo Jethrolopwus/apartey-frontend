@@ -1,12 +1,28 @@
 "use client";
 import React from "react";
-import { useReviewForm } from "@/app/context/RevievFormContext";
 
-const AmenitiesAccessibility: React.FC = () => {
-  const { location, setLocation } = useReviewForm();
+interface AmenitiesAccessibilityProps {
+  appliances: string[];
+  buildingFacilities: string[];
+  costOfRepairsCoverage: string[];
+  onAppliancesChange: (appliances: string[]) => void;
+  onBuildingFacilitiesChange: (facilities: string[]) => void;
+  onCostOfRepairsCoverageChange: (coverage: string[]) => void;
+  landlordLanguages: string[];
+  onLandlordLanguagesChange: (languages: string[]) => void;
+}
 
+const AmenitiesAccessibility: React.FC<AmenitiesAccessibilityProps> = ({
+  appliances,
+  buildingFacilities,
+  costOfRepairsCoverage,
+  onAppliancesChange,
+  onBuildingFacilitiesChange,
+  onCostOfRepairsCoverageChange,
+  landlordLanguages,
+  onLandlordLanguagesChange,
+}) => {
   // Appliances
-  const appliancesFixtures = location?.appliancesFixtures || [];
   const APPLIANCE_MAP: Record<string, string> = {
     oven: "Oven",
     washingMachine: "Washing machine",
@@ -16,43 +32,22 @@ const AmenitiesAccessibility: React.FC = () => {
     dryer: "Dryer",
     microwave: "Microwave",
   };
+  
   const isApplianceSelected = (appliance: string): boolean =>
-    appliancesFixtures.includes(APPLIANCE_MAP[appliance] || appliance);
+    appliances.includes(APPLIANCE_MAP[appliance] || appliance);
+    
   const toggleAppliance = (appliance: string, checked: boolean) => {
     let updated: string[];
     const mapped = APPLIANCE_MAP[appliance] || appliance;
     if (checked) {
-      updated = [...appliancesFixtures, mapped];
+      updated = [...appliances, mapped];
     } else {
-      updated = appliancesFixtures.filter((item) => item !== mapped);
+      updated = appliances.filter((item) => item !== mapped);
     }
-    setLocation({ ...location, appliancesFixtures: updated });
-  };
-
-  // Landlord Languages
-  const landlordLanguages = location?.landlordLanguages || [];
-  const LANGUAGE_MAP: Record<string, string> = {
-    english: "English",
-    french: "French",
-    spanish: "Spanish",
-    german: "German",
-    chinese: "Chinese",
-  };
-  const isLanguageSelected = (language: string): boolean =>
-    landlordLanguages.includes(LANGUAGE_MAP[language] || language);
-  const toggleLanguage = (language: string, checked: boolean) => {
-    let updated: string[];
-    const mapped = LANGUAGE_MAP[language] || language;
-    if (checked) {
-      updated = [...landlordLanguages, mapped];
-    } else {
-      updated = landlordLanguages.filter((item) => item !== mapped);
-    }
-    setLocation({ ...location, landlordLanguages: updated });
+    onAppliancesChange(updated);
   };
 
   // Building Facilities
-  const buildingFacilities = location?.buildingFacilities || [];
   const FACILITY_MAP: Record<string, string> = {
     wheelchairAccessible: "Wheelchair accessible",
     elevator: "Elevator",
@@ -63,8 +58,10 @@ const AmenitiesAccessibility: React.FC = () => {
     parking: "Parking lot",
     security: "Security system",
   };
+  
   const isFacilitySelected = (facility: string): boolean =>
     buildingFacilities.includes(FACILITY_MAP[facility] || facility);
+    
   const toggleFacility = (facility: string, checked: boolean) => {
     let updated: string[];
     const mapped = FACILITY_MAP[facility] || facility;
@@ -73,54 +70,66 @@ const AmenitiesAccessibility: React.FC = () => {
     } else {
       updated = buildingFacilities.filter((item) => item !== mapped);
     }
-    setLocation({ ...location, buildingFacilities: updated });
+    onBuildingFacilitiesChange(updated);
+  };
+
+  // Cost of Repairs Coverage
+  const COVERAGE_MAP: Record<string, string> = {
+    plumbing: "Plumbing",
+    electrical: "Electrical",
+    hvac: "HVAC",
+    structural: "Structural",
+    appliances: "Appliances",
+    landscaping: "Landscaping",
+  };
+  
+  const isCoverageSelected = (coverage: string): boolean =>
+    costOfRepairsCoverage.includes(COVERAGE_MAP[coverage] || coverage);
+    
+  const toggleCoverage = (coverage: string, checked: boolean) => {
+    let updated: string[];
+    const mapped = COVERAGE_MAP[coverage] || coverage;
+    if (checked) {
+      updated = [...costOfRepairsCoverage, mapped];
+    } else {
+      updated = costOfRepairsCoverage.filter((item) => item !== mapped);
+    }
+    onCostOfRepairsCoverageChange(updated);
   };
 
   // Custom Inputs
-  const handleCustomInput = (type: "appliance" | "language", value: string) => {
+  const handleCustomInput = (type: "appliance" | "facility" | "coverage", value: string) => {
     if (!value.trim()) return;
-    const field =
-      type === "appliance" ? "appliancesFixtures" : "landlordLanguages";
-    const current = location?.[field] || [];
     const newItems = value
       .split(",")
-      .map((item) => item.trim().toLowerCase())
+      .map((item) => item.trim())
       .filter((item) => item.length > 0);
-    const existingItems = [...current];
-    const itemsToAdd = newItems.filter((item) => !existingItems.includes(item));
-    const updated = [...existingItems, ...itemsToAdd];
-    setLocation({ ...location, [field]: updated });
+      
+    if (type === "appliance") {
+      const existingItems = [...appliances];
+      const itemsToAdd = newItems.filter((item) => !existingItems.includes(item));
+      onAppliancesChange([...existingItems, ...itemsToAdd]);
+    } else if (type === "facility") {
+      const existingItems = [...buildingFacilities];
+      const itemsToAdd = newItems.filter((item) => !existingItems.includes(item));
+      onBuildingFacilitiesChange([...existingItems, ...itemsToAdd]);
+    } else if (type === "coverage") {
+      const existingItems = [...costOfRepairsCoverage];
+      const itemsToAdd = newItems.filter((item) => !existingItems.includes(item));
+      onCostOfRepairsCoverageChange([...existingItems, ...itemsToAdd]);
+    }
   };
 
-  const handleCustomFacilityInput = (value: string) => {
-    if (!value.trim()) return;
-    const current = location?.buildingFacilities || [];
-    const newItems = value
-      .split(",")
-      .map((item) => item.trim().toLowerCase())
-      .filter((item) => item.length > 0);
-    const existingItems = [...current];
-    const itemsToAdd = newItems.filter((item) => !existingItems.includes(item));
-    const updated = [...existingItems, ...itemsToAdd];
-    setLocation({ ...location, buildingFacilities: updated });
-  };
-
-  // Accessibility
-  const nearestGroceryStore = location?.nearestGroceryStore || "";
-  const nearestPark = location?.nearestPark || "";
-  const nearestRestaurant = location?.nearestRestaurant || "";
+  const LANGUAGE_OPTIONS = [
+    "English",
+    "Yoruba",
+    "Hausa",
+    "Igbo",
+    "Other",
+  ];
 
   return (
     <div>
-      <div className="mb-6">
-        <h2 className="text-xl font-semibold text-gray-900 mb-2">
-          Amenities & Accessibility
-        </h2>
-        <p className="text-gray-600">
-          Tell us about the property's amenities and location
-        </p>
-      </div>
-
       <div className="space-y-6">
         {/* Appliances */}
         <div className="border border-gray-200 rounded-lg p-4">
@@ -146,7 +155,10 @@ const AmenitiesAccessibility: React.FC = () => {
                   type="checkbox"
                   id={appliance}
                   checked={isApplianceSelected(appliance)}
-                  onChange={(e) => toggleAppliance(appliance, e.target.checked)}
+                  onChange={(e) => {
+                    toggleAppliance(appliance, e.target.checked);
+                    console.log('Appliance:', APPLIANCE_MAP[appliance] || appliance, e.target.checked);
+                  }}
                   className="w-4 h-4 text-[#C85212] bg-gray-100 border-gray-300 rounded focus:ring-[#C85212] focus:ring-2"
                 />
                 <label
@@ -173,6 +185,7 @@ const AmenitiesAccessibility: React.FC = () => {
               placeholder="Enter other appliances"
               onBlur={(e) => {
                 handleCustomInput("appliance", e.target.value);
+                console.log('Custom Appliance:', e.target.value);
                 e.target.value = "";
               }}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#C85212] focus:border-transparent"
@@ -180,163 +193,23 @@ const AmenitiesAccessibility: React.FC = () => {
           </div>
 
           {/* Selected Appliances Display */}
-          {(appliancesFixtures.length ?? 0) > 0 && (
+          {appliances.length > 0 && (
             <div className="mt-4 p-3 bg-orange-50 border border-orange-200 rounded-md">
               <h4 className="text-sm font-medium text-[#C85212] mb-2">
                 Selected Appliances:
               </h4>
               <div className="flex flex-wrap gap-2">
-                {appliancesFixtures.map((appliance, index) => (
+                {appliances.map((appliance, index) => (
                   <span
                     key={index}
                     className="inline-flex items-center px-2 py-1 bg-orange-100 text-[#C85212] text-xs font-medium rounded-full"
                   >
-                    {APPLIANCE_MAP[appliance] || appliance}
+                    {appliance}
                   </span>
                 ))}
               </div>
             </div>
           )}
-        </div>
-
-        {/* Landlord Languages */}
-        <div className="border border-gray-200 rounded-lg p-4">
-          <h3 className="font-medium text-gray-900 mb-2">Landlord Languages</h3>
-          <p className="text-sm text-gray-600 mb-4">
-            Select the languages spoken by the landlord
-          </p>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-            {["english", "french", "spanish", "german", "chinese"].map(
-              (language) => (
-                <div key={language} className="flex items-center space-x-2">
-                  <input
-                    type="checkbox"
-                    id={language}
-                    checked={isLanguageSelected(language)}
-                    onChange={(e) => toggleLanguage(language, e.target.checked)}
-                    className="w-4 h-4 text-[#C85212] bg-gray-100 border-gray-300 rounded focus:ring-orange-500 focus:ring-2"
-                  />
-                  <label
-                    htmlFor={language}
-                    className="text-sm text-gray-700 capitalize"
-                  >
-                    {LANGUAGE_MAP[language] || language}
-                  </label>
-                </div>
-              )
-            )}
-          </div>
-
-          {/* Custom Language Input */}
-          <div className="mt-4">
-            <label
-              htmlFor="customLanguage"
-              className="block text-sm font-medium text-gray-700 mb-2"
-            >
-              Other Languages (comma-separated)
-            </label>
-            <input
-              type="text"
-              id="customLanguage"
-              placeholder="Enter other languages"
-              onBlur={(e) => {
-                handleCustomInput("language", e.target.value);
-                e.target.value = "";
-              }}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#C85212] focus:border-transparent"
-            />
-          </div>
-
-          {/* Selected Languages Display */}
-          {(landlordLanguages.length ?? 0) > 0 && (
-            <div className="mt-4 p-3 bg-orange-50 border border-orange-200 rounded-md">
-              <h4 className="text-sm font-medium text-[#C85212] mb-2">
-                Selected Languages:
-              </h4>
-              <div className="flex flex-wrap gap-2">
-                {landlordLanguages.map((language, index) => (
-                  <span
-                    key={index}
-                    className="inline-flex items-center px-2 py-1 bg-orange-100 text-[#C85212] text-xs font-medium rounded-full capitalize"
-                  >
-                    {LANGUAGE_MAP[language] || language}
-                  </span>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Accessibility */}
-        <div className="border border-gray-200 rounded-lg p-4">
-          <h3 className="font-medium text-gray-900 mb-2">Accessibility</h3>
-          <p className="text-sm text-gray-600 mb-4">
-            Information about the property's accessibility features
-          </p>
-
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Nearest Grocery Store
-              </label>
-              <select
-                value={nearestGroceryStore}
-                onChange={(e) =>
-                  setLocation({
-                    ...location,
-                    nearestGroceryStore: e.target.value,
-                  })
-                }
-                className="w-full  px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#C85212] focus:border-transparent"
-              >
-                <option value="">Select distance</option>
-                <option value="0-5 min walk">0-5 min walk</option>
-                <option value="6-10 min walk">6-10 min walk</option>
-                <option value="11-20 min walk">11-20 min walk</option>
-                <option value="21-30 min walk'">21-30 min walk'</option>
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Nearest Park
-              </label>
-              <select
-                value={nearestPark}
-                onChange={(e) =>
-                  setLocation({ ...location, nearestPark: e.target.value })
-                }
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#C85212] focus:border-transparent"
-              >
-                <option value="">Select distance</option>
-                <option value="0-5 min walk">0-5 min walk</option>
-                <option value="6-10 min walk">6-10 min walk</option>
-                <option value="11-20 min walk">11-20 min walk</option>
-                <option value="21-30 min walk'">21-30 min walk'</option>
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Nearest Restaurant
-              </label>
-              <select
-                value={nearestRestaurant}
-                onChange={(e) =>
-                  setLocation({
-                    ...location,
-                    nearestRestaurant: e.target.value,
-                  })
-                }
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#C85212] focus:border-transparent"
-              >
-                <option value="">Select distance</option>
-                <option value="0-5 min walk">0-5 min walk</option>
-                <option value="6-10 min walk">6-10 min walk</option>
-                <option value="11-20 min walk">11-20 min walk</option>
-                <option value="21-30 min walk'">21-30 min walk'</option>
-              </select>
-            </div>
-          </div>
         </div>
 
         {/* Building Facilities */}
@@ -364,8 +237,11 @@ const AmenitiesAccessibility: React.FC = () => {
                   type="checkbox"
                   id={facility}
                   checked={isFacilitySelected(facility)}
-                  onChange={(e) => toggleFacility(facility, e.target.checked)}
-                  className="w-4 h-4 text-[#C85212] bg-gray-100 border-gray-300 rounded focus:ring-orange-500 focus:ring-2"
+                  onChange={(e) => {
+                    toggleFacility(facility, e.target.checked);
+                    console.log('Facility:', FACILITY_MAP[facility] || facility, e.target.checked);
+                  }}
+                  className="w-4 h-4 text-[#C85212] bg-gray-100 border-gray-300 rounded focus:ring-[#C85212] focus:ring-2"
                 />
                 <label
                   htmlFor={facility}
@@ -390,15 +266,16 @@ const AmenitiesAccessibility: React.FC = () => {
               id="customFacility"
               placeholder="Enter other facilities"
               onBlur={(e) => {
-                handleCustomFacilityInput(e.target.value);
+                handleCustomInput("facility", e.target.value);
+                console.log('Custom Facility:', e.target.value);
                 e.target.value = "";
               }}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#C85212] focus:border-transparent"
             />
           </div>
 
           {/* Selected Facilities Display */}
-          {(buildingFacilities.length ?? 0) > 0 && (
+          {buildingFacilities.length > 0 && (
             <div className="mt-4 p-3 bg-orange-50 border border-orange-200 rounded-md">
               <h4 className="text-sm font-medium text-[#C85212] mb-2">
                 Selected Facilities:
@@ -409,8 +286,46 @@ const AmenitiesAccessibility: React.FC = () => {
                     key={index}
                     className="inline-flex items-center px-2 py-1 bg-orange-100 text-[#C85212] text-xs font-medium rounded-full"
                   >
-                    {FACILITY_MAP[facility] || facility}
+                    {facility}
                   </span>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+        
+        {/* Landlord Languages */}
+        <div className="border border-gray-200 rounded-lg p-4">
+          <h3 className="font-medium text-gray-900 mb-2">Landlord Languages</h3>
+          <p className="text-sm text-gray-600 mb-4">Select the languages spoken by the landlord</p>
+          <div className="flex flex-wrap gap-4">
+            {LANGUAGE_OPTIONS.map((lang) => (
+              <label key={lang} className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  value={lang}
+                  checked={landlordLanguages.includes(lang)}
+                  onChange={e => {
+                    if (e.target.checked) {
+                      onLandlordLanguagesChange([...landlordLanguages, lang]);
+                    } else {
+                      onLandlordLanguagesChange(landlordLanguages.filter(l => l !== lang));
+                    }
+                    console.log('Landlord Language:', lang, e.target.checked);
+                  }}
+                  className="w-4 h-4 text-[#C85212] bg-gray-100 border-gray-300 rounded focus:ring-[#C85212] focus:ring-2"
+                />
+                <span className="text-sm text-gray-700">{lang}</span>
+              </label>
+            ))}
+          </div>
+          {/* Selected Languages Display */}
+          {landlordLanguages.length > 0 && (
+            <div className="mt-4 p-3 bg-orange-50 border border-orange-200 rounded-md">
+              <h4 className="text-sm font-medium text-[#C85212] mb-2">Selected Languages:</h4>
+              <div className="flex flex-wrap gap-2">
+                {landlordLanguages.map((lang, idx) => (
+                  <span key={idx} className="inline-flex items-center px-2 py-1 bg-orange-100 text-[#C85212] text-xs font-medium rounded-full">{lang}</span>
                 ))}
               </div>
             </div>

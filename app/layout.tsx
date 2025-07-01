@@ -6,7 +6,8 @@ import Navbar from "@/components/molecules/Navbar";
 import Footer from "@/components/molecules/Footer";
 import QueryProvider from "@/app/QueryProvider";
 import ToastProvider from "@/app/ToastProvider";
-import NextProvider from "@/app/NextProvider";
+import NextProvider from "@/app/NextProvider"
+import { ReviewFormProvider } from "@/app/context/RevievFormContext";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -42,16 +43,18 @@ export default function RootLayout({
         />
       </head>
       <body
-        className={`${geistSans.className} ${geistMono.className} bg-gray-50 min-h-screen font-[family-name:var(--font-geist-sans)]`}
+        className={`${geistSans.variable} ${geistMono.variable} bg-gray-50 min-h-screen font-sans`}
       >
-        <NextProvider>
-          <QueryProvider>
-            <ToastProvider />
-            <Navbar />
-            {children}
-            <Footer />
-          </QueryProvider>
-        </NextProvider>
+        <ReviewFormProvider>
+          <NextProvider>
+            <QueryProvider>
+              <Navbar />
+              {children}
+              <Footer />
+              <ToastProvider />
+            </QueryProvider>
+          </NextProvider>
+        </ReviewFormProvider>
       </body>
     </html>
   );

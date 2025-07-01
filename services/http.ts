@@ -56,6 +56,15 @@ class BaseURL {
     }
   };
 
+  httpGoogleAuthCallback = async (googleData: any): Promise<SignInResponse> => {
+    try {
+      const response = await AxiosInstance.post(endpoints.googleAuth, googleData);
+      return response.data;
+    } catch (error: any) {
+      throw error;
+    }
+  };
+
   httpVerifyEmail = async (data: FormValues) => {
     try {
       const response = await AxiosInstance.post(endpoints.verifyEmail, data);
@@ -565,12 +574,44 @@ class BaseURL {
       );
     }
   };
+  httpGetAllBlogPost = async (limit?: number, byId?: number) => {
+    try {
+      let url = endpoints.getAllBlogPost;
+
+      // Build query parameters
+      const params = new URLSearchParams();
+      if (byId) {
+        params.append("byId", byId.toString());
+      }
+      if (limit) {
+        params.append("limit", limit.toString());
+      }
+      if (params.toString()) {
+        url += `?${params.toString()}`;
+      }
+
+      const response = await AxiosInstance.get(url);
+      return response.data;
+    } catch (error: any) {
+      throw new Error(
+        error.response?.data?.message || "Get all listings failed"
+      );
+    }
+  };
   httpGetListingsById = async (id: string) => {
     try {
       const response = await AxiosInstance.get(`/listings/${id}`);
       return response.data;
     } catch (error: any) {
       throw new Error(error.response?.data?.message || "Listing not found");
+    }
+  };
+  httpGetAllBlogsById = async (id: string) => {
+    try {
+      const response = await AxiosInstance.get(`/blog/${id}`);
+      return response.data;
+    } catch (error: any) {
+      throw new Error(error.response?.data?.message || "Blogs not found");
     }
   };
 

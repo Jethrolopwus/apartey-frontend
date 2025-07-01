@@ -2,20 +2,16 @@
 import React, { forwardRef, useImperativeHandle } from 'react';
 import { Star } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { useReviewForm } from '@/app/context/RevievFormContext';
 
-const SubmitReviewComponent = forwardRef((props, ref) => {
-  const { location, setLocation } = useReviewForm();
-  const isAnonymous = location?.isAnonymous || false;
-  const agreeToTerms = location?.agreeToTerms || false;
+interface SubmitReviewComponentProps {
+  isAnonymous: boolean;
+  agreeToTerms: boolean;
+  onAnonymousChange: (checked: boolean) => void;
+  onTermsChange: (checked: boolean) => void;
+}
 
-  const handleAnonymousChange = (checked: boolean) => {
-    setLocation({ ...location, isAnonymous: checked });
-  };
-
-  const handleTermsChange = (checked: boolean) => {
-    setLocation({ ...location, agreeToTerms: checked });
-  };
+const SubmitReviewComponent = forwardRef<{ handleFinalSubmit: () => Promise<any> }, SubmitReviewComponentProps>((props, ref) => {
+  const { isAnonymous, agreeToTerms, onAnonymousChange, onTermsChange } = props;
 
   // This function can be called by the parent to submit the review
   const handleFinalSubmit = async () => {
@@ -23,10 +19,10 @@ const SubmitReviewComponent = forwardRef((props, ref) => {
       toast.error('Please agree to the terms and conditions to continue');
       return false;
     }
-    // You can add any additional validation here
-    // Return the context data for final submission
+    // Return the form data for final submission
     return {
-      ...location,
+      submitAnonymously: isAnonymous,
+      agreeToTerms: agreeToTerms,
       submittedAt: new Date().toISOString(),
     };
   };
@@ -59,7 +55,7 @@ const SubmitReviewComponent = forwardRef((props, ref) => {
           type="checkbox"
           id="anonymous"
           checked={isAnonymous}
-          onChange={(e) => handleAnonymousChange(e.target.checked)}
+          onChange={(e) => onAnonymousChange(e.target.checked)}
           className="h-4 w-4 text-orange-600 focus:ring-orange-500 border-gray-300 rounded"
         />
         <label htmlFor="anonymous" className="text-sm text-gray-700 cursor-pointer">
@@ -97,7 +93,7 @@ const SubmitReviewComponent = forwardRef((props, ref) => {
             type="checkbox"
             id="terms"
             checked={agreeToTerms}
-            onChange={(e) => handleTermsChange(e.target.checked)}
+            onChange={(e) => onTermsChange(e.target.checked)}
             className="h-4 w-4 text-orange-600 focus:ring-orange-500 border-gray-300 rounded mt-0.5"
           />
           <label htmlFor="terms" className="text-sm text-gray-700 cursor-pointer">
@@ -108,5 +104,7 @@ const SubmitReviewComponent = forwardRef((props, ref) => {
     </div>
   );
 });
+
+SubmitReviewComponent.displayName = 'SubmitReviewComponent';
 
 export default SubmitReviewComponent;

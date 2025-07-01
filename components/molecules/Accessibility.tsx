@@ -1,11 +1,10 @@
 "use client";
 
 const proximityOptions = [
-  "Very Close",
-  "Close",
-  "Moderate",
-  "Far",
-  "Very Far"
+  "0-5 min walk",
+  "6-10 min walk",
+  "11-20 min walk",
+  "21-30 min walk"
 ];
 
 type AccessibilityData = {
@@ -33,9 +32,13 @@ export default function Accessibility({ accessibility, onInputChange }: Props) {
           </label>
           <select
             value={accessibility.nearestGroceryStore}
-            onChange={(e) => onInputChange("nearestGroceryStore", e.target.value)}
+            onChange={(e) => {
+              onInputChange("nearestGroceryStore", e.target.value);
+              console.log('Nearest Grocery Store:', e.target.value);
+            }}
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
+            <option value="">Select distance</option>
             {proximityOptions.map((option) => (
               <option key={option} value={option}>
                 {option}
@@ -50,9 +53,13 @@ export default function Accessibility({ accessibility, onInputChange }: Props) {
           </label>
           <select
             value={accessibility.nearestPark}
-            onChange={(e) => onInputChange("nearestPark", e.target.value)}
+            onChange={(e) => {
+              onInputChange("nearestPark", e.target.value);
+              console.log('Nearest Park:', e.target.value);
+            }}
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
+            <option value="">Select distance</option>
             {proximityOptions.map((option) => (
               <option key={option} value={option}>
                 {option}
@@ -67,9 +74,13 @@ export default function Accessibility({ accessibility, onInputChange }: Props) {
           </label>
           <select
             value={accessibility.nearestRestaurant}
-            onChange={(e) => onInputChange("nearestRestaurant", e.target.value)}
+            onChange={(e) => {
+              onInputChange("nearestRestaurant", e.target.value);
+              console.log('Nearest Restaurant:', e.target.value);
+            }}
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
+            <option value="">Select distance</option>
             {proximityOptions.map((option) => (
               <option key={option} value={option}>
                 {option}

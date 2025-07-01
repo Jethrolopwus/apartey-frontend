@@ -11,32 +11,28 @@ import {
 import { StepProps } from '@/types/generated';
 
 const PropertyTypeStep: React.FC<StepProps> = ({ onNext, onBack, formData, setFormData }) => {
-  const [category, setCategory] = useState(formData.category || 'rent');
-  const [propertyType, setPropertyType] = useState(formData.propertyType || 'apartment');
-  const [condition, setCondition] = useState(formData.condition || 'good');
-  const [petPolicy, setPetPolicy] = useState(formData.petPolicy || 'pet-friendly');
-
   const propertyTypes = [
-    { id: 'apartment', label: 'Apartment', icon: Building2 },
-    { id: 'house', label: 'House', icon: Home },
-    { id: 'commercial', label: 'Commercial', icon: Building },
-    { id: 'room', label: 'Room', icon: Building2 },
-    { id: 'garage', label: 'Garage', icon: Car },
+    { id: 'House', label: 'House', icon: Home },
+    { id: 'Apartment', label: 'Apartment', icon: Building2 },
+    { id: 'Room', label: 'Room', icon: Building2 },
+    { id: 'Commercial', label: 'Commercial', icon: Building },
+    { id: 'Garage', label: 'Garage', icon: Car },
   ];
+  const categories = [
+    { id: 'Sale', label: 'Sale' },
+    { id: 'Rent', label: 'Rent' },
+    { id: 'Swap', label: 'Swap' },
+  ];
+ const conditions = [
+  { id: 'Good Condition', label: 'Good Condition' },
+  { id: 'New Building', label: 'New Building' },
+  { id: 'Renovated', label: 'Renovated' },
+];
 
-  const conditions = [
-    { id: 'good', label: 'Good Condition' },
-    { id: 'new', label: 'New Building' },
-    { id: 'renovated', label: 'Renovated' },
-  ];
-
-  const petPolicies = [
-    { id: 'pet-friendly', label: 'Pet-Friendly (All pets welcome)' },
-    { id: 'cats-only', label: 'Cats Only' },
-    { id: 'dogs-only', label: 'Dogs Only' },
-    { id: 'small-pets', label: 'Small Pets Only (under 25 lbs)' },
-    { id: 'no-pets', label: 'No Pets Allowed' },
-  ];
+  const [category, setCategory] = useState(formData.category || 'Rent');
+  const [propertyType, setPropertyType] = useState(formData.propertyType || 'Apartment');
+  const [condition, setCondition] = useState(formData.condition || 'Good Condition');
+  const [petPolicy, setPetPolicy] = useState(formData.petPolicy || 'pet-friendly');
 
   const handleNext = () => {
     if (setFormData) {
@@ -45,7 +41,7 @@ const PropertyTypeStep: React.FC<StepProps> = ({ onNext, onBack, formData, setFo
         category,
         propertyType,
         condition,
-        petPolicy
+        petPolicy,
       });
     }
     onNext();
@@ -61,37 +57,20 @@ const PropertyTypeStep: React.FC<StepProps> = ({ onNext, onBack, formData, setFo
           Category <span className="text-red-500">*</span>
         </label>
         <div className="flex space-x-1 bg-gray-100 p-1 rounded-lg inline-flex">
-          <button
-            onClick={() => setCategory('sell')}
-            className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-              category === 'sell'
-                ? 'bg-white text-gray-900 shadow-sm'
-                : 'text-gray-600 hover:text-gray-900'
-            }`}
-          >
-            Sell property
-          </button>
-          <button
-            onClick={() => setCategory('rent')}
-            className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-              category === 'rent'
-                ? 'bg-white text-gray-900 shadow-sm'
-                : 'text-gray-600 hover:text-gray-900'
-            }`}
-            style={{ backgroundColor: category === 'rent' ? '#FED7C3' : undefined }}
-          >
-            List for Rent
-          </button>
-          <button
-            onClick={() => setCategory('swap')}
-            className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-              category === 'swap'
-                ? 'bg-white text-gray-900 shadow-sm'
-                : 'text-gray-600 hover:text-gray-900'
-            }`}
-          >
-            Home Swap
-          </button>
+          {categories.map((cat) => (
+            <button
+              key={cat.id}
+              onClick={() => setCategory(cat.id)}
+              className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                category === cat.id
+                  ? 'bg-white text-gray-900 shadow-sm'
+                  : 'text-gray-600 hover:text-gray-900'
+              }`}
+              style={{ backgroundColor: category === cat.id && cat.id === 'Rent' ? '#FED7C3' : undefined }}
+            >
+              {cat.label === 'Sale' ? 'Sell property' : cat.label === 'Rent' ? 'List for Rent' : 'Home Swap'}
+            </button>
+          ))}
         </div>
       </div>
 
@@ -100,7 +79,7 @@ const PropertyTypeStep: React.FC<StepProps> = ({ onNext, onBack, formData, setFo
         <label className="block text-sm font-medium text-gray-700 mb-4">
           Property type <span className="text-red-500">*</span>
         </label>
-        <div className="grid grid-cols-5 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
           {propertyTypes.map((type) => {
             const IconComponent = type.icon;
             return (
@@ -142,7 +121,7 @@ const PropertyTypeStep: React.FC<StepProps> = ({ onNext, onBack, formData, setFo
                 name="condition"
                 value={cond.id}
                 checked={condition === cond.id}
-                onChange={(e) => setCondition(e.target.value)}
+                onChange={() => setCondition(cond.id)}
                 className="w-4 h-4 text-orange-500 border-gray-300 focus:ring-orange-500"
               />
               <span className="ml-3 text-sm text-gray-700">{cond.label}</span>
@@ -152,24 +131,66 @@ const PropertyTypeStep: React.FC<StepProps> = ({ onNext, onBack, formData, setFo
       </div>
 
       {/* Pet Policy */}
-      <div className="mb-12">
+      <div className="mb-8">
         <label className="block text-sm font-medium text-gray-700 mb-4">
-          Pet Policy
+          Pet Policy <span className="text-red-500">*</span>
         </label>
         <div className="space-y-3">
-          {petPolicies.map((policy) => (
-            <label key={policy.id} className="flex items-center">
-              <input
-                type="radio"
-                name="petPolicy"
-                value={policy.id}
-                checked={petPolicy === policy.id}
-                onChange={(e) => setPetPolicy(e.target.value)}
-                className="w-4 h-4 text-orange-500 border-gray-300 focus:ring-orange-500"
-              />
-              <span className="ml-3 text-sm text-gray-700">{policy.label}</span>
-            </label>
-          ))}
+          <label className="flex items-center">
+            <input
+              type="radio"
+              name="petPolicy"
+              value="pet-friendly"
+              checked={petPolicy === 'pet-friendly'}
+              onChange={() => setPetPolicy('pet-friendly')}
+              className="w-4 h-4 text-orange-500 border-gray-300 focus:ring-orange-500"
+            />
+            <span className="ml-3 text-sm text-gray-700">Pet-Friendly (All pets welcome)</span>
+          </label>
+          <label className="flex items-center">
+            <input
+              type="radio"
+              name="petPolicy"
+              value="cats-only"
+              checked={petPolicy === 'cats-only'}
+              onChange={() => setPetPolicy('cats-only')}
+              className="w-4 h-4 text-orange-500 border-gray-300 focus:ring-orange-500"
+            />
+            <span className="ml-3 text-sm text-gray-700">Cats Only</span>
+          </label>
+          <label className="flex items-center">
+            <input
+              type="radio"
+              name="petPolicy"
+              value="dogs-only"
+              checked={petPolicy === 'dogs-only'}
+              onChange={() => setPetPolicy('dogs-only')}
+              className="w-4 h-4 text-orange-500 border-gray-300 focus:ring-orange-500"
+            />
+            <span className="ml-3 text-sm text-gray-700">Dogs Only</span>
+          </label>
+          <label className="flex items-center">
+            <input
+              type="radio"
+              name="petPolicy"
+              value="small-pets"
+              checked={petPolicy === 'small-pets'}
+              onChange={() => setPetPolicy('small-pets')}
+              className="w-4 h-4 text-orange-500 border-gray-300 focus:ring-orange-500"
+            />
+            <span className="ml-3 text-sm text-gray-700">Small Pets Only (under 25 lbs)</span>
+          </label>
+          <label className="flex items-center">
+            <input
+              type="radio"
+              name="petPolicy"
+              value="no-pets"
+              checked={petPolicy === 'no-pets'}
+              onChange={() => setPetPolicy('no-pets')}
+              className="w-4 h-4 text-orange-500 border-gray-300 focus:ring-orange-500"
+            />
+            <span className="ml-3 text-sm text-gray-700">No Pets Allowed</span>
+          </label>
         </div>
       </div>
 

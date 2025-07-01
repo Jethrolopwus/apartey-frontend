@@ -15,9 +15,23 @@ const LocationStep: React.FC<StepProps> = ({ onNext, onBack, formData, setFormDa
   const [district, setDistrict] = useState(formData.district || 'Wuse');
   const [zipCode, setZipCode] = useState(formData.zipCode || '11237');
   const [streetAddress, setStreetAddress] = useState(formData.streetAddress || 'Kefur-Funtua Road');
+  const [apartment, setApartment] = useState(formData.apartment || '');
+  const [countryCode, setCountryCode] = useState(formData.countryCode || 'NG');
+  const [state, setState] = useState(formData.state || 'Abuja FCT');
   
   const handleNext = () => {
     if (setFormData) {
+      const location = {
+        fullAddress: searchAddress,
+        apartment,
+        countryCode,
+        state,
+        streetAddress,
+        country,
+        city,
+        district,
+        zipCode,
+      };
       setFormData({
         ...formData,
         searchAddress,
@@ -25,7 +39,11 @@ const LocationStep: React.FC<StepProps> = ({ onNext, onBack, formData, setFormDa
         city,
         district,
         zipCode,
-        streetAddress
+        streetAddress,
+        apartment,
+        countryCode,
+        state,
+        location,
       });
     }
     onNext();
@@ -135,6 +153,127 @@ const LocationStep: React.FC<StepProps> = ({ onNext, onBack, formData, setFormDa
           className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 text-sm"
           placeholder="Enter street address"
         />
+      </div>
+
+      {/* Additional Location Fields */}
+      <div className="grid grid-cols-2 gap-4 mb-6">
+        {/* Apartment */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Apartment/Unit <span className="text-red-500">*</span>
+          </label>
+          <input
+            type="text"
+            value={apartment}
+            onChange={(e) => setApartment(e.target.value)}
+            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 text-sm"
+            placeholder="e.g., Flat 2B, Apt 15"
+          />
+        </div>
+
+        {/* Country Code */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Country Code <span className="text-red-500">*</span>
+          </label>
+          <div className="relative">
+            <select
+              value={countryCode}
+              onChange={(e) => setCountryCode(e.target.value)}
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 text-sm appearance-none bg-white"
+            >
+              <option value="NG">NG - Nigeria</option>
+              <option value="GH">GH - Ghana</option>
+              <option value="KE">KE - Kenya</option>
+              <option value="ET">ET - Estonia</option>
+            </select>
+            <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+          </div>
+        </div>
+      </div>
+
+      {/* State/Region */}
+      <div className="mb-6">
+        <label className="block text-sm font-medium text-gray-700 mb-2">
+          State/Region <span className="text-red-500">*</span>
+        </label>
+        <div className="relative">
+          <select
+            value={state}
+            onChange={(e) => setState(e.target.value)}
+            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 text-sm appearance-none bg-white"
+          >
+            <option value="Abuja FCT">Abuja FCT</option>
+            <option value="Lagos">Lagos</option>
+            <option value="Kano">Kano</option>
+            <option value="Tallinn">Tallinn</option>
+            <option value="Accra">Accra</option>
+            <option value="Nairobi">Nairobi</option>
+          </select>
+          <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+        </div>
+      </div>
+
+      {/* Coordinates Section */}
+      <div className="mb-6">
+        <h3 className="text-sm font-medium text-gray-700 mb-2">Coordinates (Optional)</h3>
+        <p className="text-xs text-gray-500 mb-4">Enter precise coordinates for better map positioning</p>
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Latitude
+            </label>
+            <input
+              type="number"
+              step="any"
+              value={formData.location?.coordinates?.latitude || ''}
+              onChange={(e) => {
+                if (setFormData) {
+                  const newCoordinates = {
+                    ...formData.location?.coordinates,
+                    latitude: e.target.value
+                  };
+                  setFormData({
+                    ...formData,
+                    location: {
+                      ...formData.location,
+                      coordinates: newCoordinates
+                    }
+                  });
+                }
+              }}
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 text-sm"
+              placeholder="e.g., 9.0579"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Longitude
+            </label>
+            <input
+              type="number"
+              step="any"
+              value={formData.location?.coordinates?.longitude || ''}
+              onChange={(e) => {
+                if (setFormData) {
+                  const newCoordinates = {
+                    ...formData.location?.coordinates,
+                    longitude: e.target.value
+                  };
+                  setFormData({
+                    ...formData,
+                    location: {
+                      ...formData.location,
+                      coordinates: newCoordinates
+                    }
+                  });
+                }
+              }}
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 text-sm"
+              placeholder="e.g., 7.4951"
+            />
+          </div>
+        </div>
       </div>
 
       {/* Map Section */}

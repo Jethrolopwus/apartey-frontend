@@ -60,15 +60,52 @@ const PropertyListings = () => {
     if (currentStep > 0) {
       setCurrentStep(currentStep - 1);
     }
+
   };
 
   const handleSubmit = () => {
-    // 1. Validate required fields
+    // 1. Validate required fields and enums
+    const PropertyTypeEnum = ['House', 'Apartment', 'Room', 'Commercial', 'Garage'];
+    const CategoriesEnum = ['Sale', 'Rent', 'Swap'];
+    const AmenitiesEnum = [
+      'TV set', 'Washing machine', 'Kitchen', 'Air conditioning', 'Separate workplace', 'Refrigerator',
+      'Drying machine', 'Closet', 'Patio', 'Fireplace', 'Shower cabin', 'Whirlpool', 'Security cameras', 'Balcony', 'Bar',
+    ];
+    const InfrastructureEnum = [
+      'Schools', 'Parking lot', 'Shop', 'Kindergarten', 'Sports center', 'Shopping center', 'Underground', 'Beauty salon', 'Bank', 'Cinema / theater', 'Restaurant / cafe', 'Park / green area',
+    ];
+    const PropertyConditionEnum = ['Good Condition', 'New Building', 'Renovated'];
+
+    // Validate enums
+    if (!PropertyTypeEnum.includes(formData.propertyType || '')) {
+      console.log("The proerty",PropertyTypeEnum);
+      
+      toast.error('Invalid property type.');
+      return;
+    }
+    if (!CategoriesEnum.includes(formData.category || '')) {
+      toast.error('Invalid category.');
+      return;
+    }
+    if (formData.amenities && !formData.amenities.every((a: string) => AmenitiesEnum.includes(a))) {
+      toast.error('Invalid amenities.');
+      return;
+    }
+    if (formData.infrastructure && !formData.infrastructure.every((i: string) => InfrastructureEnum.includes(i))) {
+      toast.error('Invalid infrastructure.');
+      return;
+    }
+    if (!PropertyConditionEnum.includes(formData.condition || '')) {
+      toast.error('Invalid property condition.');
+      return;
+    }
+
+    // 2. Validate required fields
     if (!formData.firstName || !formData.lastName || !formData.email || !formData.typeOfOffer || !formData.description || !formData.petPolicy) {
       toast.error('Please fill all required fields.');
       return;
     }
-    if (!formData.media?.coverPhoto) {
+    if (!formData?.media?.coverPhoto) {
       toast.error('Please upload a cover photo.');
       return;
     }
@@ -83,65 +120,95 @@ const PropertyListings = () => {
       return;
     }
 
-    // 2. Map values to backend enums with proper typing
-    const categoryMap: Record<CategoryType, string> = { 
-      rent: "RENT", 
-      sell: "SALE", 
-      swap: "SWAP" 
-    };
-    const propertyTypeMap: Record<PropertyTypeType, string> = { 
-      apartment: "APARTMENT", 
-      house: "HOUSE", 
-      commercial: "COMMERCIAL", 
-      room: "ROOM", 
-      garage: "GARAGE" 
-    };
-    const conditionMap: Record<ConditionType, string> = { 
-      good: "GOOD", 
-      new: "NEW", 
-      renovated: "RENOVATED" 
-    };
-    const petPolicyMap: Record<PetPolicyType, string> = { 
-      "pet-friendly": "PET_FRIENDLY", 
-      "cats-only": "CATS_ONLY", 
-      "dogs-only": "DOGS_ONLY", 
-      "small-pets": "SMALL_PETS", 
-      "no-pets": "NO_PETS" 
-    };
-
-    // 3. Build FormData with type safety
+    // 3. Build FormData with dot/bracket notation
     const apiFormData = new window.FormData();
-    apiFormData.append('firstName', formData.firstName || '');
-    apiFormData.append('lastName', formData.lastName || '');
-    apiFormData.append('email', formData.email || '');
-    apiFormData.append('typeOfOffer', formData.typeOfOffer || '');
-    apiFormData.append('description', formData.description || '');
-    
-    // Type-safe mapping with fallbacks
-    const category = formData.category as CategoryType;
-    const propertyType = formData.propertyType as PropertyTypeType;
-    const condition = formData.condition as ConditionType;
-    const petPolicy = formData.petPolicy as PetPolicyType;
-    
-    apiFormData.append('petPolicy', petPolicyMap[petPolicy] || petPolicy);
-    apiFormData.append('category', categoryMap[category] || category);
-    apiFormData.append('propertyType', propertyTypeMap[propertyType] || propertyType);
-    apiFormData.append('condition', conditionMap[condition] || condition);
 
-    // Handle cover photo
+    // Property Type
+    apiFormData.append('propertyType', String(formData.propertyType || ''));
+    apiFormData.append('category', String(formData.category || ''));
+    apiFormData.append('condition', String(formData.condition || ''));
+    apiFormData.append('petPolicy', String(formData.petPolicy || ''));
+
+    // Location (dot notation) - Match exactly with Postman
+    apiFormData.append('location.country', String(loc.country));
+    apiFormData.append('location.stateOrRegion', String(loc.state));
+    apiFormData.append('location.district', String(loc.district));
+    apiFormData.append('location.postalCode', String(loc.zipCode));
+    apiFormData.append('location.street', String(loc.streetAddress));
+    apiFormData.append('location.countryCode', String(loc.countryCode));
+    apiFormData.append('location.apartment', String(loc.apartment));
+    apiFormData.append('location.fullAddress', String(loc.fullAddress));
+    apiFormData.append('location.city', String(loc.city));
+    // Add coordinates if they exist
+    if (loc && typeof loc === 'object' && 'coordinates' in loc && loc.coordinates && typeof loc.coordinates === 'object') {
+      const coords = loc.coordinates as any;
+      if (coords.latitude !== undefined) {
+        apiFormData.append('location.coordinates.latitude', String(coords.latitude));
+      }
+      if (coords.longitude !== undefined) {
+        apiFormData.append('location.coordinates.longitude', String(coords.longitude));
+      }
+    }
+
+    // Media (files)
     if (formData.media?.coverPhoto) {
       apiFormData.append('coverPhoto', formData.media.coverPhoto);
     }
-
-    // Handle location object
-    apiFormData.append('location', JSON.stringify(loc));
-    
-    // Handle ad promotion
-    if (formData.adPromotion) {
-      apiFormData.append('adPromotion', JSON.stringify(formData.adPromotion));
+    if (formData.media?.uploads && Array.isArray(formData.media.uploads)) {
+      formData.media.uploads.forEach((file) => {
+        if (file) apiFormData.append('mediaUploads', file);
+      });
     }
 
-    // 4. Submit
+    // Property Details (dot/bracket notation)
+    apiFormData.append('propertyDetails.price', String(formData.price || ''));
+    apiFormData.append('propertyDetails.negotiatedPrice', String(formData.isNegotiated || ''));
+    apiFormData.append('propertyDetails.totalFloors', String(formData.totalFloors || ''));
+    apiFormData.append('propertyDetails.floor', String(formData.floor || ''));
+    apiFormData.append('propertyDetails.totalAreaSqM', String(formData.totalArea || ''));
+    apiFormData.append('propertyDetails.livingAreaSqM', String(formData.livingArea || ''));
+    apiFormData.append('propertyDetails.kitchenAreaSqM', String(formData.kitchenArea || ''));
+    apiFormData.append('propertyDetails.bedrooms', String(formData.bedrooms || ''));
+    apiFormData.append('propertyDetails.bathrooms', String(formData.bathrooms || ''));
+    apiFormData.append('propertyDetails.parkingSpots', String(formData.parkingSpots || ''));
+    (formData.amenities || []).forEach((item) => {
+      apiFormData.append('propertyDetails.amenities[]', String(item));
+    });
+    (formData.infrastructure || []).forEach((item) => {
+      apiFormData.append('propertyDetails.infrastructure[]', String(item));
+    });
+    apiFormData.append('propertyDetails.description', String(formData.description || ''));
+
+    // Contact Info (dot notation)
+    apiFormData.append('contactInfo.typeOfOffer', String(formData.typeOfOffer || ''));
+    apiFormData.append('contactInfo.firstName', String(formData.firstName || ''));
+    apiFormData.append('contactInfo.lastName', String(formData.lastName || ''));
+    apiFormData.append('contactInfo.email', String(formData.email || ''));
+    apiFormData.append('contactInfo.phoneNumber', String(formData.phoneNumber || ''));
+    apiFormData.append('contactInfo.openForTourSchedule', String(formData.openForTour || ''));
+
+    // Ad Promotion (dot notation, if present)
+    if (formData.adPromotion) {
+      if ('selectedTier' in formData.adPromotion && formData.adPromotion.selectedTier)
+        apiFormData.append('adPromotion.selectedTier', String(formData.adPromotion.selectedTier));
+      if ('certifiedByFinder' in formData.adPromotion && formData.adPromotion.certifiedByFinder)
+        apiFormData.append('adPromotion.certifiedByFinder', String(formData.adPromotion.certifiedByFinder));
+      if ('liftsToTopCount' in formData.adPromotion && formData.adPromotion.liftsToTopCount)
+        apiFormData.append('adPromotion.liftsToTopCount', String(formData.adPromotion.liftsToTopCount));
+      if ('detailedAnalytics' in formData.adPromotion && formData.adPromotion.detailedAnalytics)
+        apiFormData.append('adPromotion.detailedAnalytics', String(formData.adPromotion.detailedAnalytics));
+      if ('totalPrice' in formData.adPromotion && formData.adPromotion.totalPrice)
+        apiFormData.append('adPromotion.totalPrice', String(formData.adPromotion.totalPrice));
+    }
+
+    // Log the submitted data for debugging
+    const submittedData = {
+      ...formData,
+      location: loc,
+    };
+    console.log('Submitted property listing data:', submittedData);
+
+    // Submit
     mutate(apiFormData, {
       onSuccess: (data) => {
         toast.success("Property listing submitted successfully!");

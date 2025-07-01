@@ -1,4 +1,3 @@
-
 import { NextRequest, NextResponse } from 'next/server';
 
 interface UserSyncData {
@@ -6,7 +5,6 @@ interface UserSyncData {
   email: string | null;
   firstName: string | null;
   lastName: string | null;
-
   image: string | null;
   provider: string | undefined;
   providerId: string | undefined;
@@ -27,14 +25,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Send to your backend
-    const backendResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/users`, {
+    // Send to your backend using the Google auth endpoint
+    const backendResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/google`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        ...(process.env.NEXT_PUBLIC_API_URL && {
-          'Authorization': `Bearer ${process.env.NEXT_PUBLIC_API_URL}`,
-        }),
       },
       body: JSON.stringify({
         googleId: userData.googleId,

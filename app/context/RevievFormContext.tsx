@@ -11,6 +11,8 @@ export interface LocationPayload {
   apartment?: string;
   postalCode?: string;
   fullAddress?: string;
+  city?: string;
+  streetAddress?: string;
   numberOfRooms?: string;
   numberOfOccupants?: string;
   moveOutDate?: string;
@@ -45,10 +47,29 @@ interface FormContextType {
 const ReviewFormContext = createContext<FormContextType | null>(null);
 
 export const ReviewFormProvider = ({ children }: { children: ReactNode }) => {
-  const [location, setLocationState] = useState<LocationPayload | null>(null);
+  // Initialize from localStorage if available
+  const getInitialLocation = () => {
+    if (typeof window !== 'undefined') {
+      const stored = localStorage.getItem('pendingReviewData');
+      if (stored) {
+        try {
+          const parsed = JSON.parse(stored);
+          // Merge contextLocation, location, and ratingsAndReviews for full restore
+          return {
+            ...(parsed.contextLocation || {}),
+            ...(parsed.location || {}),
+            ...(parsed.ratingsAndReviews || {}),
+          };
+        } catch {}
+      }
+    }
+    return null;
+  };
+  const [location, setLocationState] = useState<LocationPayload | null>(getInitialLocation);
 
   const setLocation = (loc: LocationPayload) => {
     setLocationState(loc);
+    console.log("location", loc);
   };
 
   return (

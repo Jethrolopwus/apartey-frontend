@@ -1,363 +1,203 @@
 "use client";
-import * as React from "react";
-import { useRef, useState, useEffect } from "react";
-import { Home, Star } from "lucide-react";
-import RatingComponent from "@/components/molecules/ReviewsRating";
-import SubmitReviewComponent from "@/components/organisms/SubmitReviews";
-import { useAuthRedirect } from "@/Hooks/useAuthRedirect";
-import { useWriteUnlistedReviewMutation } from "@/Hooks/use.writeUnlistedReviews.mutation";
+import React, { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
-import PropertyDetailsSection from "@/components/molecules/PropertyDetailsSection";
-import MoveOutDatePicker from "@/components/atoms/MoveOutDatePicker";
-import RentInput from "@/components/molecules/RentInput";
-import SecurityDepositToggle from "@/components/molecules/SecurityDepositToggle";
-import {
-  PlacePrediction,
-} from "@/components/atoms/Buttons/SearchInput";
-import  {
-  LocationFormRef,
-  LocationFields,
-} from "../molecules/LocationForm";
-import AgentBrokerFeesToggle from "@/components/molecules/AgentBrokers";
-import { UnlistedPropertyReview } from "@/types/generated";
-import AmenitiesAccessibility from "@/components/molecules/AmenitiesAccessibility";
+import { useAuthRedirect } from "@/Hooks/useAuthRedirect";
+import { ReviewFormProvider, useReviewForm } from "@/app/context/RevievFormContext";
+import { Home } from "lucide-react";
 import AddressForm from "../molecules/AddressForm";
-import {
-  ReviewFormProvider,
-  useReviewForm,
-  LocationPayload,
-} from "@/app/context/RevievFormContext";
-import { ReviewFormData } from "@/types/generated";
+import MoveOutDatePicker from "../atoms/MoveOutDatePicker";
+import RentInput from "../molecules/RentInput";
+import SecurityDepositToggle from "../molecules/SecurityDepositToggle";
+import AgentBrokerFeesToggle from "../molecules/AgentBrokers";
 import FixedUtilityCostsToggle from "../molecules/FixUtilityCost";
+import AmenitiesAccessibility from "../molecules/AmenitiesAccessibility";
+import RatingComponent from "../molecules/ReviewsRating";
+import SubmitReviewComponent from "./SubmitReviews";
+import Accessibility from "../molecules/Accessibility";
 
-const APPLIANCE_OPTIONS = [
-  "Oven",
-  "Refrigerator",
-  "Washing machine",
-  "Dishwasher",
-  "Microwave",
-  "Air Conditioning",
-];
-const FACILITY_OPTIONS = [
-  "Elevator",
-  "Parking lot",
-  "Security system",
-  "Gym",
-  "Pool",
-  "Garden",
-];
-const REPAIR_COVERAGE_OPTIONS = ["Landlord", "Tenant", "Shared"];
-
-function sanitizeReviewPayload(data: any) {
-  // Sanitize appliancesFixtures
-  const appliancesFixtures = ((data.appliancesFixtures as string[]) || [])
-    .map(
-      (item: string) =>
-        APPLIANCE_OPTIONS.find(
-          (opt) =>
-            opt.toLowerCase().replace(/\s/g, "") ===
-            item.toLowerCase().replace(/\s/g, "")
-        ) || item
-    )
-    .filter((item: string) => APPLIANCE_OPTIONS.includes(item));
-  // Sanitize buildingFacilities
-  const buildingFacilities = ((data.buildingFacilities as string[]) || [])
-    .map(
-      (item: string) =>
-        FACILITY_OPTIONS.find(
-          (opt) =>
-            opt.toLowerCase().replace(/\s/g, "") ===
-            item.toLowerCase().replace(/\s/g, "")
-        ) || item
-    )
-    .filter((item: string) => FACILITY_OPTIONS.includes(item));
-  // Sanitize costOfRepairsCoverage
-  let costOfRepairsCoverage = data.costOfRepairsCoverage;
-  costOfRepairsCoverage =
-    REPAIR_COVERAGE_OPTIONS.find(
-      (opt) => opt.toLowerCase() === costOfRepairsCoverage?.toLowerCase()
-    ) || costOfRepairsCoverage;
-  return {
-    ...data,
-    appliancesFixtures,
-    buildingFacilities,
-    costOfRepairsCoverage,
-  };
+// Define the form data structure
+interface FormData {
+  propertyType: string;
+  propertyName: string;
+  propertyDescription: string;
+  rentType: "actual" | "range";
+  yearlyRent: string;
+  securityDepositRequired: boolean;
+  agentFeeRequired: boolean;
+  fixedUtilityCost: boolean;
+  centralHeating: boolean;
+  furnished: boolean;
+  julySummerUtilities: string;
+  januaryWinterUtilities: string;
+  appliances: string[];
+  buildingFacilities: string[];
+  costOfRepairsCoverage: string[];
+  isAnonymous: boolean;
+  agreeToTerms: boolean;
+  // Missing fields
+  numberOfRooms: number;
+  numberOfOccupants: number;
+  nearestGroceryStore: string;
+  nearestPark: string;
+  nearestRestaurant: string;
+  landlordLanguages: string[];
 }
 
-const WriteUnlistedPropertyReviews = () => {
+// If PendingReviewData type exists, extend it. Otherwise, use type assertion for pendingReviewData.
+type PendingReviewData = {
+  stayDetails: any;
+  costDetails: any;
+  accessibility: any;
+  ratingsAndReviews: any;
+  submitAnonymously: boolean;
+  location: any;
+  contextLocation?: any;
+};
+
+// NOTE: This component must be wrapped in <ReviewFormProvider> at a higher level (e.g., in layout.tsx or _app.tsx)
+// Do NOT wrap it here, or context will reset on every render.
+
+const WriteUnlistedPropertyReviews: React.FC = () => {
   const [currentStep, setCurrentStep] = useState(1);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [canSubmit, setCanSubmit] = useState(true);
   const [currentSubStep, setCurrentSubStep] = useState(1);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const submitReviewRef = useRef<{ handleFinalSubmit: () => Promise<unknown> }>(null);
+  const router = useRouter();
+  const restoredRef = useRef(false);
+  const [restoring, setRestoring] = useState(true);
 
-  interface SubmitReviewRef {
-    validate: () => boolean;
-  }
-
-  const locationFormRef = useRef<LocationFormRef>(null);
-  const { location } = useReviewForm();
-  const submitReviewRef = useRef<{ handleFinalSubmit: () => Promise<any> }>(
-    null
-  );
-
-  /* -- helper to fetch full place details -- */
-  const getPlaceDetails = (
-    placeId: string
-  ): Promise<google.maps.places.PlaceResult> =>
-    new Promise((resolve, reject) => {
-      const svc = new window.google.maps.places.PlacesService(
-        document.createElement("div")
-      );
-      interface PlaceDetailsRequest {
-        placeId: string;
-        fields: string[];
-      }
-
-      interface PlaceDetailsCallback {
-        (
-          result: google.maps.places.PlaceResult | null,
-          status: google.maps.places.PlacesServiceStatus
-        ): void;
-      }
-
-      svc.getDetails(
-        {
-          placeId,
-          fields: ["address_components", "formatted_address"],
-        } as PlaceDetailsRequest,
-        ((place, status) =>
-          status === window.google.maps.places.PlacesServiceStatus.OK && place
-            ? resolve(place)
-            : reject(
-                new Error("Could not load place details")
-              )) as PlaceDetailsCallback
-      );
-    });
-  const mapStateName = (country: string, raw: string): string => {
-    if (!raw) return "";
-
-    const mappings: Record<string, Record<string, string>> = {
-      nigeria: {
-        "federal capital territory": "Abuja FCT",
-      },
-      ghana: {
-        "greater accra": "Greater Accra",
-      },
-      kenya: {},
-      "south-africa": {},
-    };
-
-    const key = raw.toLowerCase();
-    const mapped = mappings[country]?.[key];
-    return mapped ?? raw;
-  };
-
-  const parseAddress = (
-    comps: google.maps.GeocoderAddressComponent[]
-  ): Partial<LocationFields> => {
-    const find = (type: string) =>
-      comps.find((c) => c.types.includes(type))?.long_name || "";
-
-    const country = find("country").toLowerCase();
-
-    /*  primary components */
-    const googleState = find("administrative_area_level_1");
-    const googleCity =
-      find("locality") ||
-      find("administrative_area_level_2") ||
-      find("sublocality_level_1");
-
-    /*  small stuff */
-    const district =
-      find("sublocality_level_2") || find("sublocality_level_1") || googleCity;
-    const zipCode = find("postal_code");
-    const streetNumber = find("street_number");
-    const route = find("route");
-    const streetAddress = [streetNumber, route].filter(Boolean).join(" ");
-
-    return {
-      country,
-      state: mapStateName(country, googleState),
-      city: googleCity,
-      district,
-      zipCode,
-      streetAddress,
-    };
-  };
-
-  const handlePlaceSelect = async (p: PlacePrediction) => {
-    try {
-      const details = await getPlaceDetails(p.place_id);
-      const parsed = parseAddress(details.address_components ?? []);
-      locationFormRef.current?.setAddress(parsed);
-    } catch (err) {
-      console.error(err);
-      toast.error("Could not load address details");
-    }
-  };
-
-  // Mutations and Auth
-  const writeReviewMutation = useWriteUnlistedReviewMutation();
+  // Auth and pending data logic
   const {
     isAuthenticated,
-    isLoading: authLoading,
     hasPendingData,
     pendingReviewData,
     handleAuthRedirect,
-    handlePostLoginRedirect,
     clearPendingData,
-    submitPendingReview,
-    checkAuthentication,
-  } = useAuthRedirect(writeReviewMutation);
-  const router = useRouter();
+  } = useAuthRedirect();
 
-  const [formData, setFormData] = useState<UnlistedPropertyReview>({
-    // Location fields
-    country: "",
-    city: "",
-    state: "",
-    district: "",
-    zipCode: "",
-    address: "",
+  const { location: addressLocation, setLocation } = useReviewForm();
 
-    // Property details
-    apartmentNumber: "",
-    numberOfRooms: "",
-    numberOfOccupants: "",
-    moveOutDate: "",
-    furnished: false,
-
-    // Appliances
-    appliances: {
-      oven: false,
-      washingMachine: false,
-      refrigerator: false,
-      garbageDisposal: false,
-      airConditioner: false,
-      dryer: false,
-      microwave: false,
-      others: false,
-      otherText: "",
-    },
-
-    // Building facilities
-    buildingFacilities: {
-      parkingLot: false,
-      streetParking: false,
-      gymFitness: false,
-      elevator: false,
-      storageSpace: false,
-      childrenPlayArea: false,
-      roofTerrace: false,
-      securitySystem: false,
-      dedicatedParking: false,
-      swimmingPool: false,
-      gardenCourtyard: false,
-      others: false,
-      otherText: "",
-    },
-
-    // Landlord languages
-    landlordLanguages: {
-      english: false,
-      spanish: false,
-      french: false,
-      german: false,
-      portuguese: false,
-      others: false,
-      otherText: "",
-      customLanguage: false,
-      customLanguageText: "",
-    },
-
-    // Cost details
-    rentType: "actual",
-    yearlyRent: "",
-    securityDepositRequired: false,
-    agentFeeRequired: false,
-    fixedUtilityCost: false,
-    julyUtilities: "",
-    januaryUtilities: "",
-
-    // Accessibility
-    nearestGroceryStore: "",
-    nearestPark: "",
-    nearestPublicTransport: "",
-
-    // Ratings
-    valueForMoney: 0,
-    costOfRepairs: "",
-    overallExperience: 0,
-    overallRating: 0,
-    detailedReview: "",
-    additionalComments: "",
-
-    // Submission preferences
-    submitAnonymously: false,
-    agreeToTerms: false,
-
-    // Required for API (will be populated during transformation)
-    location: {
-      country: "",
-      city: "",
-      district: "",
-      postalCode: "",
-      streetAddress: "",
-      apartment: "",
-      stateOrRegion: "",
-    },
-    stayDetails: {
-      numberOfRooms: 0,
-      numberOfOccupants: 0,
-      dateLeft: "",
-      furnished: false,
-      appliancesFixtures: [],
-      buildingFacilities: [],
-      landlordLanguages: [],
-    },
-    costDetails: {
-      rent: 0,
-      rentType: "Monthly",
+  // Parent-managed form state for prop-based components
+  const [formData, setFormData] = useState<FormData>(() => {
+    // Try to restore from localStorage on first render
+    if (typeof window !== 'undefined') {
+      const stored = localStorage.getItem('pendingReviewData');
+      if (stored) {
+        try {
+          const parsed = JSON.parse(stored);
+          // If the structure is correct, use it
+          if (parsed && parsed.location) {
+            return {
+              ...parsed.location,
+              landlordLanguages: parsed.location.landlordLanguages || [],
+            };
+          }
+        } catch {}
+      }
+    }
+    // Default initial state
+    return {
+      propertyType: "",
+      propertyName: "",
+      propertyDescription: "",
+      rentType: "actual",
+      yearlyRent: "",
       securityDepositRequired: false,
-      agentBrokerFeeRequired: false,
+      agentFeeRequired: false,
       fixedUtilityCost: false,
-      julySummerUtilities: 0,
-      januaryWinterUtilities: 0,
-    },
-    accessibility: {
+      centralHeating: false,
+      furnished: false,
+      julySummerUtilities: "",
+      januaryWinterUtilities: "",
+      appliances: [],
+      buildingFacilities: [],
+      costOfRepairsCoverage: [],
+      isAnonymous: false,
+      agreeToTerms: false,
+      numberOfRooms: 1,
+      numberOfOccupants: 1,
       nearestGroceryStore: "",
       nearestPark: "",
       nearestRestaurant: "",
-    },
-    ratingsAndReviews: {
-      valueForMoney: 0,
-      costOfRepairsCoverage: "",
-      overallExperience: 0,
-      overallRating: 0,
-      detailedReview: "",
-    },
+      landlordLanguages: [],
+    };
   });
 
-  const updateFormData = (field: string, value: string | boolean) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
-  };
+  // Restore pending data on mount (if redirected after login)
+  useEffect(() => {
+    if (restoredRef.current) return;
+    const pending: PendingReviewData | null = pendingReviewData as PendingReviewData;
+    if (pending) {
+      // Restore formData
+      if (pending.location) {
+        setFormData({
+          ...pending.location,
+          landlordLanguages: pending.location.landlordLanguages || [],
+        });
+      }
+      // Merge all fields for context restore
+      const mergedContext = {
+        ...(pending.contextLocation || {}),
+        ...(pending.location || {}),
+        ...(pending.ratingsAndReviews || {}),
+      };
+      if (Object.keys(mergedContext).length > 0) {
+        setLocation(mergedContext);
+      }
+    }
+    restoredRef.current = true;
+    setRestoring(false);
+  }, [pendingReviewData, setLocation]);
 
-  const updateNestedFormData = (
-    category: keyof UnlistedPropertyReview,
-    field: string,
-    value: string | boolean
-  ) => {
-    setFormData((prev) => ({
-      ...prev,
-      [category]: {
-        ...(typeof prev[category] === "object" ? prev[category] : {}),
-        [field]: value,
+  // Persist form data and context data to localStorage on every change
+  useEffect(() => {
+    // Merge formData and addressLocation for the most up-to-date location
+    const { propertyType, propertyName, propertyDescription, ...locationRest } = {
+      ...formData,
+      ...addressLocation,
+    };
+    console.log("locationRest", locationRest);
+    console.log("formData", formData);
+    console.log("addressLocation", addressLocation);
+    // Merge all context fields for ratingsAndReviews
+    const ratingsAndReviews = {
+      valueForMoney: addressLocation?.valueForMoney ?? 0,
+      costOfRepairs: addressLocation?.costOfRepairs ?? "",
+      overallExperience: addressLocation?.overallExperience ?? 0,
+      detailedReview: addressLocation?.detailedReview ?? "",
+    };
+    // Always include all context fields in location
+    const pendingData = {
+      stayDetails: {
+        numberOfRooms: formData.numberOfRooms,
+        numberOfOccupants: formData.numberOfOccupants,
       },
-    }));
-  };
+      costDetails: {
+        rentType: formData.rentType,
+        rent: formData.yearlyRent,
+        securityDepositRequired: formData.securityDepositRequired,
+        agentBrokerFeeRequired: formData.agentFeeRequired,
+        fixedUtilityCost: formData.fixedUtilityCost,
+        centralHeating: formData.centralHeating,
+        furnished: formData.furnished,
+        julySummerUtilities: formData.julySummerUtilities,
+        januaryWinterUtilities: formData.januaryWinterUtilities,
+      },
+      accessibility: {
+        nearestGroceryStore: formData.nearestGroceryStore,
+        nearestPark: formData.nearestPark,
+        nearestRestaurant: formData.nearestRestaurant,
+      },
+      ratingsAndReviews: ratingsAndReviews,
+      submitAnonymously: formData.isAnonymous,
+      location: { ...locationRest, ...ratingsAndReviews }, // include all context fields
+      contextLocation: { ...addressLocation, ...ratingsAndReviews },
+    };
+    localStorage.setItem('pendingReviewData', JSON.stringify(pendingData));
+  }, [formData, addressLocation]);
 
+  // Navigation logic
   const nextStep = () => {
     if (currentStep === 1) {
       setCurrentStep(2);
@@ -370,7 +210,6 @@ const WriteUnlistedPropertyReviews = () => {
       }
     }
   };
-
   const prevStep = () => {
     if (currentStep === 3) {
       setCurrentStep(2);
@@ -384,527 +223,7 @@ const WriteUnlistedPropertyReviews = () => {
     }
   };
 
-  interface RentData {
-    rentType: "actual" | "range" | undefined;
-    yearlyRent: string;
-  }
-
-  const rentData: RentData = {
-    rentType: (formData.rentType as "actual" | "range") || "actual",
-    yearlyRent: formData.yearlyRent || "",
-  };
-
-  const securityDepositData = {
-    securityDepositRequired: formData.securityDepositRequired,
-  };
-
-  interface AgentBrokerFeesData {
-    agentFeeRequired: boolean;
-  }
-
-  const agentBrokerFeesData: AgentBrokerFeesData = {
-    agentFeeRequired: formData.agentFeeRequired ?? false,
-  };
-
-  const handleTermsChange = (
-    agreed: boolean | ((prevState: boolean) => boolean)
-  ) => {
-    const newValue = typeof agreed === "function" ? agreed(canSubmit) : agreed;
-    setCanSubmit(newValue);
-    updateFormData("agreeToTerms", newValue);
-  };
-
-  const transformFormDataToAPI = (data: typeof formData) => {
-    // Get selected appliances
-    const selectedAppliances = Object.entries(data.appliances || {})
-      .filter(([key, value]) => value && key !== "others")
-      .map(([key]) => {
-        const appliances: { [key: string]: string } = {
-          oven: "Oven",
-          washingMachine: "Washing Machine",
-          refrigerator: "Refrigerator",
-          garbageDisposal: "Garbage Disposal",
-          airConditioner: "Air Conditioner",
-          dryer: "Dryer",
-          microwave: "Microwave",
-        };
-        return appliances[key] || key;
-      });
-
-    // Add custom appliances if specified
-    if (data?.appliances?.others && data.appliances.otherText) {
-      selectedAppliances.push(data.appliances.otherText);
-    }
-
-    // Get selected building facilities
-    const selectedFacilities = Object.entries(data.buildingFacilities || {})
-      .filter(([key, value]) => value && key !== "others")
-      .map(([key]) => {
-        const facilities: { [key: string]: string } = {
-          parkingLot: "Parking Lot",
-          streetParking: "Street Parking",
-          gymFitness: "Gym/Fitness",
-          elevator: "Elevator",
-          storageSpace: "Storage Space",
-          childrenPlayArea: "Children Play Area",
-          roofTerrace: "Roof Terrace",
-          securitySystem: "Security System",
-          dedicatedParking: "Dedicated Parking",
-          swimmingPool: "Swimming Pool",
-          gardenCourtyard: "Garden/Courtyard",
-        };
-        return facilities[key] || key;
-      });
-
-    if (
-      data.buildingFacilities?.others &&
-      data?.buildingFacilities?.otherText
-    ) {
-      selectedFacilities.push(data.buildingFacilities.otherText);
-    }
-
-    // Get selected landlord languages
-    const selectedLanguages = Object.entries(data.landlordLanguages || {})
-      .filter(
-        ([key, value]) =>
-          value &&
-          key !== "others" &&
-          key !== "customLanguage" &&
-          key !== "otherText" &&
-          key !== "customLanguageText"
-      )
-      .map(([key]) => key.charAt(0).toUpperCase() + key.slice(1));
-
-    // Add custom languages if specified
-    if (data?.landlordLanguages?.others && data.landlordLanguages.otherText) {
-      selectedLanguages.push(data.landlordLanguages.otherText);
-    }
-    if (
-      data?.landlordLanguages?.customLanguage &&
-      data.landlordLanguages.customLanguageText
-    ) {
-      selectedLanguages.push(data.landlordLanguages.customLanguageText);
-    }
-
-    // Parse rent amount from string (remove currency symbols and commas)
-    const rentAmount =
-      parseFloat(data.yearlyRent ?? "".replace(/[^\d.]/g, "")) || 0;
-
-    // Parse utility costs
-    const julyUtilities =
-      parseFloat((data?.julyUtilities ?? "").replace(/[^\d.]/g, "")) || 0;
-    const januaryUtilities =
-      parseFloat((data?.januaryUtilities ?? "").replace(/[^\d.]/g, "")) || 0;
-
-    // Convert move out date to ISO string
-    const moveOutDate = new Date(data?.moveOutDate ?? "");
-    if (isNaN(moveOutDate.getTime())) {
-      throw new Error("Invalid move out date");
-    }
-
-    // Construct fullAddress and location fields using LocationPayload type
-    const location = {
-      country: data.location?.country || data.country || "",
-      countryCode: (data.location && "countryCode" in data.location ? data.location.countryCode : "") ||
-        (data.country === "Nigeria"
-          ? "NG"
-          : data.country === "Estonia"
-          ? "EE"
-          : data.country?.slice(0, 2).toUpperCase()) ||
-        "",
-      stateOrRegion: data.location?.stateOrRegion || data.state || "",
-      district: data.location?.district || data.district || "",
-      street: (data.location && "street" in data.location ? data.location.street : "") ||
-        data.location?.streetAddress ||
-        data.address ||
-        "",
-      streetNumber: (data.location && "streetNumber" in data.location ? data.location.streetNumber : "") || "",
-      apartment: data.location?.apartment || data.apartmentNumber || "",
-      postalCode: data.location?.postalCode || data.zipCode || "",
-      fullAddress: (data.location && "fullAddress" in data.location ? data.location.fullAddress : "") || "",
-      city: data.location?.city || data.city || "",
-      streetAddress: data.location?.streetAddress || data.address || "",
-    } as {
-      country: string;
-      countryCode: string;
-      stateOrRegion: string;
-      district: string;
-      street: string;
-      streetNumber: string;
-      apartment: string;
-      postalCode: string;
-      fullAddress: string;
-      city: string;
-      streetAddress: string;
-    };
-    // If fullAddress is not set, construct it
-    if (!location.fullAddress) {
-      const fullAddr = [
-        location.streetNumber && location.street
-          ? `${location.streetNumber} ${location.street}`
-          : location.street,
-        location.apartment,
-        location.district,
-        location.stateOrRegion,
-      ]
-        .filter(Boolean)
-        .join(", ");
-      location.fullAddress = fullAddr;
-    }
-
-    return {
-      location,
-      stayDetails: {
-        numberOfRooms: parseInt(data.numberOfRooms ?? "1") || 1,
-        numberOfOccupants: parseInt(data.numberOfOccupants ?? "1") || 1,
-        dateLeft: moveOutDate.toISOString(),
-        furnished: Boolean(data.furnished),
-        appliancesFixtures: selectedAppliances,
-        buildingFacilities: selectedFacilities,
-        landlordLanguages: selectedLanguages,
-      },
-      costDetails: {
-        rent: rentAmount,
-        rentType: (data.rentType === "actual" ? "Monthly" : "Yearly") as
-          | "Monthly"
-          | "Yearly",
-        securityDepositRequired: data.securityDepositRequired ?? false,
-        agentBrokerFeeRequired: data.agentFeeRequired ?? false,
-        fixedUtilityCost: data.fixedUtilityCost ?? false,
-        julySummerUtilities: julyUtilities,
-        januaryWinterUtilities: januaryUtilities,
-      },
-      accessibility: {
-        nearestGroceryStore: data.nearestGroceryStore || "Not specified",
-        nearestPark: data.nearestPark || "Not specified",
-        nearestRestaurant: data.nearestPublicTransport || "Not specified",
-      },
-      ratingsAndReviews: {
-        valueForMoney: data.valueForMoney || 1,
-        costOfRepairsCoverage: data.costOfRepairs || "Not specified",
-        overallExperience: data.overallExperience || 1,
-        overallRating:
-          Math.round(
-            ((data.valueForMoney ?? 0) + (data.overallExperience ?? 0)) / 2
-          ) || 1,
-        detailedReview:
-          data.detailedReview ||
-          data.additionalComments ||
-          "No detailed review provided",
-      },
-      submitAnonymously: data.submitAnonymously ?? false,
-    };
-  };
-
-  const validateFormData = (data: typeof formData): string[] => {
-    const errors: string[] = [];
-
-    // Required fields validation
-    if (!data?.country) errors.push("Country is required");
-    if (!data.address) errors.push("Address is required");
-    if (!data.numberOfRooms) errors.push("Number of rooms is required");
-    if (!data.numberOfOccupants) errors.push("Number of occupants is required");
-    if (!data.moveOutDate) errors.push("Move out date is required");
-    if (!data.yearlyRent) errors.push("Rent amount is required");
-
-    // Validate rent amount
-    const rentAmount = parseFloat(
-      (data.yearlyRent ?? "").replace(/[^\d.]/g, "")
-    );
-    if (isNaN(rentAmount) || rentAmount <= 0) {
-      errors.push("Please enter a valid rent amount");
-    }
-
-    // Validate ratings
-    if ((data.valueForMoney ?? 0) <= 0) {
-      errors.push("Please provide a value for money rating");
-    }
-    if ((data.overallExperience ?? 0) <= 0) {
-      errors.push("Please provide an overall experience rating");
-    }
-
-    // Validate move out date
-    const moveOutDate = new Date(data?.moveOutDate ?? "");
-    if (isNaN(moveOutDate.getTime())) {
-      errors.push("Please provide a valid move out date");
-    }
-
-    return errors;
-  };
-
-  const transformContextToApiData = (
-    contextData: any
-  ): UnlistedPropertyReview & { submitAnonymously: boolean } => {
-    // Get selected appliances
-    const selectedAppliances = Object.entries(contextData.appliances || {})
-      .filter(([key, value]) => value && key !== "others")
-      .map(([key]) => {
-        const appliances: { [key: string]: string } = {
-          oven: "Oven",
-          washingMachine: "Washing Machine",
-          refrigerator: "Refrigerator",
-          garbageDisposal: "Garbage Disposal",
-          airConditioner: "Air Conditioner",
-          dryer: "Dryer",
-          microwave: "Microwave",
-        };
-        return appliances[key] || key;
-      });
-
-    // Add custom appliances if specified
-    if (contextData?.appliances?.others && contextData.appliances.otherText) {
-      selectedAppliances.push(contextData.appliances.otherText);
-    }
-
-    // Get selected building facilities
-    const selectedFacilities = Object.entries(
-      contextData.buildingFacilities || {}
-    )
-      .filter(([key, value]) => value && key !== "others")
-      .map(([key]) => {
-        const facilities: { [key: string]: string } = {
-          parkingLot: "Parking Lot",
-          streetParking: "Street Parking",
-          gymFitness: "Gym/Fitness",
-          elevator: "Elevator",
-          storageSpace: "Storage Space",
-          childrenPlayArea: "Children Play Area",
-          roofTerrace: "Roof Terrace",
-          securitySystem: "Security System",
-          dedicatedParking: "Dedicated Parking",
-          swimmingPool: "Swimming Pool",
-          gardenCourtyard: "Garden/Courtyard",
-        };
-        return facilities[key] || key;
-      });
-
-    if (
-      contextData.buildingFacilities?.others &&
-      contextData?.buildingFacilities?.otherText
-    ) {
-      selectedFacilities.push(contextData.buildingFacilities.otherText);
-    }
-
-    // Get selected landlord languages
-    const selectedLanguages = Object.entries(
-      contextData.landlordLanguages || {}
-    )
-      .filter(
-        ([key, value]) =>
-          value &&
-          key !== "others" &&
-          key !== "customLanguage" &&
-          key !== "otherText" &&
-          key !== "customLanguageText"
-      )
-      .map(([key]) => key.charAt(0).toUpperCase() + key.slice(1));
-
-    // Add custom languages if specified
-    if (
-      contextData?.landlordLanguages?.others &&
-      contextData.landlordLanguages.otherText
-    ) {
-      selectedLanguages.push(contextData.landlordLanguages.otherText);
-    }
-    if (
-      contextData?.landlordLanguages?.customLanguage &&
-      contextData.landlordLanguages.customLanguageText
-    ) {
-      selectedLanguages.push(contextData.landlordLanguages.customLanguageText);
-    }
-
-    // Parse rent amount from string (remove currency symbols and commas)
-    const rentAmount =
-      parseFloat(contextData.yearlyRent ?? "".replace(/[^\d.]/g, "")) || 0;
-
-    // Parse utility costs
-    const julyUtilities =
-      parseFloat((contextData?.julyUtilities ?? "").replace(/[^\d.]/g, "")) ||
-      0;
-    const januaryUtilities =
-      parseFloat(
-        (contextData?.januaryUtilities ?? "").replace(/[^\d.]/g, "")
-      ) || 0;
-
-    // Convert move out date to ISO string
-    const moveOutDate = new Date(contextData?.moveOutDate ?? "");
-    if (isNaN(moveOutDate.getTime())) {
-      throw new Error("Invalid move out date");
-    }
-
-    // Construct fullAddress and location fields using LocationPayload type
-    const location = {
-      country: contextData.location?.country || contextData.country || "",
-      countryCode: (contextData.location && "countryCode" in contextData.location ? contextData.location.countryCode : "") ||
-        (contextData.country === "Nigeria"
-          ? "NG"
-          : contextData.country === "Estonia"
-          ? "EE"
-          : contextData.country?.slice(0, 2).toUpperCase()) ||
-        "",
-      stateOrRegion: contextData.location?.stateOrRegion || contextData.state || "",
-      district: contextData.location?.district || contextData.district || "",
-      street: (contextData.location && "street" in contextData.location ? contextData.location.street : "") ||
-        contextData.location?.streetAddress ||
-        contextData.address ||
-        "",
-      streetNumber: (contextData.location && "streetNumber" in contextData.location ? contextData.location.streetNumber : "") || "",
-      apartment: contextData.location?.apartment || contextData.apartmentNumber || "",
-      postalCode: contextData.location?.postalCode || contextData.zipCode || "",
-      fullAddress: (contextData.location && "fullAddress" in contextData.location ? contextData.location.fullAddress : "") || "",
-      city: contextData.location?.city || contextData.city || "",
-      streetAddress: contextData.location?.streetAddress || contextData.address || "",
-    } as {
-      country: string;
-      countryCode: string;
-      stateOrRegion: string;
-      district: string;
-      street: string;
-      streetNumber: string;
-      apartment: string;
-      postalCode: string;
-      fullAddress: string;
-      city: string;
-      streetAddress: string;
-    };
-    // If fullAddress is not set, construct it
-    if (!location.fullAddress) {
-      const fullAddr = [
-        location.streetNumber && location.street
-          ? `${location.streetNumber} ${location.street}`
-          : location.street,
-        location.apartment,
-        location.district,
-        location.stateOrRegion,
-      ]
-        .filter(Boolean)
-        .join(", ");
-      location.fullAddress = fullAddr;
-    }
-
-    return {
-      location,
-      stayDetails: {
-        numberOfRooms: Number(contextData.numberOfRooms) || 1,
-        numberOfOccupants: Number(contextData.numberOfOccupants) || 1,
-        dateLeft: moveOutDate.toISOString(),
-        furnished: !!contextData.furnished,
-        appliancesFixtures: selectedAppliances,
-        buildingFacilities: selectedFacilities,
-        landlordLanguages: selectedLanguages,
-      },
-      costDetails: {
-        rent: rentAmount,
-        rentType: contextData.rentType === "range" ? "Yearly" : "Monthly",
-        securityDepositRequired: !!contextData.securityDepositRequired,
-        agentBrokerFeeRequired: !!contextData.agentFeeRequired,
-        fixedUtilityCost: !!contextData.fixedUtilityCost,
-        julySummerUtilities: julyUtilities,
-        januaryWinterUtilities: januaryUtilities,
-      },
-      accessibility: {
-        nearestGroceryStore: contextData.nearestGroceryStore || "",
-        nearestPark: contextData.nearestPark || "",
-        nearestRestaurant: contextData.nearestRestaurant || "",
-      },
-      ratingsAndReviews: {
-        valueForMoney: contextData.valueForMoney || 0,
-        costOfRepairsCoverage: contextData.costOfRepairs || "",
-        overallExperience: contextData.overallExperience || 0,
-        overallRating: Math.round(
-          ((contextData.valueForMoney || 0) +
-            (contextData.overallExperience || 0)) /
-            2
-        ),
-        detailedReview: contextData.detailedReview || "",
-      },
-      submitAnonymously: !!contextData.isAnonymous,
-      agreeToTerms: !!contextData.agreeToTerms,
-    };
-  };
-
-  const handleFinalSubmitWithValidation = async () => {
-    if (!canSubmit) {
-      toast.error("Please agree to the terms and conditions to continue");
-      return;
-    }
-
-    // Call the child's handleFinalSubmit for validation and data
-    let contextData = location;
-    if (submitReviewRef.current && submitReviewRef.current.handleFinalSubmit) {
-      const result = await submitReviewRef.current.handleFinalSubmit();
-      if (!result) return; // Validation failed in child
-      contextData = result;
-    }
-
-    setIsSubmitting(true);
-
-    try {
-      const apiData = transformContextToApiData(contextData);
-
-      if (!isAuthenticated) {
-        handleAuthRedirect(apiData);
-        return;
-      }
-
-      const sanitizedData = sanitizeReviewPayload(apiData);
-
-      writeReviewMutation.mutate(sanitizedData, {
-        onSuccess: (response) => {
-          console.log("response", response);
-          clearPendingData();
-          toast.success("Review submitted successfully!");
-          setTimeout(() => {
-            router.push("/");
-          }, 2000);
-        },
-        onError: (error: any) => {
-          if (error.response?.status === 401) {
-            toast.error("Session expired. Please log in again.");
-            handleAuthRedirect(apiData);
-          } else {
-            const errorMessage =
-              error.response?.data?.message ||
-              error.message ||
-              "There was an error submitting your review. Please try again.";
-            toast.error(errorMessage);
-          }
-        },
-      });
-    } catch (error) {
-      toast.error("An unexpected error occurred. Please try again.");
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const StarRating = ({
-    rating,
-    onRatingChange,
-    label,
-  }: {
-    rating: number;
-    onRatingChange: (rating: number) => void;
-    label: string;
-  }) => (
-    <div className="space-y-2">
-      <label className="block text-sm font-medium text-gray-700">{label}</label>
-      <div className="flex space-x-1">
-        {[1, 2, 3, 4, 5].map((star) => (
-          <Star
-            key={star}
-            className={`w-6 h-6 cursor-pointer transition-colors ${
-              star <= rating
-                ? "fill-orange-400 text-orange-400"
-                : "text-gray-300"
-            }`}
-            onClick={() => onRatingChange(star)}
-          />
-        ))}
-      </div>
-    </div>
-  );
-
+  // Helper functions for step titles and messages
   const getCurrentStepTitle = () => {
     if (currentStep === 1) return "Property Details";
     if (currentStep === 2) return "Experience and Ratings";
@@ -927,7 +246,7 @@ const WriteUnlistedPropertyReviews = () => {
     if (currentStep === 2 && currentSubStep === 1)
       return "You're doing great! Now let's dive into your experience.";
     if (currentStep === 2 && currentSubStep === 2)
-      return "Tell us about the property's amenities and location";
+      return "Tell us about the property&apos;s amenities and location";
     if (currentStep === 2 && currentSubStep === 3)
       return "Rate your experience with this property";
     if (currentStep === 3)
@@ -935,253 +254,348 @@ const WriteUnlistedPropertyReviews = () => {
     return "";
   };
 
-  const handleFinalSubmit = () => {
-    console.log("Form submitted:", formData);
-    toast.success("Review submitted successfully!");
+  // Final submit logic
+  const handleFinalSubmitWithValidation = async () => {
+    setIsSubmitting(true);
+    try {
+      // Build costDetails from formData
+      const costDetails = {
+        rentType: formData.rentType,
+        rent: formData.yearlyRent,
+        securityDepositRequired: formData.securityDepositRequired,
+        agentBrokerFeeRequired: formData.agentFeeRequired,
+        fixedUtilityCost: formData.fixedUtilityCost,
+        centralHeating: formData.centralHeating,
+        furnished: formData.furnished,
+        julySummerUtilities: formData.julySummerUtilities,
+        januaryWinterUtilities: formData.januaryWinterUtilities,
+      };
+      // Build ratingsAndReviews from context (addressLocation) and formData
+      const ratingsAndReviews = {
+        valueForMoney: addressLocation?.valueForMoney ?? 0,
+        costOfRepairs: addressLocation?.costOfRepairs ?? "",
+        overallExperience: addressLocation?.overallExperience ?? 0,
+        detailedReview: addressLocation?.detailedReview ?? "",
+      };
+      // Build location from addressLocation, removing propertyType, propertyName, propertyDescription
+      const { propertyType, propertyName, propertyDescription, ...locationRest } = {
+        ...formData,
+        ...addressLocation,
+      };
+      // Build pendingData
+      const pendingData = {
+        stayDetails: {
+          numberOfRooms: formData.numberOfRooms,
+          numberOfOccupants: formData.numberOfOccupants,
+        },
+        costDetails,
+        accessibility: {
+          nearestGroceryStore: formData.nearestGroceryStore,
+          nearestPark: formData.nearestPark,
+          nearestRestaurant: formData.nearestRestaurant,
+        },
+        ratingsAndReviews,
+        submitAnonymously: formData.isAnonymous,
+        location: locationRest,
+      };
+      // If not authenticated, save to localStorage and redirect
+      if (!isAuthenticated) {
+        localStorage.setItem('pendingReviewData', JSON.stringify(pendingData));
+        handleAuthRedirect(pendingData);
+        return;
+      }
+      // Simulate mutation (replace with real API call in production)
+      setTimeout(() => {
+        clearPendingData();
+        localStorage.removeItem('pendingReviewData');
+        toast.success("Review submitted successfully!");
+        router.push("/reviewsPage");
+      }, 1000);
+    } catch {
+      toast.error("An unexpected error occurred. Please try again.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
-  useEffect(() => {
-    try {
-      const stored = localStorage.getItem("unlistedReviewData");
-      if (stored) {
-        const parsed = JSON.parse(stored);
-        if (parsed && typeof parsed === "object") {
-          setFormData(parsed);
-        }
-      }
-    } catch (err) {
-      console.error("Failed to load unlistedReviewData from localStorage", err);
-    }
-  }, []);
-
-  if (authLoading) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-orange-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading...</p>
-        </div>
-      </div>
-    );
+  if (restoring) {
+    return <div>Loading...</div>;
   }
 
-  const handleRatingsChange = (field: string, value: any) => {
-    // Update the ratings and reviews section of formData
-    setFormData((prev) => ({
-      ...prev,
-      ratingsAndReviews: {
-        ...prev.ratingsAndReviews,
-        [field]: value,
-      },
-    }));
-
-    // If valueForMoney or overallExperience is updated, recalculate overallRating
-    if (field === "valueForMoney" || field === "overallExperience") {
-      setFormData((prev) => ({
-        ...prev,
-        ratingsAndReviews: {
-          ...prev.ratingsAndReviews,
-          overallRating: Math.round(
-            (prev.ratingsAndReviews.valueForMoney +
-              prev.ratingsAndReviews.overallExperience) /
-              2
-          ),
-        },
-      }));
-    }
-  };
   return (
-    <ReviewFormProvider>
-      <div className="min-h-screen bg-gray-50">
-        {hasPendingData && isAuthenticated && (
-          <div className="bg-green-50 border border-green-200 rounded-lg p-4 mx-4 mt-4">
-            <p className="text-green-700 text-sm flex items-center">
-              <span className="mr-2">✓</span>
-              Welcome back! Your review data has been restored.
+    <div className="min-h-screen bg-gray-50 w-full">
+      {hasPendingData && isAuthenticated && (
+        <div className="bg-green-50 border border-green-200 rounded-lg p-4 mx-4 mt-4">
+          <p className="text-green-700 text-sm flex items-center">
+            <span className="mr-2">✓</span>
+            Welcome back! Your review data has been restored.
+          </p>
+        </div>
+      )}
+      <main className="max-w-4xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
+        {/* Title */}
+        <div className="text-center mb-8">
+          <h1 className="text-3xl font-bold text-teal-700 mb-2">
+            Write a Property Review
+          </h1>
+          <p className="text-gray-600">
+            Share your honest opinion about a property to help others make
+            informed decisions.
+          </p>
+        </div>
+
+        {/* Progress Steps */}
+        <div className="bg-orange-100 rounded-lg p-6 mb-8">
+          <div className="flex items-center justify-between">
+            <div
+              className={`flex items-center space-x-2 ${
+                currentStep >= 1 ? "text-orange-600" : "text-gray-400"
+              }`}
+            >
+              <div
+                className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
+                  currentStep >= 1
+                    ? "bg-orange-600 text-white"
+                    : "bg-gray-300 text-gray-600"
+                }`}
+              >
+                {currentStep > 1 ? "✓" : "1"}
+              </div>
+              <span className="text-sm font-medium">Property Details</span>
+            </div>
+            <div
+              className={`flex items-center space-x-2 ${
+                currentStep >= 2 ? "text-orange-600" : "text-gray-400"
+              }`}
+            >
+              <div
+                className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
+                  currentStep >= 2
+                    ? "bg-orange-600 text-white"
+                    : "bg-gray-300 text-gray-600"
+                }`}
+              >
+                {currentStep > 2 ? "✓" : "2"}
+              </div>
+              <span className="text-sm font-medium">
+                Experience and Ratings
+              </span>
+            </div>
+            <div
+              className={`flex items-center space-x-2 ${
+                currentStep >= 3 ? "text-orange-600" : "text-gray-400"
+              }`}
+            >
+              <div
+                className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
+                  currentStep >= 3
+                    ? "bg-orange-600 text-white"
+                    : "bg-gray-300 text-gray-600"
+                }`}
+              >
+                3
+              </div>
+              <span className="text-sm font-medium">Submit Review</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Progress Message */}
+        {currentStep === 2 && (
+          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
+            <p className="text-yellow-700 text-sm flex items-center">
+              <span className="mr-2">👋</span>
+              {getCurrentStepMessage()}
             </p>
           </div>
         )}
-
-        {/* Main Content */}
-        <main className="max-w-4xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
-          {/* Title */}
-          <div className="text-center mb-8">
-            <h1 className="text-3xl font-bold text-teal-700 mb-2">
-              Write a Property Review
-            </h1>
-            <p className="text-gray-600">
-              Share your honest opinion about a property to help others make
-              informed decisions.
-            </p>
-          </div>
-
-          {/* Progress Steps */}
-          <div className="bg-orange-100 rounded-lg p-6 mb-8">
-            <div className="flex items-center justify-between">
-              <div
-                className={`flex items-center space-x-2 ${
-                  currentStep >= 1 ? "text-orange-600" : "text-gray-400"
-                }`}
-              >
-                <div
-                  className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
-                    currentStep >= 1
-                      ? "bg-orange-600 text-white"
-                      : "bg-gray-300 text-gray-600"
-                  }`}
-                >
-                  {currentStep > 1 ? "✓" : "1"}
-                </div>
-                <span className="text-sm font-medium">Property Details</span>
+        <div className="bg-white rounded-lg shadow-sm p-8">
+          {/* Step 1: Property Details */}
+          {currentStep === 1 && (
+            <div>
+              <div className="mb-6">
+                <h2 className="text-xl font-semibold text-gray-900 mb-2">
+                  {getCurrentStepTitle()}
+                </h2>
+                <p className="text-gray-600 flex items-center">
+                  <Home className="w-4 h-4 mr-1" />
+                  {getCurrentStepMessage()}
+                </p>
               </div>
-              <div
-                className={`flex items-center space-x-2 ${
-                  currentStep >= 2 ? "text-orange-600" : "text-gray-400"
-                }`}
-              >
-                <div
-                  className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
-                    currentStep >= 2
-                      ? "bg-orange-600 text-white"
-                      : "bg-gray-300 text-gray-600"
-                  }`}
-                >
-                  {currentStep > 2 ? "✓" : "2"}
-                </div>
-                <span className="text-sm font-medium">
-                  Experience and Ratings
-                </span>
-              </div>
-              <div
-                className={`flex items-center space-x-2 ${
-                  currentStep >= 3 ? "text-orange-600" : "text-gray-400"
-                }`}
-              >
-                <div
-                  className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
-                    currentStep >= 3
-                      ? "bg-orange-600 text-white"
-                      : "bg-gray-300 text-gray-600"
-                  }`}
-                >
-                  3
-                </div>
-                <span className="text-sm font-medium">Submit Review</span>
-              </div>
-            </div>
-          </div>
 
-          {/* Progress Message */}
-          {currentStep === 2 && (
-            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
-              <p className="text-yellow-700 text-sm flex items-center">
-                <span className="mr-2">👋</span>
-                {getCurrentStepMessage()}
-              </p>
-            </div>
-          )}
-          <div className="bg-white rounded-lg shadow-sm p-8">
-            {/* Step 1: Property Details */}
-            {currentStep === 1 && (
-              <div>
-                <div className="mb-6">
-                  <h2 className="text-xl font-semibold text-gray-900 mb-2">
-                    {getCurrentStepTitle()}
-                  </h2>
-                  <p className="text-gray-600 flex items-center">
-                    <Home className="w-4 h-4 mr-1" />
-                    {getCurrentStepMessage()}
-                  </p>
-                </div>
+              <div className="space-y-6">
+                <AddressForm />
+               
 
-                <div className="space-y-6">
-                  <AddressForm />
-                  {/* PropertyDetailsSections */}
-                  <PropertyDetailsSection
-                    apartmentNumber={formData.apartmentNumber}
-                    numberOfRooms={formData.numberOfRooms}
-                    numberOfOccupants={formData.numberOfOccupants}
-                    onChange={(field, value) => updateFormData(field, value)}
-                  />
-
-                  {/* Move data */}
-                  <MoveOutDatePicker />
-                </div>
-              </div>
-            )}
-
-            {/* Step 2: Experience and Ratings */}
-            {currentStep === 2 && (
-              <div>
-                {/* Step 2A: Cost Details */}
-                {currentSubStep === 1 && (
-                  <div>
-                    <div className="mb-6">
-                      <h2 className="text-xl font-semibold text-gray-900 mb-2">
-                        {getCurrentSubStepTitle()}
-                      </h2>
-                      <p className="text-gray-600">
-                        Tell us about the rental costs
-                      </p>
+                {/* Stay Details */}
+                <div className="space-y-4">
+                  <h3 className="text-lg font-medium text-gray-900">Stay Details</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Number of Rooms
+                      </label>
+                      <input
+                        type="number"
+                        min="0"
+                        value={formData.numberOfRooms}
+                        onChange={(e) => {
+                          const value = parseInt(e.target.value) || 1;
+                          setFormData(f => ({ ...f, numberOfRooms: value }));
+                          console.log('Number of Rooms:', value);
+                        }}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                      />
                     </div>
-
-                    <div className="space-y-6">
-                      {/* Rent */}
-                      <RentInput />
-                      {/* Security Deposit */}
-                      <SecurityDepositToggle />
-
-                      {/* Agent/Broker Fees */}
-                      <AgentBrokerFeesToggle />
-                      {/* Fixed Utility Costs */}
-                      <FixedUtilityCostsToggle />
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Number of Occupants
+                      </label>
+                      <input
+                        type="number"
+                        min="0"
+                        value={formData.numberOfOccupants}
+                        onChange={(e) => {
+                          const value = parseInt(e.target.value) || 1;
+                          setFormData(f => ({ ...f, numberOfOccupants: value }));
+                          console.log('Number of Occupants:', value);
+                        }}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                      />
                     </div>
                   </div>
-                )}
-                {/* Step 2B: Amenities & Accessibility */}
-                {currentSubStep === 2 && <AmenitiesAccessibility />}
-                {/* Step 2C: Ratings & Reviews */}
-                {currentSubStep === 3 && <RatingComponent />}
+                </div>
+
+                <MoveOutDatePicker />
               </div>
-            )}
-
-            {/* Step 3: Submit Review */}
-            {currentStep === 3 && (
-              <SubmitReviewComponent ref={submitReviewRef} />
-            )}
-
-            {/* Navigation Buttons */}
-            <div className="flex justify-between mt-8">
-              {currentStep > 1 && (
-                <button
-                  onClick={prevStep}
-                  className="bg-gray-200 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-300 transition duration-200"
-                >
-                  Previous
-                </button>
-              )}
-              {currentStep < 3 && (
-                <button
-                  onClick={nextStep}
-                  className="bg-[#C85212] text-white px-6 py-2 rounded-md hover:bg-orange-800 transition duration-200"
-                >
-                  Continue
-                </button>
-              )}
-              {currentStep === 3 && (
-                <button
-                  onClick={handleFinalSubmitWithValidation}
-                  disabled={!canSubmit || isSubmitting}
-                  className="bg-[#C85212] text-white px-6 py-2 rounded-md hover:bg-orange-800 transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {isSubmitting ? "Submitting..." : "Submit Review"}
-                </button>
-              )}
             </div>
+          )}
+
+          {/* Step 2: Experience and Ratings */}
+          {currentStep === 2 && (
+            <div>
+              {/* Step 2A: Cost Details */}
+              {currentSubStep === 1 && (
+                <div>
+                  <div className="mb-6">
+                    <h2 className="text-xl font-semibold text-gray-900 mb-2">
+                      {getCurrentSubStepTitle()}
+                    </h2>
+                    <p className="text-gray-600">
+                      Tell us about the rental costs
+                    </p>
+                  </div>
+
+                  <div className="space-y-6">
+                    <RentInput
+                      rentType={formData.rentType}
+                      yearlyRent={formData.yearlyRent}
+                      onRentTypeChange={val => setFormData(f => ({ ...f, rentType: val }))}
+                      onYearlyRentChange={val => setFormData(f => ({ ...f, yearlyRent: val }))}
+                    />
+                    <SecurityDepositToggle
+                      securityDepositRequired={formData.securityDepositRequired}
+                      onSecurityDepositChange={val => setFormData(f => ({ ...f, securityDepositRequired: val }))}
+                    />
+                    <AgentBrokerFeesToggle
+                      agentFeeRequired={formData.agentFeeRequired}
+                      onAgentFeeChange={val => setFormData(f => ({ ...f, agentFeeRequired: val }))}
+                    />
+                    <FixedUtilityCostsToggle
+                      fixedUtilityCost={formData.fixedUtilityCost}
+                      centralHeating={formData.centralHeating}
+                      furnished={formData.furnished}
+                      julySummerUtilities={formData.julySummerUtilities}
+                      januaryWinterUtilities={formData.januaryWinterUtilities}
+                      onFixedUtilityCostChange={val => setFormData(f => ({ ...f, fixedUtilityCost: val }))}
+                      onCentralHeatingChange={val => setFormData(f => ({ ...f, centralHeating: val }))}
+                      onFurnishedChange={val => setFormData(f => ({ ...f, furnished: val }))}
+                      onJulySummerUtilitiesChange={val => setFormData(f => ({ ...f, julySummerUtilities: val }))}
+                      onJanuaryWinterUtilitiesChange={val => setFormData(f => ({ ...f, januaryWinterUtilities: val }))}
+                    />
+                  </div>
+                </div>
+              )}
+              {/* Step 2B: Amenities & Accessibility */}
+              {currentSubStep === 2 && (
+                <div>
+                  <div className="mb-6">
+                    <h2 className="text-xl font-semibold text-gray-900 mb-2">
+                      {getCurrentSubStepTitle()}
+                    </h2>
+                    <p className="text-gray-600">
+                      Tell us about the property&apos;s amenities and location
+                    </p>
+                  </div>
+                  <div className="space-y-6">
+                    <AmenitiesAccessibility
+                      appliances={formData.appliances}
+                      buildingFacilities={formData.buildingFacilities}
+                      costOfRepairsCoverage={formData.costOfRepairsCoverage}
+                      onAppliancesChange={val => setFormData(f => ({ ...f, appliances: val }))}
+                      onBuildingFacilitiesChange={val => setFormData(f => ({ ...f, buildingFacilities: val }))}
+                      onCostOfRepairsCoverageChange={val => setFormData(f => ({ ...f, costOfRepairsCoverage: val }))}
+                      landlordLanguages={formData.landlordLanguages}
+                      onLandlordLanguagesChange={val => setFormData(f => ({ ...f, landlordLanguages: val }))}
+                    />
+                    <Accessibility
+                      accessibility={{
+                        nearestGroceryStore: formData.nearestGroceryStore,
+                        nearestPark: formData.nearestPark,
+                        nearestRestaurant: formData.nearestRestaurant,
+                      }}
+                      onInputChange={(field, value) => setFormData(f => ({ ...f, [field]: value }))}
+                    />
+                  </div>
+                </div>
+              )}
+              {/* Step 2C: Ratings & Reviews */}
+              {currentSubStep === 3 && <RatingComponent />}
+            </div>
+          )}
+
+          {/* Step 3: Submit Review */}
+          {currentStep === 3 && (
+            <SubmitReviewComponent
+              isAnonymous={formData.isAnonymous}
+              agreeToTerms={formData.agreeToTerms}
+              onAnonymousChange={val => setFormData(f => ({ ...f, isAnonymous: val }))}
+              onTermsChange={val => setFormData(f => ({ ...f, agreeToTerms: val }))}
+              ref={submitReviewRef}
+            />
+          )}
+
+          {/* Navigation Buttons */}
+          <div className="flex justify-between mt-8">
+            {currentStep > 1 && (
+              <button
+                onClick={prevStep}
+                className="bg-gray-200 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-300 transition duration-200"
+              >
+                Previous
+              </button>
+            )}
+            {currentStep < 3 && (
+              <button
+                onClick={nextStep}
+                className="bg-[#C85212] text-white px-6 py-2 rounded-md hover:bg-orange-800 transition duration-200"
+              >
+                Continue
+              </button>
+            )}
+            {currentStep === 3 && (
+              <button
+                onClick={handleFinalSubmitWithValidation}
+                disabled={isSubmitting}
+                className="bg-[#C85212] text-white px-6 py-2 rounded-md hover:bg-orange-800 transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isSubmitting ? "Submitting..." : "Submit Review"}
+              </button>
+            )}
           </div>
-        </main>
-      </div>
-    </ReviewFormProvider>
+        </div>
+      </main>
+    </div>
   );
 };
 

@@ -47,7 +47,7 @@ declare global {
 }
 
 const AddressForm: React.FC = () => {
-  const { setLocation } = useReviewForm();
+  const { location, setLocation } = useReviewForm();
   const inputRef = useRef<HTMLInputElement>(null);
   const autocompleteRef = useRef<any>(null);
 
@@ -71,6 +71,23 @@ const AddressForm: React.FC = () => {
   const [apartment, setApartment] = useState("");
   const [city, setCity] = useState("");
 
+  // Only prefill from context on first mount/restore
+  const didPrefillRef = useRef(false);
+  useEffect(() => {
+    if (location && !didPrefillRef.current) {
+      setCountry(location.country || "");
+      setState(location.stateOrRegion || "");
+      setDistrict(location.district || "");
+      setPostalCode(location.postalCode || "");
+      setAddressLine(location.street ? `${location.street}` : "");
+      setStreet(location.street || "");
+      setApartment(location.apartment || "");
+      setManualApartment(location.apartment || "");
+      setCountryCode(location.countryCode?.toLowerCase() || "ng");
+      didPrefillRef.current = true;
+    }
+  }, [location]);
+
   useEffect(() => {
     fetch("https://ipapi.co/json")
       .then((res) => res.json())
@@ -78,10 +95,14 @@ const AddressForm: React.FC = () => {
         if (data.country === "EE" || data.country === "NG") {
           console.log("my country", data.country);
           setCountryCode(data.country.toLowerCase());
+        } else {
+          setCountryCode("ng"); // fallback
         }
       })
       .catch((error) => {
         console.error("Failed to fetch country:", error);
+        setCountryCode("ng"); // fallback
+        // Optionally, show a message or allow manual country selection
       });
   }, []);
 
@@ -144,7 +165,8 @@ const AddressForm: React.FC = () => {
 
       await fetchApartments(`${streetName} ${streetNumber}`);
       const apt = apartment || manualApartment;
-      // Build fullAddress as required by backend
+      console.log(apt)
+      // Build fullAddress as required by backend: streetNumber + street + apartment + district + stateOrRegion
       const fullAddress = [
         streetNumber && streetName ? `${streetNumber} ${streetName}` : streetName,
         apt,
@@ -154,6 +176,8 @@ const AddressForm: React.FC = () => {
         .filter(Boolean)
         .join(", ");
       const locationPayload = {
+      
+        
         country: countryName,
         countryCode: countryCode.toUpperCase(),
         stateOrRegion: state,
@@ -164,6 +188,8 @@ const AddressForm: React.FC = () => {
         fullAddress,
       };
       setLocation(locationPayload);
+      console.log("the Payload",locationPayload);
+      
     });
     return () => {
       if (autocompleteRef.current) {
@@ -174,9 +200,10 @@ const AddressForm: React.FC = () => {
     };
   }, [countryCode]);
   useEffect(() => {
+    // Only update if addressLine is set (i.e., after address selection)
+    if (!addressLine) return;
     const apt = apartment || manualApartment;
-    if (!street || !state || !district) return;
-    // Build fullAddress as required by backend
+    // Build fullAddress as required by backend: streetNumber + street + apartment + district + stateOrRegion
     const fullAddress = [
       streetNumber && street ? `${streetNumber} ${street}` : street,
       apt,
@@ -196,17 +223,9 @@ const AddressForm: React.FC = () => {
       fullAddress,
     };
     setLocation(locationPayload);
-  }, [
-    apartment,
-    manualApartment,
-    street,
-    streetNumber,
-    district,
-    state,
-    country,
-    postalCode,
-    countryCode,
-  ]);
+    // For debugging
+    console.log("the Payload", locationPayload);
+  }, [apartment, manualApartment, district]);
 
   const handleManualSearch = async (
     e: React.KeyboardEvent<HTMLInputElement>
@@ -266,7 +285,7 @@ const AddressForm: React.FC = () => {
   const mark = addressIndicator[arrLength - 1];
 
   return (
-    <div className="flex justify-center bg-gray-50 py-8">
+    <div className="flex justify-center bg-gray-50 py-8 ">
       <div className="w-full max-w-2xl bg-white border border-gray-100 rounded-lg p-6 shadow-sm">
         <div className="space-y-4">
           {/* Address Input */}

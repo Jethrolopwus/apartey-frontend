@@ -1,11 +1,15 @@
 "use client";
 import React from "react";
-import { useReviewForm } from "@/app/context/RevievFormContext";
 
-const SecurityDepositToggle: React.FC = () => {
-  const { location, setLocation } = useReviewForm();
-  const securityDepositRequired = location?.securityDepositRequired || false;
+interface SecurityDepositToggleProps {
+  securityDepositRequired: boolean;
+  onSecurityDepositChange: (required: boolean) => void;
+}
 
+const SecurityDepositToggle: React.FC<SecurityDepositToggleProps> = ({
+  securityDepositRequired,
+  onSecurityDepositChange,
+}) => {
   return (
     <div className={`border border-gray-200 rounded-lg p-4`}>
       <h3 className="font-medium text-gray-900 mb-2">Security Deposit</h3>
@@ -21,12 +25,10 @@ const SecurityDepositToggle: React.FC = () => {
           <input
             type="checkbox"
             checked={securityDepositRequired}
-            onChange={(e) =>
-              setLocation({
-                ...location,
-                securityDepositRequired: e.target.checked,
-              })
-            }
+            onChange={(e) => {
+              onSecurityDepositChange(e.target.checked);
+              console.log('Security Deposit Required:', e.target.checked);
+            }}
             className="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 border-white appearance-none cursor-pointer"
           />
           <label

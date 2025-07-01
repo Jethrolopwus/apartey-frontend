@@ -10,7 +10,12 @@ interface UploadedFile {
   type: 'image' | 'video';
 }
 
-const PhotoVideoUploader = () => {
+interface PhotoVideoUploaderProps {
+  formData: any;
+  setFormData: React.Dispatch<React.SetStateAction<any>>;
+}
+
+const PhotoVideoUploader: React.FC<PhotoVideoUploaderProps> = ({ formData, setFormData }) => {
   const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
   const [coverIndex, setCoverIndex] = useState<number | null>(null);
   const [videoTourLink, setVideoTourLink] = useState('');
@@ -88,6 +93,29 @@ const PhotoVideoUploader = () => {
     const [coverFile] = orderedFiles.splice(coverIndex, 1);
     orderedFiles.unshift(coverFile);
   }
+
+  useEffect(() => {
+    if (!setFormData) return;
+    if (uploadedFiles.length === 0) {
+      setFormData((prev: any) => ({
+        ...prev,
+        media: undefined,
+      }));
+      return;
+    }
+    const coverPhotoFile = coverIndex !== null && uploadedFiles[coverIndex]?.type === 'image'
+      ? uploadedFiles[coverIndex].file
+      : undefined;
+    setFormData((prev: any) => ({
+      ...prev,
+      media: {
+        ...prev.media,
+        coverPhoto: coverPhotoFile,
+        uploads: uploadedFiles.map(f => f.file),
+        videoTourLink,
+      },
+    }));
+  }, [uploadedFiles, coverIndex, videoTourLink, setFormData]);
 
   return (
     <div className="w-full">

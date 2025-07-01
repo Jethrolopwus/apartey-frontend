@@ -1,45 +1,19 @@
-import { ArrowRight, ChevronRight } from "lucide-react";
-import { BlogPost } from "@/types/generated";
+"use client";
+import { ArrowRight } from "lucide-react";
 import Link from "next/link";
+import { useGetAllBlogPostQuery } from "@/Hooks/use-getAllBlogPost.query";
 
 export default function BlogComponent() {
-  // Sample blog posts data
-  const blogPosts: BlogPost[] = [
-    {
-      id: 1,
-      title:
-        "Converting Your Home to a Rental: 6 Tips to Protect You & Your Property.",
-      excerpt:
-        "Converting Your Home to a Rental: 6 Tips to Protect You & Your Property.",
-      image: "/HouseRent.png",
-      date: "OCTOBER 10, 2023",
-    },
-    {
-      id: 2,
-      title:
-        "Converting Your Home to a Rental: 6 Tips to Protect You & Your Property.",
-      excerpt:
-        "Converting Your Home to a Rental: 6 Tips to Protect You & Your Property.",
-      image: "/HouseRent.png",
-      date: "OCTOBER 10, 2023",
-    },
-    {
-      id: 3,
-      title:
-        "Converting Your Home to a Rental: 6 Tips to Protect You & Your Property.",
-      excerpt:
-        "Converting Your Home to a Rental: 6 Tips to Protect You & Your Property.",
-      image: "/HouseRent.png",
-      date: "OCTOBER 10, 2023",
-    },
-  ];
+  // Fetch blog posts from backend (limit 3)
+  const { data, isLoading, error } = useGetAllBlogPostQuery({ limit: 3 });
+  const posts = (data as any)?.posts || [];
 
   return (
     <div className="max-w-screen-xl mx-auto px-4 py-8">
       <div className="flex justify-between items-center mb-6">
         <div>
           <p className="text-xs uppercase text-gray-500 font-medium tracking-wide">
-            {blogPosts[0].date}
+            {posts[0]?.publishedAt ? new Date(posts[0].publishedAt).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' }) : ''}
           </p>
           <h2 className="text-2xl font-medium text-gray-800">
             Latest from Our Blog
@@ -54,14 +28,16 @@ export default function BlogComponent() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {blogPosts.map((post) => (
+        {isLoading && <div className="col-span-3 text-center">Loading...</div>}
+        {error && <div className="col-span-3 text-center text-red-500">Failed to load blog posts.</div>}
+        {posts.slice(0, 3).map((post: any) => (
           <div
-            key={post.id}
-            className="flex shadow-md rounded-md pb-4 gap-2  flex-col items-center"
+            key={post._id}
+            className="flex shadow-md rounded-md pb-4 gap-2 flex-col items-center"
           >
             <div className="w-full rounded-t-lg overflow-hidden mb-4 aspect-auto">
               <img
-                src={post.image}
+                src={post.imageUrl || "/HouseRent.png"}
                 alt={post.title}
                 className="w-full h-full object-cover"
               />

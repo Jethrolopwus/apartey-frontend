@@ -1,17 +1,32 @@
 "use client";
 
 import React from "react";
-import { useReviewForm } from "@/app/context/RevievFormContext";
 
-const FixedUtilityCostsToggle: React.FC = () => {
-  const { location, setLocation } = useReviewForm();
+interface FixedUtilityCostsToggleProps {
+  fixedUtilityCost: boolean;
+  centralHeating: boolean;
+  furnished: boolean;
+  julySummerUtilities: string;
+  januaryWinterUtilities: string;
+  onFixedUtilityCostChange: (value: boolean) => void;
+  onCentralHeatingChange: (value: boolean) => void;
+  onFurnishedChange: (value: boolean) => void;
+  onJulySummerUtilitiesChange: (value: string) => void;
+  onJanuaryWinterUtilitiesChange: (value: string) => void;
+}
 
-  const fixedUtilityCost = location?.fixedUtilityCost || false;
-  const centralHeating = location?.centralHeating || false;
-  const furnished = location?.furnished || false;
-  const julySummerUtilities = location?.julySummerUtilities || "";
-  const januaryWinterUtilities = location?.januaryWinterUtilities || "";
-
+const FixedUtilityCostsToggle: React.FC<FixedUtilityCostsToggleProps> = ({
+  fixedUtilityCost,
+  centralHeating,
+  furnished,
+  julySummerUtilities,
+  januaryWinterUtilities,
+  onFixedUtilityCostChange,
+  onCentralHeatingChange,
+  onFurnishedChange,
+  onJulySummerUtilitiesChange,
+  onJanuaryWinterUtilitiesChange,
+}) => {
   return (
     <div className="border border-gray-200 rounded-lg p-6">
       <h2 className="text-lg font-medium text-gray-900 mb-2">
@@ -36,12 +51,10 @@ const FixedUtilityCostsToggle: React.FC = () => {
               <input
                 type="checkbox"
                 checked={fixedUtilityCost}
-                onChange={(e) =>
-                  setLocation({
-                    ...location,
-                    fixedUtilityCost: e.target.checked,
-                  })
-                }
+                onChange={(e) => {
+                  onFixedUtilityCostChange(e.target.checked);
+                  console.log('Fixed Utility Cost:', e.target.checked);
+                }}
                 className="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 border-white appearance-none cursor-pointer"
               />
               <label
@@ -59,9 +72,10 @@ const FixedUtilityCostsToggle: React.FC = () => {
               <input
                 type="checkbox"
                 checked={centralHeating}
-                onChange={(e) =>
-                  setLocation({ ...location, centralHeating: e.target.checked })
-                }
+                onChange={(e) => {
+                  onCentralHeatingChange(e.target.checked);
+                  console.log('Central Heating:', e.target.checked);
+                }}
                 className="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 border-white appearance-none cursor-pointer"
               />
               <label
@@ -79,9 +93,10 @@ const FixedUtilityCostsToggle: React.FC = () => {
               <input
                 type="checkbox"
                 checked={furnished}
-                onChange={(e) =>
-                  setLocation({ ...location, furnished: e.target.checked })
-                }
+                onChange={(e) => {
+                  onFurnishedChange(e.target.checked);
+                  console.log('Furnished:', e.target.checked);
+                }}
                 className="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 border-white appearance-none cursor-pointer"
               />
               <label
@@ -110,12 +125,10 @@ const FixedUtilityCostsToggle: React.FC = () => {
             <input
               type="text"
               value={julySummerUtilities}
-              onChange={(e) =>
-                setLocation({
-                  ...location,
-                  julySummerUtilities: e.target.value,
-                })
-              }
+              onChange={(e) => {
+                onJulySummerUtilitiesChange(e.target.value);
+                console.log('July Summer Utilities:', e.target.value);
+              }}
               placeholder="e.g. ₦100,000"
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent text-sm"
             />
@@ -129,12 +142,10 @@ const FixedUtilityCostsToggle: React.FC = () => {
             <input
               type="text"
               value={januaryWinterUtilities}
-              onChange={(e) =>
-                setLocation({
-                  ...location,
-                  januaryWinterUtilities: e.target.value,
-                })
-              }
+              onChange={(e) => {
+                onJanuaryWinterUtilitiesChange(e.target.value);
+                console.log('January Winter Utilities:', e.target.value);
+              }}
               placeholder="e.g. ₦120,000"
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent text-sm"
             />

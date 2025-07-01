@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect } from "react";
+import React, { useEffect, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
@@ -13,6 +13,7 @@ import { useGetOnboardingStatusQuery } from "@/Hooks/get-onboardingStatus.query"
 import { toast } from "react-hot-toast";
 import { useReviewForm } from "@/app/context/RevievFormContext";
 import { useAuthStatusQuery } from '@/Hooks/use-getAuthStatus.query';
+import { useAuthRedirect } from "@/Hooks/useAuthRedirect";
 
 const SignIn: React.FC = () => {
   const router = useRouter();
@@ -37,20 +38,23 @@ const SignIn: React.FC = () => {
 
   const { refetch: refetchAuthStatus } = useAuthStatusQuery();
 
+  // Use the auth redirect hook for proper pending data handling
+  const { handlePostLoginRedirect } = useAuthRedirect();
+  
+  // Store the function reference to avoid dependency issues
+  const handlePostLoginRedirectRef = useRef(handlePostLoginRedirect);
+  handlePostLoginRedirectRef.current = handlePostLoginRedirect;
+
   // Handle NextAuth session (Google OAuth)
   useEffect(() => {
     if (session) {
-      if (localStorage.getItem("pendingReviewData")) {
-        router.push("/write-reviews/unlisted");
-        // set location to context using data from local storage
-        const pendingReviewData = JSON.parse(localStorage.getItem("pendingReviewData") || "{}");
-        setLocation(pendingReviewData.LocationPayload);
-      } else {
-      // router.push("/profile");
+      // Add a small delay to ensure authentication state is updated
+      setTimeout(() => {
+        console.log("Calling handlePostLoginRedirect for NextAuth session");
+        handlePostLoginRedirectRef.current();
+      }, 100);
     }
-    }
-    
-  }, [session, router]);
+  }, [session]);
 
   // Handle onboarding status check result
   useEffect(() => {
@@ -60,13 +64,16 @@ const SignIn: React.FC = () => {
       console.log("Onboarding status:", isOnboarded);
 
       if (isOnboarded) {
-        // User is onboarded, redirect to profile or dashboard
+        // User is onboarded, use proper auth redirect logic
         toast.success("Welcome back!");
-        router.push("/profile");
+        setTimeout(() => {
+          console.log("Calling handlePostLoginRedirect for onboarded user");
+          handlePostLoginRedirectRef.current();
+        }, 100);
       } else {
         // User is not onboarded, redirect to role selection
         toast.success("Please complete your setup");
-        router.push("/onboarding"); // Keep your existing onboarding route
+        router.push("/onboarding");
       }
     }
   }, [onboardingData, router]);
@@ -91,10 +98,13 @@ const SignIn: React.FC = () => {
       reset();
       refetchAuthStatus();
 
-      // Always redirect to profile after sign in
-      router.push("/profile");
+      // Add a small delay to ensure authentication state is updated
+      setTimeout(() => {
+        console.log("Calling handlePostLoginRedirect after token storage");
+        handlePostLoginRedirectRef.current();
+      }, 100);
     }
-  }, [data, reset, refetchAuthStatus, router]);
+  }, [data, reset, refetchAuthStatus]);
 
   // Handle signin error
   useEffect(() => {
@@ -204,7 +214,7 @@ const SignIn: React.FC = () => {
           {/* Google Auth Button */}
           <GoogleAuthButton
             mode="signin"
-            callbackUrl="/onboarding"
+            callbackUrl="/onboardinng"
             onClick={handleGoogleSignIn}
           />
         </div>

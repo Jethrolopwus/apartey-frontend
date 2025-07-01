@@ -14,17 +14,23 @@ const authOptions = {
       // Add access token and user id to JWT
       if (account) {
         token.accessToken = account.access_token;
+        token.provider = account.provider;
+        token.providerId = account.providerAccountId;
       }
       if (user) {
         token.id = user.id;
+        token.googleId = user.id;
       }
       return token;
     },
     async session({ session, token }: { session: any; token: any }) {
       // Add access token and user id to session
       session.accessToken = token.accessToken;
+      session.provider = token.provider;
+      session.providerId = token.providerId;
       if (session.user) {
         session.user.id = token.id;
+        session.user.googleId = token.googleId;
       }
       return session;
     },
@@ -36,10 +42,11 @@ const authOptions = {
         const userData = {
           googleId: user.id,
           email: user.email,
-          name: user.name,
+          firstName: user.name?.split(' ')[0] || '',
+          lastName: user.name?.split(' ').slice(1).join(' ') || '',
           image: user.image,
-          provider: account?.provider,
-          providerId: account?.providerAccountId,
+          provider: account?.provider || 'google',
+          providerId: account?.providerAccountId || user.email,
           lastLogin: new Date().toISOString(),
         };
 
@@ -67,10 +74,17 @@ const authOptions = {
         console.error('Error syncing user during sign in:', error);
         return true; // Continue with sign in even if sync fails
       }
+    },
+    async redirect({ url, baseUrl }: { url: string; baseUrl: string }) {
+      // Prevent automatic redirects - let the component handle the flow
+      console.log('Redirect callback - url:', url, 'baseUrl:', baseUrl);
+      
+      // Return the current page to prevent automatic redirect
+      return `${baseUrl}/signin`;
     }
   },
   pages: {
-    signIn: '/auth/signin',
+    signIn: '/signin',
     error: '/auth/error',
   },
   session: {

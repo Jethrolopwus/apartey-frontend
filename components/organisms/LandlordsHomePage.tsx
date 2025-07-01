@@ -35,7 +35,7 @@ import LandlordsToolsSection from "../molecules/LandlordsToolSection";
 
 
           <div className="flex flex-col md:flex-row gap-4 justify-center my-8">
-            <Link href="/writeReviews">
+            <Link href="/property-listings">
               <Button variant="primary">Add Property</Button>
             </Link>
             <Link href="/reviewsPage ">

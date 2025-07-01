@@ -1,5 +1,5 @@
 "use client";
-import React from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Star } from "lucide-react";
 import { useReviewForm } from "@/app/context/RevievFormContext";
 
@@ -54,7 +54,10 @@ const RatingComponent: React.FC = () => {
             {[1, 2, 3, 4, 5].map((star) => (
               <button
                 key={star}
-                onClick={() => handleStarClick("valueForMoney", star)}
+                onClick={() => {
+                  handleStarClick("valueForMoney", star);
+                  console.log('Value for Money:', star);
+                }}
                 className="focus:outline-none focus:ring-2 focus:ring-blue-300 rounded"
                 type="button"
               >
@@ -94,7 +97,10 @@ const RatingComponent: React.FC = () => {
                 name="costOfRepairs"
                 value={option.value}
                 checked={REVERSE_COST_OF_REPAIRS_MAP[costOfRepairs] === option.value}
-                onChange={() => handleRadioChange("costOfRepairs", option.value)}
+                onChange={() => {
+                  handleRadioChange("costOfRepairs", option.value);
+                  console.log('Cost of Repairs:', option.value);
+                }}
                 className="h-4 w-4 text-orange-600 focus:ring-orange-500 border-gray-300"
               />
               <label
@@ -123,7 +129,10 @@ const RatingComponent: React.FC = () => {
             {[1, 2, 3, 4, 5].map((star) => (
               <button
                 key={star}
-                onClick={() => handleStarClick("overallExperience", star)}
+                onClick={() => {
+                  handleStarClick("overallExperience", star);
+                  console.log('Overall Experience:', star);
+                }}
                 className="focus:outline-none focus:ring-2 focus:ring-blue-300 rounded"
                 type="button"
               >
@@ -144,7 +153,10 @@ const RatingComponent: React.FC = () => {
         <h3 className="text-base font-medium text-gray-900">Detailed Review</h3>
         <textarea
           value={detailedReview}
-          onChange={(e) => setLocation({ ...location, detailedReview: e.target.value })}
+          onChange={(e) => {
+            setLocation({ ...location, detailedReview: e.target.value });
+            console.log('Detailed Review:', e.target.value);
+          }}
           placeholder="Share the details of your experience, what you liked and what you didn't like etc."
           className="w-full h-32 p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent resize-none"
         />
