@@ -532,6 +532,64 @@ class BaseURL {
       throw new Error(error.response?.data?.message || "Search failed");
     }
   };
+  httpUpdateReviewsToggleLike = async (id: string, data: any): Promise<RoleSubmissionResponse> => {
+    try {
+      const token =
+        localStorage.getItem("authToken") ||
+        localStorage.getItem("token") ||
+        localStorage.getItem("accessToken");
+
+      if (!token) throw new Error("No authentication token found.");
+
+      const response = await AxiosInstance.patch(
+        endpoints.ReviewLikesToggle(id),
+        data,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      return response.data;
+    } catch (error: any) {
+      if (error.response?.status === 401) {
+        TokenManager.clearAllTokens();
+        window.location.href = "/signin";
+      }
+      throw error;
+    }
+  };
+  httpUpdateReviewsFlag = async (id: string, data: any): Promise<RoleSubmissionResponse> => {
+    try {
+      const token =
+        localStorage.getItem("authToken") ||
+        localStorage.getItem("token") ||
+        localStorage.getItem("accessToken");
+
+      if (!token) throw new Error("No authentication token found.");
+
+      const response = await AxiosInstance.post(
+        endpoints.flagReview(id),
+        data,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      return response.data;
+    } catch (error: any) {
+      if (error.response?.status === 401) {
+        TokenManager.clearAllTokens();
+        window.location.href = "/signin";
+      }
+      throw error;
+    }
+  };
   httpGetReviewById = async (id: string) => {
     try {
       const response = await AxiosInstance.get(`/reviews/${id}`);
