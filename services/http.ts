@@ -21,9 +21,10 @@ const AxiosInstance = axios.create({
   },
 });
 
+// Always read the token fresh from TokenManager for every request
 AxiosInstance.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem("token");
+    const token = TokenManager.getToken();
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }

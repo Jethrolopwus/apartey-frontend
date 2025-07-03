@@ -3,14 +3,10 @@ import http from "@/services/http";
 import { SignInResponse } from "@/types/generated";
 
 interface GoogleAuthData {
-  googleId: string;
   email: string;
-  firstName?: string;
-  lastName?: string;
-  image?: string;
-  provider: string;
-  providerId: string;
-  lastLogin: string;
+  avatar?: string;
+  firstName: string;
+  lastName: string;
 }
 
 export const useGoogleAuthMutation = () => {

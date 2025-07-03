@@ -70,9 +70,23 @@ const PropertyListings = () => {
     const AmenitiesEnum = [
       'TV set', 'Washing machine', 'Kitchen', 'Air conditioning', 'Separate workplace', 'Refrigerator',
       'Drying machine', 'Closet', 'Patio', 'Fireplace', 'Shower cabin', 'Whirlpool', 'Security cameras', 'Balcony', 'Bar',
+      'Parking lot', 'Shopping center', 'Park/green area',
     ];
     const InfrastructureEnum = [
-      'Schools', 'Parking lot', 'Shop', 'Kindergarten', 'Sports center', 'Shopping center', 'Underground', 'Beauty salon', 'Bank', 'Cinema / theater', 'Restaurant / cafe', 'Park / green area',
+      "Schools",
+      "Parking lot",
+      "Shop",
+      "Kindergarten",
+      "Sports center",
+      "Shopping center",
+      "Underground",
+      "Beauty salon",
+      "Bank",
+      "Cinema / theater",
+      "Cinema/theater",
+      "Restaurant / cafe",
+      "Park / green area",
+      "Park/green area"
     ];
     const PropertyConditionEnum = ['Good Condition', 'New Building', 'Renovated'];
 
@@ -87,12 +101,16 @@ const PropertyListings = () => {
       toast.error('Invalid category.');
       return;
     }
-    if (formData.amenities && !formData.amenities.every((a: string) => AmenitiesEnum.includes(a))) {
-      toast.error('Invalid amenities.');
+    const invalidAmenities = (formData.amenities || []).filter((a: string) => !AmenitiesEnum.includes(a));
+    if (invalidAmenities.length > 0) {
+      console.log("Invalid amenities:", invalidAmenities, "All amenities:", formData.amenities);
+      toast.error(`Invalid amenities: ${invalidAmenities.join(", ")}`);
       return;
     }
-    if (formData.infrastructure && !formData.infrastructure.every((i: string) => InfrastructureEnum.includes(i))) {
-      toast.error('Invalid infrastructure.');
+    const invalidInfrastructure = (formData.infrastructure || []).filter((i: string) => !InfrastructureEnum.includes(i));
+    if (invalidInfrastructure.length > 0) {
+      console.log("Invalid infrastructure:", invalidInfrastructure, "All infrastructure:", formData.infrastructure);
+      toast.error(`Invalid infrastructure: ${invalidInfrastructure.join(", ")}`);
       return;
     }
     if (!PropertyConditionEnum.includes(formData.condition || '')) {

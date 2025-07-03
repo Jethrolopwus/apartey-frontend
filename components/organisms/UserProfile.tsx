@@ -1,5 +1,5 @@
 "use client";
-import React from "react";
+import React, { useEffect } from "react";
 import Image from "next/image";
 import { useGetUserProfileQuery } from "@/Hooks/use-getuserProfile.query";
 import { useGetProfileCompletionQuery } from "@/Hooks/use-getProfileCompletionStat.query";
@@ -8,6 +8,7 @@ import ProfileCompletionCard from "@/components/molecules/ProfileCompletionCard"
 import { useUpdateProfileMutation } from "@/Hooks/use.updateProfile.mutation";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { TokenManager } from "@/utils/tokenManager";
 
 const ProfilePage = () => {
   const { data, isLoading, isError, error, refetch } = useGetUserProfileQuery();
@@ -21,11 +22,28 @@ const ProfilePage = () => {
   const router = useRouter();
   const user = data?.currentUser;
   const [form, setForm] = useState<any>(user);
+  const [hasToken, setHasToken] = useState(false);
+
+  React.useEffect(() => {
+    const interval = setInterval(() => {
+      const token = TokenManager.getToken();
+      console.log('Polling for token:', token);
+      if (token) {
+        setHasToken(true);
+        clearInterval(interval);
+      }
+    }, 600);
+    return () => clearInterval(interval);
+  }, []);
+
+  if (!hasToken) {
+    return <p className="p-4 text-gray-500">Loading authentication...</p>;
+  }
 
   // Update form state when user data changes
-  React.useEffect(() => {
-    setForm(user);
-  }, [user]);
+  // useEffect(() => {
+  //   setForm(user);
+  // }, [user]);
 
   const handleEditProfile = () => {
     router.push("/edit-profile");
@@ -54,7 +72,14 @@ const ProfilePage = () => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     mutate(form, {
-      onSuccess: () => {
+      onSuccess: (response) => {
+        console.log('Backend sync successful:', response);
+        if (response?.token) {
+          TokenManager.setToken(response.token, 'token');
+          setHasToken(true);
+        } else {
+          console.error('No token in backend response:', response);
+        }
         refetch();
       },
     });

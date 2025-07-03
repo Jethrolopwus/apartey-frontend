@@ -27,25 +27,21 @@ const GoogleAuthButton: React.FC<GoogleAuthButtonProps> = ({
   useEffect(() => {
     const checkAuth = async () => {
       if (status === 'authenticated' && session?.user) {
-        setIsAuthenticated(true);
-        console.log('User is authenticated:', session.user);
-        
-        // Check if user has a valid token
+        // Only set isAuthenticated if backend token is present
         const hasToken = TokenManager.hasToken();
+        console.log('User is authenticated:', session.user);
         console.log('Has token:', hasToken);
-        
+        setIsAuthenticated(hasToken);
         if (!hasToken) {
           console.log('No token found, user needs to complete backend authentication');
           return;
         }
-        
         // Refetch onboarding status to get the latest data
         await refetchOnboarding();
       } else {
         setIsAuthenticated(false);
       }
     };
-    
     checkAuth();
   }, [status, session, refetchOnboarding]);
   
@@ -69,6 +65,42 @@ const GoogleAuthButton: React.FC<GoogleAuthButtonProps> = ({
     }
   }, [isAuthenticated, isOnboardingLoading, onboardingStatus, router, callbackUrl]);
   
+  // Ensure backend sync if authenticated with Google but no backend token
+  useEffect(() => {
+    if (
+      status === 'authenticated' &&
+      session?.user &&
+      !TokenManager.hasToken()
+    ) {
+      const googleData = {
+        email: session.user.email || '',
+        avatar: session.user.image || '',
+        firstName: session.user.name?.split(' ')[0] || '',
+        lastName: session.user.name?.split(' ').slice(1).join(' ') || '',
+      };
+      console.log('Calling googleAuth mutation with:', googleData);
+      googleAuth(googleData, {
+        onSuccess: (response) => {
+          console.log('Google backend response (auto-sync):', response);
+          if (response?.token) {
+            TokenManager.setToken(response.token, 'token');
+            setIsAuthenticated(true);
+            console.log('Token set in localStorage:', response.token);
+            router.push('/profile');
+          } else {
+            console.error('No token in backend response (auto-sync):', response);
+          }
+          if (response?.user?.email) {
+            localStorage.setItem('email', response.user.email);
+          }
+        },
+        onError: (error) => {
+          console.error('Google Auth mutation error:', error);
+        }
+      });
+    }
+  }, [status, session, onboardingStatus, googleAuth]);
+  
   const handleGoogleAuth = async () => {
     try {
       setIsLoading(true);
@@ -76,40 +108,36 @@ const GoogleAuthButton: React.FC<GoogleAuthButtonProps> = ({
         onClick();
       }
       console.log('Starting Google authentication...');
-      const result = await signIn('google', { redirect: false });
+      const result = await signIn('google');
+      console.log("Resultss",result);
       if (result?.ok) {
         console.log('Google authentication successful, syncing with backend...');
         const sessionResponse = await fetch('/api/auth/session').then(res => res.json());
         if (sessionResponse?.user) {
           const googleData = {
-            googleId: sessionResponse.user.id || sessionResponse.user.email,
-            email: sessionResponse.user.email,
+            email: sessionResponse.user.email || '',
+            avatar: sessionResponse.user.image || '',
             firstName: sessionResponse.user.name?.split(' ')[0] || '',
             lastName: sessionResponse.user.name?.split(' ').slice(1).join(' ') || '',
-            image: sessionResponse.user.image,
-            provider: 'google',
-            providerId: sessionResponse.user.email,
-            lastLogin: new Date().toISOString(),
           };
-          console.log('Syncing with backend:', googleData);
+          console.log('Calling googleAuth mutation with:', googleData);
           googleAuth(googleData, {
             onSuccess: (response) => {
-              console.log('Backend sync successful:', response);
-              // Update token if provided
-              if (TokenManager.updateFromResponse(response)) {
-                console.log('Token updated from Google auth response');
-                setIsAuthenticated(true); // This will trigger the redirect effect
-                toast.success('Successfully signed in with Google!');
+              console.log('Google backend response (manual):', response);
+              if (response?.token) {
+                TokenManager.setToken(response.token, 'token');
+                setIsAuthenticated(true);
+                console.log('Token set in localStorage:', response.token);
+                router.push('/profile');
               } else {
-                console.warn('No token received from backend sync');
-                setIsAuthenticated(false);
-                toast.error('Authentication incomplete. No token received. Please try again.');
+                console.error('No token in backend response (manual):', response);
+              }
+              if (response?.user?.email) {
+                localStorage.setItem('email', response.user.email);
               }
             },
-            onError: (error: Error) => {
-              setIsAuthenticated(false);
-              console.error('Backend sync failed:', error);
-              toast.error('Authentication failed. Please try again.');
+            onError: (error) => {
+              console.error('Google Auth mutation error:', error);
             }
           });
         } else {
