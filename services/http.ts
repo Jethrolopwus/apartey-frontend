@@ -60,6 +60,7 @@ class BaseURL {
   httpGoogleAuthCallback = async (googleData: any): Promise<SignInResponse> => {
     try {
       const response = await AxiosInstance.post(endpoints.googleAuth, googleData);
+      console.log("Data", response.data)
       return response.data;
     } catch (error: any) {
       throw error;

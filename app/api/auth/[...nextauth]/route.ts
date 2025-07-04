@@ -64,12 +64,14 @@ const authOptions = {
         if (!response.ok) {
           const errorText = await response.text();
           console.error('Failed to sync user with backend:', errorText);
+          throw Error("An error occurred. Please try again")
         } else {
           const result = await response.json();
           console.log('User synced successfully with backend:', result);
+          
+          return true;
         }
         
-        return true; // Continue with sign in
       } catch (error) {
         console.error('Error syncing user during sign in:', error);
         return true; // Continue with sign in even if sync fails

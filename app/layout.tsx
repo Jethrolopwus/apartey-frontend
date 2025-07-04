@@ -8,6 +8,7 @@ import QueryProvider from "@/app/QueryProvider";
 import ToastProvider from "@/app/ToastProvider";
 import NextProvider from "@/app/NextProvider"
 import { ReviewFormProvider } from "@/app/context/RevievFormContext";
+import AuthSyncProvider from "@/components/AuthSyncProvider";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -47,7 +48,8 @@ export default function RootLayout({
       >
         <ReviewFormProvider>
           <NextProvider>
-            <QueryProvider>
+            <QueryProvider> 
+            <AuthSyncProvider/>
               <Navbar />
               {children}
               <Footer />
