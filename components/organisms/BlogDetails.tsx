@@ -22,28 +22,58 @@ const BlogDetails: React.FC<BlogDetailsProps> = ({ id }) => {
       return <div className="min-h-screen flex items-center justify-center text-red-500">Failed to load blog post.</div>;
     }
     const post = (data as any) || {};
+    // Fallbacks for missing fields
+    const authorName = "Apartey Team";
+    const authorAvatar = "/aparteyLogo.png";
+    const publishedAt = post.publishedAt || post.createdAt || new Date().toISOString();
+    const readTime = "8"; // fallback to 8 min
+    const category = post.category || "General";
+    const imageUrl = post.imageUrl || "/HouseRent.png";
+    const content = post.content || "";
+    // Format date
+    const formattedDate = new Date(publishedAt).toLocaleDateString("en-GB", { day: "2-digit", month: "long", year: "numeric" });
     return (
       <div className="min-h-screen bg-gray-50">
         <main className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+          {/* Back to Blog */}
+          <div className="mb-6 flex items-center gap-2">
+            <Link href="/blog" className="flex items-center text-gray-500 hover:text-orange-600 text-sm font-medium">
+              <span className="mr-1">←</span> Back to Blog
+            </Link>
+          </div>
           <article className="bg-white rounded-xl shadow-sm overflow-hidden">
-            <div className="relative h-64 md:h-96 w-full">
+            {/* Main Image */}
+            <div className="relative w-full h-64 md:h-96">
               <img
-                src={post.imageUrl || "/HouseRent.png"}
+                src={imageUrl}
                 alt={post.title}
-                className="object-cover"
+                className="object-cover w-full h-full rounded-b-none rounded-t-xl"
               />
             </div>
-            <div className="p-8 md:p-12">
+            <div className="p-6 md:p-10">
+              {/* Category */}
               <span className="inline-block bg-orange-100 text-orange-600 text-xs font-semibold px-3 py-1 rounded-full mb-4 w-fit">
-                {post.category}
+                {category}
               </span>
+              {/* Title */}
               <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4 leading-tight">
                 {post.title}
               </h1>
-              <p className="text-gray-600 mb-6 text-base md:text-lg">
-                {post.excerpt}
-              </p>
-              {/* Optionally render more fields here */}
+              {/* Author, Date, Read Time */}
+              <div className="flex items-center gap-4 text-gray-500 text-sm mb-6 flex-wrap">
+                <div className="flex items-center gap-2">
+                  <img src={authorAvatar} alt={authorName} className="w-6 h-6 rounded-full object-cover" />
+                  <span>{authorName}</span>
+                </div>
+                <span className="hidden md:inline">•</span>
+                <span>{formattedDate}</span>
+                <span className="hidden md:inline">•</span>
+                <span>{readTime} min read</span>
+              </div>
+              {/* Content */}
+              <div className="prose max-w-none text-gray-700 text-base md:text-lg leading-relaxed whitespace-pre-line">
+                {content}
+              </div>
             </div>
           </article>
         </main>
