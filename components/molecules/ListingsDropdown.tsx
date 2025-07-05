@@ -5,9 +5,10 @@ import { Home, ArrowRightLeft } from 'lucide-react';
 interface ListingsDropdownProps {
   isOpen: boolean;
   onClose: () => void;
+  onNavigate?: (href: string) => void;
 }
 
-const ListingsDropdown: React.FC<ListingsDropdownProps> = ({ isOpen, onClose }) => {
+const ListingsDropdown: React.FC<ListingsDropdownProps> = ({ isOpen, onClose, onNavigate }) => {
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   const listingItems = [
@@ -57,7 +58,13 @@ const ListingsDropdown: React.FC<ListingsDropdownProps> = ({ isOpen, onClose }) 
           <Link
             key={item.id}
             href={item.href}
-            onClick={onClose}
+            onClick={e => {
+              onClose();
+              if (onNavigate) {
+                e.preventDefault();
+                onNavigate(item.href);
+              }
+            }}
             className="block px-4 py-3 hover:bg-gray-50 transition-colors group"
           >
             <div className="flex items-center space-x-3">

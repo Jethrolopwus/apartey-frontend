@@ -138,17 +138,17 @@ const Navbar: React.FC<NavbarProps> = () => {
                     }
                   }}
                 >
-                  <a
-                    href="#"
-                    onClick={handleLogoOrHomeClick}
-                    className={`flex items-center space-x-1 px-3 py-2 text-sm font-medium transition-colors ${
-                      item.active
-                        ? "text-[#C85212]"
-                        : "text-gray-700 hover:text-[#C85212]"
-                    }`}
-                  >
-                    <span>{item.label}</span>
-                    {item.hasDropdown && (
+                  {item.hasDropdown && item.label === "Listings" ? (
+                    <button
+                      type="button"
+                      className={`flex items-center space-x-1 px-3 py-2 text-sm font-medium transition-colors ${
+                        item.active
+                          ? "text-[#C85212]"
+                          : "text-gray-700 hover:text-[#C85212]"
+                      }`}
+                      onClick={() => setIsListingsDropdownOpen(!isListingsDropdownOpen)}
+                    >
+                      <span>{item.label}</span>
                       <ChevronDown
                         className={`w-4 h-4 transition-transform duration-200 ${
                           isListingsDropdownOpen && item.label === "Listings"
@@ -156,14 +156,29 @@ const Navbar: React.FC<NavbarProps> = () => {
                             : ""
                         }`}
                       />
-                    )}
-                  </a>
+                    </button>
+                  ) : (
+                    <Link
+                      href={item.href}
+                      className={`flex items-center space-x-1 px-3 py-2 text-sm font-medium transition-colors ${
+                        item.active
+                          ? "text-[#C85212]"
+                          : "text-gray-700 hover:text-[#C85212]"
+                      }`}
+                    >
+                      <span>{item.label}</span>
+                    </Link>
+                  )}
 
                   {/* Listings Dropdown */}
                   {item.label === "Listings" && (
                     <ListingsDropdown
                       isOpen={isListingsDropdownOpen}
                       onClose={handleCloseListingsDropdown}
+                      onNavigate={(href: string) => {
+                        setIsListingsDropdownOpen(false);
+                        router.push(href);
+                      }}
                     />
                   )}
                 </div>
