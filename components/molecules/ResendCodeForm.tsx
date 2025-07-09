@@ -1,15 +1,13 @@
 "use client";
 
-import { useForm, SubmitHandler } from "react-hook-form";
+import { useForm } from "react-hook-form";
 import { FormValues } from "@/types/generated";
-import { ResetPasswordFormProps } from "@/types/generated";
 import ResendCodeButton from "../atoms/Buttons/ResendCodeButton";
 
-const ResetPasswordForm: React.FC<ResetPasswordFormProps> = ({ onSubmit }) => {
+const ResendCodeForm: React.FC = () => {
   const {
     register,
-
-    formState: { errors, isSubmitting },
+    formState: { errors },
   } = useForm<FormValues>();
 
   return (
@@ -39,8 +37,8 @@ const ResetPasswordForm: React.FC<ResetPasswordFormProps> = ({ onSubmit }) => {
           <p className="mt-1 text-sm text-red-500">{errors.email.message}</p>
         )}
       </div>
-      <ResendCodeButton />
+      <ResendCodeButton email={""} />
     </div>
   );
 };
-export default ResetPasswordForm;
+export default ResendCodeForm;

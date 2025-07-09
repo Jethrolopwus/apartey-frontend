@@ -12,7 +12,7 @@ import logo from "@/public/aparteyLogo.png";
 import { useAuthStatusQuery } from "@/Hooks/use-getAuthStatus.query";
 import { useGetUserProfileQuery } from "@/Hooks/use-getuserProfile.query";
 
-interface NavbarProps {}
+type NavbarProps = object;
 
 const Navbar: React.FC<NavbarProps> = () => {
   const pathname = usePathname();
@@ -24,7 +24,7 @@ const Navbar: React.FC<NavbarProps> = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   // Use auth status for authentication and role
-  const { data: authData, isLoading: isAuthLoading, refetch } = useAuthStatusQuery();
+  const { data: authData } = useAuthStatusQuery();
   const { data: userProfileData } = useGetUserProfileQuery();
   const [selectedRole, setSelectedRole] = useState();
 
@@ -204,9 +204,11 @@ const Navbar: React.FC<NavbarProps> = () => {
                   className="w-10 h-10 bg-gray-200 hover:bg-gray-300 rounded-full flex items-center justify-center transition-colors overflow-hidden"
                 >
                   {userProfileData?.currentUser?.profilePicture ? (
-                    <img
+                    <Image
                       src={userProfileData.currentUser.profilePicture}
                       alt="Profile"
+                      width={40}
+                      height={40}
                       className="w-10 h-10 object-cover rounded-full"
                     />
                   ) : (

@@ -50,11 +50,7 @@ interface Review {
   };
 }
 
-interface FeaturedReviewsProps {
-  searchTerm?: string;
-}
-
-const FeaturedReviews = ({ searchTerm }: FeaturedReviewsProps) => {
+const FeaturedReviews = () => {
   const { data, isLoading, error, refetch } = useGetAllReviewsQuery();
 
   if (isLoading) {
@@ -96,7 +92,7 @@ const FeaturedReviews = ({ searchTerm }: FeaturedReviewsProps) => {
 
   if (reviews.length === 0) {
     return (
-      <section className="max-w-7xl mx-auto px-4 py-10">
+      <section className="max-w-7xl mx-auto px-2 py-10">
         <div className="text-center py-20">
           <div className="w-24 h-24 mx-auto mb-6 bg-gray-100 rounded-full flex items-center justify-center">
             <Star className="w-12 h-12 text-gray-400" />
@@ -140,17 +136,23 @@ const FeaturedReviews = ({ searchTerm }: FeaturedReviewsProps) => {
           >
             <div className="relative w-full h-48 overflow-hidden">
               {review.linkedProperty?.media?.coverPhoto ? (
-                <img
+                <Image
                   src={
                     review?.linkedProperty.media?.coverPhoto &&
                     review.linkedProperty?.media?.coverPhoto.trim() !== ""
                       ? review.linkedProperty.media.coverPhoto
                       : "/placeholder.png"
                   }
-                  alt="property image"
-                  width={180}
-                  height={120}
+                  alt={
+                    review?.linkedProperty.media?.coverPhoto &&
+                    review.linkedProperty?.media?.coverPhoto.trim() !== ""
+                      ? `Property image for ${review.location.streetAddress}`
+                      : "Placeholder property image"
+                  }
+                  width={400}
+                  height={270}
                   className="object-cover w-full h-full"
+                  priority={false}
                 />
               ) : (
                 <div className="w-full h-full bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center">
@@ -242,11 +244,11 @@ const FeaturedReviews = ({ searchTerm }: FeaturedReviewsProps) => {
                     </span>
                   </div>
                   <span className="text-sm font-medium text-gray-800">
-                  <p className="font-semibold text-gray-900">
-                          {review?.submitAnonymously
-                            ? "Anonymous Reviewer"
-                            : review?.reviewer?.firstName || ""}
-                        </p>
+                    <p className="font-semibold text-gray-900">
+                      {review?.submitAnonymously
+                        ? "Anonymous Reviewer"
+                        : review?.reviewer?.firstName || ""}
+                    </p>
                   </span>
                 </div>
                 <span className="text-xs text-gray-400">
@@ -261,7 +263,6 @@ const FeaturedReviews = ({ searchTerm }: FeaturedReviewsProps) => {
           </article>
         ))}
       </div>
-
 
       {/* Pagination info if needed */}
       {data?.totalPages && data.totalPages > 1 && (

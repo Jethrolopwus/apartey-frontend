@@ -1,22 +1,24 @@
-'use client';
+"use client";
 
-import React, { useState } from 'react';
-import StepPropertyType from '@/components/organisms/MultiStepsForm';
-import { PropertyTypeStepData } from '@/types/generated';
-import { JSX } from 'react/jsx-runtime';
+import React, { useState } from "react";
+import StepPropertyType from "@/components/molecules/StepPropertyType";
+import { JSX } from "react/jsx-runtime";
 
-type Steps =
-  | { id: 0; name: 'property-type'; component: JSX.Element }
-  // Future steps will extend here.
-  ;
+type Steps = { id: 0; name: "property-type"; component: JSX.Element };
+// Future steps will extend here.
+interface PropertyTypeStepData {
+  category: "rent" | "sale" | string;
+  propertyType: "apartment" | "house" | "condo" | string;
+  condition: "good" | "fair" | "excellent" | "poor" | string;
+}
 
 const ListPropertyForm = () => {
   const [stepIndex, setStepIndex] = useState(0);
 
   const [formData, setFormData] = useState<PropertyTypeStepData>({
-    category: 'rent',
-    propertyType: 'apartment',
-    condition: 'good',
+    category: "rent",
+    propertyType: "apartment",
+    condition: "good",
   });
 
   /* ---------- helpers ---------- */
@@ -30,7 +32,7 @@ const ListPropertyForm = () => {
   const steps: Steps[] = [
     {
       id: 0,
-      name: 'property-type',
+      name: "property-type",
       component: (
         <StepPropertyType
           data={formData}
@@ -39,7 +41,6 @@ const ListPropertyForm = () => {
         />
       ),
     },
-    // Add future steps here…
   ];
 
   return (

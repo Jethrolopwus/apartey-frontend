@@ -12,7 +12,7 @@ export interface PlacePrediction {
 
 declare global {
   interface Window {
-    google: any;
+    google: typeof google | unknown;
   }
 }
 
@@ -27,7 +27,7 @@ interface SearchInputProps {
   inputClassName?: string;
   iconSize?: number;
   countryRestrictions?: string[];
-  googleApiKey?: string;
+  // googleApiKey?: string;
 }
 
 const SearchInput = ({
@@ -39,8 +39,6 @@ const SearchInput = ({
   className = "max-w-2xl mx-auto mb-6",
   inputClassName = "w-full px-4 py-3 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-orange-500 pl-10 text-sm sm:text-base",
   iconSize = 18,
-
-  googleApiKey,
 }: SearchInputProps) => {
   const [searchQuery, setSearchQuery] = useState(initialValue);
   const [suggestions, setSuggestions] = useState<PlacePrediction[]>([]);
@@ -75,14 +73,18 @@ const SearchInput = ({
           input: query,
         },
         (
-          predictions: PlacePrediction[] | PromiseLike<PlacePrediction[]>,
-          status: any
+          predictions: unknown,
+          status: unknown
         ) => {
+          // Type guard for status
+          const statusStr = typeof status === 'string' ? status : '';
+          // Type guard for predictions
+          const preds = Array.isArray(predictions) ? predictions : [];
           if (
-            status === window.google.maps.places.PlacesServiceStatus.OK &&
-            predictions
+            statusStr === (window.google as unknown as { maps?: { places?: { PlacesServiceStatus?: { OK: string } } } })?.maps?.places?.PlacesServiceStatus?.OK &&
+            preds.length > 0
           ) {
-            resolve(predictions);
+            resolve(preds as PlacePrediction[]);
           } else {
             resolve([]);
           }

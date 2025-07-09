@@ -4,10 +4,11 @@ import React from 'react';
 import { ChevronRight, ChevronLeft } from 'lucide-react';
 import { StepProps } from '@/types/generated';
 import PriceForm from "@/components/organisms/PriceForm";
+import { PropertyListingPayload } from '@/types/propertyListing';
 
 interface PriceStepProps extends StepProps {
-  formData: any;
-  setFormData: React.Dispatch<React.SetStateAction<any>>;
+  formData: PropertyListingPayload | Partial<PropertyListingPayload>;
+  setFormData: React.Dispatch<React.SetStateAction<PropertyListingPayload | Partial<PropertyListingPayload>>>;
 }
 
 const PriceStep: React.FC<PriceStepProps> = ({ onNext, onBack, formData, setFormData }) => (

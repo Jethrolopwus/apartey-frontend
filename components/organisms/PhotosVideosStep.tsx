@@ -4,10 +4,11 @@ import React from 'react';
 import { ChevronRight, ChevronLeft } from 'lucide-react';
 import { StepProps } from '@/types/generated';
 import PhotoVideoUploader from "@/components/organisms/PhotoVideoUploader";
+import { PropertyListingPayload } from '@/types/propertyListing';
 
 interface PhotosVideosStepProps extends StepProps {
-  formData: any;
-  setFormData: React.Dispatch<React.SetStateAction<any>>;
+  formData: PropertyListingPayload | Partial<PropertyListingPayload>;
+  setFormData: React.Dispatch<React.SetStateAction<PropertyListingPayload | Partial<PropertyListingPayload>>>;
 }
 
 const PhotosVideosStep: React.FC<PhotosVideosStepProps> = ({ onNext, onBack, formData, setFormData }) => (

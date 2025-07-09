@@ -73,7 +73,7 @@ const AdPromotionForm: React.FC<AdPromotionFormProps> = ({ formData, setFormData
         },
       });
     }
-  }, [selectedTier, selectedServices, totalPrice]);
+  }, [selectedTier, selectedServices, totalPrice, formData, setFormData]);
 
   return (
     <div className="w-full">

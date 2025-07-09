@@ -1,9 +1,9 @@
 import ListingDetail from "@/components/organisms/ListingsDetails";
 
 type Props = {
-  params: {
+  params: Promise<{
     id: string;
-  };
+  }>;
 };
 
 export default async function ListingDetailsPage({ params }: Props) {

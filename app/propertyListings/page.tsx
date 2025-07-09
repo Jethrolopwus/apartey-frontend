@@ -1,6 +1,9 @@
-
-import PropertyDetailsForm from '@/components/organisms/PropertyDetailsForm';
+"use client";
+import { useState } from "react";
+import PropertyDetailsForm from "@/components/organisms/PropertyDetailsForm";
 
 export default function ListPropertyFormPage() {
-  return <PropertyDetailsForm />;
+  const [formData, setFormData] = useState({});
+
+  return <PropertyDetailsForm formData={formData} setFormData={setFormData} />;
 }

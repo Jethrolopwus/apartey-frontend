@@ -1,6 +1,7 @@
-import { useState } from 'react';
+
 import { ChevronRight } from 'lucide-react';
 import { Category } from '@/types/generated';
+import Image from 'next/image';
 
 export default function CategoryComponent() {
   // Sample categories data
@@ -54,10 +55,13 @@ export default function CategoryComponent() {
         {categories.map((category) => (
           <div key={category.id} className="flex bg-white shadow-md rounded-md pb-4 gap-2  flex-col items-center">
             <div className="w-full rounded-t-lg overflow-hidden mb-3 aspect-auto">
-              <img 
-                src={category.image} 
+              <Image
+                src={category.image}
                 alt={category.title}
+                width={120}
+                height={120}
                 className="w-full h-full object-cover"
+                priority={false}
               />
             </div>
             <span className="text-center text-sm text-gray-700">{category.title}</span>

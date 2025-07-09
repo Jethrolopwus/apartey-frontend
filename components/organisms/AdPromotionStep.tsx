@@ -2,7 +2,6 @@
 
 import React from 'react';
 import { ChevronLeft } from 'lucide-react';
-import { StepProps } from '@/types/generated';
 import AdPromotionForm from "@/components/organisms/AdPromotionForm";
 import { PropertyListingPayload } from "@/types/propertyListing";
 

@@ -6,9 +6,9 @@ import {
   ChevronDown
 } from 'lucide-react';
 
-interface LocationFormProps {}
+type PropertyLocationProps = object;
 
-const LocationForm: React.FC<LocationFormProps> = () => {
+const LocationForm: React.FC<PropertyLocationProps> = () => {
   const [searchAddress, setSearchAddress] = useState('31 Murtala Mohammed Way, FCT, Abuja');
   const [country, setCountry] = useState('Nigeria');
   const [city, setCity] = useState('Abuja');

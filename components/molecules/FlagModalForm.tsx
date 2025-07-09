@@ -42,7 +42,7 @@ const FlagModalForm: React.FC<FlagModalFormProps> = ({ isOpen, onClose, onSubmit
       <div className="relative bg-white rounded-2xl p-8 w-full max-w-md mx-4 shadow-2xl z-10">
         <h2 className="text-2xl font-bold mb-2 text-gray-900">Flag Review</h2>
         <p className="text-gray-600 mb-4 text-sm">
-          Help us maintain quality by reporting inappropriate content.<br />What's wrong with this review?
+          Help us maintain quality by reporting inappropriate content.<br />What&#39;s wrong with this review?
         </p>
         <form onSubmit={handleSubmit}>
           <div className="space-y-3 mb-6">

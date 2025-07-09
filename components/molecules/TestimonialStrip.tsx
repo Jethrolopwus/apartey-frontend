@@ -30,7 +30,7 @@ const TestimonialStrip = ({
             className="w-8 h-8 rounded-full bg-gray-200 border-2 border-white overflow-hidden"
           >
             {avatar.isPlaceholder ? (
-              <img 
+              <Image 
                 src="/api/placeholder/32/32" 
                 alt={avatar.alt} 
                 className="w-full h-full object-cover" 

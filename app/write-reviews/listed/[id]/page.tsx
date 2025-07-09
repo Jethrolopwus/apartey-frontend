@@ -1,9 +1,9 @@
 import PropertyReviewForm from "@/components/molecules/PropertyReviewForm";
 
 type Props = {
-  params: {
+  params: Promise<{
     id: string;
-  };
+  }>;
 };
 
 export default async function WriteReviewsPage({ params }: Props) {

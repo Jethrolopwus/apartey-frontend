@@ -21,7 +21,7 @@ const PropertyDetailsSection: React.FC<PropertyDetailsSectionProps> = ({
   return (
     <div className="space-y-6">
       <h2 className="text-xl font-semibold text-gray-900">Property Details</h2>
-      <p className="text-sm text-gray-600">Tell us about the property you're reviewing</p>
+      <p className="text-sm text-gray-600">Tell us about the property you&#39;re reviewing</p>
       
       {/* Property Type */}
       <div>

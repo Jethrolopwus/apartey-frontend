@@ -8,7 +8,7 @@ interface ProfileCompletionCardProps {
 }
 
 const ProfileCompletionCard: React.FC<ProfileCompletionCardProps> = () => {
-  const { data, isLoading, isError, error } = useGetProfileCompletionQuery();
+  const { data, isLoading, isError } = useGetProfileCompletionQuery();
 
   const percentage = data?.profileCompletion?.percentage || 0;
   const missingFields = data?.profileCompletion?.missingFields || [];

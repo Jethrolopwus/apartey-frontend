@@ -1,21 +1,33 @@
 "use client";
 import { useState, useMemo, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Star, ChevronDown, Maximize, Navigation, Filter } from "lucide-react";
-import { ReviewData, ReviewsSectionProps, SortOption } from "@/types/generated";
+import { Star, ChevronDown, Maximize, Navigation } from "lucide-react";
+import { ReviewsSectionProps, SortOption } from "@/types/generated";
 import { useGetAllReviewsQuery } from "@/Hooks/use-GetAllReviews.query";
-import { Review , SortComponentProps} from "@/types/generated";
+import { Review, SortComponentProps, ReviewLocation } from "@/types/generated";
+import Image from "next/image";
 
 // Add Google Maps types
 declare global {
   interface Window {
-    google: any;
+    google: unknown;
   }
 }
 
 interface Coordinates {
   lat: number;
   lng: number;
+}
+
+function hasLatLng(location: unknown): location is ReviewLocation {
+  return (
+    location !== null &&
+    typeof location === "object" &&
+    "lat" in location &&
+    "lng" in location &&
+    typeof location.lat === "number" &&
+    typeof location.lng === "number"
+  );
 }
 
 const SortComponent: React.FC<SortComponentProps> = ({
@@ -82,7 +94,10 @@ const ReviewsSection: React.FC<ReviewsSectionProps> = ({
   const [mapMarkers, setMapMarkers] = useState<
     { id: string; top: string; left: string; coordinates: Coordinates }[]
   >([]);
-  const [mapCenter, setMapCenter] = useState<Coordinates>({ lat: 6.5244, lng: 3.3792 }); 
+  const [mapCenter, setMapCenter] = useState<Coordinates>({
+    lat: 6.5244,
+    lng: 3.3792,
+  });
   const router = useRouter();
 
   const sortOptions: SortOption[] = useMemo(
@@ -96,82 +111,85 @@ const ReviewsSection: React.FC<ReviewsSectionProps> = ({
   // Memoize marker positions to prevent infinite re-renders
   const markerPositions = useMemo(() => {
     return Array.from({ length: 10 }).map((_, i) => ({
-      top: `${20 + (i * 5) % 60}%`,
-      left: `${20 + (i * 7) % 60}%`,
+      top: `${20 + ((i * 5) % 60)}%`,
+      left: `${20 + ((i * 7) % 60)}%`,
     }));
   }, []);
 
   const { data, isLoading, error, refetch } = useGetAllReviewsQuery({
     limit: 2,
     sortBy: "mostRecent",
-    sortOrder:"highestRating"
+    sortOrder: "highestRating",
   });
 
-  const reviews: Review[] = data?.reviews || [];
+  const reviews: Review[] = useMemo(() => data?.reviews || [], [data?.reviews]);
 
   // Update map markers and center based on reviews data
   useEffect(() => {
-    if (reviews && reviews.length > 0) {
-      const validReviews = reviews.filter((review: any) => 
-        review?.location?.lat && review?.location?.lng
-      );
-      
-      if (validReviews.length > 0) {
-        // Calculate center point from all valid reviews
-        const totalLat = validReviews.reduce((sum: number, review: any) => sum + review.location.lat, 0);
-        const totalLng = validReviews.reduce((sum: number, review: any) => sum + review.location.lng, 0);
-        const centerLat = totalLat / validReviews.length;
-        const centerLng = totalLng / validReviews.length;
-        
-        // Only update mapCenter if it has changed
-        setMapCenter(prev => {
-          if (prev.lat !== centerLat || prev.lng !== centerLng) {
-            return { lat: centerLat, lng: centerLng };
-          }
-          return prev;
-        });
+    const validReviews = reviews.filter((review: Review) =>
+      hasLatLng(review.location)
+    );
 
-        // Create markers for all reviews with coordinates
-        const markers = validReviews.map((review: any, index: number) => ({
-          id: `marker-${review._id || index}`,
-          top: markerPositions[index % markerPositions.length].top,
-          left: markerPositions[index % markerPositions.length].left,
-          coordinates: {
-            lat: review.location.lat,
-            lng: review.location.lng
-          }
-        }));
-        // Only update mapMarkers if different
-        setMapMarkers(prev => {
-          if (JSON.stringify(prev) !== JSON.stringify(markers)) {
-            return markers;
-          }
-          return prev;
-        });
-      } else {
-        // Fallback to default markers if no coordinates
-        const markers = Array.from({ length: 10 }).map((_, i) => ({
-          id: `marker-${i + 1}`,
-          top: markerPositions[i].top,
-          left: markerPositions[i].left,
-          coordinates: { lat: 0, lng: 0 }
-        }));
-        setMapMarkers(prev => {
-          if (JSON.stringify(prev) !== JSON.stringify(markers)) {
-            return markers;
-          }
-          return prev;
-        });
-      }
+    if (validReviews.length > 0) {
+      // Calculate center point from all valid reviews
+      const totalLat = validReviews.reduce(
+        (sum, review) =>
+          sum + (hasLatLng(review.location) ? review.location.lat : 0),
+        0
+      );
+      const totalLng = validReviews.reduce(
+        (sum, review) =>
+          sum + (hasLatLng(review.location) ? review.location.lng : 0),
+        0
+      );
+      const centerLat = totalLat / validReviews.length;
+      const centerLng = totalLng / validReviews.length;
+
+      // Only update mapCenter if it has changed
+      setMapCenter((prev) => {
+        if (prev.lat !== centerLat || prev.lng !== centerLng) {
+          return { lat: centerLat, lng: centerLng };
+        }
+        return prev;
+      });
+
+      // Create markers for all reviews with coordinates
+      const markers = validReviews
+        .map((review, index) =>
+          hasLatLng(review.location)
+            ? {
+                id: `marker-${review._id || index}`,
+                top: markerPositions[index % markerPositions.length].top,
+                left: markerPositions[index % markerPositions.length].left,
+                coordinates: {
+                  lat: review.location.lat,
+                  lng: review.location.lng,
+                },
+              }
+            : null
+        )
+        .filter(Boolean) as {
+        id: string;
+        top: string;
+        left: string;
+        coordinates: Coordinates;
+      }[];
+      // Only update mapMarkers if different
+      setMapMarkers((prev) => {
+        if (JSON.stringify(prev) !== JSON.stringify(markers)) {
+          return markers;
+        }
+        return prev;
+      });
     } else {
-      // Default markers when no reviews
+      // Fallback to default markers if no coordinates
       const markers = Array.from({ length: 10 }).map((_, i) => ({
         id: `marker-${i + 1}`,
         top: markerPositions[i].top,
         left: markerPositions[i].left,
-        coordinates: { lat: 0, lng: 0 }
+        coordinates: { lat: 0, lng: 0 },
       }));
-      setMapMarkers(prev => {
+      setMapMarkers((prev) => {
         if (JSON.stringify(prev) !== JSON.stringify(markers)) {
           return markers;
         }
@@ -182,23 +200,26 @@ const ReviewsSection: React.FC<ReviewsSectionProps> = ({
 
   // Generate Google Maps URL with multiple markers
   const generateMapUrl = () => {
-    if (mapCenter.lat === 0 && mapCenter.lng === 0) return '';
-    
-    const validMarkers = mapMarkers.filter(marker => 
-      marker.coordinates.lat !== 0 && marker.coordinates.lng !== 0
+    if (mapCenter.lat === 0 && mapCenter.lng === 0) return "";
+
+    const validMarkers = mapMarkers.filter(
+      (marker) => marker.coordinates.lat !== 0 && marker.coordinates.lng !== 0
     );
-    
+
     if (validMarkers.length === 0) {
       // Single marker at center
       return `https://maps.googleapis.com/maps/api/staticmap?center=${mapCenter.lat},${mapCenter.lng}&zoom=13&size=600x500&markers=color:orange%7C${mapCenter.lat},${mapCenter.lng}&key=AIzaSyC_mwAjirr_vXt1xL1WlL-entKBwD7FkqY`;
     }
-    
+
     // Multiple markers (limit to 10 to avoid URL length issues)
     const limitedMarkers = validMarkers.slice(0, 10);
-    const markersParam = limitedMarkers.map(marker => 
-      `markers=color:orange%7C${marker.coordinates.lat},${marker.coordinates.lng}`
-    ).join('&');
-    
+    const markersParam = limitedMarkers
+      .map(
+        (marker) =>
+          `markers=color:orange%7C${marker.coordinates.lat},${marker.coordinates.lng}`
+      )
+      .join("&");
+
     return `https://maps.googleapis.com/maps/api/staticmap?center=${mapCenter.lat},${mapCenter.lng}&zoom=12&size=600x500&${markersParam}&key=AIzaSyC_mwAjirr_vXt1xL1WlL-entKBwD7FkqY`;
   };
 
@@ -302,7 +323,9 @@ const ReviewsSection: React.FC<ReviewsSectionProps> = ({
             <p className="text-teal-700 uppercase text-sm font-medium tracking-wide">
               REVIEWS
             </p>
-            <h3 className="text-gray-700 text-2xl font-medium">Recent Reviews</h3>
+            <h3 className="text-gray-700 text-2xl font-medium">
+              Recent Reviews
+            </h3>
           </div>
 
           <div className="space-y-6">
@@ -313,7 +336,7 @@ const ReviewsSection: React.FC<ReviewsSectionProps> = ({
                   className="flex gap-4 group cursor-pointer hover:bg-gray-50 p-2 rounded-lg transition-colors"
                 >
                   <div className="w-[180px] h-[120px] flex-shrink-0 rounded-md overflow-hidden relative">
-                    <img
+                    <Image
                       src={
                         review.linkedProperty?.media?.coverPhoto ||
                         "/placeholder-property.jpg"
@@ -360,7 +383,7 @@ const ReviewsSection: React.FC<ReviewsSectionProps> = ({
           {!isLoading && reviews.length > 0 && (
             <div className="absolute top-4 left-4 z-10 bg-white bg-opacity-90 rounded-md px-3 py-2 shadow-md">
               <p className="text-sm text-gray-700">
-                {reviews.length} review{reviews.length !== 1 ? 's' : ''} found
+                {reviews.length} review{reviews.length !== 1 ? "s" : ""} found
               </p>
             </div>
           )}
@@ -375,33 +398,33 @@ const ReviewsSection: React.FC<ReviewsSectionProps> = ({
                 </div>
               </div>
             ) : mapUrl ? (
-              <img
+              <Image
                 className="w-full h-full object-cover"
                 alt="Map of property locations"
                 src={mapUrl}
-                onError={(e) => {
-                  const target = e.target as HTMLImageElement;
-                  target.style.display = 'none';
-                  const parent = target.parentElement;
-                  if (parent) {
-                    const fallback = document.createElement('div');
-                    fallback.className = 'w-full h-full flex items-center justify-center bg-gray-200';
-                    fallback.innerHTML = '<p class="text-gray-500">Map unavailable</p>';
-                    parent.appendChild(fallback);
-                  }
+                fill
+                onError={({ currentTarget }) => {
+                  currentTarget.style.display = "none";
                 }}
+                priority={false}
               />
             ) : (
               <div className="w-full h-full flex items-center justify-center bg-gray-200">
                 <div className="text-center">
-                  <p className="text-gray-500 mb-2">No location data available</p>
-                  <p className="text-gray-400 text-sm">Reviews will appear on the map when available</p>
+                  <p className="text-gray-500 mb-2">
+                    No location data available
+                  </p>
+                  <p className="text-gray-400 text-sm">
+                    Reviews will appear on the map when available
+                  </p>
                 </div>
               </div>
             )}
 
             {/* Overlay markers for reviews with coordinates */}
-            {!isLoading && mapMarkers.length > 0 && mapMarkers.some(marker => marker.coordinates.lat !== 0) && (
+            {!isLoading &&
+              mapMarkers.length > 0 &&
+              mapMarkers.some((marker) => marker.coordinates.lat !== 0) &&
               mapMarkers.map((marker) => (
                 <div
                   key={marker.id}
@@ -414,8 +437,7 @@ const ReviewsSection: React.FC<ReviewsSectionProps> = ({
                 >
                   <div className="w-5 h-5 rounded-full bg-orange-500 border-2 border-white drop-shadow-md"></div>
                 </div>
-              ))
-            )}
+              ))}
 
             <div className="absolute bottom-4 right-4 flex flex-col gap-2">
               <button
@@ -423,7 +445,7 @@ const ReviewsSection: React.FC<ReviewsSectionProps> = ({
                 aria-label="Fullscreen"
                 onClick={() => {
                   if (mapUrl) {
-                    window.open(mapUrl, '_blank');
+                    window.open(mapUrl, "_blank");
                   }
                 }}
               >
@@ -434,7 +456,10 @@ const ReviewsSection: React.FC<ReviewsSectionProps> = ({
                 aria-label="Navigate to current location"
                 onClick={() => {
                   if (mapCenter.lat !== 0 && mapCenter.lng !== 0) {
-                    window.open(`https://www.google.com/maps?q=${mapCenter.lat},${mapCenter.lng}`, '_blank');
+                    window.open(
+                      `https://www.google.com/maps?q=${mapCenter.lat},${mapCenter.lng}`,
+                      "_blank"
+                    );
                   }
                 }}
               >

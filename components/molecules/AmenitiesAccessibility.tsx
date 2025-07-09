@@ -73,30 +73,6 @@ const AmenitiesAccessibility: React.FC<AmenitiesAccessibilityProps> = ({
     onBuildingFacilitiesChange(updated);
   };
 
-  // Cost of Repairs Coverage
-  const COVERAGE_MAP: Record<string, string> = {
-    plumbing: "Plumbing",
-    electrical: "Electrical",
-    hvac: "HVAC",
-    structural: "Structural",
-    appliances: "Appliances",
-    landscaping: "Landscaping",
-  };
-  
-  const isCoverageSelected = (coverage: string): boolean =>
-    costOfRepairsCoverage.includes(COVERAGE_MAP[coverage] || coverage);
-    
-  const toggleCoverage = (coverage: string, checked: boolean) => {
-    let updated: string[];
-    const mapped = COVERAGE_MAP[coverage] || coverage;
-    if (checked) {
-      updated = [...costOfRepairsCoverage, mapped];
-    } else {
-      updated = costOfRepairsCoverage.filter((item) => item !== mapped);
-    }
-    onCostOfRepairsCoverageChange(updated);
-  };
-
   // Custom Inputs
   const handleCustomInput = (type: "appliance" | "facility" | "coverage", value: string) => {
     if (!value.trim()) return;

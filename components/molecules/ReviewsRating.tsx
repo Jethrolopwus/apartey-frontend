@@ -1,9 +1,9 @@
 "use client";
 import React from "react";
 import { Star } from "lucide-react";
-import { useSelector, useDispatch } from 'react-redux';
-import { RootState } from '../../store';
-import { setField } from '../../store/propertyReviewFormSlice';
+import { useSelector, useDispatch } from "react-redux";
+import { RootState } from "../../store";
+import { setField } from "../../store/propertyReviewFormSlice";
 
 const COST_OF_REPAIRS_MAP: Record<string, string> = {
   tenant: "Tenant (You)",
@@ -13,29 +13,39 @@ const COST_OF_REPAIRS_MAP: Record<string, string> = {
 };
 const REVERSE_COST_OF_REPAIRS_MAP: Record<string, string> = {
   "Tenant (You)": "tenant",
-  "Landlord": "landlord",
+  Landlord: "landlord",
   "Split between both": "split",
   "Depends on the issue": "depends",
 };
 
 const RatingComponent: React.FC = () => {
   const dispatch = useDispatch();
-  const { valueForMoney, costOfRepairs, overallExperience, detailedReview } = useSelector((state: RootState) => state.propertyReviewForm);
+  const { valueForMoney, costOfRepairs, overallExperience, detailedReview } =
+    useSelector((state: RootState) => state.propertyReviewForm);
 
-  const handleStarClick = (field: 'valueForMoney' | 'overallExperience', rating: number) => {
+  const handleStarClick = (
+    field: "valueForMoney" | "overallExperience",
+    rating: number
+  ) => {
     dispatch(setField({ key: field, value: rating }));
   };
 
-  const handleRadioChange = (field: 'costOfRepairs', value: string) => {
-    dispatch(setField({ key: field, value: COST_OF_REPAIRS_MAP[value] || value }));
+  const handleRadioChange = (field: "costOfRepairs", value: string) => {
+    dispatch(
+      setField({ key: field, value: COST_OF_REPAIRS_MAP[value] || value })
+    );
   };
 
   return (
     <div className={`bg-white rounded-lg border border-gray-200 p-6 space-y-8`}>
       {/* Header */}
       <div>
-        <h2 className="text-xl font-semibold text-gray-900 mb-2">Ratings & Reviews</h2>
-        <p className="text-sm text-gray-500">Rate your experience with this property</p>
+        <h2 className="text-xl font-semibold text-gray-900 mb-2">
+          Ratings & Reviews
+        </h2>
+        <p className="text-sm text-gray-500">
+          Rate your experience with this property
+        </p>
       </div>
 
       {/* Value for Money */}
@@ -45,7 +55,7 @@ const RatingComponent: React.FC = () => {
             Value for Money
           </h3>
           <p className="text-sm text-gray-500">
-            Rate the property's value relative to the rent
+            Rate the property&apos;s value relative to the rent
           </p>
         </div>
         <div className="space-y-2">
@@ -55,16 +65,18 @@ const RatingComponent: React.FC = () => {
                 key={star}
                 onClick={() => {
                   handleStarClick("valueForMoney", star);
-                  console.log('Value for Money:', star);
+                  console.log("Value for Money:", star);
                 }}
                 className="focus:outline-none focus:ring-2 focus:ring-blue-300 rounded"
                 type="button"
               >
                 <Star
                   size={24}
-                  className={
-                    `${star <= valueForMoney ? "fill-yellow-400 text-yellow-400" : "fill-gray-200 text-gray-200"} hover:fill-yellow-300 hover:text-yellow-300 transition-colors cursor-pointer`
-                  }
+                  className={`${
+                    star <= valueForMoney
+                      ? "fill-yellow-400 text-yellow-400"
+                      : "fill-gray-200 text-gray-200"
+                  } hover:fill-yellow-300 hover:text-yellow-300 transition-colors cursor-pointer`}
                 />
               </button>
             ))}
@@ -89,16 +101,21 @@ const RatingComponent: React.FC = () => {
             { value: "split", label: "Split between both" },
             { value: "depends", label: "Depends on the issue" },
           ].map((option) => (
-            <div className="flex items-center space-x-3 py-1" key={option.value}>
+            <div
+              className="flex items-center space-x-3 py-1"
+              key={option.value}
+            >
               <input
                 type="radio"
                 id={option.value}
                 name="costOfRepairs"
                 value={option.value}
-                checked={REVERSE_COST_OF_REPAIRS_MAP[costOfRepairs] === option.value}
+                checked={
+                  REVERSE_COST_OF_REPAIRS_MAP[costOfRepairs] === option.value
+                }
                 onChange={() => {
                   handleRadioChange("costOfRepairs", option.value);
-                  console.log('Cost of Repairs:', option.value);
+                  console.log("Cost of Repairs:", option.value);
                 }}
                 className="h-4 w-4 text-orange-600 focus:ring-orange-500 border-gray-300"
               />
@@ -130,16 +147,18 @@ const RatingComponent: React.FC = () => {
                 key={star}
                 onClick={() => {
                   handleStarClick("overallExperience", star);
-                  console.log('Overall Experience:', star);
+                  console.log("Overall Experience:", star);
                 }}
                 className="focus:outline-none focus:ring-2 focus:ring-blue-300 rounded"
                 type="button"
               >
                 <Star
                   size={24}
-                  className={
-                    `${star <= overallExperience ? "fill-yellow-400 text-yellow-400" : "fill-gray-200 text-gray-200"} hover:fill-yellow-300 hover:text-yellow-300 transition-colors cursor-pointer`
-                  }
+                  className={`${
+                    star <= overallExperience
+                      ? "fill-yellow-400 text-yellow-400"
+                      : "fill-gray-200 text-gray-200"
+                  } hover:fill-yellow-300 hover:text-yellow-300 transition-colors cursor-pointer`}
                 />
               </button>
             ))}
@@ -153,8 +172,10 @@ const RatingComponent: React.FC = () => {
         <textarea
           value={detailedReview}
           onChange={(e) => {
-            dispatch(setField({ key: 'detailedReview', value: e.target.value }));
-            console.log('Detailed Review:', e.target.value);
+            dispatch(
+              setField({ key: "detailedReview", value: e.target.value })
+            );
+            console.log("Detailed Review:", e.target.value);
           }}
           placeholder="Share the details of your experience, what you liked and what you didn't like etc."
           className="w-full h-32 p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent resize-none"

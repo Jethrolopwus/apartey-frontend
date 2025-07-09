@@ -73,7 +73,7 @@ const SignUp: React.FC = () => {
         {session && (
           <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
             <p className="text-sm text-blue-800">
-              You're already logged in as {session.user?.email}. 
+              You&apos;re already logged in as {session.user?.email}. 
               <Link href="/profile" className="underline ml-1">Go to profile</Link>
             </p>
           </div>

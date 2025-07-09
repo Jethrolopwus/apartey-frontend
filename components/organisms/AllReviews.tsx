@@ -202,17 +202,23 @@ const AllReviews: React.FC<AllReviewsProps> = ({
               >
                 <div className="relative w-full h-48 overflow-hidden">
                   {review.linkedProperty?.media?.coverPhoto ? (
-                    <img
+                    <Image
                       src={
                         review?.linkedProperty.media?.coverPhoto &&
                         review.linkedProperty?.media?.coverPhoto.trim() !== ""
                           ? review.linkedProperty.media.coverPhoto
                           : "/placeholder.png"
                       }
-                      alt="property image"
-                      width={180}
-                      height={120}
+                      alt={
+                        review?.linkedProperty.media?.coverPhoto &&
+                        review.linkedProperty?.media?.coverPhoto.trim() !== ""
+                          ? `Property image for ${review.location.streetAddress}`
+                          : "Placeholder property image"
+                      }
+                      width={400}
+                      height={270}
                       className="object-cover w-full h-full"
+                      priority={false}
                     />
                   ) : (
                     <div className="w-full h-full bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center">

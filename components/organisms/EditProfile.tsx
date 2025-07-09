@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import { useForm, Controller } from "react-hook-form";
 import { Camera, Calendar } from "lucide-react";
+import Image from 'next/image';
 
 interface EditProfileProps {
   userEmail?: string;
@@ -58,7 +59,7 @@ const EditProfile: React.FC<EditProfileProps> = ({
   const {
     control,
     handleSubmit,
-    formState: { errors, isValid },
+    formState: { errors },
     watch,
     setValue,
   } = useForm<ProfileFormValues>({
@@ -106,15 +107,8 @@ const EditProfile: React.FC<EditProfileProps> = ({
     }
   };
 
-  // URL input handler
-  const handleUrlChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setAvatarUrl(e.target.value);
-    setSelectedFile(null);
-    setValue("avatar", e.target.value);
-  };
-
   // On submit, send avatar as file or string
-  const onSubmit = (data: any) => {
+  const onSubmit = (data: ProfileFormValues) => {
     const address = {
       country: data.country || "",
       stateOrRegion: data.stateOrRegion || "",
@@ -142,7 +136,7 @@ const EditProfile: React.FC<EditProfileProps> = ({
     }
     
     // Log all FormData entries
-    for (let pair of formDataObject.entries()) {
+    for (const pair of formDataObject.entries()) {
       console.log('Data', pair[0], pair[1]);
     }
     onSave?.(formDataObject);
@@ -215,11 +209,13 @@ const EditProfile: React.FC<EditProfileProps> = ({
             <div className="flex flex-col items-center">
               <div className="relative w-32 h-32 bg-gray-300 rounded-full mb-4 overflow-hidden group">
                 {avatarUrl ? (
-                  <img
+                  <Image
                     src={avatarUrl}
                     alt="Profile"
+                    width={128}
+                    height={128}
                     className="w-full h-full object-cover"
-                    onError={e => (e.currentTarget.src = '/Ellipse-2.png')}
+                    onError={(e) => { (e.currentTarget as HTMLImageElement).src = '/Ellipse-2.png'; }}
                   />
                 ) : (
                   <div className="w-full h-full bg-gray-300 flex items-center justify-center">

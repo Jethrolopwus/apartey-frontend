@@ -5,8 +5,9 @@ import React, {
   useEffect,
   useRef,
   useState,
+  useCallback,
 } from "react";
-import { useForm, Controller } from "react-hook-form";
+import { useForm, Controller, Control, RegisterOptions } from "react-hook-form";
 import { ChevronDown } from "lucide-react";
 
 export type LocationFields = {
@@ -36,6 +37,12 @@ interface EstonianBuilding {
 
 interface EstonianApiResponse {
   addresses: EstonianBuilding[];
+}
+
+interface AddressComponent {
+  long_name: string;
+  short_name: string;
+  types: string[];
 }
 
 /* ------------------------------------------------------------------ */
@@ -102,15 +109,6 @@ const CITY_OPTIONS: Record<string, string[]> = {
   estonia: ["Tallinn", "Tartu", "Narva", "Pärnu", "Kohtla-Järve"],
 };
 
-const DISTRICT_OPTIONS: Record<string, string[]> = {
-  "Abuja FCT": ["Wuse", "Garki", "Maitama", "Asokoro", "Gwarinpa"],
-  Lagos: ["Victoria Island", "Ikeja", "Lekki", "Surulere", "Yaba"],
-  "Greater Accra": ["Tema", "East Legon", "Osu", "Adabraka"],
-  Nairobi: ["Westlands", "Karen", "Kilimani", "CBD"],
-  "Western Cape": ["City Bowl", "Sea Point", "Camps Bay", "Constantia"],
-  "Harju County": ["Kesklinn", "Kristiine", "Mustamäe", "Nõmme", "Pirita"],
-};
-
 /* ------------------------------------------------------------------ */
 /*  Component                                                          */
 /* ------------------------------------------------------------------ */
@@ -135,11 +133,9 @@ const LocationForm = forwardRef<LocationFormRef>((_, ref) => {
   });
 
   const selectedCountry = watch("country");
-  const selectedState = watch("state");
   const streetAddress = watch("streetAddress");
 
   const [countryCode, setCountryCode] = useState("ng");
-  const [detectedCountry, setDetectedCountry] = useState("");
   const [matchedAddresses, setMatchedAddresses] = useState<EstonianBuilding[]>(
     []
   );
@@ -173,7 +169,6 @@ const LocationForm = forwardRef<LocationFormRef>((_, ref) => {
 
           const detectedCountryKey = countryMapping[data.country] || "";
           if (detectedCountryKey) {
-            setDetectedCountry(detectedCountryKey);
             setValue("country", detectedCountryKey);
           }
         }
@@ -184,98 +179,7 @@ const LocationForm = forwardRef<LocationFormRef>((_, ref) => {
   /* ------------------------------------------------------------------ */
   /*  Google Maps Autocomplete Setup (exactly like App component)      */
   /* ------------------------------------------------------------------ */
-  useEffect(() => {
-    if (!window.google || !inputRef.current) return;
-
-    autocompleteRef.current = new window.google.maps.places.Autocomplete(
-      inputRef.current,
-      {
-        types: ["address"],
-        componentRestrictions: { country: countryCode },
-      }
-    );
-
-    if (!autocompleteRef.current) return;
-
-    autocompleteRef.current.addListener("place_changed", async () => {
-      const place = autocompleteRef.current?.getPlace();
-      if (!place) return;
-
-      const components = place.address_components || [];
-
-      const streetNumber =
-        components.find((c: any) => c.types.includes("street_number"))
-          ?.long_name || "";
-      const streetName =
-        components.find((c: any) => c.types.includes("route"))?.long_name || "";
-      const city =
-        components.find((c: any) => c.types.includes("locality"))?.long_name ||
-        components.find((c: any) =>
-          c.types.includes("administrative_area_level_1")
-        )?.long_name ||
-        "";
-      const countryName =
-        components.find((c: any) => c.types.includes("country"))?.long_name ||
-        "";
-      console.log("Google Maps country:", countryName);
-      const stateName =
-        components.find((c: any) =>
-          c.types.includes("administrative_area_level_1")
-        )?.long_name || "";
-      const postal =
-        components.find((c: any) => c.types.includes("postal_code"))
-          ?.long_name || "";
-
-      const cleanedAddress = `${streetName} ${streetNumber}, ${city}`;
-
-      // Auto-fill form fields
-      setValue(
-        "country",
-        countryName.toLowerCase() === "estonia"
-          ? "estonia"
-          : countryName.toLowerCase()
-      );
-      setValue("state", stateName);
-      setValue("city", city);
-      setValue("zipCode", postal);
-      setValue("streetAddress", `${streetName} ${streetNumber}`);
-
-      await fetchEstonianApartments(cleanedAddress);
-    });
-
-    return () => {
-      if (autocompleteRef.current) {
-        window.google.maps.event.clearInstanceListeners(
-          autocompleteRef.current
-        );
-      }
-    };
-  }, [countryCode, setValue]);
-
-  /* ------------------------------------------------------------------ */
-  /*  Manual search handler (exactly like App component)               */
-  /* ------------------------------------------------------------------ */
-  const handleManualSearch = async (
-    e: React.KeyboardEvent<HTMLInputElement>
-  ) => {
-    if (e.key === "Enter") {
-      const target = e.target as HTMLInputElement;
-      const value = target.value.trim();
-      if (!value) return;
-
-      const cleaned = value
-        .replace(/,\s*(Estonia|Eesti)\s*$/i, "")
-        .replace(/\d{5}/g, "")
-        .trim();
-
-      await fetchEstonianApartments(cleaned);
-    }
-  };
-
-  /* ------------------------------------------------------------------ */
-  /*  Estonia API Integration (exactly like App component)             */
-  /* ------------------------------------------------------------------ */
-  const fetchEstonianApartments = async (address: string) => {
+  const fetchEstonianApartments = useCallback(async (address: string) => {
     setLoading(true);
     setApartments([]);
     setMatchedAddresses([]);
@@ -311,6 +215,88 @@ const LocationForm = forwardRef<LocationFormRef>((_, ref) => {
     } finally {
       setLoading(false);
     }
+  }, [setLoading, setApartments, setMatchedAddresses, setSelectedBuilding, setValue]);
+
+  useEffect(() => {
+    if (!window.google || !inputRef.current) return;
+
+    autocompleteRef.current = new window.google.maps.places.Autocomplete(
+      inputRef.current,
+      {
+        types: ["address"],
+        componentRestrictions: { country: countryCode },
+      }
+    );
+
+    if (!autocompleteRef.current) return;
+
+    autocompleteRef.current.addListener("place_changed", async () => {
+      const place = autocompleteRef.current?.getPlace();
+      if (!place) return;
+
+      const components = place.address_components as AddressComponent[] || [];
+
+      const streetNumber =
+        components.find((c) => c.types.includes("street_number"))?.long_name || "";
+      const streetName =
+        components.find((c) => c.types.includes("route"))?.long_name || "";
+      const city =
+        components.find((c) => c.types.includes("locality"))?.long_name ||
+        components.find((c) => c.types.includes("administrative_area_level_1"))?.long_name ||
+        "";
+      const countryName =
+        components.find((c) => c.types.includes("country"))?.long_name ||
+        "";
+      console.log("Google Maps country:", countryName);
+      const stateName =
+        components.find((c) => c.types.includes("administrative_area_level_1"))?.long_name || "";
+      const postal =
+        components.find((c) => c.types.includes("postal_code"))?.long_name || "";
+
+      const cleanedAddress = `${streetName} ${streetNumber}, ${city}`;
+
+      // Auto-fill form fields
+      setValue(
+        "country",
+        countryName.toLowerCase() === "estonia"
+          ? "estonia"
+          : countryName.toLowerCase()
+      );
+      setValue("state", stateName);
+      setValue("city", city);
+      setValue("zipCode", postal);
+      setValue("streetAddress", `${streetName} ${streetNumber}`);
+
+      await fetchEstonianApartments(cleanedAddress);
+    });
+
+    return () => {
+      if (autocompleteRef.current) {
+        window.google.maps.event.clearInstanceListeners(
+          autocompleteRef.current
+        );
+      }
+    };
+  }, [countryCode, setValue, fetchEstonianApartments]);
+
+  /* ------------------------------------------------------------------ */
+  /*  Manual search handler (exactly like App component)               */
+  /* ------------------------------------------------------------------ */
+  const handleManualSearch = async (
+    e: React.KeyboardEvent<HTMLInputElement>
+  ) => {
+    if (e.key === "Enter") {
+      const target = e.target as HTMLInputElement;
+      const value = target.value.trim();
+      if (!value) return;
+
+      const cleaned = value
+        .replace(/,\s*(Estonia|Eesti)\s*$/i, "")
+        .replace(/\d{5}/g, "")
+        .trim();
+
+      await fetchEstonianApartments(cleaned);
+    }
   };
 
   /* ------------------------------------------------------------------ */
@@ -334,12 +320,6 @@ const LocationForm = forwardRef<LocationFormRef>((_, ref) => {
   /*  Render Helpers                                                    */
   /* ------------------------------------------------------------------ */
   const isEstonia = selectedCountry === "estonia";
-  const isAfricanCountry = [
-    "nigeria",
-    "ghana",
-    "kenya",
-    "south-africa",
-  ].includes(selectedCountry);
 
   const getAddressIndicator = () => {
     if (!selectedBuilding) return "";
@@ -578,8 +558,8 @@ const LocationForm = forwardRef<LocationFormRef>((_, ref) => {
 interface FormSelectProps {
   label: string;
   name: keyof LocationFields;
-  control: any;
-  rules: any;
+  control: Control<LocationFields, unknown>;
+  rules?: RegisterOptions<LocationFields, keyof LocationFields>;
   options: { value: string; label: string; disabled?: boolean }[];
   error?: string;
   disabled?: boolean;

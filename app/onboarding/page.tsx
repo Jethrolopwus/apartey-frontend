@@ -72,7 +72,7 @@ export default function RoleSelect() {
                 router.push("/profile");
               }
             },
-            onError: (onboardingError: any) => {
+            onError: (onboardingError: unknown) => {
               console.error("Onboarding status update error:", onboardingError);
 
               // Even if onboarding status update fails, we can still navigate
@@ -88,17 +88,15 @@ export default function RoleSelect() {
             },
           });
         },
-        onError: (error: any) => {
+        onError: (error: unknown) => {
           console.error("Role submission error:", error);
 
-          if (error.response?.status === 401) {
+          if (error instanceof Error && error.message === "Authentication failed. Please login again.") {
             toast.error("Authentication failed. Please login again.");
             router.push("/signin");
           } else {
             toast.error(
-              error.response?.data?.message ||
-                error.message ||
-                "Failed to submit role. Please try again."
+              error instanceof Response ? error.statusText : error instanceof Error ? error.message : "Failed to submit role. Please try again."
             );
           }
         },
@@ -125,7 +123,7 @@ export default function RoleSelect() {
 
           {/* Title */}
           <h1 className="text-4xl font-bold text-gray-900 mb-4 tracking-tight">
-            Let's get started
+            Let&#39;s get started
           </h1>
           <p className="text-base text-gray-600 mb-12 leading-relaxed">
             Tell us a bit about yourself so we can tailor your experience

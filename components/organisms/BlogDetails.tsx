@@ -1,68 +1,101 @@
 "use client";
-import React from 'react';
-import { Search, ArrowRight } from 'lucide-react';
-import Image from 'next/image';
-import Link from 'next/link';
-import { Article } from '@/types/generated';
-import { useGetAllBlogPostQuery, BlogPostResponse } from "@/Hooks/use-getAllBlogPost.query";
+import React from "react";
+import { Search, ArrowRight } from "lucide-react";
+import Image from "next/image";
+import Link from "next/link";
+import { useGetAllBlogPostQuery } from "@/Hooks/use-getAllBlogPost.query";
 import { useGetAllBlogPostByIdQuery } from "@/Hooks/use-getAllBlogPostById.query";
 
 interface BlogDetailsProps {
   id?: string;
 }
 
+interface BlogPost {
+  _id: string;
+  title: string;
+  content: string;
+  imageUrl: string;
+  publishedAt?: string;
+  category?: string;
+  excerpt?: string;
+  author?: { name: string; avatar: string };
+}
+
 const BlogDetails: React.FC<BlogDetailsProps> = ({ id }) => {
-  // If id is provided, fetch single blog post
+  // Always call hooks unconditionally
+  const singlePostQuery = useGetAllBlogPostByIdQuery(id || "");
+  const allPostsQuery = useGetAllBlogPostQuery();
+
+  // Render single post view if id is provided
   if (id) {
-    const { data, isLoading, error } = useGetAllBlogPostByIdQuery(id);
+    const { data, isLoading, error } = singlePostQuery;
+
     if (isLoading) {
-      return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
+      return (
+        <div className="min-h-screen flex items-center justify-center">
+          Loading...
+        </div>
+      );
     }
     if (error) {
-      return <div className="min-h-screen flex items-center justify-center text-red-500">Failed to load blog post.</div>;
+      return (
+        <div className="min-h-screen flex items-center justify-center text-red-500">
+          Failed to load blog post.
+        </div>
+      );
     }
-    const post = (data as any) || {};
-    // Fallbacks for missing fields
-    const authorName = "Apartey Team";
-    const authorAvatar = "/aparteyLogo.png";
-    const publishedAt = post.publishedAt || post.createdAt || new Date().toISOString();
-    const readTime = "8"; // fallback to 8 min
+
+    const post = (data as BlogPost) || ({} as BlogPost);
+    const authorName = post?.author?.name || "Apartey Team";
+    const authorAvatar = post?.author?.avatar || "/aparteyLogo.png";
+    const publishedAt = post.publishedAt || new Date().toISOString();
+    const formattedDate = new Date(publishedAt).toLocaleDateString("en-GB", {
+      day: "2-digit",
+      month: "long",
+      year: "numeric",
+    });
+    const readTime = "8";
     const category = post.category || "General";
     const imageUrl = post.imageUrl || "/HouseRent.png";
     const content = post.content || "";
-    // Format date
-    const formattedDate = new Date(publishedAt).toLocaleDateString("en-GB", { day: "2-digit", month: "long", year: "numeric" });
+
     return (
       <div className="min-h-screen bg-gray-50">
         <main className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-          {/* Back to Blog */}
           <div className="mb-6 flex items-center gap-2">
-            <Link href="/blog" className="flex items-center text-gray-500 hover:text-orange-600 text-sm font-medium">
+            <Link
+              href="/blog"
+              className="flex items-center text-gray-500 hover:text-orange-600 text-sm font-medium"
+            >
               <span className="mr-1">←</span> Back to Blog
             </Link>
           </div>
           <article className="bg-white rounded-xl shadow-sm overflow-hidden">
-            {/* Main Image */}
             <div className="relative w-full h-64 md:h-96">
-              <img
+              <Image
                 src={imageUrl}
                 alt={post.title}
+                fill
                 className="object-cover w-full h-full rounded-b-none rounded-t-xl"
+                priority={false}
               />
             </div>
             <div className="p-6 md:p-10">
-              {/* Category */}
               <span className="inline-block bg-orange-100 text-orange-600 text-xs font-semibold px-3 py-1 rounded-full mb-4 w-fit">
                 {category}
               </span>
-              {/* Title */}
               <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4 leading-tight">
                 {post.title}
               </h1>
-              {/* Author, Date, Read Time */}
               <div className="flex items-center gap-4 text-gray-500 text-sm mb-6 flex-wrap">
                 <div className="flex items-center gap-2">
-                  <img src={authorAvatar} alt={authorName} className="w-6 h-6 rounded-full object-cover" />
+                  <Image
+                    src={authorAvatar}
+                    alt={authorName}
+                    width={24}
+                    height={24}
+                    className="w-6 h-6 rounded-full object-cover"
+                  />
                   <span>{authorName}</span>
                 </div>
                 <span className="hidden md:inline">•</span>
@@ -70,7 +103,6 @@ const BlogDetails: React.FC<BlogDetailsProps> = ({ id }) => {
                 <span className="hidden md:inline">•</span>
                 <span>{readTime} min read</span>
               </div>
-              {/* Content */}
               <div className="prose max-w-none text-gray-700 text-base md:text-lg leading-relaxed whitespace-pre-line">
                 {content}
               </div>
@@ -81,19 +113,28 @@ const BlogDetails: React.FC<BlogDetailsProps> = ({ id }) => {
     );
   }
 
-  // Otherwise, fetch all blog posts
-  const { data, isLoading, error } = useGetAllBlogPostQuery();
+  // Render all posts
+  const { data, isLoading, error } = allPostsQuery;
+
   if (isLoading) {
-    return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        Loading...
+      </div>
+    );
   }
   if (error) {
-    return <div className="min-h-screen flex items-center justify-center text-red-500">Failed to load blog posts.</div>;
+    return (
+      <div className="min-h-screen flex items-center justify-center text-red-500">
+        Failed to load blog posts.
+      </div>
+    );
   }
-  const posts = (data as any)?.posts || [];
+
+  const posts = (data as unknown as { posts?: BlogPost[] })?.posts || [];
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
       <header className="bg-white shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="text-center mb-8">
@@ -101,11 +142,10 @@ const BlogDetails: React.FC<BlogDetailsProps> = ({ id }) => {
               Apartey Blog
             </h1>
             <p className="text-gray-600 text-sm md:text-base max-w-2xl mx-auto">
-              Insights, tips, and stories about real estate and living spaces in Nigeria
+              Insights, tips, and stories about real estate and living spaces in
+              Nigeria
             </p>
           </div>
-
-          {/* Search Bar */}
           <div className="max-w-md mx-auto relative">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
@@ -123,7 +163,6 @@ const BlogDetails: React.FC<BlogDetailsProps> = ({ id }) => {
       </header>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        {/* All Articles Section */}
         <section>
           <div className="flex items-center justify-between mb-8">
             <h2 className="text-2xl md:text-3xl font-bold text-gray-900">
@@ -135,10 +174,14 @@ const BlogDetails: React.FC<BlogDetailsProps> = ({ id }) => {
             </button>
           </div>
 
-          {/* Articles Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
-            {posts.map((post: any) => (
-              <Link key={post._id} href={`/blog/${post._id}`} passHref legacyBehavior>
+            {posts.map((post: BlogPost) => (
+              <Link
+                key={post._id}
+                href={`/blog/${post._id}`}
+                passHref
+                legacyBehavior
+              >
                 <a className="bg-white rounded-xl shadow-sm overflow-hidden hover:shadow-md transition-shadow cursor-pointer group block">
                   <div className="relative h-48 md:h-56">
                     <Image

@@ -16,8 +16,7 @@ import RatingsAndReviews, { RatingsAndReviewsData } from "./RatingsAndReviews";
 import  { forwardRef, useImperativeHandle } from 'react';
 import { Star } from 'lucide-react';
 import { useReviewForm } from '@/app/context/RevievFormContext';
-import { useSelector, useDispatch } from 'react-redux';
-import { RootState } from '../../store';
+import { AxiosError } from 'axios';
 
 interface Props {
   id: string;
@@ -41,7 +40,7 @@ const FACILITY_OPTIONS = [
 ];
 const REPAIR_COVERAGE_OPTIONS = ["Landlord", "Tenant", "Shared"];
 
-const SubmitReviewComponent = forwardRef((props, ref) => {
+const SubmitReviewComponent = forwardRef(function SubmitReviewComponent(props, ref) {
   const { location, setLocation } = useReviewForm();
   const isAnonymous = location?.isAnonymous || false;
   const agreeToTerms = location?.agreeToTerms || false;
@@ -76,7 +75,7 @@ const SubmitReviewComponent = forwardRef((props, ref) => {
       <div className="flex items-center gap-2 mb-6">
         <Star className="w-5 h-5 text-orange-500 fill-orange-500" />
         <span className="text-sm text-gray-600">
-          Almost there! Just a few more details and you're done
+          Almost there! Just a few more details and you&#39;re done
         </span>
       </div>
 
@@ -173,6 +172,10 @@ function sanitizeReviewPayload(data: ReviewFormData) {
   };
 }
 
+function isAxiosError(error: unknown): error is AxiosError {
+  return (error as AxiosError).isAxiosError === true;
+}
+
 const PropertyReviewForm: React.FC<Props> = ({ id }) => {
   const router = useRouter();
   const { mutate, isLoading, error } = useWriteReviewMutation();
@@ -185,9 +188,6 @@ const PropertyReviewForm: React.FC<Props> = ({ id }) => {
     clearPendingData,
     submitPendingReview,
   } = useAuthRedirect();
-
-  const dispatch = useDispatch();
-  const formState = useSelector((state: RootState) => state.propertyReviewForm);
 
   const [formData, setFormData] = useState<ReviewFormData>({
     stayDetails: {
@@ -318,7 +318,7 @@ const PropertyReviewForm: React.FC<Props> = ({ id }) => {
   const handleInputChange = (
     section: keyof ReviewFormData,
     field: string,
-    value: any
+    value: string | number | boolean | string[] | number[] | undefined
   ) => {
     setFormData((prev) => ({
       ...prev,
@@ -375,14 +375,16 @@ const PropertyReviewForm: React.FC<Props> = ({ id }) => {
             }, 2000);
             console.log("Review submitted successfully:", data);
           },
-          onError: (error: any) => {
-            console.error("Error submitting review:", error);
-
-            if (error.response?.status === 401) {
-              toast.error("Session expired. Please log in again.");
-              handleAuthRedirect(submissionData);
+          onError: (error: unknown) => {
+            if (isAxiosError(error)) {
+              console.error("Error submitting review (Axios):", error);
+              if (error.response?.status === 401) {
+                // handle unauthorized
+              }
+            } else if (error instanceof Error) {
+              console.error("Error submitting review:", error);
             } else {
-              toast.error("Failed to submit review. Please try again.");
+              console.error("Error submitting review: Unknown error", error);
             }
           },
         }
@@ -509,5 +511,7 @@ const PropertyReviewForm: React.FC<Props> = ({ id }) => {
     </div>
   );
 };
+
+SubmitReviewComponent.displayName = 'SubmitReviewComponent';
 
 export default PropertyReviewForm;

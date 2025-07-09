@@ -22,7 +22,7 @@ const ContactPage = () => {
             Contact us
           </h1>
           <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-            We're here to help with all your needs and questions about the Finder services.
+            We&#39;re here to help with all your needs and questions about the Finder services.
           </p>
         </div>
 
@@ -63,7 +63,7 @@ const ContactPage = () => {
             </div>
             <h3 className="text-xl font-semibold text-gray-900 mb-2">Community</h3>
             <p className="text-gray-600 mb-4">
-              We help you make informed decisions by giving you access to honest reviews and real experiences from people who've lived in the exact addresses you're considering.
+              We help you make informed decisions by giving you access to honest reviews and real experiences from people who&#39;ve lived in the exact addresses you&#39;re considering.
             </p>
           </div>
         </div>

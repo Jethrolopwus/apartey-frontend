@@ -1,30 +1,10 @@
 "use client";
-import { useState } from "react";
-import eclipse from "@/public/Ellipse-2.png";
-import eclipse2 from "@/public/Ellipse-1.png";
-import SearchInput from "@/components/atoms/Buttons/SearchInput";
 import Button from "@/components/atoms/Buttons/ActionButton";
-import TestimonialStrip from "@/components/molecules/TestimonialStrip";
 import FeaturedReviews from "@/components/organisms/FeaturedReviews";
-import { useRouter } from "next/navigation";
-import ReviewsSection from "./ReviewSection";
 import Link from "next/link";
 import AgentsToolSection from "../molecules/AgentsToolSection";
 
 const AgentsHomePage = () => {
-  const [inputValue, setInputValue] = useState("");
-  const router = useRouter();
-
-  const handleSearchSubmit = () => {
-    if (!inputValue) return;
-    router.push(`/searchReview?q=${encodeURIComponent(inputValue)}`);
-  };
-
-  const testimonialAvatars = [
-    { src: eclipse, alt: "User avatar" },
-    { src: eclipse2, alt: "User avatar" },
-  ];
-
   return (
     <div className="relative py-12 bg-gray-50 md:py-12 overflow-hidden">
       <div className="relative z-10 max-w-5xl mx-auto px-4">
@@ -41,14 +21,14 @@ const AgentsHomePage = () => {
             <Link href="/writeReviews">
               <Button variant="primary">List Property</Button>
             </Link>
-            <Link href="/reviewsPage ">
+            <Link href="/reviewsPage">
               <Button variant="secondary">View Portfolio</Button>
             </Link>
           </div>
         </div>
       </div>
 
-      <FeaturedReviews searchTerm="" />
+      <FeaturedReviews />
       <AgentsToolSection />
     </div>
   );

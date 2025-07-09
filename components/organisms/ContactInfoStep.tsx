@@ -4,10 +4,11 @@ import React from 'react';
 import { ChevronRight, ChevronLeft } from 'lucide-react';
 import { StepProps } from '@/types/generated';
 import ContactInfoForm from "@/components/organisms/ContactInfoForm";
+import type { ContactInfoFormData } from "@/components/organisms/ContactInfoForm";
 
 interface ContactInfoStepProps extends StepProps {
-  formData: any;
-  setFormData: React.Dispatch<React.SetStateAction<any>>;
+  formData: ContactInfoFormData;
+  setFormData: React.Dispatch<React.SetStateAction<ContactInfoFormData>>;
 }
 
 const ContactInfoStep: React.FC<ContactInfoStepProps> = ({ onNext, onBack, formData, setFormData }) => (

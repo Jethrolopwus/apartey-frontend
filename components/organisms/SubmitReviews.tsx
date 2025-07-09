@@ -10,7 +10,7 @@ interface SubmitReviewComponentProps {
   onTermsChange: (checked: boolean) => void;
 }
 
-const SubmitReviewComponent = forwardRef<{ handleFinalSubmit: () => Promise<any> }, SubmitReviewComponentProps>((props, ref) => {
+const SubmitReviewComponent = forwardRef<{ handleFinalSubmit: () => Promise<unknown> }, SubmitReviewComponentProps>((props, ref) => {
   const { isAnonymous, agreeToTerms, onAnonymousChange, onTermsChange } = props;
 
   // This function can be called by the parent to submit the review
@@ -35,7 +35,7 @@ const SubmitReviewComponent = forwardRef<{ handleFinalSubmit: () => Promise<any>
       <div className="flex items-center gap-2 mb-6">
         <Star className="w-5 h-5 text-orange-500 fill-orange-500" />
         <span className="text-sm text-gray-600">
-          Almost there! Just a few more details and you're done
+          Almost there! Just a few more details and you&apos;re done
         </span>
       </div>
 

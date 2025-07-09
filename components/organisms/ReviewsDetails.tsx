@@ -10,7 +10,6 @@ import {
   Calendar,
   DollarSign,
   MapPin,
-  Wrench,
   Flag,
   Heart,
 } from "lucide-react";
@@ -19,7 +18,7 @@ import Image from "next/image";
 import ListingsButtons from "@/components/atoms/Buttons/ListingButtons";
 import { useState, useEffect } from "react";
 import FlagModalForm from "@/components/molecules/FlagModalForm";
-import toast from 'react-hot-toast';
+import toast from "react-hot-toast";
 
 interface Props {
   id: string;
@@ -33,8 +32,17 @@ export default function ReviewDetails({ id }: Props) {
   // Like state
   const [liked, setLiked] = useState(false);
   const [likeCount, setLikeCount] = useState(0);
-  const { toggleLike, isLoading: isLiking, data: likeData } = useUpdateReviewsToggleLikeMutation();
-  const { flagReview, isLoading: isFlagging, error: flagError, data: flagData } = useUpdateReviewsFlagMutation();
+  const {
+    toggleLike,
+    isLoading: isLiking,
+    data: likeData,
+  } = useUpdateReviewsToggleLikeMutation();
+  const {
+    flagReview,
+    isLoading: isFlagging,
+    error: flagError,
+    data: flagData,
+  } = useUpdateReviewsFlagMutation();
   const [flagOpen, setFlagOpen] = useState(false);
   const [flagCount, setFlagCount] = useState(0);
 
@@ -54,18 +62,18 @@ export default function ReviewDetails({ id }: Props) {
   }, [likeData, review]);
 
   useEffect(() => {
-    console.log('Flag mutation data:', flagData, 'error:', flagError);
+    console.log("Flag mutation data:", flagData, "error:", flagError);
     if (flagData && flagData.success) {
       setFlagOpen(false);
-      toast.success(flagData.message || 'Review flagged successfully!');
-      if (typeof flagData.data?.flagCount === 'number') {
+      toast.success(flagData.message || "Review flagged successfully!");
+      if (typeof flagData.data?.flagCount === "number") {
         setFlagCount(flagData.data.flagCount);
       } else {
         setFlagCount((prev) => prev + 1);
       }
     }
     if (flagError) {
-      toast.error(flagError.message || 'Failed to flag review.');
+      toast.error(flagError.message || "Failed to flag review.");
     }
   }, [flagData, flagError]);
 
@@ -96,7 +104,8 @@ export default function ReviewDetails({ id }: Props) {
             </div>
             <p className="text-lg text-red-600 mb-2">Review not found</p>
             <p className="text-gray-500 text-sm">
-              The review you're looking for doesn't exist or has been removed.
+              The review you&apos;re looking for doesn&apos;t exist or has been
+              removed.
             </p>
           </div>
         </div>
@@ -133,11 +142,11 @@ export default function ReviewDetails({ id }: Props) {
   const handleFlagSubmit = (reason: string, otherText?: string) => {
     const reviewId = review?.id || review?._id;
     if (!reviewId) {
-      console.log('Review not loaded. Please try again.', review);
-      toast.error('Review not loaded. Please try again.');
+      console.log("Review not loaded. Please try again.", review);
+      toast.error("Review not loaded. Please try again.");
       return;
     }
-    console.log('Flag submit:', { id: reviewId, reason, otherText });
+    console.log("Flag submit:", { id: reviewId, reason, otherText });
     flagReview({ id: reviewId, reason, otherText });
   };
 
@@ -154,12 +163,13 @@ export default function ReviewDetails({ id }: Props) {
 
         {/* Property Image */}
         <div className="relative mb-6">
-          <img
+          <Image
             src={review?.property?.media?.coverPhoto || "/Apartment1.png"}
             alt="Review Property"
             width={800}
             height={400}
             className="rounded-lg w-full object-cover"
+            priority={false}
           />
           {review?.property && (
             <span className="absolute top-4 right-4 bg-teal-600 text-white text-xs font-semibold px-3 py-1 rounded-full">
@@ -169,7 +179,9 @@ export default function ReviewDetails({ id }: Props) {
           {/* Like and Flag Buttons */}
           <div className="absolute bottom-4 right-4 flex gap-2 z-10">
             <button
-              className={`bg-white border border-gray-200 rounded-full p-2 shadow hover:bg-teal-50 transition-colors flex items-center justify-center ${isLiking ? 'opacity-50 cursor-not-allowed' : ''}`}
+              className={`bg-white border border-gray-200 rounded-full p-2 shadow hover:bg-teal-50 transition-colors flex items-center justify-center ${
+                isLiking ? "opacity-50 cursor-not-allowed" : ""
+              }`}
               aria-label="Like"
               type="button"
               onClick={() => {
@@ -212,16 +224,10 @@ export default function ReviewDetails({ id }: Props) {
             {review?.location?.streetAddress}
           </h1>
           <p className="text-gray-600 mb-3">
-            {review?.location?.district && (
-              <>{review.location.district}, </>
-            )}
-            {review?.location?.city && (
-              <>{review.location.city}, </>
-            )}
+            {review?.location?.district && <>{review.location.district}, </>}
+            {review?.location?.city && <>{review.location.city}, </>}
             {review?.location?.country}
-            {review?.location?.zipCode && (
-              <> {review.location.zipCode}</>
-            )}
+            {review?.location?.zipCode && <> {review.location.zipCode}</>}
           </p>
 
           <div className="flex items-center gap-4 mb-4">
@@ -711,48 +717,83 @@ export default function ReviewDetails({ id }: Props) {
           <h4 className="font-bold mb-4 text-gray-900">Related Reviews</h4>
           {relatedReviews.length > 0 ? (
             <>
-              {relatedReviews.slice(0, 3).map((relatedReview: any) => (
-                <div
-                  key={relatedReview._id}
-                  className="flex items-center gap-3 mb-4 last:mb-0"
-                >
-                  <img
-                    src={
-                      relatedReview?.propertyReference?.propertyId?.media
-                        ?.coverPhoto || "/cleanHouse.png"
-                    }
-                    alt="Related Property"
-                    width={80}
-                    height={60}
-                    className="rounded-lg object-cover"
-                  />
-                  <div className="flex-1 min-w-0">
-                    <p className="font-semibold text-sm text-gray-900 truncate">
-                      {relatedReview?.location?.streetAddress ||
-                        "Property Address"}
-                    </p>
-                    <div className="flex items-center gap-1 mb-1">
-                      <Star
-                        className="text-yellow-400 fill-current"
-                        size={12}
+              {relatedReviews
+                .slice(0, 3)
+                .map((relatedReview: unknown) => {
+                  // Type guard to ensure relatedReview is an object with expected properties
+                  if (
+                    !relatedReview ||
+                    typeof relatedReview !== "object" ||
+                    !("_id" in relatedReview)
+                  ) {
+                    return null;
+                  }
+
+                  const review = relatedReview as {
+                    _id: string;
+                    propertyReference?: {
+                      propertyId?: {
+                        media?: {
+                          coverPhoto?: string;
+                        };
+                      };
+                    };
+                    location?: {
+                      streetAddress?: string;
+                    };
+                    ratingsAndReviews?: {
+                      overallRating?: number;
+                      detailedReview?: string;
+                    };
+                    costDetails?: {
+                      rentType?: string;
+                      rent?: number;
+                    };
+                  };
+
+                  return (
+                    <div
+                      key={review._id}
+                      className="flex items-center gap-3 mb-4 last:mb-0"
+                    >
+                      <Image
+                        src={
+                          review?.propertyReference?.propertyId?.media
+                            ?.coverPhoto || "/cleanHouse.png"
+                        }
+                        alt="Related Property"
+                        width={80}
+                        height={60}
+                        className="rounded-lg object-cover"
                       />
-                      <span className="text-xs text-gray-600">
-                        {relatedReview?.ratingsAndReviews?.overallRating || 0}.0
-                      </span>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-semibold text-sm text-gray-900 truncate">
+                          {review?.location?.streetAddress ||
+                            "Property Address"}
+                        </p>
+                        <div className="flex items-center gap-1 mb-1">
+                          <Star
+                            className="text-yellow-400 fill-current"
+                            size={12}
+                          />
+                          <span className="text-xs text-gray-600">
+                            {review?.ratingsAndReviews?.overallRating || 0}.0
+                          </span>
+                        </div>
+                        <p className="text-xs text-gray-500 line-clamp-2">
+                          {review?.ratingsAndReviews?.detailedReview ||
+                            "No review text available"}
+                        </p>
+                        <p className="text-xs text-gray-400 mt-1">
+                          {review?.costDetails?.rentType}:{" "}
+                          {formatCurrency(review?.costDetails?.rent || 0)}
+                        </p>
+                      </div>
                     </div>
-                    <p className="text-xs text-gray-500 line-clamp-2">
-                      "
-                      {relatedReview?.ratingsAndReviews?.detailedReview ||
-                        "No review text available"}
-                      "
-                    </p>
-                    <p className="text-xs text-gray-400 mt-1">
-                      {relatedReview?.costDetails?.rentType}:{" "}
-                      {formatCurrency(relatedReview?.costDetails?.rent || 0)}
-                    </p>
-                  </div>
-                </div>
-              ))}
+                  );
+                })
+                .filter(Boolean)}{" "}
+              {/* Filter out null values */}
             </>
           ) : (
             <div className="text-center text-gray-500 py-4">

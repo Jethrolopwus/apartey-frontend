@@ -3,24 +3,8 @@
 import { useEffect, useState, useRef } from "react";
 import { useSelector, useDispatch } from 'react-redux';
 import { RootState } from '../../store';
-import { setField, setMultipleFields } from '../../store/propertyReviewFormSlice';
+import { setMultipleFields } from '../../store/propertyReviewFormSlice';
 
-interface AddressComponent {
-  long_name: string;
-  short_name: string;
-  types: string[];
-}
-
-interface Place {
-  address_components: AddressComponent[];
-  formatted_address: string;
-  geometry?: {
-    location: {
-      lat: () => number;
-      lng: () => number;
-    };
-  };
-}
 
 interface Apartment {
   adr_id: string;
@@ -44,7 +28,7 @@ interface Coordinates {
 
 declare global {
   interface Window {
-    google: any;
+    google: unknown;
   }
 }
 
@@ -52,7 +36,7 @@ const AddressForm: React.FC = () => {
   const dispatch = useDispatch();
   const location = useSelector((state: RootState) => state.propertyReviewForm);
   const inputRef = useRef<HTMLInputElement>(null);
-  const autocompleteRef = useRef<any>(null);
+  const autocompleteRef = useRef<google.maps.places.Autocomplete | null>(null);
 
   // Local state for UI only, but always sync with Redux
   const [selectedAddress, setSelectedAddress] = useState<string>("");
@@ -70,7 +54,6 @@ const AddressForm: React.FC = () => {
   const [country, setCountry] = useState(location.country || "");
   const [postalCode, setPostalCode] = useState(location.postalCode || "");
   const [coordinates, setCoordinates] = useState<Coordinates | null>(location.coordinates || null);
-  const [city, setCity] = useState("");
 
   // Only prefill from Redux on first mount/restore
   const didPrefillRef = useRef(false);
@@ -107,78 +90,83 @@ const AddressForm: React.FC = () => {
 
   useEffect(() => {
     if (!window.google) return;
-    autocompleteRef.current = new window.google.maps.places.Autocomplete(
-      inputRef.current,
-      {
-        types: ["address"],
-        componentRestrictions: { country: countryCode },
-      }
-    );
-    autocompleteRef.current.addListener("place_changed", async () => {
-      const place: Place = autocompleteRef.current.getPlace();
-      const components = place.address_components;
-      const streetNumber =
-        components.find((c) => c.types.includes("street_number"))?.long_name ||
-        "";
-      const streetName =
-        components.find((c) => c.types.includes("route"))?.long_name || "";
-      const districtRaw =
-        components.find((c) => c.types.includes("sublocality"))?.long_name ||
-        "";
-      const countryName =
-        components.find((c) => c.types.includes("country"))?.long_name || "";
-      const stateRaw =
-        components.find((c) => c.types.includes("administrative_area_level_1"))
-          ?.long_name || "";
-      const postal =
-        components.find((c) => c.types.includes("postal_code"))?.long_name ||
-        "";
-      const capitalize = (str: string) =>
-        str ? str.charAt(0).toUpperCase() + str.slice(1).toLowerCase() : "";
-      const district = capitalize(districtRaw);
-      const state = capitalize(stateRaw);
-      const coordinates: Coordinates | null = place.geometry?.location
-        ? {
-            lat: place.geometry.location.lat(),
-            lng: place.geometry.location.lng(),
-          }
-        : null;
-      setCoordinates(coordinates);
-      setCountry(countryName);
-      setState(state);
-      setDistrict(district);
-      setPostalCode(postal);
-      setAddressLine(`${streetName} ${streetNumber}`);
-      setStreetName(streetName);
-      setStreetNumber(streetNumber);
-      setApartment("");
-      await fetchApartments(`${streetName} ${streetNumber}`);
-      const apt = apartment || manualApartment;
-      const fullAddress = [
-        streetNumber && streetName ? `${streetNumber} ${streetName}` : streetName,
-        apt,
-        district,
-        state,
-      ]
-        .filter(Boolean)
-        .join(", ");
-      const locationPayload = {
-        country: countryName,
-        countryCode: countryCode.toUpperCase(),
-        stateOrRegion: state,
-        street: streetName,
-        district: district,
-        apartment: apt,
-        postalCode: postal,
-        fullAddress,
-        coordinates,
-      };
-      dispatch(setMultipleFields(locationPayload));
-      console.log("the Payload", locationPayload);
-    });
+    const googleObj = window.google as typeof google | undefined;
+    if (inputRef.current && googleObj?.maps?.places?.Autocomplete) {
+      autocompleteRef.current = new googleObj.maps.places.Autocomplete(
+        inputRef.current,
+        {
+          types: ["address"],
+          componentRestrictions: { country: countryCode },
+        }
+      );
+      autocompleteRef.current.addListener("place_changed", async () => {
+        if (!autocompleteRef.current) return;
+        const place = autocompleteRef.current.getPlace() as google.maps.places.PlaceResult;
+        const components = place.address_components || [];
+        const streetNumber =
+          components.find((c) => c.types.includes("street_number"))?.long_name ||
+          "";
+        const streetName =
+          components.find((c) => c.types.includes("route"))?.long_name || "";
+        const districtRaw =
+          components.find((c) => c.types.includes("sublocality"))?.long_name ||
+          "";
+        const countryName =
+          components.find((c) => c.types.includes("country"))?.long_name || "";
+        const stateRaw =
+          components.find((c) => c.types.includes("administrative_area_level_1"))
+            ?.long_name || "";
+        const postal =
+          components.find((c) => c.types.includes("postal_code"))?.long_name ||
+          "";
+        const capitalize = (str: string) =>
+          str ? str.charAt(0).toUpperCase() + str.slice(1).toLowerCase() : "";
+        const district = capitalize(districtRaw);
+        const state = capitalize(stateRaw);
+        const coordinates: Coordinates | null = place.geometry?.location
+          ? {
+              lat: place.geometry.location.lat(),
+              lng: place.geometry.location.lng(),
+            }
+          : null;
+        setCoordinates(coordinates);
+        setCountry(countryName);
+        setState(state);
+        setDistrict(district);
+        setPostalCode(postal);
+        setAddressLine(`${streetName} ${streetNumber}`);
+        setStreetName(streetName);
+        setStreetNumber(streetNumber);
+        setApartment("");
+        await fetchApartments(`${streetName} ${streetNumber}`);
+        const apt = apartment || manualApartment;
+        const fullAddress = [
+          streetNumber && streetName ? `${streetNumber} ${streetName}` : streetName,
+          apt,
+          district,
+          state,
+        ]
+          .filter(Boolean)
+          .join(", ");
+        const locationPayload = {
+          country: countryName,
+          countryCode: countryCode.toUpperCase(),
+          stateOrRegion: state,
+          street: streetName,
+          district: district,
+          apartment: apt,
+          postalCode: postal,
+          fullAddress,
+          coordinates,
+        };
+        dispatch(setMultipleFields(locationPayload));
+        console.log("the Payload", locationPayload);
+      });
+    }
     return () => {
-      if (autocompleteRef.current) {
-        window.google.maps.event.clearInstanceListeners(
+      const googleObj = window.google as typeof google | undefined;
+      if (autocompleteRef.current && googleObj?.maps?.event?.clearInstanceListeners) {
+        googleObj.maps.event.clearInstanceListeners(
           autocompleteRef.current
         );
       }

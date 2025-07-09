@@ -1,11 +1,10 @@
-
-import React, { Suspense } from 'react';
-import BlogDetails from '@/components/organisms/BlogDetails';
+import React, { Suspense } from "react";
+import BlogDetails from "@/components/organisms/BlogDetails";
 
 type Props = {
-  params: {
-    id: number;
-  };
+  params: Promise<{
+    id: string;
+  }>;
 };
 
 export default async function BlogsDetailPage({ params }: Props) {
@@ -13,7 +12,7 @@ export default async function BlogsDetailPage({ params }: Props) {
   return (
     <Suspense fallback={<div>Loading review...</div>}>
       <div className="min-h-screen">
-        <BlogDetails id={String(id)} />
+        <BlogDetails id={id} />
       </div>
     </Suspense>
   );

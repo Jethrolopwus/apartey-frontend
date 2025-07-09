@@ -1,5 +1,4 @@
 "use client";
-import { useState } from "react";
 import { useRouter } from "next/navigation";
 import eclipse from "@/public/Ellipse-2.png";
 import eclipse2 from "@/public/Ellipse-1.png";
@@ -14,16 +13,10 @@ import Link from "next/link";
 import { useGetUserRoleQuery } from "@/Hooks/use-getUserRole.query";
 
 export default function Hero() {
-  const [inputValue, setInputValue] = useState("");
   const router = useRouter();
   const { data, isLoading } = useGetUserRoleQuery();
 
   const role = data?.role || "renter";
-
-  const handleSearchSubmit = () => {
-    if (!inputValue) return;
-    router.push(`/searchReview?q=${encodeURIComponent(inputValue)}`);
-  };
 
   const testimonialAvatars = [
     { src: eclipse, alt: "User avatar" },
@@ -43,7 +36,7 @@ export default function Hero() {
   return (
     <div className="relative py-12 bg-gray-50 md:py-12 overflow-hidden">
       <div className="relative z-10 max-w-5xl mx-auto px-4">
-        <div className="text-center px-6 sm:px-16 mb-8">
+        <div className="text-center px-6 sm:16 mb-8">
           <h1 className="text-3xl md:text-5xl font-bold text-teal-800 mb-4">
             Real People... Real Experience
           </h1>
@@ -56,12 +49,11 @@ export default function Hero() {
             placeholder="Search by address, neighborhood, or city"
             countryRestrictions={["ng", "ee"]}
             onPlaceSelect={(place) => {
-              setInputValue(place.description);
               router.push(
                 `/searchReview?q=${encodeURIComponent(place.description)}`
               );
             }}
-            onChange={(value) => setInputValue(value)}
+            onChange={() => {}} // Empty function since we don't need to track the input
             onSubmit={(value) => {
               if (value) {
                 router.push(`/searchReview?q=${encodeURIComponent(value)}`);
@@ -87,7 +79,7 @@ export default function Hero() {
       </div>
 
       <ReviewsSection />
-      <FeaturedReviews searchTerm="" />
+      <FeaturedReviews />
       {role === "landlord" && <LandlordsToolsSection />}
       {role === "agent" && <AgentsToolSection />}
     </div>

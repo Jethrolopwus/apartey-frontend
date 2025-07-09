@@ -12,7 +12,7 @@ type CostDetailsData = {
 
 type Props = {
   costDetails: CostDetailsData;
-  onInputChange: (field: keyof CostDetailsData, value: any) => void;
+  onInputChange: (field: keyof CostDetailsData, value: number | boolean | 'Monthly' | 'Yearly') => void;
 };
 
 export default function CostDetails({ costDetails, onInputChange }: Props) {

@@ -10,7 +10,7 @@ import RoleGuard from "@/components/molecules/RoleGuard";
 export default function Agent() {
   return (
     <div className="min-h-screen">
-      <RoleGuard allowedRoles={["agent"]}>
+      <RoleGuard>
       <AgentsHomePage/>
       <Listings/>
       <CategoryComponent/>

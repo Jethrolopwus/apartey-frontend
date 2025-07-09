@@ -2,11 +2,22 @@
 import { ArrowRight } from "lucide-react";
 import Link from "next/link";
 import { useGetAllBlogPostQuery } from "@/Hooks/use-getAllBlogPost.query";
+import Image from "next/image";
+
+// Define a BlogPost type if not imported
+interface BlogPost {
+  _id: string;
+  title: string;
+  imageUrl: string;
+  category: string;
+  excerpt: string;
+  publishedAt?: string;
+}
 
 export default function BlogComponent() {
   // Fetch blog posts from backend (limit 3)
   const { data, isLoading, error } = useGetAllBlogPostQuery({ limit: 3 });
-  const posts = (data as any)?.posts || [];
+  const posts = ((data as unknown) as { posts?: BlogPost[] })?.posts || [];
 
   return (
     <div className="max-w-screen-xl mx-auto px-4 py-8">
@@ -30,16 +41,19 @@ export default function BlogComponent() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {isLoading && <div className="col-span-3 text-center">Loading...</div>}
         {error && <div className="col-span-3 text-center text-red-500">Failed to load blog posts.</div>}
-        {posts.slice(0, 3).map((post: any) => (
+        {posts.slice(0, 3).map((post: BlogPost) => (
           <div
             key={post._id}
             className="flex shadow-md rounded-md pb-4 gap-2 flex-col items-center"
           >
             <div className="w-full rounded-t-lg overflow-hidden mb-4 aspect-auto">
-              <img
+              <Image
                 src={post.imageUrl || "/HouseRent.png"}
                 alt={post.title}
+                width={400}
+                height={250}
                 className="w-full h-full object-cover"
+                priority={false}
               />
             </div>
             <h3 className="text-lg font-medium text-gray-800 mb-2">

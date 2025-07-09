@@ -11,8 +11,7 @@ import { FormData } from "@/types/generated";
 import { useSignInMutation } from "@/Hooks/use.login.mutation";
 import { useGetOnboardingStatusQuery } from "@/Hooks/get-onboardingStatus.query";
 import { toast } from "react-hot-toast";
-import { useReviewForm } from "@/app/context/RevievFormContext";
-import { useAuthStatusQuery } from '@/Hooks/use-getAuthStatus.query';
+import { useAuthStatusQuery } from "@/Hooks/use-getAuthStatus.query";
 import { useAuthRedirect } from "@/Hooks/useAuthRedirect";
 
 const SignIn: React.FC = () => {
@@ -27,28 +26,18 @@ const SignIn: React.FC = () => {
 
   const { mutate, isLoading, error, data } = useSignInMutation();
 
-  // Onboarding status query (disabled by default)
-  const {
-    refetch: checkOnboardingStatus,
-    data: onboardingData,
-    isLoading: isCheckingOnboarding,
-  } = useGetOnboardingStatusQuery();
-
-  const { setLocation } = useReviewForm();
+  const { data: onboardingData, isLoading: isCheckingOnboarding } =
+    useGetOnboardingStatusQuery();
 
   const { refetch: refetchAuthStatus } = useAuthStatusQuery();
 
-  // Use the auth redirect hook for proper pending data handling
   const { handlePostLoginRedirect } = useAuthRedirect();
-  
-  // Store the function reference to avoid dependency issues
+
   const handlePostLoginRedirectRef = useRef(handlePostLoginRedirect);
   handlePostLoginRedirectRef.current = handlePostLoginRedirect;
 
-  // Handle NextAuth session (Google OAuth)
   useEffect(() => {
     if (session) {
-      // Add a small delay to ensure authentication state is updated
       setTimeout(() => {
         console.log("Calling handlePostLoginRedirect for NextAuth session");
         handlePostLoginRedirectRef.current();
@@ -56,7 +45,6 @@ const SignIn: React.FC = () => {
     }
   }, [session]);
 
-  // Handle onboarding status check result
   useEffect(() => {
     if (onboardingData) {
       const isOnboarded = onboardingData.currentUserStatus?.isOnboarded;
@@ -64,26 +52,22 @@ const SignIn: React.FC = () => {
       console.log("Onboarding status:", isOnboarded);
 
       if (isOnboarded) {
-        // User is onboarded, use proper auth redirect logic
         toast.success("Welcome back!");
         setTimeout(() => {
           console.log("Calling handlePostLoginRedirect for onboarded user");
           handlePostLoginRedirectRef.current();
         }, 100);
       } else {
-        // User is not onboarded, redirect to role selection
         toast.success("Please complete your setup");
         router.push("/onboarding");
       }
     }
   }, [onboardingData, router]);
 
-  // Handle traditional signin success
   useEffect(() => {
     if (data) {
       console.log("Sign in data:", data);
 
-      // Store tokens
       if (data.token) {
         localStorage.setItem("token", data.token);
       }
@@ -98,7 +82,6 @@ const SignIn: React.FC = () => {
       reset();
       refetchAuthStatus();
 
-      // Add a small delay to ensure authentication state is updated
       setTimeout(() => {
         console.log("Calling handlePostLoginRedirect after token storage");
         handlePostLoginRedirectRef.current();
@@ -106,7 +89,6 @@ const SignIn: React.FC = () => {
     }
   }, [data, reset, refetchAuthStatus]);
 
-  // Handle signin error
   useEffect(() => {
     if (error) {
       console.error("Sign in error:", error);
@@ -116,7 +98,9 @@ const SignIn: React.FC = () => {
       if (error instanceof Error) {
         errorMessage = error.message;
       } else if (error && typeof error === "object" && "response" in error) {
-        const apiError = error as any;
+        const apiError = error as unknown as {
+          response?: { status?: number; data?: { message?: string } };
+        };
         if (apiError.response?.status === 401) {
           errorMessage = "Invalid email or password";
         } else if (apiError.response?.status === 404) {
@@ -220,7 +204,7 @@ const SignIn: React.FC = () => {
         </div>
 
         <p className="mt-4 text-center text-sm text-gray-500">
-          Don't have an account?{" "}
+          Don&apos;t have an account?{" "}
           <Link
             href="/signup"
             className="font-semibold leading-6 text-orange-600 hover:text-orange-500"

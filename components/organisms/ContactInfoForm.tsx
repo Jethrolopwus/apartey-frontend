@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 
-interface ContactInfoFormData {
+export interface ContactInfoFormData {
     firstName: string;
     lastName: string;
     email: string;
@@ -13,7 +13,7 @@ interface ContactInfoFormData {
 
 interface ContactInfoFormProps {
   formData: ContactInfoFormData;
-  setFormData: React.Dispatch<React.SetStateAction<any>>;
+  setFormData: React.Dispatch<React.SetStateAction<ContactInfoFormData>>;
 }
 
 const ContactInfoForm = ({ formData, setFormData }: ContactInfoFormProps) => {
@@ -27,8 +27,8 @@ const ContactInfoForm = ({ formData, setFormData }: ContactInfoFormProps) => {
   });
 
   useEffect(() => {
-    setFormData((prev: any) => ({ ...prev, ...localData }));
-  }, [localData]);
+    setFormData((prev) => ({ ...prev, ...localData }));
+  }, [localData, setFormData]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;

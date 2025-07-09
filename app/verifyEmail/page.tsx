@@ -4,7 +4,6 @@ import Image from "next/image";
 import { useEffect, useState } from "react";
 import ContinueButton from "@/components/atoms/Buttons/ContinueButton";
 import { useRouter } from "next/navigation";
-import { toast } from "react-hot-toast";
 import { useVerifyEmailMutation } from "@/Hooks/use.verifyEmail.mutation";
 import ResendCodeButton from "@/components/atoms/Buttons/ResendCodeButton";
 import {
@@ -31,7 +30,7 @@ export default function VerifyEmail() {
   const router = useRouter();
   const [userEmail, setUserEmail] = useState("");
 
-  const { mutate, data, error, isLoading } = useVerifyEmailMutation();
+  const { mutate, isLoading } = useVerifyEmailMutation();
 
   const onSubmit = (formData: FormValues) => {
     const email = localStorage.getItem("email");

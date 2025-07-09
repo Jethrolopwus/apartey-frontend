@@ -8,7 +8,7 @@ import { useGoogleAuthMutation } from '@/Hooks/use.googleAuth.mutation';
 import { useGetOnboardingStatusQuery } from '@/Hooks/get-onboardingStatus.query';
 import { TokenManager } from '@/utils/tokenManager';
 import toast from 'react-hot-toast';
-import { log } from 'console';
+import Image from 'next/image';
 
 const GoogleAuthButton: React.FC<GoogleAuthButtonProps> = ({ 
   mode, 
@@ -92,10 +92,12 @@ const GoogleAuthButton: React.FC<GoogleAuthButtonProps> = ({
       disabled={status === 'loading' || isLoadingState}
       className="flex w-full items-center justify-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
     >
-      <img
+      <Image
         className="mr-2 h-5 w-5"
         src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg"
         alt="Google logo"
+        width={20}
+        height={20}
       />
       {isLoadingState ? 'Authenticating...' : buttonText}
     </button>

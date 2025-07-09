@@ -1,22 +1,11 @@
 "use client";
 
-import React, { useState } from "react";
-import {
-  Heart,
-  Star,
-  Bed,
-  Bath,
-  Square,
-  Phone,
-  Mail,
-  Facebook,
-  Instagram,
-  Twitter,
-  Linkedin,
-} from "lucide-react";
+import React from "react";
+import { Heart, Star, Bed, Bath, Square } from "lucide-react";
 import { useGetUserFavoriteQuery } from "@/Hooks/use-getUsersFavorites.query";
 import { useUpdatePropertyToggleLikeMutation } from "@/Hooks/use.propertyLikeToggle.mutation";
 import { toast } from "react-hot-toast";
+import Image from "next/image";
 
 interface PropertyCardProps {
   id: string;
@@ -39,6 +28,27 @@ interface FavoritesPageProps {
   onViewAll?: () => void;
 }
 
+interface FavoriteItem {
+  _id: string;
+  propertyDetails?: {
+    description?: string;
+    bedrooms?: number;
+    bathrooms?: number;
+    totalAreaSqM?: number;
+    price?: number;
+  };
+  location?: {
+    street?: string;
+    district?: string;
+    fullAddress?: string;
+    stateOrRegion?: string;
+    country?: string;
+  };
+  media?: {
+    coverPhoto?: string;
+  };
+}
+
 const PropertyCard: React.FC<PropertyCardProps> = ({
   id,
   title,
@@ -58,7 +68,14 @@ const PropertyCard: React.FC<PropertyCardProps> = ({
     <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
       {/* Property Image */}
       <div className="relative">
-        <img src={image} alt={title} className="w-full h-48 object-cover" />
+        <Image
+          src={image}
+          alt={title}
+          width={400}
+          height={192}
+          className="w-full h-48 object-cover"
+          priority={false}
+        />
         {/* Rent Badge */}
         <div className="absolute top-3 left-3">
           <span className="bg-white px-2 py-1 rounded text-sm font-medium text-gray-700">
@@ -68,11 +85,15 @@ const PropertyCard: React.FC<PropertyCardProps> = ({
         {/* Heart Icon */}
         <button
           onClick={() => onToggleFavorite?.(id)}
-          className={`absolute top-3 right-3 p-2 bg-white rounded-full shadow-sm hover:shadow-md transition-shadow ${isFavorited ? 'fill-red-500 text-red-500' : 'text-gray-400'}`}
-          title={isFavorited ? 'Remove from favorites' : 'Add to favorites'}
+          className={`absolute top-3 right-3 p-2 bg-white rounded-full shadow-sm hover:shadow-md transition-shadow ${
+            isFavorited ? "fill-red-500 text-red-500" : "text-gray-400"
+          }`}
+          title={isFavorited ? "Remove from favorites" : "Add to favorites"}
         >
           <Heart
-            className={`w-4 h-4 ${isFavorited ? 'fill-red-500 text-red-500' : 'text-gray-400'}`}
+            className={`w-4 h-4 ${
+              isFavorited ? "fill-red-500 text-red-500" : "text-gray-400"
+            }`}
           />
         </button>
         {/* Image Dots Indicator */}
@@ -145,26 +166,33 @@ const PropertyCard: React.FC<PropertyCardProps> = ({
   );
 };
 
-const FavoritesPage: React.FC<FavoritesPageProps> = ({
-  properties: _props,
-  onViewAll,
-}) => {
+const FavoritesPage: React.FC<FavoritesPageProps> = ({ onViewAll }) => {
   const { data, isLoading, isError, error } = useGetUserFavoriteQuery();
-  const { toggleLike, isLoading: isToggling } = useUpdatePropertyToggleLikeMutation();
+  const { toggleLike } = useUpdatePropertyToggleLikeMutation();
   const { refetch } = useGetUserFavoriteQuery();
 
   // Map API data to PropertyCardProps
-  const apiProperties = (data?.favorites || []).map((item: any) => ({
+  const apiProperties = (data?.favorites || []).map((item: FavoriteItem) => ({
     id: item._id,
-    title: item.propertyDetails?.description || `${item.location?.street || ""}, ${item.location?.district || ""}`,
-    location: item.location?.fullAddress || `${item.location?.district || ""}, ${item.location?.stateOrRegion || ""}, ${item.location?.country || ""}`,
+    title:
+      item.propertyDetails?.description ||
+      `${item.location?.street || ""}, ${item.location?.district || ""}`,
+    location:
+      item.location?.fullAddress ||
+      `${item.location?.district || ""}, ${
+        item.location?.stateOrRegion || ""
+      }, ${item.location?.country || ""}`,
     rating: 0,
     reviewCount: 0,
     bedrooms: item.propertyDetails?.bedrooms || 0,
     bathrooms: item.propertyDetails?.bathrooms || 0,
     area: item.propertyDetails?.totalAreaSqM || 0,
-    priceOriginal: item.propertyDetails?.price ? `₦${item.propertyDetails.price.toLocaleString()}` : "",
-    priceDiscounted: item.propertyDetails?.price ? `₦${item.propertyDetails.price.toLocaleString()}` : "",
+    priceOriginal: item.propertyDetails?.price
+      ? `₦${item.propertyDetails.price.toLocaleString()}`
+      : "",
+    priceDiscounted: item.propertyDetails?.price
+      ? `₦${item.propertyDetails.price.toLocaleString()}`
+      : "",
     image: item.media?.coverPhoto || "/Estate2.png",
     isFavorited: true,
   }));
@@ -172,20 +200,30 @@ const FavoritesPage: React.FC<FavoritesPageProps> = ({
   const handleToggleFavorite = (id: string) => {
     toggleLike(id, {
       onSuccess: () => {
-        toast.success('Favorite updated!');
+        toast.success("Favorite updated!");
         refetch();
       },
       onError: () => {
-        toast.error('Failed to update favorite.');
+        toast.error("Failed to update favorite.");
       },
     });
   };
 
   if (isLoading) {
-    return <div className="min-h-screen flex items-center justify-center text-gray-500">Loading favorites...</div>;
+    return (
+      <div className="min-h-screen flex items-center justify-center text-gray-500">
+        Loading favorites...
+      </div>
+    );
   }
   if (isError) {
-    return <div className="min-h-screen flex items-center justify-center text-red-500">{(error as any)?.message || "Failed to load favorites."}</div>;
+    return (
+      <div className="min-h-screen flex items-center justify-center text-red-500">
+        {typeof error === "object" && error && "message" in error
+          ? (error as { message?: string }).message
+          : "Failed to load favorites."}
+      </div>
+    );
   }
 
   return (
@@ -216,7 +254,9 @@ const FavoritesPage: React.FC<FavoritesPageProps> = ({
               />
             ))
           ) : (
-            <div className="col-span-full text-center text-gray-500 py-12">No favorites found.</div>
+            <div className="col-span-full text-center text-gray-500 py-12">
+              No favorites found.
+            </div>
           )}
         </div>
       </main>

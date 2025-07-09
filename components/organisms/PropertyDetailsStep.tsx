@@ -4,10 +4,11 @@ import React from 'react';
 import { ChevronRight, ChevronLeft } from 'lucide-react';
 import { StepProps } from '@/types/generated';
 import PropertyDetailsForm from "@/components/organisms/PropertyDetailsForm";
+import { PropertyListingPayload } from '@/types/propertyListing';
 
 interface PropertyDetailsStepProps extends StepProps {
-  formData: any;
-  setFormData: React.Dispatch<React.SetStateAction<any>>;
+  formData: PropertyListingPayload | Partial<PropertyListingPayload>;
+  setFormData: React.Dispatch<React.SetStateAction<PropertyListingPayload | Partial<PropertyListingPayload>>>;
 }
 
 const PropertyDetailsStep: React.FC<PropertyDetailsStepProps> = ({ onNext, onBack, formData, setFormData }) => (

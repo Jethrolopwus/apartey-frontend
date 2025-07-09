@@ -12,18 +12,27 @@ import {
 } from "lucide-react";
 import { useGetListingsByIdQuery } from "@/Hooks/use-getAllListingsById.query";
 import Link from "next/link";
-import { useUpdatePropertyToggleLikeMutation } from '@/Hooks/use.propertyLikeToggle.mutation';
-import { useGetUserFavoriteQuery } from '@/Hooks/use-getUsersFavorites.query';
-import { toast } from 'react-hot-toast';
-import React from 'react';
+import { useUpdatePropertyToggleLikeMutation } from "@/Hooks/use.propertyLikeToggle.mutation";
+import { useGetUserFavoriteQuery } from "@/Hooks/use-getUsersFavorites.query";
+import { toast } from "react-hot-toast";
+import React from "react";
 
 interface Props {
   id: string;
 }
 
+// Define proper types for media files
+interface MediaFile {
+  type: string;
+  url: string;
+  _id?: string;
+  filename?: string;
+}
+
 export default function ListingDetail({ id }: Props) {
   const { data: property, isLoading, error } = useGetListingsByIdQuery(id);
-  const { toggleLike, isLoading: isToggling } = useUpdatePropertyToggleLikeMutation();
+  const { toggleLike, isLoading: isToggling } =
+    useUpdatePropertyToggleLikeMutation();
   const { refetch: refetchFavorites } = useGetUserFavoriteQuery();
   const [isLiked, setIsLiked] = React.useState(false);
 
@@ -62,27 +71,33 @@ export default function ListingDetail({ id }: Props) {
         </h2>
         <div className="flex gap-2">
           <button
-            className={`p-2 rounded-full border ${isLiked ? 'bg-red-100 border-red-300' : 'bg-white border-gray-300'} transition-colors`}
+            className={`p-2 rounded-full border ${
+              isLiked ? "bg-red-100 border-red-300" : "bg-white border-gray-300"
+            } transition-colors`}
             onClick={() => {
               setIsLiked((prev) => !prev);
               toggleLike(property?._id, {
                 onSuccess: () => {
-                  console.log("The property",property);
-                  
-                  toast.success('Favorite updated!');
+                  console.log("The property", property);
+
+                  toast.success("Favorite updated!");
                   refetchFavorites();
                 },
                 onError: () => {
-                  console.log("The property",property);
-                  toast.error('Failed to update favorite.');
+                  console.log("The property", property);
+                  toast.error("Failed to update favorite.");
                   setIsLiked((prev) => !prev); // revert
                 },
               });
             }}
-            title={isLiked ? 'Remove from favorites' : 'Add to favorites'}
+            title={isLiked ? "Remove from favorites" : "Add to favorites"}
             disabled={isToggling}
           >
-            <Heart className={`w-5 h-5 ${isLiked ? 'fill-red-500 text-red-500' : 'text-gray-400'}`} />
+            <Heart
+              className={`w-5 h-5 ${
+                isLiked ? "fill-red-500 text-red-500" : "text-gray-400"
+              }`}
+            />
           </button>
           <ListingsButtons icon={Share2} variant="outline">
             Share
@@ -134,10 +149,10 @@ export default function ListingDetail({ id }: Props) {
       {/* Interior Images */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-10">
         {media?.uploads
-          ?.filter((file: any) => file.type === "image")
-          .map((img: any, idx: any) => (
+          ?.filter((file: MediaFile) => file.type === "image")
+          .map((img: MediaFile, idx: number) => (
             <Image
-              key={idx}
+              key={img._id || idx}
               src={img.url}
               alt={`Interior ${idx + 1}`}
               width={200}

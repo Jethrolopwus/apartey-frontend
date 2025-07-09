@@ -21,9 +21,9 @@ const Footer: React.FC = () => {
             </div>
             <p className="text-sm leading-relaxed text-gray-600 lg:text-base">
               Apartey is a community-powered rent intelligence platform designed
-              to help renters make better, smarter housing decisions. It's a
+              to help renters make better, smarter housing decisions. It&#39;s a
               space where renters share honest reviews, experiences, and
-              insights about the homes they've lived in.
+              insights about the homes they&#39;ve lived in.
             </p>
           </div>
 

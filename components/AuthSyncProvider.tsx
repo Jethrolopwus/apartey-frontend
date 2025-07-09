@@ -3,6 +3,7 @@ import { useSession } from 'next-auth/react';
 import { useEffect } from 'react';
 import { useGoogleAuthMutation } from '@/Hooks/use.googleAuth.mutation';
 import { TokenManager } from '@/utils/tokenManager';
+import { SignInResponse } from '@/types/generated';
 
 const AuthSyncProvider: React.FC = () => {
   const { data: session, status } = useSession();
@@ -22,8 +23,8 @@ const AuthSyncProvider: React.FC = () => {
         lastName: session.user.name?.split(' ').slice(1).join(' ') || '',
       };
       googleAuth(googleData, {
-        onSuccess: (response: any) => {
-          const token = response?.token || response?.user?.token;
+        onSuccess: (response: SignInResponse) => {
+          const token = response?.token;
           if (token) {
             TokenManager.setToken(token, 'token');
             console.log('Token set in localStorage:', token);

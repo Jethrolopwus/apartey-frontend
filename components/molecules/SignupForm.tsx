@@ -1,9 +1,7 @@
-
 "use client";
 import React, { useState } from 'react';
 import { EyeIcon, EyeSlashIcon } from '@heroicons/react/24/outline';
 import SignUpButton from '@/components/atoms/Buttons/SIgnUpButton';
-import { FormData } from '@/types/generated';
 import { SignUpFormProps } from '@/types/generated';
 
 const SignUpForm: React.FC<SignUpFormProps> = ({ 

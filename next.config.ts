@@ -3,7 +3,14 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   /* config options here */
   images: {
-    remotePatterns: [new URL("https://apartey-media-storage.s3.eu-north-1.amazonaws.com/public/properties/images/1748812200484-e13ef158-b415-4244-afc8-c8b45a86969f-cover-1748812200484-cover.jpg"                                                                    )],
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "apartey-media-storage.s3.eu-north-1.amazonaws.com",
+        pathname: "/**",
+      },
+    ],
+    domains: ["maps.googleapis.com"],
   },
   keyframes: {
     "caret-blink": {
@@ -14,8 +21,6 @@ const nextConfig: NextConfig = {
   animation: {
     "caret-blink": "caret-blink 1.25s ease-out infinite",
   },
-  
-}
-
+};
 
 export default nextConfig;

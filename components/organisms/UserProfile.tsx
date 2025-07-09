@@ -1,89 +1,44 @@
 "use client";
-import React, { useEffect, useState } from "react";
-import Image from "next/image";
+import React from "react";
 import { useGetUserProfileQuery } from "@/Hooks/use-getuserProfile.query";
 import { useGetProfileCompletionQuery } from "@/Hooks/use-getProfileCompletionStat.query";
 import { Mail, MapPin, Edit3 } from "lucide-react";
 import ProfileCompletionCard from "@/components/molecules/ProfileCompletionCard";
-import { useUpdateProfileMutation } from "@/Hooks/use.updateProfile.mutation";
 import { useRouter } from "next/navigation";
-import { TokenManager } from "@/utils/tokenManager";
-import { useAuthToken } from '@/Hooks/useAuthToken';
+import { useAuthToken } from "@/Hooks/useAuthToken";
+import Image from "next/image";
 
 const ProfilePage = () => {
-  const { data, isLoading, isError, error, refetch } = useGetUserProfileQuery();
+  const { data, isLoading, isError, error } = useGetUserProfileQuery();
   const {
     data: completionData,
     isLoading: isLoadingCompletion,
     isError: isErrorCompletion,
     error: completionError,
   } = useGetProfileCompletionQuery();
-  const { mutate, isLoading: isUpdating, error: updateError, data: updateData } = useUpdateProfileMutation();
   const router = useRouter();
   const user = data?.currentUser;
-  const [form, setForm] = useState<any>(user);
   const token = useAuthToken();
-
-
-  useEffect(() => {
-    if (user) {
-      setForm(user);
-    }
-  }, [user]);
 
   if (!token || isLoading) {
     return <p className="p-4 text-gray-500">Loading profile...</p>;
   }
+
   const handleEditProfile = () => {
     router.push("/edit-profile");
   };
 
-  const handleCancel = () => {
-    setForm(user);
-  };
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
-    setForm((prev: any) => ({ ...prev, [name]: value }));
-  };
-
-  const handleAddressChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setForm((prev: any) => ({
-      ...prev,
-      address: {
-        ...prev.address,
-        [name]: value,
-      },
-    }));
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    mutate(form, {
-      onSuccess: (response) => {
-        console.log('Backend sync successful:', response);
-        if (response?.token) {
-          TokenManager.setToken(response.token, 'token');
-        } else {
-          console.error('No token in backend response:', response);
-        }
-        refetch();
-      },
-    });
-  };
-
-
   if (isError) {
     return (
       <p className="p-4 text-red-500">
-        Error fetching profile: {(error as any)?.message}
+        Error fetching profile:{" "}
+        {(error as unknown as { message: string })?.message}
       </p>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 px-4 py-8 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-gray-50 px-4 py-8 sm:px-6 lg:8">
       <div className="mx-auto max-w-4xl">
         <h1 className="mb-4 text-3xl font-bold text-gray-900">My profile</h1>
 
@@ -94,7 +49,8 @@ const ProfilePage = () => {
 
           {isErrorCompletion && (
             <p className="text-red-500">
-              Error loading completion: {(completionError as any)?.message}
+              Error loading completion:{" "}
+              {(completionError as unknown as { message: string })?.message}
             </p>
           )}
 
@@ -118,10 +74,11 @@ const ProfilePage = () => {
             {/* Profile Image */}
             <div className="mb-4 flex justify-center sm:mb-0 sm:justify-start">
               <div className="relative h-20 w-20 overflow-hidden rounded-full">
-                <img
+                <Image
                   src={user?.profilePicture || "/Ellipse-1.png"}
                   alt={`${user?.firstName || "User"}'s avatar`}
-                  className="object-cover w-full h-full"
+                  layout="fill"
+                  objectFit="cover"
                 />
               </div>
             </div>
@@ -141,9 +98,15 @@ const ProfilePage = () => {
                     <div className="flex items-center justify-center sm:justify-start">
                       <MapPin className="mr-2 h-4 w-4" />
                       <span>
-                        {user?.address?.street ? user.address.street + ", " : ""}
-                        {user?.address?.district ? user.address.district + ", " : ""}
-                        {user?.address?.stateOrRegion ? user.address.stateOrRegion + ", " : ""}
+                        {user?.address?.street
+                          ? user.address.street + ", "
+                          : ""}
+                        {user?.address?.district
+                          ? user.address.district + ", "
+                          : ""}
+                        {user?.address?.stateOrRegion
+                          ? user.address.stateOrRegion + ", "
+                          : ""}
                         {user?.address?.country || "Not specified"}
                       </span>
                     </div>
@@ -181,7 +144,7 @@ const ProfilePage = () => {
 
         {/* Additional Info Card */}
         <div className="rounded-lg bg-white p-6 shadow-sm">
-          <h3 className="mb-4 text-lg font-semibold text-gray-900">
+          <h3 className="mb-4 text-lg font-semibold text-gray-9001">
             Profile Details
           </h3>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 text-sm text-gray-700">
@@ -207,14 +170,27 @@ const ProfilePage = () => {
             </div>
             <div>
               <p className="text-gray-500">Date of Birth</p>
-              <p className="font-medium">{user?.dateOfBirth ? new Date(user.dateOfBirth).toLocaleDateString() : "N/A"}</p>
+              <p className="font-medium">
+                {user?.dateOfBirth
+                  ? new Date(user.dateOfBirth).toLocaleDateString()
+                  : "N/A"}
+              </p>
             </div>
             <div>
               <p className="text-gray-500">Website</p>
               <p className="font-medium">
                 {user?.website ? (
-                  <a href={user.website} target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">{user.website}</a>
-                ) : "N/A"}
+                  <a
+                    href={user.website}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-blue-600 underline"
+                  >
+                    {user.website}
+                  </a>
+                ) : (
+                  "N/A"
+                )}
               </p>
             </div>
           </div>
