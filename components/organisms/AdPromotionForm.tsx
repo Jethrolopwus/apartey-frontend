@@ -36,11 +36,10 @@ const otherServices = [
 ];
 
 type AdPromotionFormProps = {
-  formData: PropertyListingPayload | Partial<PropertyListingPayload>;
   setFormData: React.Dispatch<React.SetStateAction<PropertyListingPayload | Partial<PropertyListingPayload>>>;
 };
 
-const AdPromotionForm: React.FC<AdPromotionFormProps> = ({ formData, setFormData }) => {
+const AdPromotionForm: React.FC<AdPromotionFormProps> = ({ setFormData }) => {
   const [selectedTier, setSelectedTier] = useState('Fast Sale');
   const [selectedServices, setSelectedServices] = useState<string[]>(['10 lifts to the top of the list (daily, 7 days)']);
   
@@ -63,17 +62,15 @@ const AdPromotionForm: React.FC<AdPromotionFormProps> = ({ formData, setFormData
   const totalPrice = totalTierPrice + totalServicesPrice;
 
   useEffect(() => {
-    if (setFormData) {
-      setFormData({
-        ...formData,
-        adPromotion: {
-          selectedTier,
-          selectedServices,
-          totalPrice,
-        },
-      });
-    }
-  }, [selectedTier, selectedServices, totalPrice, formData, setFormData]);
+    setFormData((prev) => ({
+      ...(typeof prev === 'object' && prev !== null ? prev : {}),
+      adPromotion: {
+        selectedTier,
+        selectedServices,
+        totalPrice,
+      },
+    }));
+  }, [selectedTier, selectedServices, totalPrice, setFormData]);
 
   return (
     <div className="w-full">

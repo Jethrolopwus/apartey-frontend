@@ -21,7 +21,6 @@ const AxiosInstance = axios.create({
   },
 });
 
-// Always read the token fresh from TokenManager for every request
 AxiosInstance.interceptors.request.use(
   (config) => {
     const token = TokenManager.getToken();
@@ -59,8 +58,11 @@ class BaseURL {
 
   httpGoogleAuthCallback = async (googleData: any): Promise<SignInResponse> => {
     try {
-      const response = await AxiosInstance.post(endpoints.googleAuth, googleData);
-      console.log("Data", response.data)
+      const response = await AxiosInstance.post(
+        endpoints.googleAuth,
+        googleData
+      );
+      console.log("Data", response.data);
       return response.data;
     } catch (error: any) {
       throw error;
@@ -197,14 +199,14 @@ class BaseURL {
 
       if (!token) throw new Error("No authentication token found.");
 
-      console.log('Update Data', data)
+      console.log("Update Data", data);
 
       let payloadToSend: any = data;
       let headers: any = {
         Authorization: `Bearer ${token}`,
-        'Content-Type': 'multipart/form-data'
+        "Content-Type": "multipart/form-data",
       };
-        payloadToSend = data;
+      payloadToSend = data;
 
       const response = await AxiosInstance.patch(
         endpoints.updateProfile,
@@ -221,7 +223,10 @@ class BaseURL {
       throw error;
     }
   };
-  httpUpdatePropertyToggleLike = async (id: string, data: any): Promise<RoleSubmissionResponse> => {
+  httpUpdatePropertyToggleLike = async (
+    id: string,
+    data: any
+  ): Promise<RoleSubmissionResponse> => {
     try {
       const token =
         localStorage.getItem("authToken") ||
@@ -387,7 +392,6 @@ class BaseURL {
     }
   };
 
-
   httpWriteReview = async (id: string, data: ReviewFormData) => {
     try {
       const token =
@@ -534,7 +538,10 @@ class BaseURL {
       throw new Error(error.response?.data?.message || "Search failed");
     }
   };
-  httpUpdateReviewsToggleLike = async (id: string, data: any): Promise<RoleSubmissionResponse> => {
+  httpUpdateReviewsToggleLike = async (
+    id: string,
+    data: any
+  ): Promise<RoleSubmissionResponse> => {
     try {
       const token =
         localStorage.getItem("authToken") ||
@@ -563,7 +570,10 @@ class BaseURL {
       throw error;
     }
   };
-  httpUpdateReviewsFlag = async (id: string, data: any): Promise<RoleSubmissionResponse> => {
+  httpUpdateReviewsFlag = async (
+    id: string,
+    data: any
+  ): Promise<RoleSubmissionResponse> => {
     try {
       const token =
         localStorage.getItem("authToken") ||

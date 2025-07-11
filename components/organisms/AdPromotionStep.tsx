@@ -12,9 +12,9 @@ type AdPromotionStepProps = {
   setFormData: React.Dispatch<React.SetStateAction<PropertyListingPayload | Partial<PropertyListingPayload>>>;
 };
 
-const AdPromotionStep: React.FC<AdPromotionStepProps> = ({ onBack, onSubmit, formData, setFormData }) => (
+const AdPromotionStep: React.FC<AdPromotionStepProps> = ({ onBack, onSubmit,  setFormData }) => (
   <div className="max-w-4xl w-full">
-    <AdPromotionForm formData={formData} setFormData={setFormData} />
+    <AdPromotionForm setFormData={setFormData} />
     <div className="flex justify-between mt-8">
        <button onClick={onBack} className="flex items-center px-6 py-3 border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-colors">
         <ChevronLeft className="w-4 h-4 mr-2" />Back

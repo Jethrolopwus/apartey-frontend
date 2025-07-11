@@ -37,7 +37,13 @@ const Navbar: React.FC<NavbarProps> = () => {
   }, [authData]);
 
   const navItems = [
-    { label: "Home", href: "/", active: pathname === "/", hasDropdown: false },
+    { 
+      label: "Home", 
+      href: "/", 
+      active: pathname === "/", 
+      hasDropdown: false,
+      isDynamic: true // Mark Home as dynamic
+    },
     {
       label: "Listings",
       href: "/listings",
@@ -66,33 +72,28 @@ const Navbar: React.FC<NavbarProps> = () => {
 
   const handleLogoOrHomeClick = (e: React.MouseEvent) => {
     e.preventDefault();
+    console.log("Logo/Home clicked, authData:", authData); // Debug log
     if (!authData) {
       router.push("/");
       return;
     }
     const userRole =
       authData.user?.role || authData.role || authData.currentUserRole?.role || "renter";
+    console.log("User role:", userRole); // Debug log
     let homepage = "/";
     if (userRole.toLowerCase() === "homeowner") homepage = "/landlord";
     else if (userRole.toLowerCase() === "agent") homepage = "/agent";
+    console.log("Routing to homepage:", homepage); // Debug log
     router.push(homepage);
   };
 
   const handleUserIconClick = () => {
+    console.log("User icon clicked, authData:", authData); // Debug log
     if (!authData ) {
       router.push("/signin");
       return;
     }
-    // Authenticated: redirect to role homepage if not already there
-    const userRole =
-      authData.user?.role || authData.role || authData.currentUserRole?.role || "renter";
-    let homepage = "/";
-    if (userRole.toLowerCase() === "homeowner") homepage = "/landlord";
-    else if (userRole.toLowerCase() === "agent") homepage = "/agent";
-    if (pathname !== homepage) {
-      router.push(homepage);
-      return;
-    }
+    console.log("Setting dropdown to true"); // Debug log
     setIsUserDropdownOpen(true);
   };
 
@@ -165,6 +166,12 @@ const Navbar: React.FC<NavbarProps> = () => {
                           ? "text-[#C85212]"
                           : "text-gray-700 hover:text-[#C85212]"
                       }`}
+                      onClick={(e) => {
+                        if (item.isDynamic && item.label === "Home") {
+                          e.preventDefault();
+                          handleLogoOrHomeClick(e);
+                        }
+                      }}
                     >
                       <span>{item.label}</span>
                     </Link>
@@ -265,7 +272,13 @@ const Navbar: React.FC<NavbarProps> = () => {
               <div key={item.label}>
                 <Link
                   href={item.href}
-                  onClick={() => setIsMobileMenuOpen(false)}
+                  onClick={(e) => {
+                    setIsMobileMenuOpen(false);
+                    if (item.isDynamic && item.label === "Home") {
+                      e.preventDefault();
+                      handleLogoOrHomeClick(e);
+                    }
+                  }}
                   className={`block px-3 py-2 text-base font-medium ${
                     item.active
                       ? "text-[#C85212] bg-orange-50"
