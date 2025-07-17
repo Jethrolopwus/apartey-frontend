@@ -17,14 +17,14 @@ const ListingsDropdown: React.FC<ListingsDropdownProps> = ({ isOpen, onClose, on
       label: 'Rent Home',
       description: 'Find rental properties',
       icon: Home,
-      href: '/listings/rent',
+      href: '/rent',
     },
     {
       id: 'swap-home',
       label: 'Swap Home',
       description: 'Exchange properties',
       icon: ArrowRightLeft,
-      href: '/listings/swap',
+      href: '/home-swap',
     }
   ];
 

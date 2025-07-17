@@ -32,10 +32,10 @@ const AmenitiesAccessibility: React.FC<AmenitiesAccessibilityProps> = ({
     dryer: "Dryer",
     microwave: "Microwave",
   };
-  
+
   const isApplianceSelected = (appliance: string): boolean =>
     appliances.includes(APPLIANCE_MAP[appliance] || appliance);
-    
+
   const toggleAppliance = (appliance: string, checked: boolean) => {
     let updated: string[];
     const mapped = APPLIANCE_MAP[appliance] || appliance;
@@ -58,10 +58,10 @@ const AmenitiesAccessibility: React.FC<AmenitiesAccessibilityProps> = ({
     parking: "Parking lot",
     security: "Security system",
   };
-  
+
   const isFacilitySelected = (facility: string): boolean =>
     buildingFacilities.includes(FACILITY_MAP[facility] || facility);
-    
+
   const toggleFacility = (facility: string, checked: boolean) => {
     let updated: string[];
     const mapped = FACILITY_MAP[facility] || facility;
@@ -74,35 +74,38 @@ const AmenitiesAccessibility: React.FC<AmenitiesAccessibilityProps> = ({
   };
 
   // Custom Inputs
-  const handleCustomInput = (type: "appliance" | "facility" | "coverage", value: string) => {
+  const handleCustomInput = (
+    type: "appliance" | "facility" | "coverage",
+    value: string
+  ) => {
     if (!value.trim()) return;
     const newItems = value
       .split(",")
       .map((item) => item.trim())
       .filter((item) => item.length > 0);
-      
+
     if (type === "appliance") {
       const existingItems = [...appliances];
-      const itemsToAdd = newItems.filter((item) => !existingItems.includes(item));
+      const itemsToAdd = newItems.filter(
+        (item) => !existingItems.includes(item)
+      );
       onAppliancesChange([...existingItems, ...itemsToAdd]);
     } else if (type === "facility") {
       const existingItems = [...buildingFacilities];
-      const itemsToAdd = newItems.filter((item) => !existingItems.includes(item));
+      const itemsToAdd = newItems.filter(
+        (item) => !existingItems.includes(item)
+      );
       onBuildingFacilitiesChange([...existingItems, ...itemsToAdd]);
     } else if (type === "coverage") {
       const existingItems = [...costOfRepairsCoverage];
-      const itemsToAdd = newItems.filter((item) => !existingItems.includes(item));
+      const itemsToAdd = newItems.filter(
+        (item) => !existingItems.includes(item)
+      );
       onCostOfRepairsCoverageChange([...existingItems, ...itemsToAdd]);
     }
   };
 
-  const LANGUAGE_OPTIONS = [
-    "English",
-    "Yoruba",
-    "Hausa",
-    "Igbo",
-    "Other",
-  ];
+  const LANGUAGE_OPTIONS = ["English", "Yoruba", "Hausa", "Igbo", "Other"];
 
   return (
     <div>
@@ -133,7 +136,11 @@ const AmenitiesAccessibility: React.FC<AmenitiesAccessibilityProps> = ({
                   checked={isApplianceSelected(appliance)}
                   onChange={(e) => {
                     toggleAppliance(appliance, e.target.checked);
-                    console.log('Appliance:', APPLIANCE_MAP[appliance] || appliance, e.target.checked);
+                    console.log(
+                      "Appliance:",
+                      APPLIANCE_MAP[appliance] || appliance,
+                      e.target.checked
+                    );
                   }}
                   className="w-4 h-4 text-[#C85212] bg-gray-100 border-gray-300 rounded focus:ring-[#C85212] focus:ring-2"
                 />
@@ -161,7 +168,7 @@ const AmenitiesAccessibility: React.FC<AmenitiesAccessibilityProps> = ({
               placeholder="Enter other appliances"
               onBlur={(e) => {
                 handleCustomInput("appliance", e.target.value);
-                console.log('Custom Appliance:', e.target.value);
+                console.log("Custom Appliance:", e.target.value);
                 e.target.value = "";
               }}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#C85212] focus:border-transparent"
@@ -215,7 +222,11 @@ const AmenitiesAccessibility: React.FC<AmenitiesAccessibilityProps> = ({
                   checked={isFacilitySelected(facility)}
                   onChange={(e) => {
                     toggleFacility(facility, e.target.checked);
-                    console.log('Facility:', FACILITY_MAP[facility] || facility, e.target.checked);
+                    console.log(
+                      "Facility:",
+                      FACILITY_MAP[facility] || facility,
+                      e.target.checked
+                    );
                   }}
                   className="w-4 h-4 text-[#C85212] bg-gray-100 border-gray-300 rounded focus:ring-[#C85212] focus:ring-2"
                 />
@@ -243,7 +254,7 @@ const AmenitiesAccessibility: React.FC<AmenitiesAccessibilityProps> = ({
               placeholder="Enter other facilities"
               onBlur={(e) => {
                 handleCustomInput("facility", e.target.value);
-                console.log('Custom Facility:', e.target.value);
+                console.log("Custom Facility:", e.target.value);
                 e.target.value = "";
               }}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#C85212] focus:border-transparent"
@@ -269,11 +280,13 @@ const AmenitiesAccessibility: React.FC<AmenitiesAccessibilityProps> = ({
             </div>
           )}
         </div>
-        
+
         {/* Landlord Languages */}
         <div className="border border-gray-200 rounded-lg p-4">
           <h3 className="font-medium text-gray-900 mb-2">Landlord Languages</h3>
-          <p className="text-sm text-gray-600 mb-4">Select the languages spoken by the landlord</p>
+          <p className="text-sm text-gray-600 mb-4">
+            Select the languages spoken by the landlord
+          </p>
           <div className="flex flex-wrap gap-4">
             {LANGUAGE_OPTIONS.map((lang) => (
               <label key={lang} className="flex items-center gap-2">
@@ -281,13 +294,15 @@ const AmenitiesAccessibility: React.FC<AmenitiesAccessibilityProps> = ({
                   type="checkbox"
                   value={lang}
                   checked={landlordLanguages.includes(lang)}
-                  onChange={e => {
+                  onChange={(e) => {
                     if (e.target.checked) {
                       onLandlordLanguagesChange([...landlordLanguages, lang]);
                     } else {
-                      onLandlordLanguagesChange(landlordLanguages.filter(l => l !== lang));
+                      onLandlordLanguagesChange(
+                        landlordLanguages.filter((l) => l !== lang)
+                      );
                     }
-                    console.log('Landlord Language:', lang, e.target.checked);
+                    console.log("Landlord Language:", lang, e.target.checked);
                   }}
                   className="w-4 h-4 text-[#C85212] bg-gray-100 border-gray-300 rounded focus:ring-[#C85212] focus:ring-2"
                 />
@@ -298,10 +313,17 @@ const AmenitiesAccessibility: React.FC<AmenitiesAccessibilityProps> = ({
           {/* Selected Languages Display */}
           {landlordLanguages.length > 0 && (
             <div className="mt-4 p-3 bg-orange-50 border border-orange-200 rounded-md">
-              <h4 className="text-sm font-medium text-[#C85212] mb-2">Selected Languages:</h4>
+              <h4 className="text-sm font-medium text-[#C85212] mb-2">
+                Selected Languages:
+              </h4>
               <div className="flex flex-wrap gap-2">
                 {landlordLanguages.map((lang, idx) => (
-                  <span key={idx} className="inline-flex items-center px-2 py-1 bg-orange-100 text-[#C85212] text-xs font-medium rounded-full">{lang}</span>
+                  <span
+                    key={idx}
+                    className="inline-flex items-center px-2 py-1 bg-orange-100 text-[#C85212] text-xs font-medium rounded-full"
+                  >
+                    {lang}
+                  </span>
                 ))}
               </div>
             </div>

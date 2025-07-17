@@ -143,10 +143,16 @@ const Footer: React.FC = () => {
                 Terms of Service
               </Link>
               <Link
-                href="/cookies-settings"
+                href="/cookie-settings"
                 className="text-sm text-gray-600 transition-colors hover:text-gray-900"
               >
                 Cookies Settings
+              </Link>
+              <Link
+                href="/content-policy"
+                className="text-sm text-gray-600 transition-colors hover:text-gray-900"
+              >
+                Content policy
               </Link>
             </div>
           </div>

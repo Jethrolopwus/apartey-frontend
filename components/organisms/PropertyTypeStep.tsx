@@ -31,8 +31,8 @@ const PropertyTypeStep: React.FC<StepProps> = ({
   const [propertyType, setPropertyType] = useState(
     formData.propertyType || "Apartment"
   );
-  const [condition, setCondition] = useState(
-    formData.condition || "Good Condition"
+  const [condition, setCondition] = useState<"Good Condition" | "New Building" | "Renovated">(
+    (formData.condition as "Good Condition" | "New Building" | "Renovated") || "Good Condition"
   );
   const [petPolicy, setPetPolicy] = useState(
     formData.petPolicy || "pet-friendly"
@@ -142,7 +142,7 @@ const PropertyTypeStep: React.FC<StepProps> = ({
                 name="condition"
                 value={cond.id}
                 checked={condition === cond.id}
-                onChange={() => setCondition(cond.id)}
+                onChange={() => setCondition(cond.id as "Good Condition" | "New Building" | "Renovated")}
                 className="w-4 h-4 text-orange-500 border-gray-300 focus:ring-orange-500"
               />
               <span className="ml-3 text-sm text-gray-700">{cond.label}</span>

@@ -21,109 +21,131 @@ interface PhotoVideoUploaderProps {
 }
 
 const PhotoVideoUploader: React.FC<PhotoVideoUploaderProps> = ({
+  formData,
   setFormData,
 }) => {
-  const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
-  const [coverIndex, setCoverIndex] = useState<number | null>(null);
+  // Separate state for cover photo and media uploads
+  const [coverPhoto, setCoverPhoto] = useState<File | null>(null);
+  const [coverPreview, setCoverPreview] = useState<string>("");
+  const [mediaUploads, setMediaUploads] = useState<UploadedFile[]>([]);
   const [videoTourLink, setVideoTourLink] = useState("");
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const coverInputRef = useRef<HTMLInputElement>(null);
+  const mediaInputRef = useRef<HTMLInputElement>(null);
 
-  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+  // Handle cover photo change
+  const handleCoverChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file && file.type.startsWith("image/")) {
+      setCoverPhoto(file);
+      setCoverPreview(URL.createObjectURL(file));
+      setFormData((prev) => ({
+        ...prev,
+        media: {
+          ...prev.media,
+          coverPhoto: file,
+          videoTourLink,
+          uploads: prev.media?.uploads || [],
+        },
+      }));
+    }
+  };
+
+  // Handle media uploads change
+  const handleMediaChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(event.target.files || []);
-    const newFiles: UploadedFile[] = [];
-
-    files.forEach((file) => {
-      const isImage = file.type.startsWith("image/");
-      const isVideo = file.type.startsWith("video/");
-
-      if (isImage && file.size > 8 * 1024 * 1024) {
-        alert("Max photo size is 8MB"); // Replace with a better notification system
-        return;
-      }
-      if (isVideo && file.size > 10 * 1024 * 1024) {
-        alert("Max video size is 10MB"); // Replace with a better notification system
-        return;
-      }
-
-      if (isImage || isVideo) {
-        newFiles.push({
-          file,
-          preview: URL.createObjectURL(file),
-          type: isImage ? "image" : "video",
-        });
-      }
-    });
-
-    const updatedFiles = [...uploadedFiles, ...newFiles];
-    setUploadedFiles(updatedFiles);
-
-    if (coverIndex === null && updatedFiles.some((f) => f.type === "image")) {
-      const firstImageIndex = updatedFiles.findIndex((f) => f.type === "image");
-      setCoverIndex(firstImageIndex);
-    }
+    const newFiles: UploadedFile[] = files.map((file) => ({
+      file,
+      preview: URL.createObjectURL(file),
+      type: file.type.startsWith("image/") ? "image" : "video",
+    }));
+    const allFiles = [...mediaUploads, ...newFiles];
+    setMediaUploads(allFiles);
+    setFormData((prev) => ({
+      ...prev,
+      media: {
+        ...prev.media,
+        uploads: allFiles.map((f) => f.file),
+        coverPhoto: coverPhoto || prev.media?.coverPhoto,
+        videoTourLink,
+      },
+    }));
   };
 
-  const triggerFileSelect = () => {
-    fileInputRef.current?.click();
+  const triggerCoverSelect = () => {
+    coverInputRef.current?.click();
+  };
+  const triggerMediaSelect = () => {
+    mediaInputRef.current?.click();
   };
 
-  const removeFile = (indexToRemove: number) => {
-    const fileToRemove = uploadedFiles[indexToRemove];
+  // Remove cover photo
+  const removeCoverPhoto = () => {
+    if (coverPreview) URL.revokeObjectURL(coverPreview);
+    setCoverPhoto(null);
+    setCoverPreview("");
+    setFormData((prev) => ({
+      ...prev,
+      media: {
+        ...prev.media,
+        coverPhoto: undefined,
+        uploads: prev.media?.uploads || [],
+        videoTourLink,
+      },
+    }));
+  };
+
+  // Remove media upload
+  const removeMediaFile = (indexToRemove: number) => {
+    const fileToRemove = mediaUploads[indexToRemove];
     URL.revokeObjectURL(fileToRemove.preview);
-
-    const updatedFiles = uploadedFiles.filter((_, i) => i !== indexToRemove);
-    setUploadedFiles(updatedFiles);
-
-    if (indexToRemove === coverIndex) {
-      const newCoverIndex = updatedFiles.findIndex((f) => f.type === "image");
-      setCoverIndex(newCoverIndex !== -1 ? newCoverIndex : null);
-    } else if (coverIndex !== null && indexToRemove < coverIndex) {
-      setCoverIndex(coverIndex - 1);
-    }
-  };
-
-  const setAsCover = (index: number) => {
-    if (uploadedFiles[index].type === "image") {
-      setCoverIndex(index);
-    }
+    const updatedFiles = mediaUploads.filter((_, i) => i !== indexToRemove);
+    setMediaUploads(updatedFiles);
+    setFormData((prev) => ({
+      ...prev,
+      media: {
+        ...prev.media,
+        uploads: updatedFiles.map((f) => f.file),
+        coverPhoto: coverPhoto || prev.media?.coverPhoto,
+        videoTourLink,
+      },
+    }));
   };
 
   useEffect(() => {
     // Cleanup object URLs on unmount
     return () => {
-      uploadedFiles.forEach((file) => URL.revokeObjectURL(file.preview));
+      if (coverPreview) URL.revokeObjectURL(coverPreview);
+      mediaUploads.forEach((file) => URL.revokeObjectURL(file.preview));
     };
-  }, [uploadedFiles]);
+  }, [coverPreview, mediaUploads]);
 
-  const orderedFiles = [...uploadedFiles];
-  if (coverIndex !== null && coverIndex < uploadedFiles.length) {
-    const [coverFile] = orderedFiles.splice(coverIndex, 1);
-    orderedFiles.unshift(coverFile);
-  }
-
+  // Initialize from formData
   useEffect(() => {
-    if (!setFormData) return;
-    if (uploadedFiles.length === 0) {
-      setFormData((prev) => ({
-        ...prev,
-        media: undefined,
-      }));
-      return;
+    if (formData && formData.media) {
+      // Cover photo
+      if (formData.media.coverPhoto instanceof File) {
+        setCoverPhoto(formData.media.coverPhoto);
+        setCoverPreview(URL.createObjectURL(formData.media.coverPhoto));
+      } else if (typeof formData.media.coverPhoto === "string") {
+        setCoverPreview(formData.media.coverPhoto);
+      }
+      // Media uploads
+      if (Array.isArray(formData.media.uploads)) {
+        const newFiles = formData.media.uploads;
+        const files = newFiles.map((file) => ({
+          file,
+          preview: URL.createObjectURL(file),
+          type: file.type.startsWith("image/") ? "image" : "video",
+        }));
+        setMediaUploads(files as UploadedFile[]);
+      }
     }
-    const coverPhotoFile =
-      coverIndex !== null && uploadedFiles[coverIndex]?.type === "image"
-        ? uploadedFiles[coverIndex].file
-        : undefined;
-    setFormData((prev) => ({
-      ...prev,
-      media: {
-        ...prev.media,
-        coverPhoto: coverPhotoFile,
-        uploads: uploadedFiles.map((f) => f.file),
-        videoTourLink,
-      },
-    }));
-  }, [uploadedFiles, coverIndex, videoTourLink, setFormData]);
+    // Clean up on unmount
+    return () => {
+      mediaUploads.forEach((file) => URL.revokeObjectURL(file.preview));
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [formData?.media?.uploads, formData?.media?.coverPhoto]);
 
   return (
     <div className="w-full">
@@ -137,73 +159,93 @@ const PhotoVideoUploader: React.FC<PhotoVideoUploaderProps> = ({
         The maximum video size is 10 MB. Formats: mp4, mov.
       </p>
 
-      <div className="grid grid-cols-3 gap-4">
-        {orderedFiles.map((file) => {
-          const originalIndex = uploadedFiles.indexOf(file);
-          const isCover = originalIndex === coverIndex;
+      {/* Cover Photo Section */}
+      <div className="mb-6">
+        <label className="block text-sm font-medium text-gray-700 mb-2">Cover Photo <span className="text-red-500">*</span></label>
+        {coverPreview ? (
+          <div className="relative w-40 h-40 mb-2">
+            <Image
+              src={coverPreview}
+              alt="cover preview"
+              fill
+              className="object-cover w-full h-full rounded-lg border"
+              style={{ objectFit: 'cover' }}
+            />
+            <button
+              onClick={removeCoverPhoto}
+              className="absolute top-2 right-2 p-1 bg-white rounded-full shadow"
+              title="Remove cover photo"
+            >
+              <X size={16} className="text-gray-800" />
+            </button>
+          </div>
+        ) : (
+          <div
+            onClick={triggerCoverSelect}
+            className="flex flex-col items-center justify-center w-40 h-40 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors"
+          >
+            <PlusCircle className="text-gray-400 mb-2" size={32} />
+            <p className="text-sm text-gray-600 text-center">Upload cover photo</p>
+          </div>
+        )}
+        <input
+          type="file"
+          ref={coverInputRef}
+          onChange={handleCoverChange}
+          accept="image/jpeg,image/png,image/jpg"
+          className="hidden"
+        />
+      </div>
 
-          return (
+      {/* Media Uploads Section */}
+      <div className="mb-6">
+        <label className="block text-sm font-medium text-gray-700 mb-2">Additional Photos / Videos</label>
+        <div className="grid grid-cols-3 gap-4">
+          {mediaUploads.map((file, idx) => (
             <div
               key={file.preview}
               className="relative group rounded-lg overflow-hidden border aspect-w-1 aspect-h-1"
             >
               <Image
                 src={file.preview}
-                alt={`upload preview`}
-                layout="fill"
-                objectFit="cover"
+                alt="upload preview"
+                fill
+                className="object-cover w-full h-full"
+                style={{ objectFit: "cover" }}
               />
-
               {file.type === "video" && (
                 <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-30">
                   <PlayCircle size={40} className="text-white" />
                 </div>
               )}
-
-              {isCover && file.type === "image" && (
-                <div className="absolute top-2 left-2 bg-white text-gray-800 text-xss font-semibold px-2 py-1 rounded-md">
-                  Cover
-                </div>
-              )}
-              <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-40 transition-all duration-300 flex flex-col items-center justify-center space-y-2">
-                <button
-                  onClick={() => removeFile(originalIndex)}
-                  className="absolute top-2 right-2 p-1 bg-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity z-10"
-                >
-                  <X size={16} className="text-gray-800" />
-                </button>
-                {!isCover && file.type === "image" && (
-                  <button
-                    onClick={() => setAsCover(originalIndex)}
-                    className="text-white text-sm font-semibold opacity-0 group-hover:opacity-100 transition-opacity bg-black bg-opacity-50 px-3 py-1 rounded-md"
-                  >
-                    Set as cover
-                  </button>
-                )}
-              </div>
+              <button
+                onClick={() => removeMediaFile(idx)}
+                className="absolute top-2 right-2 p-1 bg-white rounded-full opacity-80 hover:opacity-100 transition-opacity z-10"
+                title="Remove file"
+              >
+                <X size={16} className="text-gray-800" />
+              </button>
             </div>
-          );
-        })}
-        <div
-          onClick={triggerFileSelect}
-          className="flex flex-col items-center justify-center w-full p-4 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors aspect-w-1 aspect-h-1"
-        >
-          <PlusCircle className="text-gray-400 mb-2" size={32} />
-          <p className="text-sm text-gray-600 text-center">
-            Upload photos / videos
-          </p>
+          ))}
+          <div
+            onClick={triggerMediaSelect}
+            className="flex flex-col items-center justify-center w-full p-4 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors aspect-w-1 aspect-h-1"
+          >
+            <PlusCircle className="text-gray-400 mb-2" size={32} />
+            <p className="text-sm text-gray-600 text-center">Upload photos / videos</p>
+          </div>
         </div>
+        <input
+          type="file"
+          ref={mediaInputRef}
+          onChange={handleMediaChange}
+          multiple
+          accept="image/jpeg,image/png,image/jpg,video/mp4,video/mov"
+          className="hidden"
+        />
       </div>
 
-      <input
-        type="file"
-        ref={fileInputRef}
-        onChange={handleFileChange}
-        multiple
-        accept="image/jpeg,image/png,image/jpg,video/mp4,video/mov"
-        className="hidden"
-      />
-
+      {/* Video Tour Link */}
       <div className="mt-8">
         <label
           htmlFor="video-tour-link"

@@ -8,6 +8,134 @@ import { useUpdatePropertyToggleLikeMutation } from "@/Hooks/use.propertyLikeTog
 import { useGetUserFavoriteQuery } from "@/Hooks/use-getUsersFavorites.query";
 import { toast } from "react-hot-toast";
 import Image from "next/image";
+import type { FC } from "react";
+
+export interface ListingCardProps {
+  id: string;
+  imageUrl: string;
+  title: string;
+  location: string;
+  rating: number;
+  reviewCount: number;
+  beds: number;
+  baths: number;
+  size: string;
+  oldPrice: string;
+  newPrice: string;
+  isLiked: boolean;
+  onLike: (id: string) => void;
+  onClick: (id: string) => void;
+}
+
+export const ListingCard: FC<ListingCardProps> = ({
+  id,
+  imageUrl,
+  title,
+  location,
+  rating,
+  reviewCount,
+  beds,
+  baths,
+  size,
+  oldPrice,
+  newPrice,
+  isLiked,
+  onLike,
+  onClick,
+}) => {
+  return (
+    <article
+      key={id}
+      onClick={() => onClick(id)}
+      className="cursor-pointer bg-white rounded-xl shadow hover:shadow-md transition-shadow duration-300 overflow-hidden relative border border-gray-100 flex flex-col"
+      style={{ minHeight: "370px", boxSizing: "border-box" }}
+    >
+      {/* image */}
+      <div className="relative w-full h-40">
+        <Image
+          src={imageUrl}
+          alt={title}
+          width={400}
+          height={160}
+          className="w-full h-full object-cover"
+          onError={(e) => {
+            (e.currentTarget as HTMLImageElement).src = "/Estate2.png";
+          }}
+          priority={false}
+        />
+        {/* Sale/Rent badge */}
+        <span className="absolute top-3 left-3 bg-[#C85212] text-white text-xs font-semibold px-3 py-1 rounded-full shadow">
+          Sale
+        </span>
+        <span className="absolute top-3 right-3 bg-teal-600 text-white text-xs font-semibold px-3 py-1 rounded-full shadow">
+          Rent
+        </span>
+      </div>
+      {/* body */}
+      <div className="p-4 space-y-2 flex-1 flex flex-col justify-between">
+        <div>
+          <h3
+            className="font-medium text-gray-800 text-base truncate mb-1"
+            title={title}
+          >
+            {title}
+          </h3>
+          <p className="text-sm text-gray-500 mb-1">{location}</p>
+          <div className="flex items-center gap-2 text-sm text-gray-600 mb-1">
+            <div className="flex gap-0.5 text-yellow-500">
+              {[...Array(5)].map((_, i) => (
+                <Star
+                  key={i}
+                  size={14}
+                  className={
+                    i < Math.floor(rating)
+                      ? "fill-yellow-500"
+                      : "text-gray-300"
+                  }
+                />
+              ))}
+            </div>
+            <span className="text-xs font-medium text-gray-700">
+              {rating.toFixed(1)} ({reviewCount} reviews)
+            </span>
+          </div>
+          <div className="flex items-center text-gray-700 text-xs gap-4 mb-1">
+            <span className="flex items-center gap-1" title={`${beds} bedrooms`}>
+              <Bed size={14} /> {beds}
+            </span>
+            <span className="flex items-center gap-1" title={`${baths} bathrooms`}>
+              <Bath size={14} /> {baths}
+            </span>
+            <span className="flex items-center gap-1" title={`${size} area`}>
+              <Ruler size={14} /> {size}
+            </span>
+          </div>
+          <div className="flex items-center gap-2 text-xs text-gray-500">
+            <span className="line-through">{oldPrice}</span>
+            <span className="text-gray-800 font-semibold">{newPrice}</span>
+          </div>
+        </div>
+        <div className="flex items-center justify-between mt-2">
+          <button
+            className={`text-gray-400 hover:text-teal-600 transition-colors ${
+              isLiked ? "fill-red-500 text-red-500" : ""
+            }`}
+            onClick={(e) => {
+              e.stopPropagation();
+              onLike(id);
+            }}
+            title={isLiked ? "Remove from favorites" : "Add to favorites"}
+          >
+            <Heart
+              size={20}
+              className={isLiked ? "fill-red-500 text-red-500" : ""}
+            />
+          </button>
+        </div>
+      </div>
+    </article>
+  );
+};
 
 const Listings = () => {
   const router = useRouter();
@@ -185,126 +313,38 @@ const Listings = () => {
           {listings.map((listing) => {
             const isLiked = likedIds.includes(listing.id);
             return (
-              <article
+              <ListingCard
                 key={listing.id}
+                id={listing.id}
+                imageUrl={listing.imageUrl}
+                title={listing.title}
+                location={listing.location}
+                rating={listing.rating}
+                reviewCount={listing.reviewCount}
+                beds={listing.beds}
+                baths={listing.baths}
+                size={listing.size}
+                oldPrice={listing.oldPrice}
+                newPrice={listing.newPrice}
+                isLiked={isLiked}
+                onLike={() => {
+                  setLikedIds((prev) =>
+                    prev.includes(listing.id)
+                      ? prev.filter((id) => id !== listing.id)
+                      : [...prev, listing.id]
+                  );
+                  toggleLike(listing.id, {
+                    onSuccess: () => {
+                      toast.success("Favorite updated!");
+                      refetchFavorites();
+                    },
+                    onError: () => {
+                      toast.error("Failed to update favorite.");
+                    },
+                  });
+                }}
                 onClick={() => router.push(`/listings/${listing.id}`)}
-                className="cursor-pointer bg-white rounded-xl shadow hover:shadow-md transition-shadow duration-300 overflow-hidden relative border border-gray-100 flex flex-col"
-                style={{ minHeight: "370px", boxSizing: "border-box" }}
-              >
-                {/* image */}
-                <div className="relative w-full h-40">
-                  <Image
-                    src={listing.imageUrl}
-                    alt={listing.title}
-                    width={400}
-                    height={160}
-                    className="w-full h-full object-cover"
-                    onError={(e) => {
-                      (e.currentTarget as HTMLImageElement).src =
-                        "/Estate2.png";
-                    }}
-                    priority={false}
-                  />
-                  {/* Sale/Rent badge */}
-                  <span className="absolute top-3 left-3 bg-[#C85212] text-white text-xs font-semibold px-3 py-1 rounded-full shadow">
-                    Sale
-                  </span>
-                  <span className="absolute top-3 right-3 bg-teal-600 text-white text-xs font-semibold px-3 py-1 rounded-full shadow">
-                    Rent
-                  </span>
-                </div>
-                {/* body */}
-                <div className="p-4 space-y-2 flex-1 flex flex-col justify-between">
-                  <div>
-                    <h3
-                      className="font-medium text-gray-800 text-base truncate mb-1"
-                      title={listing.title}
-                    >
-                      {listing.title}
-                    </h3>
-                    <p className="text-sm text-gray-500 mb-1">
-                      {listing.location}
-                    </p>
-                    <div className="flex items-center gap-2 text-sm text-gray-600 mb-1">
-                      <div className="flex gap-0.5 text-yellow-500">
-                        {[...Array(5)].map((_, i) => (
-                          <Star
-                            key={i}
-                            size={14}
-                            className={
-                              i < Math.floor(listing.rating)
-                                ? "fill-yellow-500"
-                                : "text-gray-300"
-                            }
-                          />
-                        ))}
-                      </div>
-                      <span className="text-xs font-medium text-gray-700">
-                        {listing.rating.toFixed(1)} ({listing.reviewCount}{" "}
-                        reviews)
-                      </span>
-                    </div>
-                    <div className="flex items-center text-gray-700 text-xs gap-4 mb-1">
-                      <span
-                        className="flex items-center gap-1"
-                        title={`${listing.beds} bedrooms`}
-                      >
-                        <Bed size={14} /> {listing.beds}
-                      </span>
-                      <span
-                        className="flex items-center gap-1"
-                        title={`${listing.baths} bathrooms`}
-                      >
-                        <Bath size={14} /> {listing.baths}
-                      </span>
-                      <span
-                        className="flex items-center gap-1"
-                        title={`${listing.size} area`}
-                      >
-                        <Ruler size={14} /> {listing.size}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-2 text-xs text-gray-500">
-                      <span className="line-through">{listing.oldPrice}</span>
-                      <span className="text-gray-800 font-semibold">
-                        {listing.newPrice}
-                      </span>
-                    </div>
-                  </div>
-                  <div className="flex items-center justify-between mt-2">
-                    <button
-                      className={`text-gray-400 hover:text-teal-600 transition-colors ${
-                        isLiked ? "fill-red-500 text-red-500" : ""
-                      }`}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setLikedIds((prev) =>
-                          prev.includes(listing.id)
-                            ? prev.filter((id) => id !== listing.id)
-                            : [...prev, listing.id]
-                        );
-                        toggleLike(listing.id, {
-                          onSuccess: () => {
-                            toast.success("Favorite updated!");
-                            refetchFavorites();
-                          },
-                          onError: () => {
-                            toast.error("Failed to update favorite.");
-                          },
-                        });
-                      }}
-                      title={
-                        isLiked ? "Remove from favorites" : "Add to favorites"
-                      }
-                    >
-                      <Heart
-                        size={20}
-                        className={isLiked ? "fill-red-500 text-red-500" : ""}
-                      />
-                    </button>
-                  </div>
-                </div>
-              </article>
+              />
             );
           })}
         </div>

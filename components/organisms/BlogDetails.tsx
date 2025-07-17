@@ -138,7 +138,7 @@ const BlogDetails: React.FC<BlogDetailsProps> = ({ id }) => {
       <header className="bg-white shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="text-center mb-8">
-            <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
+            <h1 className="text-4xl md:text-5xl font-bold text-teal-800 mb-4">
               Apartey Blog
             </h1>
             <p className="text-gray-600 text-sm md:text-base max-w-2xl mx-auto">

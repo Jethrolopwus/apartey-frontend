@@ -23,6 +23,7 @@ export default Object.freeze({
   writeUnlistedReview: "/reviews/unlisted",
   searchReviews: "/reviews/search?fullAddress=abuja",
   getAllReviews: "/reviews",
+  getAllProperties: "/listings?category=swap",
   getAllBlogPost: "/blog",
   getReviewById: (id: string) => `/reviews/${id}`,
   ReviewLikesToggle: (id: string) => `/reviews/${id}/likes`,
@@ -32,5 +33,7 @@ export default Object.freeze({
   createListing: "/listings",
   getAllListings: "/listings",
   getListingById: (id: string) => `/listings/${id}`,
+  getPropertiesById: (id: string) => `/properties/${id}`,
+
   getRelatedListing: (id: string) => `/listings/${id}`,
 });

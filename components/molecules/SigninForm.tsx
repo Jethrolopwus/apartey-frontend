@@ -29,7 +29,7 @@ const SignInForm: React.FC<SignInFormProps> = ({
 
   useEffect(() => {
     if (authData && !authError) {
-      toast.error("You are already signed in!");
+      toast.success("You are already signed in!");
       const userRole =
         authData.user?.role || authData.role || authData.currentUserRole?.role;
 

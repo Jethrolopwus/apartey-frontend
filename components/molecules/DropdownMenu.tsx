@@ -10,6 +10,7 @@ import {
   UserCheck,
   LogOut,
   HistoryIcon,
+  Bell,
 } from "lucide-react";
 
 interface UserDropdownMenuProps {
@@ -38,6 +39,14 @@ const UserDropdownMenu: React.FC<UserDropdownMenuProps> = ({
       icon: User,
       route: "/profile",
       hasNotification: false,
+    },
+    {
+      id: "notifications",
+      label: "Notifications",
+      icon: Bell,
+      route: "/notifications",
+      hasNotification: true,
+      notificationCount: favoriteCount,
     },
     {
       id: "activity",

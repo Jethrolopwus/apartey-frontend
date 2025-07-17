@@ -3,7 +3,7 @@ import { LocationPayload } from "@/types/generated";
 // Enum types for backend validation
 export type CategoryType = 'rent' | 'sell' | 'swap';
 export type PropertyTypeType = 'apartment' | 'house' | 'commercial' | 'room' | 'garage';
-export type ConditionType = 'good' | 'new' | 'renovated';
+export type ConditionType = 'Good Condition' | 'New Building' | 'Renovated';
 export type PetPolicyType = 'pet-friendly' | 'cats-only' | 'dogs-only' | 'small-pets' | 'no-pets';
 export type OfferType = 'private' | 'agent';
 
@@ -25,8 +25,8 @@ export interface PropertyListingPayload {
 
   // Step 3: Photos & Videos
   media?: {
-    coverPhoto?: File | string;
-    uploads?: (File | string)[];
+    coverPhoto?: File;
+    uploads?: File[];
     videoTourLink?: string;
   };
 

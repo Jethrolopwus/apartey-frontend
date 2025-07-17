@@ -435,13 +435,16 @@ class BaseURL {
       if (!token) {
         throw new Error("No authentication token found. Please login again.");
       }
-
+      console.log(data);
+      
+      // Use AxiosInstance to POST FormData, do NOT set Content-Type
       const response = await AxiosInstance.post(endpoints.createListing, data, {
+
         headers: {
           Authorization: `Bearer ${token}`,
-          // Do not set Content-Type so Axios can set the correct boundary for FormData
         },
       });
+
       return response.data;
     } catch (error: any) {
       if (error.response?.status === 401) {
@@ -536,6 +539,31 @@ class BaseURL {
       return response.data;
     } catch (error: any) {
       throw new Error(error.response?.data?.message || "Search failed");
+    }
+  };
+  httpGetAllProperties = async (limit?: number, byId?: number) => {
+    try {
+      // Always start with the base endpoint (no query string)
+      let url = "/listings";
+      // Always include category=Swap (capital S)
+      const params = new URLSearchParams({ category: "Swap" });
+      if (byId) {
+        params.append("byId", byId.toString());
+      }
+      if (limit) {
+        params.append("limit", limit.toString());
+      }
+      if (params.toString()) {
+        url += `?${params.toString()}`;
+      }
+      console.log("[httpGetAllProperties] Requesting URL:", url);
+      const response = await AxiosInstance.get(url);
+      console.log("[httpGetAllProperties] Response data:", response.data);
+      return response.data;
+    } catch (error: any) {
+      throw new Error(
+        error.response?.data?.message || "Get all listings failed"
+      );
     }
   };
   httpUpdateReviewsToggleLike = async (
@@ -669,6 +697,14 @@ class BaseURL {
     }
   };
   httpGetListingsById = async (id: string) => {
+    try {
+      const response = await AxiosInstance.get(`/listings/${id}`);
+      return response.data;
+    } catch (error: any) {
+      throw new Error(error.response?.data?.message || "Listing not found");
+    }
+  };
+  httpGetPropertiesById = async (id: string) => {
     try {
       const response = await AxiosInstance.get(`/listings/${id}`);
       return response.data;
