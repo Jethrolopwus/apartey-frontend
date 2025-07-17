@@ -28,6 +28,7 @@ interface PropertyBackendType {
 
 const transformPropertyToListing = (property: PropertyBackendType): ListingCardProps => {
   const formatPrice = (price: number) => {
+    if (typeof price !== "number" || isNaN(price)) return "N/A";
     if (price >= 1_000_000) return `NGN${(price / 1_000_000).toFixed(1)}M/Year`;
     if (price >= 1_000) return `NGN${(price / 1_000).toFixed(0)}K/Year`;
     return `NGN${price.toLocaleString()}/Year`;

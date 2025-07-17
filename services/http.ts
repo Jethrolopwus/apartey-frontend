@@ -436,12 +436,12 @@ class BaseURL {
         throw new Error("No authentication token found. Please login again.");
       }
       console.log(data);
-      
+
       // Use AxiosInstance to POST FormData, do NOT set Content-Type
       const response = await AxiosInstance.post(endpoints.createListing, data, {
-
         headers: {
           Authorization: `Bearer ${token}`,
+          "Content-Type": "multipart/form-data",
         },
       });
 
