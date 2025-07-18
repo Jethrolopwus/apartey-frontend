@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Star, Bed, Bath, Ruler, Heart, Search, Filter } from "lucide-react";
+import { Star, Bed, Bath, Ruler, Heart, Search } from "lucide-react";
 import { useGetAllListingsQuery } from "@/Hooks/use-getAllListings.query";
 import { useRouter } from "next/navigation";
 import { useUpdatePropertyToggleLikeMutation } from "@/Hooks/use.propertyLikeToggle.mutation";
@@ -43,6 +43,11 @@ export const ListingCard: FC<ListingCardProps> = ({
   onLike,
   onClick,
 }) => {
+  // Determine badge type (for demo, alternate Sale/Rent by id hash)
+  const safeId = typeof id === 'string' && id.length > 0 ? id : '0';
+  const isSale = safeId.charCodeAt(0) % 2 === 0;
+  const badgeText = isSale ? "Sale" : "Rent";
+  const badgeColor = isSale ? "bg-[#C85212]" : "bg-teal-600";
   return (
     <article
       key={id}
@@ -63,12 +68,9 @@ export const ListingCard: FC<ListingCardProps> = ({
           }}
           priority={false}
         />
-        {/* Sale/Rent badge */}
-        <span className="absolute top-3 left-3 bg-[#C85212] text-white text-xs font-semibold px-3 py-1 rounded-full shadow">
-          Sale
-        </span>
-        <span className="absolute top-3 right-3 bg-teal-600 text-white text-xs font-semibold px-3 py-1 rounded-full shadow">
-          Rent
+        {/* Single Sale/Rent badge */}
+        <span className={`absolute top-3 left-3 ${badgeColor} text-white text-xs font-semibold px-3 py-1 rounded-full shadow`}>
+          {badgeText}
         </span>
       </div>
       {/* body */}
@@ -80,7 +82,20 @@ export const ListingCard: FC<ListingCardProps> = ({
           >
             {title}
           </h3>
-          <p className="text-sm text-gray-500 mb-1">{location}</p>
+          <div className="flex items-center justify-between mb-1">
+            <p className="text-sm text-gray-500 truncate mr-2">{location}</p>
+            <button
+              className={`ml-2 bg-white rounded-full p-1 shadow-sm z-10 hover:bg-gray-100 transition-colors ${isLiked ? "fill-red-500 text-red-500" : "text-gray-400"}`}
+              onClick={e => {
+                e.stopPropagation();
+                onLike(id);
+              }}
+              title={isLiked ? "Remove from favorites" : "Add to favorites"}
+              style={{ boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}
+            >
+              <Heart size={20} className={isLiked ? "fill-red-500 text-red-500" : ""} />
+            </button>
+          </div>
           <div className="flex items-center gap-2 text-sm text-gray-600 mb-1">
             <div className="flex gap-0.5 text-yellow-500">
               {[...Array(5)].map((_, i) => (
@@ -115,23 +130,7 @@ export const ListingCard: FC<ListingCardProps> = ({
             <span className="text-gray-800 font-semibold">{newPrice}</span>
           </div>
         </div>
-        <div className="flex items-center justify-between mt-2">
-          <button
-            className={`text-gray-400 hover:text-teal-600 transition-colors ${
-              isLiked ? "fill-red-500 text-red-500" : ""
-            }`}
-            onClick={(e) => {
-              e.stopPropagation();
-              onLike(id);
-            }}
-            title={isLiked ? "Remove from favorites" : "Add to favorites"}
-          >
-            <Heart
-              size={20}
-              className={isLiked ? "fill-red-500 text-red-500" : ""}
-            />
-          </button>
-        </div>
+        {/* Remove bottom like button, handled above */}
       </div>
     </article>
   );
@@ -140,8 +139,16 @@ export const ListingCard: FC<ListingCardProps> = ({
 const Listings = () => {
   const router = useRouter();
 
+  // Filter states
+  const [search, setSearch] = React.useState("");
+  const [listingType, setListingType] = React.useState<string>("All");
+  const [sortBy, setSortBy] = React.useState<string>("Newest");
+  const [propertyType, setPropertyType] = React.useState<string>("All Types");
+  const [bedrooms, setBedrooms] = React.useState<string>("Any");
+  const [bathrooms, setBathrooms] = React.useState<string>("Any");
+
   const { data, isLoading, error } = useGetAllListingsQuery({
-    limit: 6,
+    limit: 100, // fetch more for client-side filtering
   });
 
   // For favorites refetch
@@ -163,6 +170,7 @@ const Listings = () => {
     };
     propertyType: string;
     location: { district: string; city: string; country: string };
+    category?: string;
   }) => {
     // (helper fns unchanged)
     const formatPrice = (price: number) => {
@@ -193,56 +201,108 @@ const Listings = () => {
       size: `${property.propertyDetails.totalAreaSqM}m²`,
       oldPrice: generateOldPrice(property.propertyDetails.price),
       newPrice: formatPrice(property.propertyDetails.price),
+      propertyType: property.propertyType,
+      bedrooms: property.propertyDetails.bedrooms,
+      bathrooms: property.propertyDetails.bathrooms,
+      category: property.category || "Rent", // fallback
     };
   };
 
   // ---------- loading / error / empty states (unchanged) ----------
   if (isLoading) {
-    /* … */
+    return <div className="text-center py-20 text-lg text-gray-500">Loading properties...</div>;
   }
   if (error) {
-    /* … */
+    return <div className="text-center py-20 text-lg text-red-500">Error loading properties.</div>;
   }
 
-  const listings = data?.properties?.map(transformPropertyToListing) || [];
-  if (listings.length === 0) {
-    /* … */
+  let listings = data?.properties?.map(transformPropertyToListing) || [];
+
+  // ---------- filtering ----------
+  listings = listings.filter((listing) => {
+    // Search filter
+    if (search && !(
+      listing.title.toLowerCase().includes(search.toLowerCase()) ||
+      listing.location.toLowerCase().includes(search.toLowerCase())
+    )) {
+      return false;
+    }
+    // Listing type filter
+    if (listingType !== "All" && listing.category !== listingType) return false;
+    // Property type filter
+    if (propertyType !== "All Types" && listing.propertyType !== propertyType) return false;
+    // Bedrooms filter
+    if (bedrooms !== "Any") {
+      if (bedrooms === "4+" && listing.beds < 4) return false;
+      if (bedrooms !== "4+" && listing.beds !== Number(bedrooms)) return false;
+    }
+    // Bathrooms filter
+    if (bathrooms !== "Any") {
+      if (bathrooms === "4+" && listing.baths < 4) return false;
+      if (bathrooms !== "4+" && listing.baths !== Number(bathrooms)) return false;
+    }
+    return true;
+  });
+
+  // ---------- sorting ----------
+  if (sortBy === "Newest") {
+    listings = listings.slice().reverse(); // assuming newest last in array
+  } else if (sortBy === "Oldest") {
+    // do nothing, default order
+  } else if (sortBy === "Price: Low to High") {
+    listings = listings.slice().sort((a, b) => {
+      const priceA = Number(a.newPrice.replace(/[^\d.]/g, ""));
+      const priceB = Number(b.newPrice.replace(/[^\d.]/g, ""));
+      return priceA - priceB;
+    });
+  } else if (sortBy === "Price: High to Low") {
+    listings = listings.slice().sort((a, b) => {
+      const priceA = Number(a.newPrice.replace(/[^\d.]/g, ""));
+      const priceB = Number(b.newPrice.replace(/[^\d.]/g, ""));
+      return priceB - priceA;
+    });
   }
 
   // ---------- render ----------
   return (
-    <section className="max-w-[1200px] mx-auto px-4 py-10 flex gap-8">
-      {/* Sidebar Filter */}
-      <aside className="w-full max-w-[270px] bg-white rounded-xl border border-gray-100 p-6 hidden lg:block">
-        <h3 className="text-lg font-semibold text-gray-800 mb-6">Filters</h3>
-        <div className="mb-6">
-          <p className="text-xs font-medium text-gray-500 mb-2">Listing type</p>
-          <div className="flex gap-2">
-            <button className="px-3 py-1 rounded-full text-xs font-medium bg-teal-50 text-teal-700 border border-teal-600">
-              All
-            </button>
-            <button className="px-3 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-700 border border-gray-200">
-              Rent
-            </button>
-            <button className="px-3 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-700 border border-gray-200">
-              Buy
-            </button>
+    <section className="max-w-[1200px] mx-auto px-4 py-14 flex gap-10">
+      {/* Sidebar Filter (move to left, add margin-top for alignment) */}
+      <aside className="w-full max-w-[280px] bg-white rounded-2xl border border-gray-100 p-8 hidden lg:block shadow-sm mt-[280px]">
+        <h3 className="text-xl font-semibold text-gray-800 mb-8">Filters</h3>
+        <div className="mb-8">
+          <p className="text-sm font-medium text-gray-500 mb-3">Listing type</p>
+          <div className="flex gap-3">
+            {['All', 'Rent', 'Sale'].map((type) => (
+              <button
+                key={type}
+                className={`px-4 py-2 rounded-full text-sm font-medium border transition-colors ${listingType === type ? 'bg-teal-50 text-teal-700 border-teal-600' : 'bg-gray-100 text-gray-700 border-gray-200'}`}
+                onClick={() => setListingType(type)}
+              >
+                {type}
+              </button>
+            ))}
           </div>
         </div>
-        <div className="mb-6">
-          <p className="text-xs font-medium text-gray-500 mb-2">Sort By</p>
-          <select className="w-full px-3 py-2 border border-gray-200 rounded-md text-sm text-gray-7000 bg-white">
+        <div className="mb-8">
+          <p className="text-sm font-medium text-gray-500 mb-3">Sort By</p>
+          <select
+            className="w-full px-4 py-3 border border-gray-200 rounded-lg text-base text-gray-700 bg-white"
+            value={sortBy}
+            onChange={e => setSortBy(e.target.value)}
+          >
             <option>Newest</option>
             <option>Oldest</option>
             <option>Price: Low to High</option>
             <option>Price: High to Low</option>
           </select>
         </div>
-        <div className="mb-6">
-          <p className="text-xs font-medium text-gray-500 mb-2">
-            Property Type
-          </p>
-          <select className="w-full px-3 py-2 border border-gray-200 rounded-md text-sm text-gray-700 bg-white">
+        <div className="mb-8">
+          <p className="text-sm font-medium text-gray-500 mb-3">Property Type</p>
+          <select
+            className="w-full px-4 py-3 border border-gray-200 rounded-lg text-base text-gray-700 bg-white"
+            value={propertyType}
+            onChange={e => setPropertyType(e.target.value)}
+          >
             <option>All Types</option>
             <option>Apartment</option>
             <option>House</option>
@@ -250,17 +310,13 @@ const Listings = () => {
             <option>Penthouse</option>
           </select>
         </div>
-        <div className="mb-6">
-          <p className="text-xs font-medium text-gray-500 mb-2">Bedrooms</p>
-          <input type="range" min="0" max="10" className="w-full" />
-          <div className="flex justify-between text-xs text-gray-400 mt-1">
-            <span>NGN0</span>
-            <span>NGN10,000,000</span>
-          </div>
-        </div>
-        <div className="mb-6">
-          <p className="text-xs font-medium text-gray-500 mb-2">Bedrooms</p>
-          <select className="w-full px-3 py-2 border border-gray-200 rounded-md text-sm text-gray-700 bg-white">
+        <div className="mb-8">
+          <p className="text-sm font-medium text-gray-500 mb-3">Bedrooms</p>
+          <select
+            className="w-full px-4 py-3 border border-gray-200 rounded-lg text-base text-gray-700 bg-white"
+            value={bedrooms}
+            onChange={e => setBedrooms(e.target.value)}
+          >
             <option>Any</option>
             <option>1</option>
             <option>2</option>
@@ -268,9 +324,13 @@ const Listings = () => {
             <option>4+</option>
           </select>
         </div>
-        <div className="mb-6">
-          <p className="text-xs font-mmedium text-gray-500 mb-2">Bathrooms</p>
-          <select className="w-full px-3 py-2 border border-gray-200 rounded-md text-sm text-gray-700 bg-white">
+        <div className="mb-8">
+          <p className="text-sm font-medium text-gray-500 mb-3">Bathrooms</p>
+          <select
+            className="w-full px-4 py-3 border border-gray-200 rounded-lg text-base text-gray-700 bg-white"
+            value={bathrooms}
+            onChange={e => setBathrooms(e.target.value)}
+          >
             <option>Any</option>
             <option>1</option>
             <option>2</option>
@@ -278,39 +338,53 @@ const Listings = () => {
             <option>4+</option>
           </select>
         </div>
-        <button className="w-full mt-4 py-2 bg-gray-100 text-gray-700 rounded-md font-medium text-sm hover:bg-gray-200 transition">
+        <button
+          className="w-full mt-6 py-3 bg-gray-100 text-gray-700 rounded-lg font-medium text-base hover:bg-gray-200 transition"
+          onClick={() => {
+            setListingType("All");
+            setSortBy("Newest");
+            setPropertyType("All Types");
+            setBedrooms("Any");
+            setBathrooms("Any");
+            setSearch("");
+          }}
+        >
           Clear Filters
         </button>
       </aside>
-
-      {/* Main Content */}
+      {/* Main Content (centered for title/subtitle/search) */}
       <div className="flex-1">
-        {/* Search Bar */}
-        <div className="flex items-center gap-2 mb-8">
-          <div className="flex items-center flex-1 bg-white border border-gray-200 rounded-md px-4 py-2">
-            <Search size={18} className="text-gray-400 mr-2" />
+        {/* Title & Subtitle */}
+        <div className="text-center mb-12">
+          <h1 className="font-bold text-5xl text-teal-800 mb-3 tracking-tight leading-tight" style={{letterSpacing: '-0.02em'}}>Find Your Perfect Property</h1>
+          <p className="text-lg text-gray-500 font-normal max-w-2xl mx-auto leading-relaxed">Discover what real tenants and homeowners are saying about local properties around you</p>
+        </div>
+        {/* Search Bar (button inside input) */}
+        <div className="flex items-center justify-center mb-10">
+          <div className="relative w-full max-w-2xl">
             <input
               type="text"
-              className="flex-1 outline-none text-gray-700 bg-transparent"
+              className="w-full pl-14 pr-36 py-4 rounded-xl border border-gray-200 text-gray-700 bg-white shadow focus:ring-2 focus:ring-teal-200 focus:border-teal-400 transition outline-none text-lg font-medium"
               placeholder="Lagos, Nigeria"
+              value={search}
+              onChange={e => setSearch(e.target.value)}
             />
+            <Search size={22} className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-400" />
+            <button className="absolute right-3 top-1/2 -translate-y-1/2 bg-[#C85212] hover:bg-orange-600 text-white font-semibold px-8 py-2 rounded-lg flex items-center gap-2 transition text-lg shadow" style={{height: '48px'}} onClick={() => {}}>
+              <Search size={20} className="mr-2" />
+              Search
+            </button>
           </div>
-          <button className="ml-2 px-6 py-2 cursor-pointer bg-[#C85212] text-white rounded-md font-medium hover:bg-orange-600 transition flex items-center gap-2">
-            <Filter size={18} />
-            Search
-          </button>
         </div>
-
         {/* Property count and pagination top */}
-        <div className="flex items-center justify-between mb-4">
-          <span className="text-lg font-semibold text-teal-800">
-            12 Properties found
+        <div className="flex items-center justify-between mb-6">
+          <span className="text-xl font-semibold text-teal-800">
+            {listings.length} Properties found
           </span>
-          <span className="text-xs text-gray-500">Page 1 of 13</span>
+          <span className="text-sm text-gray-500">Page 1 of 1</span>
         </div>
-
         {/* Cards Grid */}
-        <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-8 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
           {listings.map((listing) => {
             const isLiked = likedIds.includes(listing.id);
             return (
@@ -359,24 +433,9 @@ const Listings = () => {
             {"< Previous"}
           </button>
           <div className="flex items-center gap-1">
-            {[...Array(10)].map((_, i) => (
-              <button
-                key={i}
-                className={`w-8 h-8 text-sm rounded ${
-                  i === 0
-                    ? "bg-teal-600 text-white"
-                    : "text-gray-600 hover:bg-gray-100"
-                } transition-colors`}
-              >
-                {i + 1}
-              </button>
-            ))}
-            <span className="px-2 text-gray-400">...</span>
-            <button className="w-8 h-8 text-sm rounded text-gray-600 hover:bg-gray-100 transition-colors">
-              13
-            </button>
+            <button className="w-8 h-8 text-sm rounded bg-teal-600 text-white transition-colors">1</button>
           </div>
-          <button className="text-gray-400 hover:text-teal-600 transition-colors px-2 py-1 rounded">
+          <button className="text-gray-400 hover:text-teal-600 transition-colors px-2 py-1 rounded" disabled>
             {"Next >"}
           </button>
         </div>

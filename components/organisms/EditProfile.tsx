@@ -149,7 +149,7 @@ const EditProfile: React.FC<EditProfileProps> = ({
     circumference - (completionPercentage / 100) * circumference;
 
   return (
-    <div className="max-w-4xl mx-auto p-6 bg-white rounded-lg shadow-md">
+    <div className="max-w-4xl mx-auto p-6 bg-white mb-16  rounded-lg shadow-md">
       {/* Header */}
       <div className="mb-8">
         <h1 className="text-3xl font-semibold text-gray-900 mb-6">
