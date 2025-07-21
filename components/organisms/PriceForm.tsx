@@ -56,33 +56,28 @@ const PriceForm = ({ formData, setFormData }: PriceFormProps) => {
         >
           Price / Year *
         </label>
-        <div className="mt-1 relative rounded-md shadow-sm">
-          <div className="absolute inset-y-0 left-0 flex items-center">
-            <label htmlFor="currency" className="sr-only">
-              Currency
-            </label>
-            <select
-              id="currency"
-              name="currency"
-              value={localData.currency}
-              onChange={(e) =>
-                setLocalData((p) => ({ ...p, currency: e.target.value }))
-              }
-              className="h-full rounded-md border-transparent bg-transparent py-0 pl-3 pr-7 text-gray-500 focus:border-orange-500 focus:ring-orange-500 sm:text-sm"
-            >
-              <option>$</option>
-              <option>€</option>
-              <option>₦</option>
-            </select>
-          </div>
+        <div className="mt-1 flex gap-4 w-full max-w-sm">
+          <select
+            id="currency"
+            name="currency"
+            value={localData.currency}
+            onChange={(e) => setLocalData((p) => ({ ...p, currency: e.target.value }))}
+            className="rounded-lg border border-gray-300 bg-white py-2 px-3 text-base text-gray-700 focus:border-orange-500 focus:ring-orange-500 outline-none"
+            style={{ borderRight: '', minWidth: 60 }}
+          >
+            <option>$</option>
+            <option>€</option>
+            <option>₦</option>
+          </select>
           <input
             type="text"
             name="price"
             id="price"
             value={localData.price}
             onChange={handleInputChange}
-            className="block w-full rounded-md border-gray-300 pl-16 focus:border-orange-500 focus:ring-orange-500 sm:text-sm py-3"
+            className="block w-full rounded-lg border border-gray-300  focus:border-orange-500 focus:ring-orange-500 text-base py-2 px-4 outline-none"
             placeholder="0.00"
+            style={{ minWidth: 0 }}
           />
         </div>
       </div>

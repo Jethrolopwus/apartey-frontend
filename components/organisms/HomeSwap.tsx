@@ -246,7 +246,7 @@ const HomeSwap = () => {
                 Exchange homes with others and experience<br />
                 new destinations like a local
               </p>
-              <Link href={"/property-listings"}>
+              <Link href={"/swap-property-listings"}>
               
               <button className="bg-[#C85212] text-white px-6 py-3 rounded-md hover:bg-[#A64310] transition-colors flex items-center gap-2 mx-auto">
                 <Plus className="w-5 h-5" />

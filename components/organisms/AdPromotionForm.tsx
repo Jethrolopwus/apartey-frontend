@@ -6,8 +6,8 @@ import { PropertyListingPayload } from "@/types/propertyListing";
 
 const promotionTiers = [
   {
-    name: 'Easy Start',
-    price: 20000,
+    name: 'Free',
+    price: 0,
     icon: Zap,
     description: "Ideal if you're testing the waters and want to start with basic exposure.",
     features: ['7-Day Run for your ad active for one week', 'Keep your ad live and active for one week', 'Track views and basic engagement metrics']
@@ -78,15 +78,19 @@ const AdPromotionForm: React.FC<AdPromotionFormProps> = ({ setFormData }) => {
       <p className="text-sm text-gray-500 mt-1 mb-6">We have created a special offer for your business to make promotion on Finder convenient and effective.</p>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {promotionTiers.map(tier => (
+        {promotionTiers.map((tier) => (
           <div key={tier.name} className={`border rounded-lg p-6 flex flex-col relative ${selectedTier === tier.name ? 'border-orange-500 border-2' : 'border-gray-300'}`}>
             {tier.recommended && <div className="absolute top-0 -mt-3 left-1/2 -translate-x-1/2 bg-orange-500 text-white text-xs font-semibold px-3 py-1 rounded-full">Recommended</div>}
             <div className="flex-grow">
                 <tier.icon className="w-8 h-8 text-orange-500 mb-4" />
-                <h3 className="text-lg font-semibold text-gray-900">{tier.name}</h3>
-                <p className="text-2xl font-bold text-gray-900 mt-2">NGN{tier.price.toLocaleString()}<span className="text-sm font-medium text-gray-500">/month</span></p>
+                <h3 className="text-lg font-semibold text-gray-900">{tier.name === 'Free' ? 'Easy Start' : tier.name}</h3>
+                {tier.name === 'Free' ? (
+                  <p className="text-2xl font-bold text-gray-900 mt-2">Free <span className="text-sm font-medium text-gray-500">/Always</span></p>
+                ) : (
+                  <p className="text-2xl font-bold text-gray-900 mt-2">NGN{tier.price.toLocaleString()}<span className="text-sm font-medium text-gray-500">/month</span></p>
+                )}
                 <p className="text-sm text-gray-600 mt-2 mb-4">{tier.description}</p>
-                <button onClick={() => handleSelectTier(tier.name)} className={`w-full py-2.5 rounded-lg font-semibold text-sm transition-colors ${selectedTier === tier.name ? 'bg-orange-500 text-white' : 'bg-white border border-gray-300 text-gray-800 hover:bg-gray-50'}`}>Select {tier.name}</button>
+                <button onClick={() => handleSelectTier(tier.name)} className={`w-full py-2.5 rounded-lg font-semibold text-sm transition-colors ${selectedTier === tier.name ? 'bg-orange-500 text-white' : 'bg-white border border-gray-300 text-gray-800 hover:bg-gray-50'}`}>{tier.name === 'Free' ? 'List Property for Free' : `Select ${tier.name}`}</button>
                 <ul className="mt-6 space-y-3 text-sm text-gray-600">
                     {tier.features.map(feature => <li key={feature} className="flex items-start"><Check size={16} className="text-green-500 mr-3 mt-0.5 flex-shrink-0"/>{feature}</li>)}
                 </ul>

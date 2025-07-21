@@ -18,6 +18,7 @@ interface Review {
     streetAddress: string;
     apartmentUnitNumber?: string;
     displayOnMap?: boolean;
+    fullAddress?: string; // Added for the new helper
   };
   overallRating: number;
   detailedReview: string;
@@ -49,6 +50,19 @@ interface Review {
     _id: string;
   };
 }
+
+// Helper to get the best available address string
+const getDisplayAddress = (loc: Review["location"]) => {
+  if (loc?.fullAddress && loc.fullAddress.trim() !== "") return loc.fullAddress;
+  const parts = [
+    loc?.streetAddress || "",
+    loc?.apartmentUnitNumber || "",
+    loc?.district || "",
+    loc?.city || "",
+    loc?.country || ""
+  ].filter(Boolean);
+  return parts.length > 0 ? parts.join(", ") : "No Address";
+};
 
 const FeaturedReviews = () => {
   const { data, isLoading, error, refetch } = useGetAllReviewsQuery();
@@ -189,11 +203,14 @@ const FeaturedReviews = () => {
             </div>
 
             <div className="p-4 space-y-3">
+              <h1 className="text-gray-800 font-medium text-lg">
+                {getDisplayAddress(review.location)}
+              </h1>
               <h3 className="font-medium text-gray-800 text-base line-clamp-2">
                 {review.location.streetAddress}
                 {review.location.apartmentUnitNumber &&
                   `, ${review.location.apartmentUnitNumber}`}
-                {review.location.district && `, ${review.location.district}`},{" "}
+                {/* {review.location.district && `, ${review.location.district}`},{" "} */}
                 {review.location.city}
               </h3>
 

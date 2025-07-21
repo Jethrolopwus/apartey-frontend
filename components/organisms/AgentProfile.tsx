@@ -1,86 +1,126 @@
 "use client";
-import React from "react";
+import React, { useMemo } from "react";
 import Image from "next/image";
 import Button from "@/components/atoms/Buttons/ActionButton";
 import { useRouter } from "next/navigation";
 import { Star, Bed, Bath, Ruler } from "lucide-react";
+import { useGetUserProfileQuery } from "@/Hooks/use-getuserProfile.query";
+import { useGetAllMyListingsQuery } from "@/Hooks/use-getAllMyListings.query";
 
-// Dummy data for now (replace with real data as needed)
-const agent = {
-  name: "Sarah Abba",
-  location: "Abuja, Nigeria",
-  agency: "Imperial Property Agency",
-  code: "600APK",
-  verified: true,
-  premium: true,
-  profileImage: "/Ellipse-1.png",
-  coverImage: "/cover-image.png",
-  description:
-    "With over 8 years of experience in real estate development and property management, I specialize in residential and commercial properties across New York. My expertise includes property development, investment consulting, and helping clients find their perfect home or investment opportunity. I pride myself on delivering exceptional service and building lasting relationships with my clients.",
-  stats: [
-    { label: "Work Experience", value: "3 years" },
-    { label: "Active Listings", value: "26" },
-    { label: "Properties sold", value: "12" },
-    { label: "Clients Rating", value: "4.9" },
-  ],
-  properties: [
-    {
-      id: "1",
-      image: "/Estate2.png",
-      title: "No 1. kumuye strt...",
-      location: "Abuja, Nigeria",
-      rating: 4.0,
-      reviewCount: 28,
-      beds: 4,
-      baths: 4,
-      size: 44,
-      oldPrice: "NGN650,000/Year",
-      newPrice: "NGN450,000/Year",
-      status: "Active",
-      mark: "Rented",
-      isActive: true,
-    },
-    {
-      id: "2",
-      image: "/Estate2.png",
-      title: "No 1. kumuye strt...",
-      location: "Abuja, Nigeria",
-      rating: 4.0,
-      reviewCount: 28,
-      beds: 4,
-      baths: 4,
-      size: 40,
-      oldPrice: "NGN650,000/Year",
-      newPrice: "NGN450,000/Year",
-      status: "Inactive",
-      mark: "Available",
-      isActive: false,
-    },
-    {
-      id: "3",
-      image: "/Estate2.png",
-      title: "No 3. kumuye strt...",
-      location: "Abuja, Nigeria",
-      rating: 4.5,
-      reviewCount: 35,
-      beds: 5,
-      baths: 4,
-      size: 36,
-      oldPrice: "NGN700,000/Year",
-      newPrice: "NGN500,000/Year",
-      status: "Active",
-      mark: "Available",
-      isActive: true,
-    },
-    // Add more as needed for grid
-  ],
-};
+const DEFAULT_PROFILE_IMAGE = "/Ellipse-1.png";
+const DEFAULT_COVER_IMAGE = "/cover-image.png";
+const DEFAULT_PROPERTY_IMAGE = "/Estate2.png";
 
 const AgentProfile: React.FC = () => {
   const router = useRouter();
-  const [propertyStates, setPropertyStates] = React.useState(
-    agent.properties.map((p) => ({ id: p.id, isRented: p.isActive }))
+  const { data: userData, isLoading: userLoading, error: userError } = useGetUserProfileQuery();
+  const { data: listingsData, isLoading: listingsLoading, error: listingsError } = useGetAllMyListingsQuery();
+
+  // Extract agent info from userData
+  const agent = userData?.currentUser || {
+    name: "Sarah Abba",
+    location: "Abuja, Nigeria",
+    agency: "Imperial Property Agency",
+    code: "600APK",
+    verified: true,
+    premium: true,
+    profileImage: DEFAULT_PROFILE_IMAGE,
+    coverImage: DEFAULT_COVER_IMAGE,
+    description:
+      "With over 8 years of experience in real estate development and property management, I specialize in residential and commercial properties across New York. My expertise includes property development, investment consulting, and helping clients find their perfect home or investment opportunity. I pride myself on delivering exceptional service and building lasting relationships with my clients.",
+    stats: [
+      { label: "Work Experience", value: "3 years" },
+      { label: "Active Listings", value: "26" },
+      { label: "Properties sold", value: "12" },
+      { label: "Clients Rating", value: "4.9" },
+    ],
+  };
+
+  // Map backend properties to UI format
+  interface Property {
+    id: string;
+    image: string;
+    title: string;
+    location: string;
+    rating: number;
+    reviewCount: number;
+    beds: number;
+    baths: number;
+    size: number;
+    oldPrice: string;
+    newPrice: string;
+    status: string;
+    mark: string;
+    isActive: boolean;
+  }
+
+  interface Stat {
+    label: string;
+    value: string;
+  }
+
+  type RawProperty = {
+    _id: string;
+    media?: { coverPhoto?: string };
+    location?: { streetAddress?: string; city?: string; country?: string };
+    propertyDetails?: {
+      rating?: number;
+      reviewCount?: number;
+      bedrooms?: number;
+      bathrooms?: number;
+      totalAreaSqM?: number;
+      oldPrice?: string;
+      price?: string | number;
+    };
+    status?: string;
+  };
+
+  const properties: Property[] = useMemo(() => {
+    if (listingsData?.properties?.length) {
+      return listingsData.properties.map((property: RawProperty) => ({
+        id: property._id,
+        image: property.media?.coverPhoto || DEFAULT_PROPERTY_IMAGE,
+        title: property.location?.streetAddress || "No address",
+        location: `${property.location?.city || ""}, ${property.location?.country || ""}`,
+        rating: property.propertyDetails?.rating || 4.0,
+        reviewCount: property.propertyDetails?.reviewCount || 0,
+        beds: property.propertyDetails?.bedrooms || 0,
+        baths: property.propertyDetails?.bathrooms || 0,
+        size: property.propertyDetails?.totalAreaSqM || 0,
+        oldPrice: property.propertyDetails?.oldPrice || "NGN650,000/Year",
+        newPrice: property.propertyDetails?.price ? `NGN${property.propertyDetails.price}/Year` : "NGN450,000/Year",
+        status: property.status === "active" ? "Active" : "Inactive",
+        mark: property.status === "rented" ? "Rented" : "Available",
+        isActive: property.status === "active",
+      }));
+    }
+    return [
+      {
+        id: "1",
+        image: DEFAULT_PROPERTY_IMAGE,
+        title: "No 1. kumuye strt...",
+        location: "Abuja, Nigeria",
+        rating: 4.0,
+        reviewCount: 28,
+        beds: 4,
+        baths: 4,
+        size: 44,
+        oldPrice: "NGN650,000/Year",
+        newPrice: "NGN450,000/Year",
+        status: "Active",
+        mark: "Rented",
+        isActive: true,
+      },
+    ];
+  }, [listingsData]);
+
+  const [propertyStates, setPropertyStates] = React.useState<{ id: string; isRented: boolean }[]>(
+    properties.map((p) => ({ id: p.id, isRented: p.isActive }))
   );
+
+  React.useEffect(() => {
+    setPropertyStates(properties.map((p) => ({ id: p.id, isRented: p.isActive })));
+  }, [properties]);
 
   const handleToggle = (id: string) => {
     setPropertyStates((prev) =>
@@ -90,12 +130,19 @@ const AgentProfile: React.FC = () => {
     );
   };
 
+  if (userLoading || listingsLoading) {
+    return <div className="p-8 text-center">Loading...</div>;
+  }
+  if (userError || listingsError) {
+    return <div className="p-8 text-center text-red-500">Error loading profile or listings.</div>;
+  }
+
   return (
     <div className="min-h-screen bg-[#F5F5F5] flex flex-col pb-6 items-center w-full">
       {/* Cover Image */}
       <div className="w-full h-[220px] md:h-[260px] relative">
         <Image
-          src={agent.coverImage}
+          src={agent.coverImage || DEFAULT_COVER_IMAGE}
           alt="cover"
           fill
           className="object-cover w-full h-full rounded-b-2xl"
@@ -108,7 +155,7 @@ const AgentProfile: React.FC = () => {
           {/* Profile Image */}
           <div className="relative w-32 h-32 border-4 border-white rounded-full overflow-hidden -mt-16 md:mt-0 shadow-md">
             <Image
-              src={agent.profileImage}
+              src={agent.profileImage || DEFAULT_PROFILE_IMAGE}
               alt="profile"
               fill
               className="object-cover"
@@ -146,7 +193,7 @@ const AgentProfile: React.FC = () => {
             </div>
             <p className="text-gray-700 text-sm mt-2 max-w-2xl">{agent.description}</p>
             <div className="flex flex-wrap gap-8 mt-4">
-              {agent.stats.map((stat, idx) => (
+              {agent.stats && (agent.stats as Stat[]).map((stat, idx: number) => (
                 <div key={idx} className="flex flex-col items-center min-w-[90px]">
                   <span className="text-lg font-bold text-gray-900">{stat.value}</span>
                   <span className="text-xs text-gray-500">{stat.label}</span>
@@ -164,19 +211,19 @@ const AgentProfile: React.FC = () => {
         </div>
         {/* Tabs */}
         <div className="flex gap-4 mb-6">
-          <button className="px-4 py-2 rounded-full text-sm font-medium bg-teal-50 text-teal-700 border border-teal-600">For rent (8)</button>
-          <button className="px-4 py-2 rounded-full text-sm font-medium bg-gray-100 text-gray-700 border border-gray-200">For sale (13)</button>
+          <button className="px-4 py-2 rounded-full text-sm font-medium bg-teal-50 text-teal-700 border border-teal-600">For rent ({properties.length})</button>
+          <button className="px-4 py-2 rounded-full text-sm font-medium bg-gray-100 text-gray-700 border border-gray-200">For sale (0)</button>
         </div>
         {/* Properties Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {agent.properties.map((property) => {
+          {properties.map((property) => {
             const state = propertyStates.find((p) => p.id === property.id);
             const isRented = state ? state.isRented : property.isActive;
             return (
               <div key={property.id} className="bg-white rounded-xl shadow border border-gray-100 overflow-hidden flex flex-col">
                 <div className="relative w-full h-40">
                   <Image
-                    src={property.image}
+                    src={property.image || DEFAULT_PROPERTY_IMAGE}
                     alt={property.title}
                     fill
                     className="object-cover w-full h-full"
@@ -197,7 +244,7 @@ const AgentProfile: React.FC = () => {
                           <Star key={i} size={14} className={i < Math.floor(property.rating) ? "fill-yellow-500" : "text-gray-300"} />
                         ))}
                       </div>
-                      <span className="text-xs font-medium text-gray-700">{property.rating.toFixed(1)} ({property.reviewCount} reviews)</span>
+                      <span className="text-xs font-medium text-gray-700">{property.rating?.toFixed(1)} ({property.reviewCount} reviews)</span>
                     </div>
                     <div className="flex items-center text-gray-700 text-xs gap-4 mb-1">
                       <span className="flex items-center gap-1" title={`${property.beds} bedrooms`}><Bed size={14} /> {property.beds}</span>

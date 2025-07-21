@@ -22,6 +22,29 @@ const sortOptions = [
   },
 ];
 
+// Define a type for the location object
+interface ReviewLocation {
+  fullAddress?: string;
+  streetAddress?: string;
+  apartmentUnitNumber?: string;
+  district?: string;
+  city?: string;
+  country?: string;
+}
+
+// Helper to get the best available address string
+const getDisplayAddress = (loc: ReviewLocation) => {
+  if (loc?.fullAddress && loc.fullAddress.trim() !== "") return loc.fullAddress;
+  const parts = [
+    loc?.streetAddress || "",
+    loc?.apartmentUnitNumber || "",
+    loc?.district || "",
+    loc?.city || "",
+    loc?.country || ""
+  ].filter(Boolean);
+  return parts.length > 0 ? parts.join(", ") : "No Address";
+};
+
 const AllReviews: React.FC<AllReviewsProps> = ({
   className = "",
   showHeader = true,
@@ -244,12 +267,7 @@ const AllReviews: React.FC<AllReviewsProps> = ({
                 <div className="p-4 space-y-3 flex-1 flex flex-col justify-between">
                   <div>
                     <h3 className="font-medium text-gray-800 text-base line-clamp-2 mb-1">
-                      {review.location.streetAddress}
-                      {review.location.apartmentUnitNumber &&
-                        `, ${review.location.apartmentUnitNumber}`}
-                      {review.location.district &&
-                        `, ${review.location.district}`}
-                      , {review.location.city}
+                      {getDisplayAddress(review.location)}
                     </h3>
                     <div className="flex items-center gap-2 mb-1">
                       <div className="flex gap-0.5">

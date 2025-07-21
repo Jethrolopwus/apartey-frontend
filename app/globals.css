@@ -80,3 +80,7 @@ h1, h2, h3, h4, h5, h6 {
 .aspect-square {
   aspect-ratio: 1 / 1;
 }
+
+.text-teal-800 {
+  color: #115e59;
+}

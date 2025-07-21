@@ -1,5 +1,12 @@
+"use client";
 import React from 'react';
-import { Heart, MessageSquare, Home } from 'lucide-react';
+import { Heart, MessageSquare, Home, Trash2 } from 'lucide-react';
+import { useEffect } from "react";
+import socket from "@/utils/socket";
+import { toast } from "react-hot-toast";
+import { useGetAllNotificationsQuery } from "@/Hooks/use-getAllNotifications.query";
+import { useUpdateAllNotificationsAsReadMutation } from "@/Hooks/use-updateAllNotificationsAsRead.mutation";
+import { useDeleteNotificationById } from "@/Hooks/use-deleteNotification";
 
 interface NotificationItem {
   id: string;
@@ -10,29 +17,43 @@ interface NotificationItem {
 }
 
 const Notifications: React.FC = () => {
-  const notifications: NotificationItem[] = [
-    {
-      id: '1',
-      type: 'like',
-      title: 'Someone liked your property listing',
-      timestamp: '2 Hours ago',
-      icon: <Heart className="w-5 h-5 text-orange-500 fill-orange-500" />
-    },
-    {
-      id: '2',
-      type: 'message',
-      title: 'New message from Sarah Johnson',
-      timestamp: '4 Hours ago',
-      icon: <MessageSquare className="w-5 h-5 text-orange-500 fill-orange-500" />
-    },
-    {
-      id: '3',
-      type: 'approval',
-      title: 'Your property listing has been approved',
-      timestamp: '4 Hours ago',
-      icon: <Home className="w-5 h-5 text-black-500" />
-    }
-  ];
+  // Removed unused 'user' and 'notification' state to fix lint errors
+  const { data, isLoading, error } = useGetAllNotificationsQuery();
+  const { mutate: markAllAsRead, isLoading: isMarkingRead } = useUpdateAllNotificationsAsReadMutation();
+  const { mutate: deleteNotification, isPending: isDeleting } = useDeleteNotificationById();
+
+
+  useEffect(() => {
+    socket.on("new_notification", (notification) => {
+      toast.success(notification.message);
+    });
+
+    return () => {
+      socket.off("new_notification");
+    };
+  }, []);
+  // Map API notifications to NotificationItem[] for display
+  const notifications: NotificationItem[] = (data || []).map((n) => {
+    let icon: React.ReactNode = null;
+    if (n.type === 'like') icon = <Heart className="w-5 h-5 text-orange-500 fill-orange-500" />;
+    else if (n.type === 'message') icon = <MessageSquare className="w-5 h-5 text-orange-500 fill-orange-500" />;
+    else if (n.type === 'approval') icon = <Home className="w-5 h-5 text-black-500" />;
+    else icon = <Home className="w-5 h-5 text-black-500" />;
+    return {
+      id: n.id,
+      type: n.type as 'like' | 'message' | 'approval',
+      title: n.title,
+      timestamp: n.timestamp,
+      icon,
+    };
+  });
+
+  if (isLoading) {
+    return <div className="p-8 text-center">Loading notifications...</div>;
+  }
+  if (error) {
+    return <div className="p-8 text-center text-red-500">Failed to load notifications.</div>;
+  }
 
   return (
     <div className="max-w-xl  mx-auto  rounded-lg shadow-sm">
@@ -47,8 +68,12 @@ const Notifications: React.FC = () => {
       <div className="p-4 bg-white  py-12 rounded-lg shadow-sm">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-sm font-medium text-gray-700">Recent Notifications</h2>
-          <button className="text-sm text-gray-500 hover:text-blue-700 transition-colors">
-            Mark as Read
+          <button
+            className="text-sm text-gray-500 hover:text-blue-700 transition-colors disabled:opacity-50"
+            onClick={() => markAllAsRead()}
+            disabled={isMarkingRead}
+          >
+            {isMarkingRead ? 'Marking...' : 'Mark as Read'}
           </button>
         </div>
 
@@ -72,11 +97,19 @@ const Notifications: React.FC = () => {
                 </p>
               </div>
 
-              {/* Timestamp */}
-              <div className="flex-shrink-0">
+              {/* Timestamp and Delete */}
+              <div className="flex-shrink-0 flex items-center gap-2">
                 <span className="text-xs text-gray-500">
                   {notification.timestamp}
                 </span>
+                <button
+                  className="ml-2 p-1 rounded hover:bg-red-100 transition-colors disabled:opacity-50"
+                  title="Delete notification"
+                  onClick={() => deleteNotification(notification.id)}
+                  disabled={isDeleting}
+                >
+                  <Trash2 className="w-4 h-4 text-red-500" />
+                </button>
               </div>
             </div>
           ))}

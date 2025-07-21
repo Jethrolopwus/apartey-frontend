@@ -200,7 +200,15 @@ const ReviewsSection: React.FC<ReviewsSectionProps> = ({
 
   // Generate Google Maps URL with multiple markers
   const generateMapUrl = () => {
-    if (mapCenter.lat === 0 && mapCenter.lng === 0) return "";
+    const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
+    if (!apiKey) {
+      console.warn('Google Maps API key is missing!');
+      return '';
+    }
+    if (mapCenter.lat === 0 && mapCenter.lng === 0) {
+      // Fallback to Abuja if no valid center
+      return `https://maps.googleapis.com/maps/api/staticmap?center=9.05785,7.49508&zoom=13&size=600x500&markers=color:orange%7C9.05785,7.49508&key=${apiKey}`;
+    }
 
     const validMarkers = mapMarkers.filter(
       (marker) => marker.coordinates.lat !== 0 && marker.coordinates.lng !== 0
@@ -208,7 +216,7 @@ const ReviewsSection: React.FC<ReviewsSectionProps> = ({
 
     if (validMarkers.length === 0) {
       // Single marker at center
-      return `https://maps.googleapis.com/maps/api/staticmap?center=${mapCenter.lat},${mapCenter.lng}&zoom=13&size=600x500&markers=color:orange%7C${mapCenter.lat},${mapCenter.lng}&key=AIzaSyC_mwAjirr_vXt1xL1WlL-entKBwD7FkqY`;
+      return `https://maps.googleapis.com/maps/api/staticmap?center=${mapCenter.lat},${mapCenter.lng}&zoom=13&size=600x500&markers=color:orange%7C${mapCenter.lat},${mapCenter.lng}&key=${apiKey}`;
     }
 
     // Multiple markers (limit to 10 to avoid URL length issues)
@@ -220,10 +228,11 @@ const ReviewsSection: React.FC<ReviewsSectionProps> = ({
       )
       .join("&");
 
-    return `https://maps.googleapis.com/maps/api/staticmap?center=${mapCenter.lat},${mapCenter.lng}&zoom=12&size=600x500&${markersParam}&key=AIzaSyC_mwAjirr_vXt1xL1WlL-entKBwD7FkqY`;
+    return `https://maps.googleapis.com/maps/api/staticmap?center=${mapCenter.lat},${mapCenter.lng}&zoom=12&size=600x500&${markersParam}&key=${apiKey}`;
   };
-
   const mapUrl = generateMapUrl();
+
+  
 
   const renderStars = (rating: number) => {
     const stars = [];
@@ -253,6 +262,19 @@ const ReviewsSection: React.FC<ReviewsSectionProps> = ({
   const handleSortChange = (option: SortOption) => {
     setSortOption(option.label);
     router.push(`/reviewsPage?sort=${option.value}`);
+  };
+
+  // Helper to get the best available address string
+  const getDisplayAddress = (loc: Review["location"] & { fullAddress?: string }) => {
+    if (loc?.fullAddress && loc.fullAddress.trim() !== "") return loc.fullAddress;
+    const parts = [
+      loc?.streetAddress || "",
+      loc?.apartmentUnitNumber || "",
+      loc?.district || "",
+      loc?.city || "",
+      loc?.country || ""
+    ].filter(Boolean);
+    return parts.length > 0 ? parts.join(", ") : "No Address";
   };
 
   if (isLoading) {
@@ -328,12 +350,21 @@ const ReviewsSection: React.FC<ReviewsSectionProps> = ({
             </h3>
           </div>
 
-          <div className="space-y-6">
+          <div className="space-y-10">
             {reviews.length > 0 ? (
               reviews.map((review, index) => (
                 <article
                   key={index}
                   className="flex gap-4 group cursor-pointer hover:bg-gray-50 p-2 rounded-lg transition-colors"
+                  onClick={() => router.push(`/reviewsPage/${review._id}`)}
+                  tabIndex={0}
+                  role="button"
+                  aria-label={`View details for review at ${getDisplayAddress(review.location as typeof review.location & { fullAddress?: string })}`}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      router.push(`/reviewsPage/${review._id}`);
+                    }
+                  }}
                 >
                   <div className="w-[180px] h-[120px] flex-shrink-0 rounded-md overflow-hidden relative">
                     <Image
@@ -353,10 +384,13 @@ const ReviewsSection: React.FC<ReviewsSectionProps> = ({
                     )}
                   </div>
                   <div className="flex flex-col">
-                    <h4 className="text-gray-800 font-medium text-lg">
+                    <h1 className="text-gray-800 font-medium text-lg">
+                      {getDisplayAddress(review.location as typeof review.location & { fullAddress?: string })}
+                    </h1>
+                    {/* <h4 className="text-gray-800 font-medium text-lg">
                       {review.location.streetAddress},{" "}
                       {review.location.district}, {review.location.city}
-                    </h4>
+                    </h4> */}
                     <div className="flex items-center gap-2 my-1">
                       <div className="flex">
                         {renderStars(review.overallRating)}
@@ -389,38 +423,17 @@ const ReviewsSection: React.FC<ReviewsSectionProps> = ({
           )}
 
           {/* Google Maps Container */}
-          <div className="w-full h-[500px] bg-gray-200 mt-16 rounded-lg overflow-hidden relative">
-            {isLoading ? (
-              <div className="w-full h-full flex items-center justify-center bg-gray-200">
-                <div className="text-center">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500 mx-auto mb-2"></div>
-                  <p className="text-gray-500">Loading map...</p>
-                </div>
-              </div>
-            ) : mapUrl ? (
-              <Image
-                className="w-full h-full object-cover"
-                alt="Map of property locations"
-                src={mapUrl}
-                fill
-                onError={({ currentTarget }) => {
-                  currentTarget.style.display = "none";
-                }}
-                priority={false}
-              />
-            ) : (
-              <div className="w-full h-full flex items-center justify-center bg-gray-200">
-                <div className="text-center">
-                  <p className="text-gray-500 mb-2">
-                    No location data available
-                  </p>
-                  <p className="text-gray-400 text-sm">
-                    Reviews will appear on the map when available
-                  </p>
-                </div>
-              </div>
-            )}
-
+          <div className="w-full h-[380px] bg-gray-200 mt-16 rounded-lg overflow-hidden relative min-h-[300px]">
+            <Image
+              className="w-full h-full object-cover"
+              alt="Map of property locations"
+              src={mapUrl}
+              fill
+              onError={({ currentTarget }) => {
+                currentTarget.style.display = "none";
+              }}
+              priority={false}
+            />
             {/* Overlay markers for reviews with coordinates */}
             {!isLoading &&
               mapMarkers.length > 0 &&
@@ -438,7 +451,6 @@ const ReviewsSection: React.FC<ReviewsSectionProps> = ({
                   <div className="w-5 h-5 rounded-full bg-orange-500 border-2 border-white drop-shadow-md"></div>
                 </div>
               ))}
-
             <div className="absolute bottom-4 right-4 flex flex-col gap-2">
               <button
                 className="bg-white p-2 rounded-md shadow-md hover:bg-gray-50 transition-colors"

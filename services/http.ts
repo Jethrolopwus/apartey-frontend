@@ -255,6 +255,120 @@ class BaseURL {
       throw error;
     }
   };
+  httpUpdateAllNotificationsAsRead = async (): Promise<RoleSubmissionResponse> => {
+    try {
+      const token =
+        localStorage.getItem("authToken") ||
+        localStorage.getItem("token") ||
+        localStorage.getItem("accessToken");
+
+      if (!token) throw new Error("No authentication token found.");
+
+      const response = await AxiosInstance.patch(
+        endpoints.updateAllNotificationsAsRead,
+        {},
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      return response.data;
+    } catch (error: any) {
+      if (error.response?.status === 401) {
+        TokenManager.clearAllTokens();
+        window.location.href = "/signin";
+      }
+      throw error;
+    }
+  };
+  httpUpdateNotificationsAsRead = async (
+    id: string,
+    data: any
+  ): Promise<RoleSubmissionResponse> => {
+    try {
+      const token =
+        localStorage.getItem("authToken") ||
+        localStorage.getItem("token") ||
+        localStorage.getItem("accessToken");
+
+      if (!token) throw new Error("No authentication token found.");
+
+      const response = await AxiosInstance.patch(
+        endpoints.updateNotificationAsRead(id),
+        data,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      return response.data;
+    } catch (error: any) {
+      if (error.response?.status === 401) {
+        TokenManager.clearAllTokens();
+        window.location.href = "/signin";
+      }
+      throw error;
+    }
+  };
+  httpUpdateNotificationAsRead = async (id: string): Promise<RoleSubmissionResponse> => {
+    try {
+      const token =
+        localStorage.getItem("authToken") ||
+        localStorage.getItem("token") ||
+        localStorage.getItem("accessToken");
+
+      if (!token) throw new Error("No authentication token found.");
+
+      const response = await AxiosInstance.patch(
+        `/notifications/${id}/read`,
+        {},
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      return response.data;
+    } catch (error: any) {
+      if (error.response?.status === 401) {
+        TokenManager.clearAllTokens();
+        window.location.href = "/signin";
+      }
+      throw error;
+    }
+  };
+  httpDeleteNotifications = async (id: string) => {
+    const token = localStorage.getItem("token");
+
+    if (!token) {
+      throw new Error("No authentication token found");
+    }
+
+    try {
+      const response = await AxiosInstance.delete(
+        endpoints.deleteNotificationById(id),
+        {
+          headers: {
+            Authorization: ` ${token}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      return response.data;
+    } catch (error) {
+      console.error("Failed to Delete Notification", error);
+      throw error;
+    }
+  };
   httpGetUsersActivities = async (): Promise<RoleSubmissionResponse> => {
     try {
       const token =
@@ -425,6 +539,39 @@ class BaseURL {
       throw error;
     }
   };
+  httpClaimProperty = async (id: string, data: any) => {
+    try {
+      const token =
+        localStorage.getItem("authToken") ||
+        localStorage.getItem("token") ||
+        localStorage.getItem("accessToken");
+
+      if (!token) {
+        throw new Error("No authentication token found. Please login again.");
+      }
+
+      const response = await AxiosInstance.post(
+        endpoints.claimProperties(id),
+        data,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+      return response.data;
+    } catch (error: any) {
+      if (error.response?.status === 401) {
+        localStorage.removeItem("authToken");
+        localStorage.removeItem("token");
+        localStorage.removeItem("accessToken");
+
+        window.location.href = "/signin";
+      }
+      throw error;
+    }
+  };
   httpCreateListings = async (data: globalThis.FormData) => {
     try {
       const token =
@@ -516,6 +663,39 @@ class BaseURL {
   ) => {
     try {
       let url = endpoints.getAllReviews;
+
+      // Build query parameters
+      const params = new URLSearchParams();
+      if (sortBy) {
+        params.append("sortBy", sortBy);
+      }
+      if (sortOrder) {
+        params.append("sortOrder", sortOrder);
+      }
+
+      if (limit) {
+        params.append("limit", limit.toString());
+      }
+
+      // Add parameters to URL if they exist
+      if (params.toString()) {
+        url += `?${params.toString()}`;
+      }
+
+      const response = await AxiosInstance.get(url);
+      return response.data;
+    } catch (error: any) {
+      throw new Error(error.response?.data?.message || "Search failed");
+    }
+  };
+
+  httpGetAllNotifications = async (
+    limit?: number,
+    sortBy?: string,
+    sortOrder?: string
+  ) => {
+    try {
+      let url = endpoints.getAllNotifications;
 
       // Build query parameters
       const params = new URLSearchParams();
@@ -672,6 +852,30 @@ class BaseURL {
       );
     }
   };
+  httpGetAllMyListings = async (limit?: number, byId?: number) => {
+    try {
+      let url = endpoints.getAllMyListings;
+
+      // Build query parameters
+      const params = new URLSearchParams();
+      if (byId) {
+        params.append("byId", byId.toString());
+      }
+      if (limit) {
+        params.append("limit", limit.toString());
+      }
+      if (params.toString()) {
+        url += `?${params.toString()}`;
+      }
+
+      const response = await AxiosInstance.get(url);
+      return response.data;
+    } catch (error: any) {
+      throw new Error(
+        error.response?.data?.message || "Get all My listings failed"
+      );
+    }
+  };
   httpGetAllBlogPost = async (limit?: number, byId?: number) => {
     try {
       let url = endpoints.getAllBlogPost;
@@ -728,6 +932,22 @@ class BaseURL {
     } catch (error: any) {
       throw new Error(error.response?.data?.message || "Listing not found");
     }
+  };
+
+  httpDeleteNotificationById = async (id: string): Promise<void> => {
+    const token =
+      localStorage.getItem("authToken") ||
+      localStorage.getItem("token") ||
+      localStorage.getItem("accessToken");
+
+    if (!token) throw new Error("No authentication token found.");
+
+    await AxiosInstance.delete(`/notifications/${id}`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+    });
   };
 }
 

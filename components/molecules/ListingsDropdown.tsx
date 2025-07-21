@@ -1,6 +1,6 @@
 import React, { useRef, useEffect } from 'react';
 import Link from 'next/link';
-import { Home, ArrowRightLeft } from 'lucide-react';
+import { Home, ArrowRightLeft, ShoppingBag} from 'lucide-react';
 
 interface ListingsDropdownProps {
   isOpen: boolean;
@@ -18,6 +18,13 @@ const ListingsDropdown: React.FC<ListingsDropdownProps> = ({ isOpen, onClose, on
       description: 'Find rental properties',
       icon: Home,
       href: '/rent',
+    },
+    {
+      id: 'buy-home',
+      label: 'Buy a Home',
+      description: 'Find properties for sale',
+      icon: ShoppingBag,
+      href: '/buy',
     },
     {
       id: 'swap-home',
