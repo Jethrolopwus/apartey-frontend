@@ -10,11 +10,11 @@ export interface PlacePrediction {
   };
 }
 
-declare global {
-  interface Window {
-    google: typeof google | unknown;
-  }
-}
+// declare global {
+//   interface Window {
+//     google: typeof google | unknown;
+//   }
+// }
 
 interface SearchInputProps {
   onLocationSelect: (location: string) => void;
@@ -72,16 +72,18 @@ const SearchInput = ({
         {
           input: query,
         },
-        (
-          predictions: unknown,
-          status: unknown
-        ) => {
+        (predictions: unknown, status: unknown) => {
           // Type guard for status
-          const statusStr = typeof status === 'string' ? status : '';
+          const statusStr = typeof status === "string" ? status : "";
           // Type guard for predictions
           const preds = Array.isArray(predictions) ? predictions : [];
           if (
-            statusStr === (window.google as unknown as { maps?: { places?: { PlacesServiceStatus?: { OK: string } } } })?.maps?.places?.PlacesServiceStatus?.OK &&
+            statusStr ===
+              (
+                window.google as unknown as {
+                  maps?: { places?: { PlacesServiceStatus?: { OK: string } } };
+                }
+              )?.maps?.places?.PlacesServiceStatus?.OK &&
             preds.length > 0
           ) {
             resolve(preds as PlacePrediction[]);

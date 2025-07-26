@@ -29,6 +29,6 @@
     "**/*.tsx",
     ".next/types/**/*.ts",
     "types/next-auth.d.ts"
-, ".next/types/app/agent/page.tsx"  ],
+  ],
   "exclude": ["node_modules"]
 }

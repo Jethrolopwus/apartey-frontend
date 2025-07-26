@@ -1,10 +1,9 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
-import { useSelector, useDispatch } from 'react-redux';
-import { RootState } from '../../store';
-import { setMultipleFields } from '../../store/propertyReviewFormSlice';
-
+import { useSelector, useDispatch } from "react-redux";
+import { RootState } from "../../store";
+import { setMultipleFields } from "../../store/propertyReviewFormSlice";
 
 interface Apartment {
   adr_id: string;
@@ -43,17 +42,25 @@ const AddressForm: React.FC = () => {
   const [matchedAddresses, setMatchedAddresses] = useState<Building[]>([]);
   const [apartments, setApartments] = useState<Apartment[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
-  const [countryCode, setCountryCode] = useState<string>(location.countryCode?.toLowerCase() || "ng");
+  const [countryCode, setCountryCode] = useState<string>(
+    location.countryCode?.toLowerCase() || "ng"
+  );
   const [streetName, setStreetName] = useState(location.street || "");
   const [streetNumber, setStreetNumber] = useState("");
-  const [manualApartment, setManualApartment] = useState(location.apartment || "");
+  const [manualApartment, setManualApartment] = useState(
+    location.apartment || ""
+  );
   const [apartment, setApartment] = useState(location.apartment || "");
-  const [addressLine, setAddressLine] = useState(location.street ? `${location.street}` : "");
+  const [addressLine, setAddressLine] = useState(
+    location.street ? `${location.street}` : ""
+  );
   const [district, setDistrict] = useState(location.district || "");
   const [state, setState] = useState(location.stateOrRegion || "");
   const [country, setCountry] = useState(location.country || "");
   const [postalCode, setPostalCode] = useState(location.postalCode || "");
-  const [coordinates, setCoordinates] = useState<Coordinates | null>(location.coordinates || null);
+  const [coordinates, setCoordinates] = useState<Coordinates | null>(
+    location.coordinates || null
+  );
 
   // Only prefill from Redux on first mount/restore
   const didPrefillRef = useRef(false);
@@ -101,11 +108,12 @@ const AddressForm: React.FC = () => {
       );
       autocompleteRef.current.addListener("place_changed", async () => {
         if (!autocompleteRef.current) return;
-        const place = autocompleteRef.current.getPlace() as google.maps.places.PlaceResult;
+        const place =
+          autocompleteRef.current.getPlace() as google.maps.places.PlaceResult;
         const components = place.address_components || [];
         const streetNumber =
-          components.find((c) => c.types.includes("street_number"))?.long_name ||
-          "";
+          components.find((c) => c.types.includes("street_number"))
+            ?.long_name || "";
         const streetName =
           components.find((c) => c.types.includes("route"))?.long_name || "";
         const districtRaw =
@@ -114,8 +122,9 @@ const AddressForm: React.FC = () => {
         const countryName =
           components.find((c) => c.types.includes("country"))?.long_name || "";
         const stateRaw =
-          components.find((c) => c.types.includes("administrative_area_level_1"))
-            ?.long_name || "";
+          components.find((c) =>
+            c.types.includes("administrative_area_level_1")
+          )?.long_name || "";
         const postal =
           components.find((c) => c.types.includes("postal_code"))?.long_name ||
           "";
@@ -141,7 +150,9 @@ const AddressForm: React.FC = () => {
         await fetchApartments(`${streetName} ${streetNumber}`);
         const apt = apartment || manualApartment;
         const fullAddress = [
-          streetNumber && streetName ? `${streetNumber} ${streetName}` : streetName,
+          streetNumber && streetName
+            ? `${streetNumber} ${streetName}`
+            : streetName,
           apt,
           district,
           state,
@@ -165,10 +176,11 @@ const AddressForm: React.FC = () => {
     }
     return () => {
       const googleObj = window.google as typeof google | undefined;
-      if (autocompleteRef.current && googleObj?.maps?.event?.clearInstanceListeners) {
-        googleObj.maps.event.clearInstanceListeners(
-          autocompleteRef.current
-        );
+      if (
+        autocompleteRef.current &&
+        googleObj?.maps?.event?.clearInstanceListeners
+      ) {
+        googleObj.maps.event.clearInstanceListeners(autocompleteRef.current);
       }
     };
   }, [countryCode, dispatch, apartment, manualApartment]);
@@ -197,7 +209,20 @@ const AddressForm: React.FC = () => {
     };
     dispatch(setMultipleFields(locationPayload));
     console.log("the Payload", locationPayload);
-  }, [apartment, manualApartment, district, addressLine, country, countryCode, state, streetName, streetNumber, postalCode, coordinates, dispatch]);
+  }, [
+    apartment,
+    manualApartment,
+    district,
+    addressLine,
+    country,
+    countryCode,
+    state,
+    streetName,
+    streetNumber,
+    postalCode,
+    coordinates,
+    dispatch,
+  ]);
 
   const handleManualSearch = async (
     e: React.KeyboardEvent<HTMLInputElement>

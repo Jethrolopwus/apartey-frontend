@@ -1,18 +1,12 @@
 "use client";
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { Star, ChevronDown, Maximize, Navigation } from "lucide-react";
+import { Loader } from "@googlemaps/js-api-loader";
+import { Star, ChevronDown, Maximize } from "lucide-react"; // Removed unused 'Navigation' import
 import { ReviewsSectionProps, SortOption } from "@/types/generated";
 import { useGetAllReviewsQuery } from "@/Hooks/use-GetAllReviews.query";
 import { Review, SortComponentProps, ReviewLocation } from "@/types/generated";
 import Image from "next/image";
-
-// Add Google Maps types
-declare global {
-  interface Window {
-    google: unknown;
-  }
-}
 
 interface Coordinates {
   lat: number;
@@ -41,8 +35,6 @@ const SortComponent: React.FC<SortComponentProps> = ({
   const handleSortChange = (option: SortOption) => {
     onSortChange(option);
     setIsDropdownOpen(false);
-
-    // Navigate to reviews page with selected sort option
     router.push(`/reviewsPage?sort=${option.value}`);
   };
 
@@ -61,7 +53,6 @@ const SortComponent: React.FC<SortComponentProps> = ({
               {currentSort}
               <ChevronDown size={16} />
             </button>
-
             {isDropdownOpen && (
               <ul
                 className="absolute right-0 mt-1 w-40 bg-white shadow-lg rounded-md py-1 z-20"
@@ -91,13 +82,11 @@ const ReviewsSection: React.FC<ReviewsSectionProps> = ({
   initialSortOption = "Recent",
 }) => {
   const [sortOption, setSortOption] = useState<string>(initialSortOption);
-  const [mapMarkers, setMapMarkers] = useState<
-    { id: string; top: string; left: string; coordinates: Coordinates }[]
-  >([]);
   const [mapCenter, setMapCenter] = useState<Coordinates>({
     lat: 6.5244,
     lng: 3.3792,
   });
+  const mapRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
 
   const sortOptions: SortOption[] = useMemo(
@@ -108,14 +97,6 @@ const ReviewsSection: React.FC<ReviewsSectionProps> = ({
     []
   );
 
-  // Memoize marker positions to prevent infinite re-renders
-  const markerPositions = useMemo(() => {
-    return Array.from({ length: 10 }).map((_, i) => ({
-      top: `${20 + ((i * 5) % 60)}%`,
-      left: `${20 + ((i * 7) % 60)}%`,
-    }));
-  }, []);
-
   const { data, isLoading, error, refetch } = useGetAllReviewsQuery({
     limit: 2,
     sortBy: "mostRecent",
@@ -124,115 +105,91 @@ const ReviewsSection: React.FC<ReviewsSectionProps> = ({
 
   const reviews: Review[] = useMemo(() => data?.reviews || [], [data?.reviews]);
 
-  // Update map markers and center based on reviews data
+  // Initialize Google Map
   useEffect(() => {
-    const validReviews = reviews.filter((review: Review) =>
-      hasLatLng(review.location)
-    );
+    // Capture the current ref value at the start of the effect
+    const currentMapRef = mapRef.current;
 
-    if (validReviews.length > 0) {
-      // Calculate center point from all valid reviews
-      const totalLat = validReviews.reduce(
-        (sum, review) =>
-          sum + (hasLatLng(review.location) ? review.location.lat : 0),
-        0
+    const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
+    if (!apiKey) {
+      console.error(
+        "Error: NEXT_PUBLIC_GOOGLE_MAPS_API_KEY is missing in .env"
       );
-      const totalLng = validReviews.reduce(
-        (sum, review) =>
-          sum + (hasLatLng(review.location) ? review.location.lng : 0),
-        0
-      );
-      const centerLat = totalLat / validReviews.length;
-      const centerLng = totalLng / validReviews.length;
+      return;
+    }
 
-      // Only update mapCenter if it has changed
-      setMapCenter((prev) => {
-        if (prev.lat !== centerLat || prev.lng !== centerLng) {
-          return { lat: centerLat, lng: centerLng };
-        }
-        return prev;
-      });
+    const loader = new Loader({
+      apiKey,
+      version: "weekly",
+    });
 
-      // Create markers for all reviews with coordinates
-      const markers = validReviews
-        .map((review, index) =>
-          hasLatLng(review.location)
-            ? {
-                id: `marker-${review._id || index}`,
-                top: markerPositions[index % markerPositions.length].top,
-                left: markerPositions[index % markerPositions.length].left,
-                coordinates: {
+    loader
+      .load()
+      .then((google) => {
+        if (currentMapRef) {
+          const map = new google.maps.Map(currentMapRef, {
+            center: mapCenter,
+            zoom: 12,
+          });
+
+          // Add markers for reviews with valid coordinates
+          const validReviews = reviews.filter((review: Review) =>
+            hasLatLng(review.location)
+          );
+          validReviews.forEach((review) => {
+            // Removed unused 'index' parameter
+            if (hasLatLng(review.location)) {
+              new google.maps.Marker({
+                position: {
                   lat: review.location.lat,
                   lng: review.location.lng,
                 },
-              }
-            : null
-        )
-        .filter(Boolean) as {
-        id: string;
-        top: string;
-        left: string;
-        coordinates: Coordinates;
-      }[];
-      // Only update mapMarkers if different
-      setMapMarkers((prev) => {
-        if (JSON.stringify(prev) !== JSON.stringify(markers)) {
-          return markers;
+                map,
+                title: getDisplayAddress(
+                  review.location as typeof review.location & {
+                    fullAddress?: string;
+                  }
+                ),
+                icon: {
+                  url: "http://maps.google.com/mapfiles/ms/icons/orange-dot.png",
+                },
+              });
+            }
+          });
+
+          // Update map center based on valid reviews
+          if (validReviews.length > 0) {
+            const totalLat = validReviews.reduce(
+              (sum, review) =>
+                sum + (hasLatLng(review.location) ? review.location.lat : 0),
+              0
+            );
+            const totalLng = validReviews.reduce(
+              (sum, review) =>
+                sum + (hasLatLng(review.location) ? review.location.lng : 0),
+              0
+            );
+            const centerLat = totalLat / validReviews.length;
+            const centerLng = totalLng / validReviews.length;
+
+            if (centerLat !== mapCenter.lat || centerLng !== mapCenter.lng) {
+              setMapCenter({ lat: centerLat, lng: centerLng });
+              map.setCenter({ lat: centerLat, lng: centerLng });
+            }
+          }
         }
-        return prev;
+      })
+      .catch((error) => {
+        console.error("Failed to load Google Maps:", error);
       });
-    } else {
-      // Fallback to default markers if no coordinates
-      const markers = Array.from({ length: 10 }).map((_, i) => ({
-        id: `marker-${i + 1}`,
-        top: markerPositions[i].top,
-        left: markerPositions[i].left,
-        coordinates: { lat: 0, lng: 0 },
-      }));
-      setMapMarkers((prev) => {
-        if (JSON.stringify(prev) !== JSON.stringify(markers)) {
-          return markers;
-        }
-        return prev;
-      });
-    }
-  }, [reviews, markerPositions]);
 
-  // Generate Google Maps URL with multiple markers
-  const generateMapUrl = () => {
-    const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
-    console.log(apiKey);
-
-    if (!apiKey) {
-      console.warn("Google Maps API key is missing!");
-      return "";
-    }
-    if (mapCenter.lat === 0 && mapCenter.lng === 0) {
-      return `https://maps.googleapis.com/maps/api/staticmap?center=9.05785,7.49508&zoom=13&size=600x500&markers=color:orange%7C9.05785,7.49508&key=${apiKey}`;
-    }
-    console.log("Map Center:", mapCenter);
-
-    const validMarkers = mapMarkers.filter(
-      (marker) => marker.coordinates.lat !== 0 && marker.coordinates.lng !== 0
-    );
-    console.log("Valid Markers:", validMarkers);
-
-    if (validMarkers.length === 0) {
-      return `https://maps.googleapis.com/maps/api/staticmap?center=${mapCenter.lat},${mapCenter.lng}&zoom=13&size=600x500&markers=color:orange%7C${mapCenter.lat},${mapCenter.lng}&key=${apiKey}`;
-    }
-
-    // Multiple markers (limit to 10 to avoid URL length issues)
-    const limitedMarkers = validMarkers.slice(0, 10);
-    const markersParam = limitedMarkers
-      .map(
-        (marker) =>
-          `markers=color:orange%7C${marker.coordinates.lat},${marker.coordinates.lng}`
-      )
-      .join("&");
-
-    return `https://maps.googleapis.com/maps/api/staticmap?center=${mapCenter.lat},${mapCenter.lng}&zoom=12&size=600x500&${markersParam}&key=${apiKey}`;
-  };
-  const mapUrl = generateMapUrl();
+    // Cleanup to prevent memory leaks - using captured ref value
+    return () => {
+      if (currentMapRef) {
+        currentMapRef.innerHTML = "";
+      }
+    };
+  }, [reviews, mapCenter]);
 
   const renderStars = (rating: number) => {
     const stars = [];
@@ -264,7 +221,6 @@ const ReviewsSection: React.FC<ReviewsSectionProps> = ({
     router.push(`/reviewsPage?sort=${option.value}`);
   };
 
-  // Helper to get the best available address string
   const getDisplayAddress = (
     loc: Review["location"] & { fullAddress?: string }
   ) => {
@@ -329,7 +285,6 @@ const ReviewsSection: React.FC<ReviewsSectionProps> = ({
             Explore Reviews Near You
           </h2>
         </div>
-        {/* SortComponent at top right, same line as heading */}
         <div className="mt-4 md:mt-0">
           <SortComponent
             sortOptions={sortOptions}
@@ -338,11 +293,7 @@ const ReviewsSection: React.FC<ReviewsSectionProps> = ({
           />
         </div>
       </div>
-
-      {/* Filter Bar - below heading and sort */}
-      {/* REMOVED FILTER BAR (input and apartments dropdown) */}
       <div className="flex flex-col lg:flex-row gap-8">
-        {/* Left Side - Reviews List */}
         <div className="lg:w-1/2 space-y-6">
           <div>
             <p className="text-teal-700 uppercase text-sm font-medium tracking-wide">
@@ -352,79 +303,75 @@ const ReviewsSection: React.FC<ReviewsSectionProps> = ({
               Recent Reviews
             </h3>
           </div>
-
           <div className="space-y-10">
             {reviews.length > 0 ? (
-              reviews.map((review, index) => (
-                <article
-                  key={index}
-                  className="flex gap-4 group cursor-pointer hover:bg-gray-50 p-2 rounded-lg transition-colors"
-                  onClick={() => router.push(`/reviewsPage/${review._id}`)}
-                  tabIndex={0}
-                  role="button"
-                  aria-label={`View details for review at ${getDisplayAddress(
-                    review.location as typeof review.location & {
-                      fullAddress?: string;
-                    }
-                  )}`}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" || e.key === " ") {
-                      router.push(`/reviewsPage/${review._id}`);
-                    }
-                  }}
-                >
-                  <div className="w-[180px] h-[120px] flex-shrink-0 rounded-md overflow-hidden relative">
-                    <Image
-                      src={
-                        review.linkedProperty?.media?.coverPhoto ||
-                        "/placeholder-property.jpg"
+              reviews.map(
+                (
+                  review // Removed unused 'index' parameter
+                ) => (
+                  <article
+                    key={review._id} // Use review._id as key instead of index
+                    className="flex gap-4 group cursor-pointer hover:bg-gray-50 p-2 rounded-lg transition-colors"
+                    onClick={() => router.push(`/reviewsPage/${review._id}`)}
+                    tabIndex={0}
+                    role="button"
+                    aria-label={`View details for review at ${getDisplayAddress(
+                      review.location as typeof review.location & {
+                        fullAddress?: string;
                       }
-                      alt={`Property at ${review.location.streetAddress}`}
-                      width={180}
-                      height={120}
-                      className="object-cover w-full h-full"
-                    />
-                    {review.isLinkedToDatabaseProperty && (
-                      <span className="absolute top-2 right-2 bg-teal-600 text-white text-xs font-semibold px-2 py-1 rounded-full">
-                        Verified
-                      </span>
-                    )}
-                  </div>
-                  <div className="flex flex-col">
-                    <h1 className="text-gray-800 font-medium text-lg">
-                      {getDisplayAddress(
-                        review.location as typeof review.location & {
-                          fullAddress?: string;
+                    )}`}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        router.push(`/reviewsPage/${review._id}`);
+                      }
+                    }}
+                  >
+                    <div className="w-[180px] h-[120px] flex-shrink-0 rounded-md overflow-hidden relative">
+                      <Image
+                        src={
+                          review.linkedProperty?.media?.coverPhoto ||
+                          "/placeholder-property.jpg"
                         }
+                        alt={`Property at ${review.location.streetAddress}`}
+                        width={180}
+                        height={120}
+                        className="object-cover w-full h-full"
+                      />
+                      {review.isLinkedToDatabaseProperty && (
+                        <span className="absolute top-2 right-2 bg-teal-600 text-white text-xs font-semibold px-2 py-1 rounded-full">
+                          Verified
+                        </span>
                       )}
-                    </h1>
-                    {/* <h4 className="text-gray-800 font-medium text-lg">
-                      {review.location.streetAddress},{" "}
-                      {review.location.district}, {review.location.city}
-                    </h4> */}
-                    <div className="flex items-center gap-2 my-1">
-                      <div className="flex">
-                        {renderStars(review.overallRating)}
-                      </div>
-                      <span className="text-gray-700">
-                        {review.overallRating.toString()}
-                      </span>
                     </div>
-                    <p className="text-gray-500 text-sm">
-                      {review.detailedReview}
-                    </p>
-                  </div>
-                </article>
-              ))
+                    <div className="flex flex-col">
+                      <h1 className="text-gray-800 font-medium text-lg">
+                        {getDisplayAddress(
+                          review.location as typeof review.location & {
+                            fullAddress?: string;
+                          }
+                        )}
+                      </h1>
+                      <div className="flex items-center gap-2 my-1">
+                        <div className="flex">
+                          {renderStars(review.overallRating)}
+                        </div>
+                        <span className="text-gray-700">
+                          {review.overallRating.toString()}
+                        </span>
+                      </div>
+                      <p className="text-gray-500 text-sm">
+                        {review.detailedReview}
+                      </p>
+                    </div>
+                  </article>
+                )
+              )
             ) : (
               <p className="text-gray-500">No reviews found.</p>
             )}
           </div>
         </div>
-
-        {/* Right Side - Map */}
         <div className="lg:w-1/2 relative">
-          {/* Map Info */}
           {!isLoading && reviews.length > 0 && (
             <div className="absolute top-4 left-4 z-10 bg-white bg-opacity-90 rounded-md px-3 py-2 shadow-md">
               <p className="text-sm text-gray-700">
@@ -432,63 +379,25 @@ const ReviewsSection: React.FC<ReviewsSectionProps> = ({
               </p>
             </div>
           )}
-
-          {/* Google Maps Container */}
-          <div className="w-full h-[380px] bg-gray-200 mt-16 rounded-lg overflow-hidden relative min-h-[300px]">
-            <Image
-              className="w-full h-full object-cover"
-              alt="Map of property locations"
-              src={mapUrl}
-              fill
-              onError={({ currentTarget }) => {
-                currentTarget.style.display = "none";
+          <div
+            ref={mapRef}
+            className="w-full h-[380px] bg-gray-200 mt-16 rounded-lg overflow-hidden relative min-h-[300px]"
+          />
+          <div className="absolute bottom-4 right-4 flex flex-col gap-2">
+            <button
+              className="bg-white p-2 rounded-md shadow-md hover:bg-gray-50 transition-colors"
+              aria-label="Open in Google Maps"
+              onClick={() => {
+                if (mapCenter.lat !== 0 && mapCenter.lng !== 0) {
+                  window.open(
+                    `https://www.google.com/maps?q=${mapCenter.lat},${mapCenter.lng}`,
+                    "_blank"
+                  );
+                }
               }}
-              priority={false}
-            />
-            {/* Overlay markers for reviews with coordinates */}
-            {!isLoading &&
-              mapMarkers.length > 0 &&
-              mapMarkers.some((marker) => marker.coordinates.lat !== 0) &&
-              mapMarkers.map((marker) => (
-                <div
-                  key={marker.id}
-                  className="absolute w-6 h-6 flex items-center justify-center"
-                  style={{
-                    top: marker.top,
-                    left: marker.left,
-                    transform: "translate(-50%, -50%)",
-                  }}
-                >
-                  <div className="w-5 h-5 rounded-full bg-orange-500 border-2 border-white drop-shadow-md"></div>
-                </div>
-              ))}
-            <div className="absolute bottom-4 right-4 flex flex-col gap-2">
-              <button
-                className="bg-white p-2 rounded-md shadow-md hover:bg-gray-50 transition-colors"
-                aria-label="Fullscreen"
-                onClick={() => {
-                  if (mapUrl) {
-                    window.open(mapUrl, "_blank");
-                  }
-                }}
-              >
-                <Maximize size={20} className="text-gray-700" />
-              </button>
-              <button
-                className="bg-white p-2 rounded-md shadow-md hover:bg-gray-50 transition-colors"
-                aria-label="Navigate to current location"
-                onClick={() => {
-                  if (mapCenter.lat !== 0 && mapCenter.lng !== 0) {
-                    window.open(
-                      `https://www.google.com/maps?q=${mapCenter.lat},${mapCenter.lng}`,
-                      "_blank"
-                    );
-                  }
-                }}
-              >
-                <Navigation size={20} className="text-gray-700" />
-              </button>
-            </div>
+            >
+              <Maximize size={20} className="text-gray-700" />
+            </button>
           </div>
         </div>
       </div>

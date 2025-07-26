@@ -3,25 +3,14 @@ import { useEffect, useMemo, useState, useRef } from "react";
 import SearchInput from "@/components/atoms/Buttons/SearchInput";
 import { useSearchParams } from "next/navigation";
 import { useSearchReviewsQuery } from "@/Hooks/use-searchReviews.query";
-import { Maximize, Navigation, Star, Filter } from "lucide-react";
+import { Star, Filter, ChevronDown } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { toast } from "react-hot-toast";
 import Image from "next/image";
 
-declare global {
-  interface Window {
-    google: unknown;
-  }
-}
-
-interface Coordinates {
-  lat: number;
-  lng: number;
-}
-
 interface Review {
   id?: string;
-  _id?: string; // Add _id as alternative identifier
+  _id?: string;
   location: {
     lat: number;
     lng: number;
@@ -31,7 +20,7 @@ interface Review {
     city?: string;
     district?: string;
     streetAddress?: string;
-    fullAddress?: string; // Add fullAddress field
+    fullAddress?: string;
   };
   linkedProperty?: {
     media?: {
@@ -41,28 +30,23 @@ interface Review {
   overallRating?: number;
   reviewCount?: number;
   detailedReview?: string;
-  isLinkedToDatabaseProperty?: boolean; // Add verified property flag
-}
-
-interface Marker {
-  id: string;
-  top: string;
-  left: string;
-  coordinates: Coordinates;
+  isLinkedToDatabaseProperty?: boolean;
+  author?: {
+    name?: string;
+    avatar?: string;
+  };
+  createdAt?: string;
 }
 
 const ReviewSearchContainer = () => {
   const searchParams = useSearchParams();
   const router = useRouter();
 
-  const [mapMarkers, setMapMarkers] = useState<Marker[]>([]);
-  const [mapCenter, setMapCenter] = useState<Coordinates>({
-    lat: 6.5244,
-    lng: 3.3792,
-  });
   const [apartment, setApartment] = useState<string>(
     searchParams.get("apartment") || "all"
   );
+  const [sortBy, setSortBy] = useState<string>("recent");
+  const [isDropdownOpen, setIsDropdownOpen] = useState<boolean>(false);
 
   const fullAddress = searchParams.get("q") || "";
   const { data, isLoading } = useSearchReviewsQuery(
@@ -73,14 +57,7 @@ const ReviewSearchContainer = () => {
 
   const lastValidQuery = useRef({ fullAddress, apartment });
 
-  const markerPositions = useMemo(() => {
-    return Array.from({ length: 12 }).map((_, i) => ({
-      top: `${20 + ((i * 5) % 60)}%`,
-      left: `${20 + ((i * 7) % 60)}%`,
-    }));
-  }, []);
-
-  // Helper to get the best available address string (same as ReviewsSection)
+  // Helper to get the best available address string
   const getDisplayAddress = (loc: Review["location"]) => {
     if (loc?.fullAddress && loc.fullAddress.trim() !== "")
       return loc.fullAddress;
@@ -117,92 +94,6 @@ const ReviewSearchContainer = () => {
     }
   };
 
-  useEffect(() => {
-    if (reviews && reviews.length > 0) {
-      const validReviews = reviews.filter(
-        (review) => review.location?.lat && review.location?.lng
-      );
-
-      if (validReviews.length > 0) {
-        const totalLat = validReviews.reduce(
-          (sum, r) => sum + r.location.lat,
-          0
-        );
-        const totalLng = validReviews.reduce(
-          (sum, r) => sum + r.location.lng,
-          0
-        );
-        const centerLat = totalLat / validReviews.length;
-        const centerLng = totalLng / validReviews.length;
-
-        setMapCenter((prev) => {
-          if (prev.lat !== centerLat || prev.lng !== centerLng) {
-            return { lat: centerLat, lng: centerLng };
-          }
-          return prev;
-        });
-
-        const markers: Marker[] = validReviews.map((review, index) => ({
-          id: `marker-${getReviewId(review) || index}`,
-          top: markerPositions[index % markerPositions.length].top,
-          left: markerPositions[index % markerPositions.length].left,
-          coordinates: {
-            lat: review.location.lat,
-            lng: review.location.lng,
-          },
-        }));
-
-        setMapMarkers(markers);
-      } else {
-        const fallbackMarkers: Marker[] = Array.from({ length: 10 }).map(
-          (_, i) => ({
-            id: `marker-${i + 1}`,
-            top: markerPositions[i].top,
-            left: markerPositions[i].left,
-            coordinates: { lat: 0, lng: 0 },
-          })
-        );
-        setMapMarkers(fallbackMarkers);
-      }
-    } else {
-      const fallbackMarkers: Marker[] = Array.from({ length: 10 }).map(
-        (_, i) => ({
-          id: `marker-${i + 1}`,
-          top: markerPositions[i].top,
-          left: markerPositions[i].left,
-          coordinates: { lat: 0, lng: 0 },
-        })
-      );
-      setMapMarkers(fallbackMarkers);
-    }
-  }, [reviews, markerPositions]);
-
-  const generateMapUrl = (): string => {
-    const apiKey = process.env.GOOGLE_MAPS_API_KEY;
-
-    if (!apiKey || mapCenter.lat === 0 || mapCenter.lng === 0) return "";
-
-    const validMarkers = mapMarkers.filter(
-      (marker) => marker.coordinates.lat !== 0 && marker.coordinates.lng !== 0
-    );
-
-    if (validMarkers.length === 0) {
-      return `https://maps.googleapis.com/maps/api/staticmap?center=${mapCenter.lat},${mapCenter.lng}&zoom=13&size=600x500&markers=color:orange%7C${mapCenter.lat},${mapCenter.lng}&key=${apiKey}`;
-    }
-
-    const limitedMarkers = validMarkers.slice(0, 10);
-    const markersParam = limitedMarkers
-      .map(
-        (marker) =>
-          `markers=color:orange%7C${marker.coordinates.lat},${marker.coordinates.lng}`
-      )
-      .join("&");
-
-    return `https://maps.googleapis.com/maps/api/staticmap?center=${mapCenter.lat},${mapCenter.lng}&zoom=12&size=600x500&${markersParam}&key=${apiKey}`;
-  };
-
-  const mapUrl = generateMapUrl();
-
   const renderStars = (rating: number = 0) => {
     const stars = [];
     const fullStars = Math.floor(rating);
@@ -211,14 +102,14 @@ const ReviewSearchContainer = () => {
     for (let i = 0; i < 5; i++) {
       if (i < fullStars) {
         stars.push(
-          <Star key={i} size={16} className="fill-gray-400 text-gray-400" />
+          <Star key={i} size={16} className="fill-yellow-400 text-yellow-400" />
         );
       } else if (i === fullStars && hasHalfStar) {
         stars.push(
           <Star
             key={i}
             size={16}
-            className="fill-gray-400 text-gray-400 opacity-50"
+            className="fill-yellow-400 text-yellow-400 opacity-50"
           />
         );
       } else {
@@ -277,31 +168,82 @@ const ReviewSearchContainer = () => {
     }
   };
 
+  const handleSortChange = (value: string) => {
+    setSortBy(value);
+    setIsDropdownOpen(false);
+    // Add sorting logic here if needed
+  };
+
   useEffect(() => {
     setFilteredReviews(reviews);
   }, [reviews]);
 
+  const sortOptions = [
+    { label: "Recent", value: "recent" },
+    { label: "Highest Rating", value: "highest_rating" },
+    { label: "Lowest Rating", value: "lowest_rating" },
+  ];
+
   return (
     <section
-      className="w-full h-screen max-w-7xl bg-white mx-auto px-4 py-8 overflow-y-auto"
+      className="w-full max-w-7xl bg-white mx-auto px-4 py-8"
       aria-label="Property reviews"
     >
-      <div className="flex flex-col lg:flex-row gap-8">
-        {/* Left Panel: Review List */}
-        <div className="lg:w-1/2 space-y-6">
-          <div>
-            <p className="text-teal-700 uppercase text-sm font-medium tracking-wide">
-              REVIEWS
-            </p>
-            <h2 className="text-teal-700 text-3xl font-medium">
-              Explore Reviews Near You
-            </h2>
+      {/* Header */}
+      <div className="mb-8">
+        <h1 className="text-2xl font-semibold text-teal-800 mb-2">
+          Read Trusted Reviews from Verified Tenants
+        </h1>
+
+        {/* Sort Dropdown */}
+        <div className="flex justify-end mb-6">
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-gray-600">Sort by</span>
+            <div className="relative">
+              <button
+                className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-md bg-white text-sm hover:bg-gray-50"
+                onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                aria-expanded={isDropdownOpen}
+                aria-haspopup="listbox"
+              >
+                {sortOptions.find((option) => option.value === sortBy)?.label ||
+                  "Recent"}
+                <ChevronDown size={16} />
+              </button>
+              {isDropdownOpen && (
+                <ul
+                  className="absolute right-0 mt-1 w-40 bg-white shadow-lg rounded-md py-1 z-20 border border-gray-200"
+                  role="listbox"
+                >
+                  {sortOptions.map((option) => (
+                    <li
+                      key={option.value}
+                      className="px-4 py-2 hover:bg-gray-100 cursor-pointer text-sm text-gray-800"
+                      onClick={() => handleSortChange(option.value)}
+                      role="option"
+                      aria-selected={sortBy === option.value}
+                    >
+                      {option.label}
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Filter Section */}
+        <div className="flex justify-between items-center gap-8 mb-6 shadow-md  rounded-md ">
+          <div className="flex items-center gap-2">
+            <Filter size={20} className="text-gray-600" />
+            <span className="text-md font-medium text-gray-700">
+              Filter Reviews:
+            </span>
           </div>
 
           <SearchInput
-            placeholder="Search by address, neighborhood, or city"
+            placeholder="Search by home address e.g 62 Peiga Epime Road, Peiga, Kwara"
             onPlaceSelect={(place) => {
-              setApartment(place.description);
               router.push(
                 `/reviews?q=${encodeURIComponent(place.description)}${
                   apartment && apartment !== "all"
@@ -323,142 +265,123 @@ const ReviewSearchContainer = () => {
               }
             }}
             onLocationSelect={() => {}}
+            className="flex-1 max-w-full"
           />
 
-          <div className="flex justify-between items-center mt-6">
-            <div className="flex items-center gap-3">
-              <Filter size={20} className="text-gray-600" />
-              <label className="text-sm text-gray-700 font-medium">
-                Filter by Apartment
-              </label>
-              <select
-                value={apartment}
-                onChange={(e) => handleDropdownFilter(e.target.value)}
-                className="border border-gray-300 rounded-md p-2 text-sm"
-              >
-                <option value="all">All</option>
-                <option value="studio">Studio</option>
-                <option value="1bed">1 Bedroom</option>
-                <option value="2bed">2 Bedroom</option>
-              </select>
+          <select
+            value={apartment}
+            onChange={(e) => handleDropdownFilter(e.target.value)}
+            className="border border-gray-300 rounded-md px-3 py-2 text-sm bg-white"
+          >
+            <option value="all">All Apartments</option>
+            <option value="studio">Studio</option>
+            <option value="1bed">1 Bedroom</option>
+            <option value="2bed">2 Bedroom</option>
+            <option value="3bed">3 Bedroom</option>
+          </select>
+        </div>
+      </div>
+
+      {/* Reviews Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {isLoading ? (
+          <div className="col-span-full flex items-center justify-center py-12">
+            <div className="flex flex-col items-center gap-4">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-teal-600"></div>
+              <p className="text-gray-600">Loading reviews...</p>
             </div>
           </div>
+        ) : filteredReviews.length === 0 ? (
+          <div className="col-span-full text-center py-12">
+            <p className="text-gray-500 text-lg">No reviews found.</p>
+          </div>
+        ) : (
+          filteredReviews.map((review, index) => (
+            <article
+              key={getReviewId(review) || index}
+              className="bg-white border border-gray-200 rounded-lg overflow-hidden hover:shadow-md transition-shadow cursor-pointer"
+              onClick={() => handleReviewClick(review)}
+              tabIndex={0}
+              role="button"
+              aria-label={`View details for review at ${getDisplayAddress(
+                review.location
+              )}`}
+              onKeyDown={(e) => handleReviewKeyDown(e, review)}
+            >
+              {/* Property Image */}
+              <div className="relative h-48 w-full">
+                <Image
+                  src={
+                    review.linkedProperty?.media?.coverPhoto ||
+                    "/placeholder-property.jpg"
+                  }
+                  alt={`Property at ${review.location.streetAddress}`}
+                  fill
+                  className="object-cover"
+                />
+                {review.isLinkedToDatabaseProperty && (
+                  <span className="absolute top-3 right-3 bg-teal-600 text-white text-xs font-semibold px-2 py-1 rounded-full">
+                    Verified
+                  </span>
+                )}
+              </div>
 
-          <div className="space-y-6">
-            {isLoading ? (
-              <p>Loading reviews...</p>
-            ) : filteredReviews.length === 0 ? (
-              <p className="text-gray-500">No reviews found.</p>
-            ) : (
-              filteredReviews.map((review, index) => (
-                <article
-                  key={getReviewId(review) || index}
-                  className="flex gap-4 group cursor-pointer hover:bg-gray-50 p-4 border rounded-md hover:shadow transition-colors"
-                  onClick={() => handleReviewClick(review)}
-                  tabIndex={0}
-                  role="button"
-                  aria-label={`View details for review at ${getDisplayAddress(
-                    review.location
-                  )}`}
-                  onKeyDown={(e) => handleReviewKeyDown(e, review)}
-                >
-                  {/* Property Image */}
-                  <div className="w-[180px] h-[120px] flex-shrink-0 rounded-md overflow-hidden relative">
-                    <Image
-                      src={
-                        review.linkedProperty?.media?.coverPhoto ||
-                        "/placeholder-property.jpg"
-                      }
-                      alt={`Property at ${review.location.streetAddress}`}
-                      width={180}
-                      height={120}
-                      className="object-cover w-full h-full"
-                    />
-                    {review.isLinkedToDatabaseProperty && (
-                      <span className="absolute top-2 right-2 bg-teal-600 text-white text-xs font-semibold px-2 py-1 rounded-full">
-                        Verified
+              {/* Review Content */}
+              <div className="p-4">
+                <h3 className="font-semibold text-gray-800 mb-2 text-sm">
+                  {getDisplayAddress(review.location)}
+                </h3>
+
+                <div className="flex items-center gap-2 mb-3">
+                  <div className="flex">
+                    {renderStars(review.overallRating)}
+                  </div>
+                  <span className="text-sm text-gray-600">
+                    {review.overallRating?.toFixed(1) || "0.0"}
+                  </span>
+                  <span className="text-xs text-gray-500">
+                    ({review.reviewCount || 0} reviews)
+                  </span>
+                </div>
+
+                <p className="text-sm text-gray-600 line-clamp-3 mb-4">
+                  {review.detailedReview}
+                </p>
+
+                {/* Author Info */}
+                <div className="flex items-center gap-2 pt-3 border-t border-gray-100">
+                  <div className="w-6 h-6 rounded-full bg-gray-300 flex items-center justify-center">
+                    {review.author?.avatar ? (
+                      <Image
+                        src={review.author.avatar}
+                        alt={review.author.name || "User"}
+                        width={24}
+                        height={24}
+                        className="rounded-full"
+                      />
+                    ) : (
+                      <span className="text-xs text-gray-600">
+                        {(review.author?.name || "Anonymous")
+                          .charAt(0)
+                          .toUpperCase()}
                       </span>
                     )}
                   </div>
-
-                  {/* Review Content */}
-                  <div className="flex flex-col flex-1">
-                    <h3 className="text-lg font-semibold text-gray-800 mb-1">
-                      {getDisplayAddress(review.location)}
-                    </h3>
-                    <div className="flex items-center gap-2 my-2">
-                      <div className="flex">
-                        {renderStars(review.overallRating)}
-                      </div>
-                      <span className="text-gray-700">
-                        {review.overallRating?.toString() || "0"}
-                      </span>
-                      <span className="text-sm text-gray-600">
-                        ({review.reviewCount || 0})
-                      </span>
-                    </div>
-                    <p className="text-sm text-gray-600 line-clamp-3">
-                      {review.detailedReview}
+                  <div className="flex-1">
+                    <p className="text-xs font-medium text-gray-800">
+                      {review.author?.name || "Anonymous"}
+                    </p>
+                    <p className="text-xs text-gray-500">
+                      {review.createdAt
+                        ? new Date(review.createdAt).toLocaleDateString()
+                        : "Recently"}
                     </p>
                   </div>
-                </article>
-              ))
-            )}
-          </div>
-        </div>
-
-        <div className="lg:w-1/2 relative">
-          <div className="w-full h-[500px] bg-gray-200 rounded-lg overflow-hidden relative">
-            {mapUrl ? (
-              <Image
-                src={mapUrl}
-                fill
-                alt="Map of property locations"
-                className="w-full h-full object-cover"
-              />
-            ) : (
-              <div className="w-full h-full flex items-center justify-center bg-gray-100">
-                <p className="text-gray-500">Map not available</p>
-              </div>
-            )}
-
-            {mapMarkers.map((marker) =>
-              marker.coordinates.lat !== 0 ? (
-                <div
-                  key={marker.id}
-                  className="absolute w-6 h-6"
-                  style={{
-                    top: marker.top,
-                    left: marker.left,
-                    transform: "translate(-50%, -50%)",
-                  }}
-                >
-                  <div className="w-5 h-5 rounded-full bg-orange-500 border-2 border-white shadow"></div>
                 </div>
-              ) : null
-            )}
-
-            <div className="absolute bottom-4 right-4 flex flex-col gap-2">
-              <button
-                onClick={() => mapUrl && window.open(mapUrl, "_blank")}
-                className="p-2 bg-white rounded shadow"
-              >
-                <Maximize size={20} />
-              </button>
-              <button
-                onClick={() =>
-                  window.open(
-                    `https://www.google.com/maps?q=${mapCenter.lat},${mapCenter.lng}`,
-                    "_blank"
-                  )
-                }
-                className="p-2 bg-white rounded shadow"
-              >
-                <Navigation size={20} />
-              </button>
-            </div>
-          </div>
-        </div>
+              </div>
+            </article>
+          ))
+        )}
       </div>
     </section>
   );
