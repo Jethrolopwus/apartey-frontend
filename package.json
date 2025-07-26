@@ -44,5 +44,11 @@
     "eslint-config-next": "15.3.2",
     "tailwindcss": "^4",
     "typescript": "^5"
+  },
+  "overrides": {
+    "react-simple-maps": {
+      "react": "^19.0.0",
+      "react-dom": "^19.0.0"
+    }
   }
 }
