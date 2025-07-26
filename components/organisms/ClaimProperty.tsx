@@ -1,36 +1,94 @@
 "use client";
-import React, { useState } from 'react';
-import ClaimPropertyDetailsForm from '../molecules/ClaimPropertyDetailsForm';
-import ClaimPropertyVerificationForm from '../molecules/ClaimPropertyVerificationForm';
-import ClaimPropertyConfirmForm from '../molecules/ClaimPropertyConfirmForm';
-import { useGetUserProfileQuery } from '@/Hooks/use-getuserProfile.query';
-import { useMutation } from '@tanstack/react-query';
-import http from '@/services/http';
-import { useSearchParams } from 'next/navigation';
+import React, { useState, useEffect } from "react";
+import ClaimPropertyDetailsForm from "@/components/molecules/ClaimPropertyDetailsForm";
+import ClaimPropertyVerificationForm from "../molecules/ClaimPropertyVerificationForm";
+import ClaimPropertyConfirmForm from "../molecules/ClaimPropertyConfirmForm";
+import { useGetUserProfileQuery } from "@/Hooks/use-getuserProfile.query";
+import { useGetAllMyListingsQuery } from "@/Hooks/use-getAllMyListings.query";
+import { useMutation } from "@tanstack/react-query";
+import http from "@/services/http";
+import { useSearchParams } from "next/navigation";
+
+interface Property {
+  id: string;
+  location?: {
+    streetAddress?: string;
+    city?: string;
+    country?: string;
+  };
+  propertyType?: string;
+}
+
+interface ListingsData {
+  properties: Property[];
+}
+
+interface User {
+  email?: string;
+  name?: string;
+  phone?: string;
+}
+
+interface UserData {
+  currentUser: User;
+}
 
 const ClaimProperty = () => {
-  // Step 1: Property Details form state
-  const [form, setForm] = useState({
-    streetAddress: '',
-    district: '',
-    state: '',
-    postalCode: '',
-    propertyType: '',
-  });
-
-  // Step 2: Verification form state
-  const [verificationForm, setVerificationForm] = useState({
-    fullName: '',
-    email: '',
-    phone: '',
-    additionalDetails: '',
-  });
-
-  // Fetch user profile
-  const { data: userData } = useGetUserProfileQuery();
-
   const searchParams = useSearchParams();
-  const propertyId = searchParams.get('propertyId');
+  const propertyId = searchParams.get("propertyId");
+
+  // Fetch user profile and listings
+  const { data: userData } = useGetUserProfileQuery() as { data?: UserData };
+  const { data: listingsData } = useGetAllMyListingsQuery() as {
+    data?: ListingsData;
+  };
+
+  // Form states
+  const [form, setForm] = useState({
+    streetAddress: "",
+    district: "",
+    state: "",
+    postalCode: "",
+    propertyType: "",
+  });
+
+  const [verificationForm, setVerificationForm] = useState({
+    fullName: "",
+    email: "",
+    phone: "",
+    additionalDetails: "",
+  });
+
+  // Prepopulate form with property details
+  useEffect(() => {
+    if (propertyId && listingsData?.properties) {
+      const property = listingsData.properties.find(
+        (p: Property) => p.id === propertyId
+      );
+      if (property) {
+        setForm({
+          streetAddress: property.location?.streetAddress || "",
+          district: property.location?.city || "",
+          state: property.location?.country || "",
+          postalCode: "",
+          propertyType: property?.propertyType || "Residential",
+        });
+      }
+    }
+  }, [propertyId, listingsData]);
+
+  // Prepopulate verification form with user data
+  useEffect(() => {
+    if (userData?.currentUser) {
+      const user = userData.currentUser;
+      setVerificationForm((prev) => ({
+        ...prev,
+        email: user.email || "",
+        fullName: user.name || "",
+        phone: user.phone || "",
+      }));
+    }
+  }, [userData]);
 
   // Mutation for claim property
   type ClaimPropertyPayload = {
@@ -44,39 +102,27 @@ const ClaimProperty = () => {
     additionalInfo: string;
     email: string;
   };
-  const { mutate: claimProperty, error: claimError, data: claimData, isPending: claimLoading } = useMutation<unknown, Error, ClaimPropertyPayload>({
-    mutationFn: (payload: ClaimPropertyPayload) => {
-      if (!propertyId) throw new Error('No propertyId provided in URL');
-      return http.httpClaimProperty(propertyId, payload);
-    }
-  });
 
-  // Prepopulate form fields from user profile
-  React.useEffect(() => {
-    if (userData?.currentUser) {
-      const user = userData.currentUser;
-      setForm((prev) => ({
-        ...prev,
-        streetAddress: user.street || user.streetAddress || '',
-        district: user.district || '',
-        state: user.state || user.stateOrRegion || '',
-        postalCode: user.postalCode || '',
-        // propertyType left for user to select
-      }));
-      setVerificationForm((prev) => ({
-        ...prev,
-        email: user.email || '',
-        // fullName and phone left for user to fill
-      }));
-    }
-  }, [userData]);
+  const {
+    mutate: claimProperty,
+    error: claimError,
+    data: claimData,
+    isPending: claimLoading,
+  } = useMutation<unknown, Error, ClaimPropertyPayload>({
+    mutationFn: (payload: ClaimPropertyPayload) => {
+      if (!propertyId) throw new Error("No propertyId provided in URL");
+      return http.httpClaimProperty(propertyId, payload);
+    },
+  });
 
   // Step state
   const [step, setStep] = useState(1);
   const [submitting, setSubmitting] = useState(false);
 
   // Handlers for step 1
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+  ) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
   const handleContinue = (e: React.FormEvent) => {
@@ -85,17 +131,22 @@ const ClaimProperty = () => {
   };
   const handleCancel = () => {
     setForm({
-      streetAddress: '',
-      district: '',
-      state: '',
-      postalCode: '',
-      propertyType: '',
+      streetAddress: "",
+      district: "",
+      state: "",
+      postalCode: "",
+      propertyType: "",
     });
   };
 
   // Handlers for step 2
-  const handleVerificationChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    setVerificationForm({ ...verificationForm, [e.target.name]: e.target.value });
+  const handleVerificationChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
+    setVerificationForm({
+      ...verificationForm,
+      [e.target.name]: e.target.value,
+    });
   };
   const handleVerificationContinue = (e: React.FormEvent) => {
     e.preventDefault();
@@ -103,10 +154,10 @@ const ClaimProperty = () => {
   };
   const handleVerificationCancel = () => {
     setVerificationForm({
-      fullName: '',
-      email: '',
-      phone: '',
-      additionalDetails: '',
+      fullName: "",
+      email: "",
+      phone: "",
+      additionalDetails: "",
     });
     setStep(1);
   };
@@ -119,8 +170,8 @@ const ClaimProperty = () => {
     setSubmitting(true);
     const payload: ClaimPropertyPayload = {
       fullName: verificationForm.fullName,
-      phoneNunber: verificationForm.phone, // Note: backend expects 'phoneNunber' (typo in backend)
-      country: userData?.currentUser?.country || '',
+      phoneNunber: verificationForm.phone,
+      country: form.state, // Assuming state maps to country for simplicity
       stateOrRegion: form.state,
       district: form.district,
       postalCode: form.postalCode,
@@ -131,7 +182,7 @@ const ClaimProperty = () => {
     claimProperty(payload, {
       onSuccess: () => {
         setSubmitting(false);
-        alert('Claim submitted!');
+        alert("Claim submitted!");
       },
       onError: () => {
         setSubmitting(false);
@@ -152,35 +203,95 @@ const ClaimProperty = () => {
   };
 
   // Read-only fields for prepopulated data
-  const detailsReadOnlyFields = ['streetAddress', 'district', 'state', 'postalCode'];
-  const verificationReadOnlyFields = ['email'];
+  const detailsReadOnlyFields = [
+    "streetAddress",
+    "district",
+    "state",
+    "postalCode",
+    "propertyType",
+  ];
+  const verificationReadOnlyFields = ["email", "fullName", "phone"];
 
   if (!propertyId) {
-    return <div className="p-8 text-center text-red-600">No propertyId provided in the URL. Please select a property to claim.</div>;
+    return (
+      <div className="p-8 text-center text-red-600">
+        No propertyId provided in the URL. Please select a property to claim.
+      </div>
+    );
   }
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-start bg-white py-10">
-      <h1 className="text-4xl font-bold text-teal-800 mb-2">Claim Your Property</h1>
+      <h1 className="text-4xl font-bold text-teal-800 mb-2">
+        Claim Your Property
+      </h1>
       <p className="text-gray-500 mb-8">Claim your home</p>
-      {claimLoading && <div className="text-orange-600 mb-4">Submitting claim...</div>}
-      {claimError && <div className="text-red-600 mb-4">Error: {claimError.message}</div>}
-      {claimData !== undefined && <div className="text-green-600 mb-4">Claim submitted successfully!</div>}
+      {claimLoading && (
+        <div className="text-orange-600 mb-4">Submitting claim...</div>
+      )}
+      {claimError && (
+        <div className="text-red-600 mb-4">Error: {claimError.message}</div>
+      )}
+      {claimData !== undefined && (
+        <div className="text-green-600 mb-4">Claim submitted successfully!</div>
+      )}
       {/* Stepper */}
       <div className="flex items-center justify-center w-full max-w-xl mb-8">
         <div className="flex-1 flex flex-col items-center">
-          <div className={`w-10 h-10 rounded-full ${step === 1 ? 'bg-[#C85212] text-white' : 'bg-gray-200 text-gray-400'} flex items-center justify-center font-bold`}>1</div>
-          <span className={`mt-2 text-sm font-medium ${step === 1 ? 'text-gray-700' : 'text-gray-400'}`}>Property Details</span>
+          <div
+            className={`w-10 h-10 rounded-full ${
+              step === 1
+                ? "bg-[#C85212] text-white"
+                : "bg-gray-200 text-gray-400"
+            } flex items-center justify-center font-bold`}
+          >
+            1
+          </div>
+          <span
+            className={`mt-2 text-sm font-medium ${
+              step === 1 ? "text-gray-700" : "text-gray-400"
+            }`}
+          >
+            Property Details
+          </span>
         </div>
         <div className="flex-1 border-t-2 border-gray-200 mx-2" />
         <div className="flex-1 flex flex-col items-center">
-          <div className={`w-10 h-10 rounded-full ${step === 2 ? 'bg-[#C85212] text-white' : 'bg-gray-200 text-gray-400'} flex items-center justify-center font-bold`}>2</div>
-          <span className={`mt-2 text-sm font-medium ${step === 2 ? 'text-gray-700' : 'text-gray-400'}`}>Verification</span>
+          <div
+            className={`w-10 h-10 rounded-full ${
+              step === 2
+                ? "bg-[#C85212] text-white"
+                : "bg-gray-200 text-gray-400"
+            } flex items-center justify-center font-bold`}
+          >
+            2
+          </div>
+          <span
+            className={`mt-2 text-sm font-medium ${
+              step === 2 ? "text-gray-700" : "text-gray-400"
+            }`}
+          >
+            Verification
+          </span>
         </div>
         <div className="flex-1 border-t-2 border-gray-200 mx-2" />
         <div className="flex-1 flex flex-col items-center">
-          <div className={`w-10 h-10 rounded-full ${step === 3 ? 'bg-[#C85212] text-white' : 'bg-gray-200 text-gray-400'} flex items-center justify-center font-bold`}>3</div>
-          <span className={`mt-2 text-sm font-medium ${step === 3 ? 'text-gray-700' : 'text-gray-400'}`}>Confirmation</span>
+          <div
+            className={`w-10 h-10 rounded-full ${
+              step === 3
+                ? "bg-[#C85212] text-white"
+                : "bg-gray-200 text-gray-400"
+            } flex items-center justify-center font-bold`}
+          >
+            3
+          </div>
+          <span
+            className={`mt-2 text-sm font-medium ${
+              step === 3 ? "text-gray-700" : "text-gray-400"
+            }`}
+          >
+            Confirmation
+          </span>
         </div>
       </div>
       {/* Step 1: Property Details Form */}
@@ -217,4 +328,4 @@ const ClaimProperty = () => {
   );
 };
 
-export default ClaimProperty; 
+export default ClaimProperty;

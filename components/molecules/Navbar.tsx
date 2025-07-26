@@ -5,10 +5,9 @@ import { usePathname, useRouter } from "next/navigation";
 import { ChevronDown, Menu, Phone, User, X } from "lucide-react";
 import UserDropdownMenu from "@/components/molecules/DropdownMenu";
 import SwitchProfileModal from "@/components/molecules/ProfileModal";
-import ListingsDropdown from "@/components//molecules/ListingsDropdown";
+import ListingsDropdown from "@/components/molecules/ListingsDropdown";
 import Image from "next/image";
 import logo from "@/public/aparteyLogo.png";
-// import { TokenManager } from "@/utils/tokenManager";
 import { useAuthStatusQuery } from "@/Hooks/use-getAuthStatus.query";
 import { useGetUserProfileQuery } from "@/Hooks/use-getuserProfile.query";
 
@@ -26,7 +25,7 @@ const Navbar: React.FC<NavbarProps> = () => {
   // Use auth status for authentication and role
   const { data: authData } = useAuthStatusQuery();
   const { data: userProfileData } = useGetUserProfileQuery();
-  const [selectedRole, setSelectedRole] = useState();
+  const [selectedRole, setSelectedRole] = useState<string | undefined>();
 
   useEffect(() => {
     if (authData) {
@@ -36,13 +35,16 @@ const Navbar: React.FC<NavbarProps> = () => {
     }
   }, [authData]);
 
+  // Early return for admin paths after all hooks
+  if (pathname?.startsWith("/admin")) return null;
+
   const navItems = [
-    { 
-      label: "Home", 
-      href: "/", 
-      active: pathname === "/", 
+    {
+      label: "Home",
+      href: "/",
+      active: pathname === "/",
       hasDropdown: false,
-      isDynamic: true // Mark Home as dynamic
+      isDynamic: true,
     },
     {
       label: "Listings",
@@ -72,28 +74,31 @@ const Navbar: React.FC<NavbarProps> = () => {
 
   const handleLogoOrHomeClick = (e: React.MouseEvent) => {
     e.preventDefault();
-    console.log("Logo/Home clicked, authData:", authData); // Debug log
+    console.log("Logo/Home clicked, authData:", authData);
     if (!authData) {
       router.push("/");
       return;
     }
     const userRole =
-      authData.user?.role || authData.role || authData.currentUserRole?.role || "renter";
-    console.log("User role:", userRole); // Debug log
+      authData.user?.role ||
+      authData.role ||
+      authData.currentUserRole?.role ||
+      "renter";
+    console.log("User role:", userRole);
     let homepage = "/";
     if (userRole.toLowerCase() === "homeowner") homepage = "/landlord";
     else if (userRole.toLowerCase() === "agent") homepage = "/agent";
-    console.log("Routing to homepage:", homepage); // Debug log
+    console.log("Routing to homepage:", homepage);
     router.push(homepage);
   };
 
   const handleUserIconClick = () => {
-    console.log("User icon clicked, authData:", authData); // Debug log
-    if (!authData ) {
+    console.log("User icon clicked, authData:", authData);
+    if (!authData) {
       router.push("/signin");
       return;
     }
-    console.log("Setting dropdown to true"); // Debug log
+    console.log("Setting dropdown to true");
     setIsUserDropdownOpen(true);
   };
 
@@ -112,13 +117,18 @@ const Navbar: React.FC<NavbarProps> = () => {
       <nav className="bg-white shadow-sm border-b border-gray-100 relative">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
-            {/* Logo */}
-            <a href="#" className="flex items-center" onClick={handleLogoOrHomeClick}>
+            <a
+              href="#"
+              className="flex items-center"
+              onClick={handleLogoOrHomeClick}
+            >
               <Image
                 src={logo}
                 alt="Logo"
-                className="object-cover"
-                sizes="(max-width: 768px) 100vw, (min-width: 769px) 50vw"
+                className="object-cover w-20 md:w-32 lg:w-40"
+                width={64}
+                height={64}
+                sizes="(max-width: 768px) 48px, 64px"
               />
             </a>
 
@@ -147,7 +157,9 @@ const Navbar: React.FC<NavbarProps> = () => {
                           ? "text-[#C85212]"
                           : "text-gray-700 hover:text-[#C85212]"
                       }`}
-                      onClick={() => setIsListingsDropdownOpen(!isListingsDropdownOpen)}
+                      onClick={() =>
+                        setIsListingsDropdownOpen(!isListingsDropdownOpen)
+                      }
                     >
                       <span>{item.label}</span>
                       <ChevronDown
@@ -229,9 +241,6 @@ const Navbar: React.FC<NavbarProps> = () => {
                 isOpen={isUserDropdownOpen}
                 onClose={handleCloseUserDropdown}
                 onSwitchProfile={handleSwitchProfile}
-                userName="John Doe"
-                userEmail="john@example.com"
-                favoriteCount={3}
               />
             )}
 
@@ -307,7 +316,7 @@ const Navbar: React.FC<NavbarProps> = () => {
         </div>
       </nav>
 
-      {/* Profile Switch Modal - Now uses userData instead of hardcoded currentProfile */}
+      {/* Profile Switch Modal */}
       <SwitchProfileModal
         isOpen={isSwitchProfileModalOpen}
         onClose={handleCloseSwitchProfileModal}

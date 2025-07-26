@@ -201,21 +201,23 @@ const ReviewsSection: React.FC<ReviewsSectionProps> = ({
   // Generate Google Maps URL with multiple markers
   const generateMapUrl = () => {
     const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
+    console.log(apiKey);
+
     if (!apiKey) {
-      console.warn('Google Maps API key is missing!');
-      return '';
+      console.warn("Google Maps API key is missing!");
+      return "";
     }
     if (mapCenter.lat === 0 && mapCenter.lng === 0) {
-      // Fallback to Abuja if no valid center
       return `https://maps.googleapis.com/maps/api/staticmap?center=9.05785,7.49508&zoom=13&size=600x500&markers=color:orange%7C9.05785,7.49508&key=${apiKey}`;
     }
+    console.log("Map Center:", mapCenter);
 
     const validMarkers = mapMarkers.filter(
       (marker) => marker.coordinates.lat !== 0 && marker.coordinates.lng !== 0
     );
+    console.log("Valid Markers:", validMarkers);
 
     if (validMarkers.length === 0) {
-      // Single marker at center
       return `https://maps.googleapis.com/maps/api/staticmap?center=${mapCenter.lat},${mapCenter.lng}&zoom=13&size=600x500&markers=color:orange%7C${mapCenter.lat},${mapCenter.lng}&key=${apiKey}`;
     }
 
@@ -231,8 +233,6 @@ const ReviewsSection: React.FC<ReviewsSectionProps> = ({
     return `https://maps.googleapis.com/maps/api/staticmap?center=${mapCenter.lat},${mapCenter.lng}&zoom=12&size=600x500&${markersParam}&key=${apiKey}`;
   };
   const mapUrl = generateMapUrl();
-
-  
 
   const renderStars = (rating: number) => {
     const stars = [];
@@ -265,14 +265,17 @@ const ReviewsSection: React.FC<ReviewsSectionProps> = ({
   };
 
   // Helper to get the best available address string
-  const getDisplayAddress = (loc: Review["location"] & { fullAddress?: string }) => {
-    if (loc?.fullAddress && loc.fullAddress.trim() !== "") return loc.fullAddress;
+  const getDisplayAddress = (
+    loc: Review["location"] & { fullAddress?: string }
+  ) => {
+    if (loc?.fullAddress && loc.fullAddress.trim() !== "")
+      return loc.fullAddress;
     const parts = [
       loc?.streetAddress || "",
       loc?.apartmentUnitNumber || "",
       loc?.district || "",
       loc?.city || "",
-      loc?.country || ""
+      loc?.country || "",
     ].filter(Boolean);
     return parts.length > 0 ? parts.join(", ") : "No Address";
   };
@@ -359,9 +362,13 @@ const ReviewsSection: React.FC<ReviewsSectionProps> = ({
                   onClick={() => router.push(`/reviewsPage/${review._id}`)}
                   tabIndex={0}
                   role="button"
-                  aria-label={`View details for review at ${getDisplayAddress(review.location as typeof review.location & { fullAddress?: string })}`}
+                  aria-label={`View details for review at ${getDisplayAddress(
+                    review.location as typeof review.location & {
+                      fullAddress?: string;
+                    }
+                  )}`}
                   onKeyDown={(e) => {
-                    if (e.key === 'Enter' || e.key === ' ') {
+                    if (e.key === "Enter" || e.key === " ") {
                       router.push(`/reviewsPage/${review._id}`);
                     }
                   }}
@@ -385,7 +392,11 @@ const ReviewsSection: React.FC<ReviewsSectionProps> = ({
                   </div>
                   <div className="flex flex-col">
                     <h1 className="text-gray-800 font-medium text-lg">
-                      {getDisplayAddress(review.location as typeof review.location & { fullAddress?: string })}
+                      {getDisplayAddress(
+                        review.location as typeof review.location & {
+                          fullAddress?: string;
+                        }
+                      )}
                     </h1>
                     {/* <h4 className="text-gray-800 font-medium text-lg">
                       {review.location.streetAddress},{" "}

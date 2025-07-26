@@ -6,6 +6,8 @@ import { SignInFormProps } from "@/types/generated";
 import { useAuthStatusQuery } from "@/Hooks/use-getAuthStatus.query";
 import { toast } from "react-hot-toast";
 import { useRouter } from "next/navigation";
+import { TokenManager } from "@/utils/tokenManager";
+import { useUserRole } from "@/Hooks/useUserRole";
 
 const SignInForm: React.FC<SignInFormProps> = ({
   isSubmitting,
@@ -15,6 +17,7 @@ const SignInForm: React.FC<SignInFormProps> = ({
 }) => {
   const [showPassword, setShowPassword] = useState(false);
   const router = useRouter();
+  const { updateRole } = useUserRole();
 
   const {
     data: authData,
@@ -28,35 +31,75 @@ const SignInForm: React.FC<SignInFormProps> = ({
   };
 
   useEffect(() => {
-    if (authData && !authError) {
-      toast.success("You are already signed in!");
-      const userRole =
-        authData.user?.role || authData.role || authData.currentUserRole?.role;
+    // Check for pending profile switch after sign-in
+    const handlePostLoginRedirect = () => {
+      const pendingReviewData = localStorage.getItem("pendingReviewData");
+      if (pendingReviewData) {
+        try {
+          const parsedData = JSON.parse(pendingReviewData);
+          const intendedProfile = parsedData?.location?.intendedProfile;
+          if (intendedProfile && authData && !authError) {
+            updateRole(intendedProfile);
+            localStorage.removeItem("pendingReviewData");
+            switch (intendedProfile.toLowerCase()) {
+              case "renter":
+                router.push("/");
+                break;
+              case "landlord":
+                router.push("/landlord");
+                break;
+              case "agent":
+                router.push("/agent");
+                break;
+              default:
+                router.push("/profile");
+                break;
+            }
+            return true;
+          }
+        } catch (error) {
+          console.error("Error parsing pending review data:", error);
+          localStorage.removeItem("pendingReviewData");
+        }
+      }
+      return false;
+    };
 
-      switch (userRole?.toLowerCase()) {
-        case "renter":
-          router.push("/");
-          break;
-        case "homeowner":
-          router.push("/landlord");
-          break;
-        case "agent":
-          router.push("/agent");
-          break;
-        default:
-          router.push("/profile");
-          break;
+    // Only redirect if authenticated and no pending profile switch
+    if (authData && !authError && TokenManager.hasToken()) {
+      if (!handlePostLoginRedirect()) {
+        const userRole =
+          authData.user?.role ||
+          authData.role ||
+          authData.currentUserRole?.role ||
+          "renter";
+        toast.success("You are already signed in!");
+        switch (userRole.toLowerCase()) {
+          case "renter":
+            router.push("/");
+            break;
+          case "homeowner":
+            router.push("/landlord");
+            break;
+          case "agent":
+            router.push("/agent");
+            break;
+          default:
+            router.push("/profile");
+            break;
+        }
       }
     }
-  }, [authData, authError, router]);
+  }, [authData, authError, router, updateRole]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
       await onSubmit(e);
-      refetchAuthStatus();
+      await refetchAuthStatus();
     } catch (error) {
       console.error("Sign-in error:", error);
+      toast.error("Sign-in failed. Please try again.");
     }
   };
 
@@ -73,7 +116,10 @@ const SignInForm: React.FC<SignInFormProps> = ({
     <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
       <div className="space-y-4 shadow-xl">
         <div>
-          <label htmlFor="email" className="block text-sm font-medium text-gray-700">
+          <label
+            htmlFor="email"
+            className="block text-sm font-medium text-gray-700"
+          >
             Email
           </label>
           <div className="mt-1">
@@ -83,29 +129,37 @@ const SignInForm: React.FC<SignInFormProps> = ({
               autoComplete="email"
               placeholder="example@email.com"
               className={`block w-full rounded-md border ${
-                errors.email ? 'border-red-300' : 'border-gray-300'
+                errors.email ? "border-red-300" : "border-gray-300"
               } px-3 py-2 placeholder-gray-400 shadow-sm focus:border-orange-500 focus:outline-none focus:ring-orange-500 sm:text-sm`}
-              {...register('email', {
-                required: 'Email is required',
+              {...register("email", {
+                required: "Email is required",
                 pattern: {
                   value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
-                  message: 'Invalid email address',
+                  message: "Invalid email address",
                 },
               })}
             />
             {errors.email && (
-              <p className="mt-1 text-xs text-red-600">{errors.email.message}</p>
+              <p className="mt-1 text-xs text-red-600">
+                {errors.email.message}
+              </p>
             )}
           </div>
         </div>
 
         <div>
           <div className="flex items-center justify-between">
-            <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+            <label
+              htmlFor="password"
+              className="block text-sm font-medium text-gray-700"
+            >
               Password
             </label>
             <div className="text-sm">
-              <a href="/resetPassword" className="font-medium text-blue-500 hover:text-blue-400">
+              <a
+                href="/resetPassword"
+                className="font-medium text-blue-500 hover:text-blue-400"
+              >
                 Forgot password?
               </a>
             </div>
@@ -113,17 +167,17 @@ const SignInForm: React.FC<SignInFormProps> = ({
           <div className="mt-1 relative">
             <input
               id="password"
-              type={showPassword ? 'text' : 'password'}
+              type={showPassword ? "text" : "password"}
               autoComplete="current-password"
               placeholder="Enter password"
               className={`block w-full rounded-md border ${
-                errors.password ? 'border-red-300' : 'border-gray-300'
+                errors.password ? "border-red-300" : "border-gray-300"
               } px-3 py-2 pr-10 placeholder-gray-400 shadow-sm focus:border-orange-500 focus:outline-none focus:ring-orange-500 sm:text-sm`}
-              {...register('password', {
-                required: 'Password is required',
+              {...register("password", {
+                required: "Password is required",
                 minLength: {
                   value: 6,
-                  message: 'Password must be at least 6 characters',
+                  message: "Password must be at least 6 characters",
                 },
               })}
             />
@@ -139,7 +193,9 @@ const SignInForm: React.FC<SignInFormProps> = ({
               )}
             </button>
             {errors.password && (
-              <p className="mt-1 text-xs text-red-600">{errors.password.message}</p>
+              <p className="mt-1 text-xs text-red-600">
+                {errors.password.message}
+              </p>
             )}
           </div>
         </div>

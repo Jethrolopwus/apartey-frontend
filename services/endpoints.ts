@@ -25,10 +25,10 @@ export default Object.freeze({
   getAllReviews: "/reviews",
   getAllProperties: "/listings?category=swap",
   getAllBlogPost: "/blog",
-  getAllNotifications:"/notifications",
+  getAllNotifications: "/notifications",
   updateAllNotificationsAsRead: "/notifications/mark-all",
-  updateNotificationAsRead:(id: string) => `/notifications/${id}/read`,
-  deleteNotificationById: (id: string) =>`/notifications/${id}`,
+  updateNotificationAsRead: (id: string) => `/notifications/${id}/read`,
+  deleteNotificationById: (id: string) => `/notifications/${id}`,
   getReviewById: (id: string) => `/reviews/${id}`,
   ReviewLikesToggle: (id: string) => `/reviews/${id}/likes`,
   flagReview: (id: string) => `/reviews/${id}/flag`,
@@ -37,9 +37,32 @@ export default Object.freeze({
   createListing: "/listings",
   getAllListings: "/listings",
   getAllMyListings: "/listings/my-listings",
-  claimProperties: (id: string) =>`/listings/claim/${id}`,
+  claimProperties: (id: string) => `/listings/claim/${id}`,
   getListingById: (id: string) => `/listings/${id}`,
   getPropertiesById: (id: string) => `/properties/${id}`,
 
   getRelatedListing: (id: string) => `/listings/${id}`,
+
+  // ====ADMIN ENDPOINTS=====//
+
+  getAdminOverviewStatus: "/admin/overview",
+  getAdminProperties: "/admin/properties",
+  getAdminPropertyById: (id: string) => `/admin/properties/${id}`,
+  updateAdminProperty: (id: string) => `/admin/properties/${id}`,
+  deleteAdminProperty: (id: string) => `/admin/properties/${id}`,
+  // ==ADMINUSERS ENDPOINTS===//
+  getAllAdminUsers: "/admin/users",
+  getAdminUsersById: (id: string) => `/admin/users/${id}`,
+  deleteAdminUser: (id: string) => `/admin/users/${id}`,
+  toggleAdminUserDeactivate: (id: string) => `/admin/users/${id}/status`,
+  // ==ADMIN REVIEWS ENDPOINTS===//
+  getAllAdminReviews: "/admin/reviews",
+  getAdminReviewsById: (id: string) => `/admin/reviews/${id}`,
+  deleteAdminReviewsById: (id: string) => `/admin/reviews/${id}`,
+
+  // ==ADMIN CLAIM ENDPOINTS===//
+  getAllAdminPropertyClaims: "/admin/claims",
+  getAdminPropertyClaimDetails: (id: string) => `/admin/claims/${id}`,
+  approvePropertyClaim: (id: string) => `/admin/claims/${id}`,
+  rejectPropertyClaim: (id: string) => `/admin/claims/${id}/reject`,
 });

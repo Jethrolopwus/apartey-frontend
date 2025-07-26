@@ -1,8 +1,12 @@
 "use client";
-
 import React from "react";
 import { useRouter } from "next/navigation";
 import { X, Home, Building, Users } from "lucide-react";
+import { useUserRole } from "@/Hooks/useUserRole";
+import { useAuthRedirect } from "@/Hooks/useAuthRedirect";
+import { useAddRolesMutation } from "@/Hooks/use.addRoles.mutation";
+import { toast } from "react-hot-toast";
+import { TokenManager } from "@/utils/tokenManager";
 
 interface SwitchProfileModalProps {
   isOpen: boolean;
@@ -19,27 +23,29 @@ const SwitchProfileModal: React.FC<SwitchProfileModalProps> = ({
   onClose,
   userData,
 }) => {
-  // Determine current profile based on user data
-  const getCurrentProfile = (): "renter" | "landlord" | "developer" => {
-    if (!userData?.currentUserRole?.role) return "renter";
+  const router = useRouter();
+  const { role, updateRole, isLoading: roleLoading } = useUserRole();
+  const { isAuthenticated, handleAuthRedirect } = useAuthRedirect();
+  const { mutate: addRole, isLoading: mutationLoading } = useAddRolesMutation();
 
-    const userRole = userData.currentUserRole.role.toLowerCase();
-
-    if (
-      userRole.includes("landlord") ||
-      userRole.includes("homeowner") ||
-      userRole.includes("owner")
-    ) {
-      return "landlord";
-    } else if (userRole.includes("developer") || userRole.includes("agent")) {
-      return "developer";
+  // Determine current profile based on userData or stored role
+  const getCurrentProfile = (): "renter" | "homeowner" | "agent" => {
+    if (userData?.currentUserRole?.role) {
+      const userRole = userData.currentUserRole.role.toLowerCase();
+      if (
+        userRole.includes("agent") ||
+        userRole.includes("homeowner") ||
+        userRole.includes("renter")
+      ) {
+        return "homeowner";
+      } else if (userRole.includes("homeowner") || userRole.includes("agent")) {
+        return "agent";
+      }
     }
-
-    return "renter";
+    return role || "renter";
   };
 
   const currentProfile = getCurrentProfile();
-  const router = useRouter();
 
   const profiles = [
     {
@@ -51,9 +57,11 @@ const SwitchProfileModal: React.FC<SwitchProfileModalProps> = ({
       bgColor: "bg-orange-100",
       textColor: "text-orange-600",
       iconColor: "text-orange-500",
+      activeBgColor: "bg-[#C85212]",
+      activeTextColor: "text-white",
     },
     {
-      id: "landlord" as const,
+      id: "homeowner" as const,
       title: "Landlord",
       description: "Manage your properties",
       icon: Building,
@@ -61,22 +69,70 @@ const SwitchProfileModal: React.FC<SwitchProfileModalProps> = ({
       bgColor: "bg-blue-100",
       textColor: "text-blue-600",
       iconColor: "text-blue-500",
+      activeBgColor: "bg-[#C85212]",
+      activeTextColor: "text-white",
     },
     {
-      id: "developer" as const,
-      title: "Developer/Agent",
+      id: "agent" as const,
+      title: "Agent",
       description: "Grow your business",
       icon: Users,
       route: "/agent",
       bgColor: "bg-green-100",
       textColor: "text-green-600",
       iconColor: "text-green-500",
+      activeBgColor: "bg-[#C85212]",
+      activeTextColor: "text-white",
     },
   ];
 
-  const handleProfileSelect = (profile: (typeof profiles)[0]) => {
-    router.push(profile.route);
-    onClose();
+  const handleProfileSelect = async (profile: (typeof profiles)[0]) => {
+    if (!isAuthenticated) {
+      // Store the intended profile switch and redirect to signin
+      handleAuthRedirect({
+        stayDetails: {},
+        costDetails: {},
+        accessibility: {},
+        ratingsAndReviews: {},
+        submitAnonymously: false,
+        location: {
+          intendedProfile: profile.id,
+          intendedProfileRoute: profile.route,
+        },
+      });
+      return;
+    }
+
+    try {
+      // Update role in backend
+      await new Promise((resolve, reject) => {
+        addRole(
+          { role: profile.id },
+          {
+            onSuccess: () => {
+              // Update local role
+              updateRole(profile.id);
+              TokenManager.setProfileRoute(profile.route);
+              // Redirect to the appropriate role-based homepage
+              router.push(profile.route);
+              router.refresh();
+              toast.success(`Switched to ${profile.title} profile`);
+              onClose();
+              resolve(null);
+            },
+            onError: (error: unknown) => {
+              console.error("Error updating role:", error);
+              toast.error("Failed to switch profile. Please try again.");
+              reject(error);
+            },
+          }
+        );
+      });
+    } catch (error) {
+      console.error("Error switching profile:", error);
+      router.push("/signin");
+      onClose();
+    }
   };
 
   if (!isOpen) return null;
@@ -111,35 +167,40 @@ const SwitchProfileModal: React.FC<SwitchProfileModalProps> = ({
               <button
                 key={profile.id}
                 onClick={() => handleProfileSelect(profile)}
+                disabled={roleLoading || mutationLoading}
                 className={`w-full p-4 rounded-xl border transition-all duration-200 hover:shadow-md ${
                   isSelected
-                    ? "bg-[#C85212] border-[#C85212]"
+                    ? `${profile.activeBgColor} border-[#C85212]`
                     : "bg-gray-50 border-gray-200 hover:bg-gray-100"
+                } ${
+                  roleLoading || mutationLoading
+                    ? "opacity-50 cursor-not-allowed"
+                    : ""
                 }`}
               >
                 <div className="flex items-center space-x-4">
                   <div
                     className={`p-2 rounded-lg ${
-                      isSelected ? "bg-white shadow-sm" : "bg-white"
+                      isSelected ? "bg-white shadow-sm" : profile.bgColor
                     }`}
                   >
                     <Icon
                       className={`w-5 h-5 ${
-                        isSelected ? "text-[#C85212]" : "text-gray-500"
+                        isSelected ? profile.activeTextColor : profile.iconColor
                       }`}
                     />
                   </div>
                   <div className="text-left">
                     <h3
                       className={`font-medium ${
-                        isSelected ? "text-white" : "text-gray-700"
+                        isSelected ? profile.activeTextColor : profile.textColor
                       }`}
                     >
                       {profile.title}
                     </h3>
                     <p
                       className={`text-sm ${
-                        isSelected ? "text-white" : "text-gray-500"
+                        isSelected ? profile.activeTextColor : profile.textColor
                       }`}
                     >
                       {profile.description}
@@ -147,7 +208,7 @@ const SwitchProfileModal: React.FC<SwitchProfileModalProps> = ({
                   </div>
                   {isSelected && (
                     <div className="ml-auto">
-                      <div className="w-2 h-2  rounded-full bg-white" />
+                      <div className="w-2 h-2 rounded-full bg-white" />
                     </div>
                   )}
                 </div>

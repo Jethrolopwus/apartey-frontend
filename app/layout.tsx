@@ -1,3 +1,4 @@
+
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import Script from "next/script";
@@ -6,9 +7,10 @@ import Navbar from "@/components/molecules/Navbar";
 import Footer from "@/components/molecules/Footer";
 import QueryProvider from "@/app/QueryProvider";
 import ToastProvider from "@/app/ToastProvider";
-import NextProvider from "@/app/NextProvider"
+import NextProvider from "@/app/NextProvider";
 import { ReviewFormProvider } from "@/app/context/RevievFormContext";
 import AuthSyncProvider from "@/components/AuthSyncProvider";
+import React from "react";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -48,8 +50,8 @@ export default function RootLayout({
       >
         <ReviewFormProvider>
           <NextProvider>
-            <QueryProvider> 
-            <AuthSyncProvider/>
+            <QueryProvider>
+              <AuthSyncProvider />
               <Navbar />
               {children}
               <Footer />

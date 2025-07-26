@@ -1,6 +1,7 @@
 "use client";
 import React, { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { signOut } from "next-auth/react";
 import {
   User,
   Heart,
@@ -12,32 +13,61 @@ import {
   HistoryIcon,
   Bell,
 } from "lucide-react";
+import { useAuthRedirect } from "@/Hooks/useAuthRedirect";
+import { useUserRole } from "@/Hooks/useUserRole";
+import { TokenManager } from "@/utils/tokenManager";
 
 interface UserDropdownMenuProps {
   isOpen: boolean;
   onClose: () => void;
   onSwitchProfile: () => void;
-  userName?: string;
-  userEmail?: string;
-  favoriteCount?: number;
+  userData?: {
+    userName?: string;
+    userEmail?: string;
+    favoriteCount?: number;
+  };
 }
 
 const UserDropdownMenu: React.FC<UserDropdownMenuProps> = ({
   isOpen,
   onClose,
   onSwitchProfile,
-  favoriteCount = 3,
+  userData,
 }) => {
   const router = useRouter();
   const dropdownRef = useRef<HTMLDivElement>(null);
   const [selectedItem, setSelectedItem] = useState<string | null>(null);
+  const { role } = useUserRole();
+  const { isAuthenticated, checkAuthentication } = useAuthRedirect();
+
+  // Determine profile route based on role
+  const getProfileRoute = () => {
+    switch (role?.toLowerCase()) {
+      case "landlord":
+        return "/profile";
+      case "agent":
+        return "/agent-profile";
+      case "renter":
+      default:
+        return "/profile";
+    }
+  };
+
+  // Dynamic user details based on role
+  const userName =
+    userData?.userName ||
+    `${role ? role.charAt(0).toUpperCase() + role.slice(1) : "Renter"} User`;
+  const userEmail = userData?.userEmail || `${role || "renter"}@example.com`;
+  const favoriteCount = userData?.favoriteCount || 3;
 
   const menuItems = [
     {
       id: "profile",
-      label: "My profile",
+      label: `${
+        role ? role.charAt(0).toUpperCase() + role.slice(1) : "Renter"
+      } Profile`,
       icon: User,
-      route: "/profile",
+      route: getProfileRoute(),
       hasNotification: false,
     },
     {
@@ -59,7 +89,12 @@ const UserDropdownMenu: React.FC<UserDropdownMenuProps> = ({
       id: "favorites",
       label: "Favorites",
       icon: Heart,
-      route: "/profile-favorite",
+      route:
+        role?.toLowerCase() === "landlord"
+          ? "/landlord/favorites"
+          : role?.toLowerCase() === "agent"
+          ? "/agent/favorites"
+          : "/renter-profile/favorites",
       hasNotification: true,
       notificationCount: favoriteCount,
     },
@@ -88,9 +123,7 @@ const UserDropdownMenu: React.FC<UserDropdownMenuProps> = ({
 
   const handleMenuItemClick = (item: (typeof menuItems)[0]) => {
     setSelectedItem(item.id);
-    if (item.id === "profile") {
-      router.push("/profile");
-    } else if (item.route) {
+    if (item.route) {
       router.push(item.route);
     }
     onClose();
@@ -100,30 +133,33 @@ const UserDropdownMenu: React.FC<UserDropdownMenuProps> = ({
     onSwitchProfile();
   };
 
-  const handleLogout = () => {
-    console.log("Logging out...");
-    onClose();
+  const handleLogout = async () => {
+    try {
+      // Clear all tokens and role
+      TokenManager.clearAllTokens();
+      localStorage.removeItem("userRole");
+
+      // Sign out from NextAuth
+      await signOut({ redirect: false });
+
+      // Redirect to signin page
+      router.push("/signin");
+      router.refresh();
+      onClose();
+    } catch (error) {
+      console.error("Logout error:", error);
+      router.push("/signin");
+      onClose();
+    }
   };
 
-  // Close dropdown when clicking outside
+  // Redirect to signin if not authenticated
   useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (
-        dropdownRef.current &&
-        !dropdownRef.current.contains(event.target as Node)
-      ) {
-        onClose();
-      }
-    };
-
-    if (isOpen) {
-      document.addEventListener("mousedown", handleClickOutside);
+    if (!isAuthenticated && !checkAuthentication()) {
+      router.push("/signin");
+      onClose();
     }
-
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, [isOpen, onClose]);
+  }, [isAuthenticated, checkAuthentication, router, onClose]);
 
   if (!isOpen) return null;
 
@@ -132,6 +168,12 @@ const UserDropdownMenu: React.FC<UserDropdownMenuProps> = ({
       ref={dropdownRef}
       className="absolute right-0 top-full mt-2 w-72 bg-white rounded-xl shadow-2xl border border-gray-100 py-2 z-50"
     >
+      {/* User Info */}
+      <div className="px-4 py-3 border-b border-gray-100">
+        <p className="text-gray-900 font-medium">{userName}</p>
+        <p className="text-sm text-gray-500">{userEmail}</p>
+      </div>
+
       {/* Menu Items */}
       <div className="py-2">
         {menuItems.map((item) => {

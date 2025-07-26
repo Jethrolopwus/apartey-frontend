@@ -12,6 +12,20 @@ import type {
 } from "@/types/generated";
 import { TokenManager } from "@/utils/tokenManager";
 import { LocationPayload } from "@/app/context/RevievFormContext";
+import {
+  AdminClaimedPropertiesResponse,
+  AdminClaimedProperty,
+  AdminOverviewResponse,
+  AdminReviews,
+  AdminReviewsResponse,
+  ApiClaimResponse,
+} from "@/types/admin";
+import {
+  AdminPropertiesResponse,
+  AdminProperty,
+  AdminUser,
+  AdminUsersResponse,
+} from "@/types/admin";
 
 const AxiosInstance = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_URL,
@@ -255,35 +269,36 @@ class BaseURL {
       throw error;
     }
   };
-  httpUpdateAllNotificationsAsRead = async (): Promise<RoleSubmissionResponse> => {
-    try {
-      const token =
-        localStorage.getItem("authToken") ||
-        localStorage.getItem("token") ||
-        localStorage.getItem("accessToken");
+  httpUpdateAllNotificationsAsRead =
+    async (): Promise<RoleSubmissionResponse> => {
+      try {
+        const token =
+          localStorage.getItem("authToken") ||
+          localStorage.getItem("token") ||
+          localStorage.getItem("accessToken");
 
-      if (!token) throw new Error("No authentication token found.");
+        if (!token) throw new Error("No authentication token found.");
 
-      const response = await AxiosInstance.patch(
-        endpoints.updateAllNotificationsAsRead,
-        {},
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
+        const response = await AxiosInstance.patch(
+          endpoints.updateAllNotificationsAsRead,
+          {},
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+          }
+        );
+
+        return response.data;
+      } catch (error: any) {
+        if (error.response?.status === 401) {
+          TokenManager.clearAllTokens();
+          window.location.href = "/signin";
         }
-      );
-
-      return response.data;
-    } catch (error: any) {
-      if (error.response?.status === 401) {
-        TokenManager.clearAllTokens();
-        window.location.href = "/signin";
+        throw error;
       }
-      throw error;
-    }
-  };
+    };
   httpUpdateNotificationsAsRead = async (
     id: string,
     data: any
@@ -316,7 +331,9 @@ class BaseURL {
       throw error;
     }
   };
-  httpUpdateNotificationAsRead = async (id: string): Promise<RoleSubmissionResponse> => {
+  httpUpdateNotificationAsRead = async (
+    id: string
+  ): Promise<RoleSubmissionResponse> => {
     try {
       const token =
         localStorage.getItem("authToken") ||
@@ -948,6 +965,343 @@ class BaseURL {
         "Content-Type": "application/json",
       },
     });
+  };
+  // ==Admin methods====//
+
+  httpGetAdminOverviewStatus = async (
+    limit?: number,
+    byId?: number
+  ): Promise<AdminOverviewResponse> => {
+    try {
+      let url = endpoints.getAdminOverviewStatus;
+
+      // Build query parameters
+      const params = new URLSearchParams();
+      if (byId) {
+        params.append("byId", byId.toString());
+      }
+      if (limit) {
+        params.append("limit", limit.toString());
+      }
+      if (params.toString()) {
+        url += `?${params.toString()}`;
+      }
+
+      const response = await AxiosInstance.get<AdminOverviewResponse>(url);
+      return response.data;
+    } catch (error: any) {
+      throw new Error(
+        error.response?.data?.message || "Get admin overview status failed"
+      );
+    }
+  };
+
+  httpGetAdminAllProperties = async (
+    limit?: number,
+    byId?: number
+  ): Promise<AdminPropertiesResponse> => {
+    try {
+      let url = endpoints.getAdminProperties;
+      const params = new URLSearchParams();
+      if (byId) params.append("byId", byId.toString());
+      if (limit) params.append("limit", limit.toString());
+      if (params.toString()) url += `?${params.toString()}`;
+      const response = await AxiosInstance.get(url);
+      return response.data;
+    } catch (error: any) {
+      throw new Error(
+        error.response?.data?.message || "Get all Propertyies failed"
+      );
+    }
+  };
+
+  httpGetAdminPropertyById = async (id: string): Promise<AdminProperty> => {
+    try {
+      const response = await AxiosInstance.get(
+        endpoints.getAdminPropertyById(id)
+      );
+      return response.data;
+    } catch (error: any) {
+      throw new Error(error.response?.data?.message || "Get property failed");
+    }
+  };
+  httpUpdateAdminProperty = async (
+    id: string,
+    data: Partial<AdminProperty>
+  ): Promise<AdminProperty> => {
+    try {
+      const payload = {
+        ...data,
+        price: data.price ? Number(data.price) : undefined,
+      };
+      console.log(
+        "Sending PATCH request to:",
+        endpoints.updateAdminProperty(id)
+      );
+      console.log("Payload:", payload);
+
+      const response = await AxiosInstance.patch(
+        endpoints.updateAdminProperty(id),
+        payload
+      );
+      console.log("Response Data:", response.data);
+      return response.data;
+    } catch (error: any) {
+      console.error("Update property failed:", {
+        message: error.response?.data?.message || error.message,
+        status: error.response?.status,
+        headers: error.response?.headers,
+        request: {
+          url: endpoints.updateAdminProperty(id),
+          data,
+        },
+      });
+      throw new Error(
+        error.response?.data?.message || "Update property failed"
+      );
+    }
+  };
+  //   id: string,
+  //   data: Partial<AdminProperty>
+  // ): Promise<AdminProperty> => {
+  //   try {
+  //     const response = await AxiosInstance.patch(
+  //       endpoints.updateAdminProperty(id),
+  //       data
+  //     );
+  //     console.log("Response Data", response.data);
+  //     return response.data;
+  //   } catch (error: any) {
+  //     throw new Error(
+  //       error.response?.data?.message || "Update property failed"
+  //     );
+  //   }
+  // };
+  httpDeleteAdminProperty = async (id: string): Promise<void> => {
+    try {
+      await AxiosInstance.delete(endpoints.deleteAdminProperty(id));
+    } catch (error: any) {
+      throw new Error(
+        error.response?.data?.message || "Delete property failed"
+      );
+    }
+  };
+
+  // ==== ADMIN USERS ======
+  httpGetAdminAllUsers = async (
+    limit?: number,
+    byId?: number
+  ): Promise<AdminUsersResponse> => {
+    try {
+      let url = endpoints.getAllAdminUsers;
+      const params = new URLSearchParams();
+      if (byId) params.append("byId", byId.toString());
+      if (limit) params.append("limit", limit.toString());
+      if (params.toString()) url += `?${params.toString()}`;
+      const response = await AxiosInstance.get(url);
+      return response.data;
+    } catch (error: any) {
+      throw new Error(
+        error.response?.data?.message || "Get all Admin Users failed"
+      );
+    }
+  };
+  httpGetAdminUsersById = async (id: string): Promise<AdminUser> => {
+    try {
+      const response = await AxiosInstance.get(endpoints.getAdminUsersById(id));
+      return response.data;
+    } catch (error: any) {
+      throw new Error(error.response?.data?.message || "Get User failed");
+    }
+  };
+  httpUpdateAdminUser = async (
+    id: string,
+    data: Partial<AdminUser>
+  ): Promise<AdminUsersResponse> => {
+    try {
+      const payload = {
+        ...data,
+        isActive: data.Deactivated !== undefined ? data.Deactivated : undefined,
+      };
+      console.log(
+        "Sending PATCH request to:",
+        endpoints.toggleAdminUserDeactivate(id)
+      );
+      console.log("Payload:", payload);
+
+      const response = await AxiosInstance.patch(
+        endpoints.updateAdminProperty(id),
+        payload
+      );
+      console.log("Response Data:", response.data);
+      return response.data;
+    } catch (error: any) {
+      console.error("Update property failed:", {
+        message: error.response?.data?.message || error.message,
+        status: error.response?.status,
+        headers: error.response?.headers,
+        request: {
+          url: endpoints.updateAdminProperty(id),
+          data,
+        },
+      });
+      throw new Error(
+        error.response?.data?.message || "Update property failed"
+      );
+    }
+  };
+  httpDeleteAdminUserById = async (id: string): Promise<void> => {
+    try {
+      await AxiosInstance.delete(endpoints.deleteAdminUser(id));
+    } catch (error: any) {
+      throw new Error(
+        error.response?.data?.message || "Delete Admin User failed"
+      );
+    }
+  };
+
+  // ADMIN REVIEWS ====
+  httpGetAdminAllReviews = async (
+    limit?: number,
+    byId?: number
+  ): Promise<AdminReviewsResponse> => {
+    try {
+      let url = endpoints.getAllAdminReviews;
+      const params = new URLSearchParams();
+      if (byId) params.append("byId", byId.toString());
+      if (limit) params.append("limit", limit.toString());
+      if (params.toString()) url += `?${params.toString()}`;
+      const response = await AxiosInstance.get(url);
+      return response.data;
+    } catch (error: any) {
+      throw new Error(
+        error.response?.data?.message || "Get all Admin Reviews failed"
+      );
+    }
+  };
+  httpGetAdminReviewById = async (id: string): Promise<AdminReviews> => {
+    try {
+      const response = await AxiosInstance.get(
+        endpoints.getAdminReviewsById(id)
+      );
+      return response.data;
+    } catch (error: any) {
+      throw new Error(error.response?.data?.message || "Get Review failed");
+    }
+  };
+  httpDeleteAdminReviewById = async (id: string): Promise<void> => {
+    try {
+      await AxiosInstance.delete(endpoints.deleteAdminReviewsById(id));
+    } catch (error: any) {
+      throw new Error(
+        error.response?.data?.message || "Delete Admin Review failed"
+      );
+    }
+  };
+
+  // === ADMIN CLAIM PROPERTIES ==== //
+  httpGetAdminAllClaimedProperties = async (
+    limit?: number,
+    page?: number
+  ): Promise<AdminClaimedPropertiesResponse> => {
+    try {
+      let url = endpoints.getAllAdminPropertyClaims;
+      const params = new URLSearchParams();
+      if (page) params.append("page", page.toString());
+      if (limit) params.append("limit", limit.toString());
+      if (params.toString()) url += `?${params.toString()}`;
+      const response = await AxiosInstance.get(url);
+      return response.data;
+    } catch (error: any) {
+      throw new Error(
+        error.response?.data?.message || "Get all Claimed Properties failed"
+      );
+    }
+  };
+  httpGetAdminClaimedPropertyDetails = async (
+    id: string
+  ): Promise<ApiClaimResponse> => {
+    try {
+      const response = await AxiosInstance.get(
+        endpoints.getAdminPropertyClaimDetails(id)
+      );
+      return response.data;
+    } catch (error: any) {
+      throw new Error(
+        error.response?.data?.message || "Get Claimed Property failed"
+      );
+    }
+  };
+  httpUpdateAdminApproveClaimedProperty = async (
+    id: string,
+    data: { status: "approved" | "pending" | "rejected" }
+  ): Promise<ApiClaimResponse> => {
+    try {
+      const payload = {
+        status: data.status,
+      };
+      console.log(
+        "Sending PATCH request to:",
+        endpoints.approvePropertyClaim(id)
+      );
+      console.log("Payload:", payload);
+
+      const response = await AxiosInstance.patch(
+        endpoints.approvePropertyClaim(id),
+        payload
+      );
+      console.log("Response Data:", response.data);
+      return response.data;
+    } catch (error: any) {
+      console.error("Update claimed property failed:", {
+        message: error.response?.data?.message || error.message,
+        status: error.response?.status,
+        headers: error.response?.headers,
+        request: {
+          url: endpoints.updateAdminProperty(id),
+          data,
+        },
+      });
+      throw new Error(
+        error.response?.data?.message || "Update claimed property failed"
+      );
+    }
+  };
+  httpUpdateAdminRejectClaimedProperty = async (
+    id: string,
+    data: Partial<AdminClaimedProperty>
+  ): Promise<AdminClaimedProperty> => {
+    try {
+      const payload = {
+        ...data,
+        // isActive: data. !== undefined ? data.isActive : undefined,
+      };
+      console.log(
+        "Sending PATCH request to:",
+        endpoints.rejectPropertyClaim(id)
+      );
+      console.log("Payload:", data);
+
+      const response = await AxiosInstance.patch(
+        endpoints.rejectPropertyClaim(id),
+        payload
+      );
+      console.log("Response Data:", response.data);
+      return response.data;
+    } catch (error: any) {
+      console.error("Update claimed property failed:", {
+        message: error.response?.data?.message || error.message,
+        status: error.response?.status,
+        headers: error.response?.headers,
+        request: {
+          url: endpoints.rejectPropertyClaim(id),
+          data,
+        },
+      });
+      throw new Error(
+        error.response?.data?.message || "Update claimed property failed"
+      );
+    }
   };
 }
 

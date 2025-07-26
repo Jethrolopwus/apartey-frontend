@@ -21,6 +21,7 @@ interface Coordinates {
 
 interface Review {
   id?: string;
+  _id?: string; // Add _id as alternative identifier
   location: {
     lat: number;
     lng: number;
@@ -30,6 +31,7 @@ interface Review {
     city?: string;
     district?: string;
     streetAddress?: string;
+    fullAddress?: string; // Add fullAddress field
   };
   linkedProperty?: {
     media?: {
@@ -39,6 +41,7 @@ interface Review {
   overallRating?: number;
   reviewCount?: number;
   detailedReview?: string;
+  isLinkedToDatabaseProperty?: boolean; // Add verified property flag
 }
 
 interface Marker {
@@ -77,6 +80,43 @@ const ReviewSearchContainer = () => {
     }));
   }, []);
 
+  // Helper to get the best available address string (same as ReviewsSection)
+  const getDisplayAddress = (loc: Review["location"]) => {
+    if (loc?.fullAddress && loc.fullAddress.trim() !== "")
+      return loc.fullAddress;
+    const parts = [
+      loc?.streetAddress || "",
+      loc?.apartmentUnitNumber || "",
+      loc?.district || "",
+      loc?.city || "",
+      loc?.country || "",
+    ].filter(Boolean);
+    return parts.length > 0 ? parts.join(", ") : "No Address";
+  };
+
+  // Helper to get review ID (prioritize _id over id)
+  const getReviewId = (review: Review) => {
+    return review._id || review.id;
+  };
+
+  // Handle review click navigation
+  const handleReviewClick = (review: Review) => {
+    const reviewId = getReviewId(review);
+    if (reviewId) {
+      router.push(`/reviewsPage/${reviewId}`);
+    } else {
+      toast.error("Unable to view review details");
+    }
+  };
+
+  // Handle keyboard navigation for accessibility
+  const handleReviewKeyDown = (e: React.KeyboardEvent, review: Review) => {
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      handleReviewClick(review);
+    }
+  };
+
   useEffect(() => {
     if (reviews && reviews.length > 0) {
       const validReviews = reviews.filter(
@@ -103,7 +143,7 @@ const ReviewSearchContainer = () => {
         });
 
         const markers: Marker[] = validReviews.map((review, index) => ({
-          id: `marker-${review.id || index}`,
+          id: `marker-${getReviewId(review) || index}`,
           top: markerPositions[index % markerPositions.length].top,
           left: markerPositions[index % markerPositions.length].left,
           coordinates: {
@@ -139,7 +179,7 @@ const ReviewSearchContainer = () => {
 
   const generateMapUrl = (): string => {
     const apiKey = process.env.GOOGLE_MAPS_API_KEY;
-    
+
     if (!apiKey || mapCenter.lat === 0 || mapCenter.lng === 0) return "";
 
     const validMarkers = mapMarkers.filter(
@@ -312,28 +352,61 @@ const ReviewSearchContainer = () => {
             ) : (
               filteredReviews.map((review, index) => (
                 <article
-                  key={index}
-                  className="p-4 border rounded-md hover:shadow transition"
+                  key={getReviewId(review) || index}
+                  className="flex gap-4 group cursor-pointer hover:bg-gray-50 p-4 border rounded-md hover:shadow transition-colors"
+                  onClick={() => handleReviewClick(review)}
+                  tabIndex={0}
+                  role="button"
+                  aria-label={`View details for review at ${getDisplayAddress(
+                    review.location
+                  )}`}
+                  onKeyDown={(e) => handleReviewKeyDown(e, review)}
                 >
-                  <h3 className="text-lg font-semibold text-gray-800">
-                    {review.location.streetAddress}, {review.location.city}
-                  </h3>
-                  <div className="flex items-center gap-2 my-2">
-                    {renderStars(review.overallRating)}
-                    <span className="text-sm text-gray-600">
-                      ({review.reviewCount || 0})
-                    </span>
+                  {/* Property Image */}
+                  <div className="w-[180px] h-[120px] flex-shrink-0 rounded-md overflow-hidden relative">
+                    <Image
+                      src={
+                        review.linkedProperty?.media?.coverPhoto ||
+                        "/placeholder-property.jpg"
+                      }
+                      alt={`Property at ${review.location.streetAddress}`}
+                      width={180}
+                      height={120}
+                      className="object-cover w-full h-full"
+                    />
+                    {review.isLinkedToDatabaseProperty && (
+                      <span className="absolute top-2 right-2 bg-teal-600 text-white text-xs font-semibold px-2 py-1 rounded-full">
+                        Verified
+                      </span>
+                    )}
                   </div>
-                  <p className="text-sm text-gray-600">
-                    {review.detailedReview}
-                  </p>
+
+                  {/* Review Content */}
+                  <div className="flex flex-col flex-1">
+                    <h3 className="text-lg font-semibold text-gray-800 mb-1">
+                      {getDisplayAddress(review.location)}
+                    </h3>
+                    <div className="flex items-center gap-2 my-2">
+                      <div className="flex">
+                        {renderStars(review.overallRating)}
+                      </div>
+                      <span className="text-gray-700">
+                        {review.overallRating?.toString() || "0"}
+                      </span>
+                      <span className="text-sm text-gray-600">
+                        ({review.reviewCount || 0})
+                      </span>
+                    </div>
+                    <p className="text-sm text-gray-600 line-clamp-3">
+                      {review.detailedReview}
+                    </p>
+                  </div>
                 </article>
               ))
             )}
           </div>
         </div>
 
-        {/* Right Panel: Map */}
         <div className="lg:w-1/2 relative">
           <div className="w-full h-[500px] bg-gray-200 rounded-lg overflow-hidden relative">
             {mapUrl ? (

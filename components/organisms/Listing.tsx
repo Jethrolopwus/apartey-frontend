@@ -44,7 +44,7 @@ export const ListingCard: FC<ListingCardProps> = ({
   onClick,
 }) => {
   // Determine badge type (for demo, alternate Sale/Rent by id hash)
-  const safeId = typeof id === 'string' && id.length > 0 ? id : '0';
+  const safeId = typeof id === "string" && id.length > 0 ? id : "0";
   const isSale = safeId.charCodeAt(0) % 2 === 0;
   const badgeText = isSale ? "Sale" : "Rent";
   const badgeColor = isSale ? "bg-[#C85212]" : "bg-teal-600";
@@ -69,7 +69,9 @@ export const ListingCard: FC<ListingCardProps> = ({
           priority={false}
         />
         {/* Single Sale/Rent badge */}
-        <span className={`absolute top-3 left-3 ${badgeColor} text-white text-xs font-semibold px-3 py-1 rounded-full shadow`}>
+        <span
+          className={`absolute top-3 left-3 ${badgeColor} text-white text-xs font-semibold px-3 py-1 rounded-full shadow`}
+        >
           {badgeText}
         </span>
       </div>
@@ -85,15 +87,20 @@ export const ListingCard: FC<ListingCardProps> = ({
           <div className="flex items-center justify-between mb-1">
             <p className="text-sm text-gray-500 truncate mr-2">{location}</p>
             <button
-              className={`ml-2 bg-white rounded-full p-1 shadow-sm z-10 hover:bg-gray-100 transition-colors ${isLiked ? "fill-red-500 text-red-500" : "text-gray-400"}`}
-              onClick={e => {
+              className={`ml-2 bg-white rounded-full p-1 shadow-sm z-10 hover:bg-gray-100 transition-colors ${
+                isLiked ? "fill-red-500 text-red-500" : "text-gray-400"
+              }`}
+              onClick={(e) => {
                 e.stopPropagation();
                 onLike(id);
               }}
               title={isLiked ? "Remove from favorites" : "Add to favorites"}
-              style={{ boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}
+              style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.08)" }}
             >
-              <Heart size={20} className={isLiked ? "fill-red-500 text-red-500" : ""} />
+              <Heart
+                size={20}
+                className={isLiked ? "fill-red-500 text-red-500" : ""}
+              />
             </button>
           </div>
           <div className="flex items-center gap-2 text-sm text-gray-600 mb-1">
@@ -103,9 +110,7 @@ export const ListingCard: FC<ListingCardProps> = ({
                   key={i}
                   size={14}
                   className={
-                    i < Math.floor(rating)
-                      ? "fill-yellow-500"
-                      : "text-gray-300"
+                    i < Math.floor(rating) ? "fill-yellow-500" : "text-gray-300"
                   }
                 />
               ))}
@@ -115,10 +120,16 @@ export const ListingCard: FC<ListingCardProps> = ({
             </span>
           </div>
           <div className="flex items-center text-gray-700 text-xs gap-4 mb-1">
-            <span className="flex items-center gap-1" title={`${beds} bedrooms`}>
+            <span
+              className="flex items-center gap-1"
+              title={`${beds} bedrooms`}
+            >
               <Bed size={14} /> {beds}
             </span>
-            <span className="flex items-center gap-1" title={`${baths} bathrooms`}>
+            <span
+              className="flex items-center gap-1"
+              title={`${baths} bathrooms`}
+            >
               <Bath size={14} /> {baths}
             </span>
             <span className="flex items-center gap-1" title={`${size} area`}>
@@ -148,10 +159,8 @@ const Listings = () => {
   const [bathrooms, setBathrooms] = React.useState<string>("Any");
 
   const { data, isLoading, error } = useGetAllListingsQuery({
-    limit: 100, // fetch more for client-side filtering
+    limit: 100,
   });
-
-  // For favorites refetch
   const { refetch: refetchFavorites } = useGetUserFavoriteQuery();
   const { toggleLike } = useUpdatePropertyToggleLikeMutation();
   const [likedIds, setLikedIds] = React.useState<string[]>([]);
@@ -210,10 +219,18 @@ const Listings = () => {
 
   // ---------- loading / error / empty states (unchanged) ----------
   if (isLoading) {
-    return <div className="text-center py-20 text-lg text-gray-500">Loading properties...</div>;
+    return (
+      <div className="text-center py-20 text-lg text-gray-500">
+        Loading properties...
+      </div>
+    );
   }
   if (error) {
-    return <div className="text-center py-20 text-lg text-red-500">Error loading properties.</div>;
+    return (
+      <div className="text-center py-20 text-lg text-red-500">
+        Error loading properties.
+      </div>
+    );
   }
 
   let listings = data?.properties?.map(transformPropertyToListing) || [];
@@ -221,16 +238,20 @@ const Listings = () => {
   // ---------- filtering ----------
   listings = listings.filter((listing) => {
     // Search filter
-    if (search && !(
-      listing.title.toLowerCase().includes(search.toLowerCase()) ||
-      listing.location.toLowerCase().includes(search.toLowerCase())
-    )) {
+    if (
+      search &&
+      !(
+        listing.title.toLowerCase().includes(search.toLowerCase()) ||
+        listing.location.toLowerCase().includes(search.toLowerCase())
+      )
+    ) {
       return false;
     }
     // Listing type filter
     if (listingType !== "All" && listing.category !== listingType) return false;
     // Property type filter
-    if (propertyType !== "All Types" && listing.propertyType !== propertyType) return false;
+    if (propertyType !== "All Types" && listing.propertyType !== propertyType)
+      return false;
     // Bedrooms filter
     if (bedrooms !== "Any") {
       if (bedrooms === "4+" && listing.beds < 4) return false;
@@ -239,14 +260,15 @@ const Listings = () => {
     // Bathrooms filter
     if (bathrooms !== "Any") {
       if (bathrooms === "4+" && listing.baths < 4) return false;
-      if (bathrooms !== "4+" && listing.baths !== Number(bathrooms)) return false;
+      if (bathrooms !== "4+" && listing.baths !== Number(bathrooms))
+        return false;
     }
     return true;
   });
 
   // ---------- sorting ----------
   if (sortBy === "Newest") {
-    listings = listings.slice().reverse(); // assuming newest last in array
+    listings = listings.slice().reverse();
   } else if (sortBy === "Oldest") {
     // do nothing, default order
   } else if (sortBy === "Price: Low to High") {
@@ -272,10 +294,14 @@ const Listings = () => {
         <div className="mb-8">
           <p className="text-sm font-medium text-gray-500 mb-3">Listing type</p>
           <div className="flex gap-3">
-            {['All', 'Rent', 'Sale'].map((type) => (
+            {["All", "Rent", "Sale"].map((type) => (
               <button
                 key={type}
-                className={`px-4 py-2 rounded-full text-sm font-medium border transition-colors ${listingType === type ? 'bg-teal-50 text-teal-700 border-teal-600' : 'bg-gray-100 text-gray-700 border-gray-200'}`}
+                className={`px-4 py-2 rounded-full text-sm font-medium border transition-colors ${
+                  listingType === type
+                    ? "bg-teal-50 text-teal-700 border-teal-600"
+                    : "bg-gray-100 text-gray-700 border-gray-200"
+                }`}
                 onClick={() => setListingType(type)}
               >
                 {type}
@@ -288,7 +314,7 @@ const Listings = () => {
           <select
             className="w-full px-4 py-3 border border-gray-200 rounded-lg text-base text-gray-700 bg-white"
             value={sortBy}
-            onChange={e => setSortBy(e.target.value)}
+            onChange={(e) => setSortBy(e.target.value)}
           >
             <option>Newest</option>
             <option>Oldest</option>
@@ -297,11 +323,13 @@ const Listings = () => {
           </select>
         </div>
         <div className="mb-8">
-          <p className="text-sm font-medium text-gray-500 mb-3">Property Type</p>
+          <p className="text-sm font-medium text-gray-500 mb-3">
+            Property Type
+          </p>
           <select
             className="w-full px-4 py-3 border border-gray-200 rounded-lg text-base text-gray-700 bg-white"
             value={propertyType}
-            onChange={e => setPropertyType(e.target.value)}
+            onChange={(e) => setPropertyType(e.target.value)}
           >
             <option>All Types</option>
             <option>Apartment</option>
@@ -315,7 +343,7 @@ const Listings = () => {
           <select
             className="w-full px-4 py-3 border border-gray-200 rounded-lg text-base text-gray-700 bg-white"
             value={bedrooms}
-            onChange={e => setBedrooms(e.target.value)}
+            onChange={(e) => setBedrooms(e.target.value)}
           >
             <option>Any</option>
             <option>1</option>
@@ -329,7 +357,7 @@ const Listings = () => {
           <select
             className="w-full px-4 py-3 border border-gray-200 rounded-lg text-base text-gray-700 bg-white"
             value={bathrooms}
-            onChange={e => setBathrooms(e.target.value)}
+            onChange={(e) => setBathrooms(e.target.value)}
           >
             <option>Any</option>
             <option>1</option>
@@ -356,8 +384,16 @@ const Listings = () => {
       <div className="flex-1">
         {/* Title & Subtitle */}
         <div className="text-center mb-12">
-          <h1 className="font-bold text-5xl text-teal-800 mb-3 tracking-tight leading-tight" style={{letterSpacing: '-0.02em'}}>Find Your Perfect Property</h1>
-          <p className="text-lg text-gray-500 font-normal max-w-2xl mx-auto leading-relaxed">Discover what real tenants and homeowners are saying about local properties around you</p>
+          <h1
+            className="font-bold text-5xl text-teal-800 mb-3 tracking-tight leading-tight"
+            style={{ letterSpacing: "-0.02em" }}
+          >
+            Find Your Perfect Property
+          </h1>
+          <p className="text-lg text-gray-500 font-normal max-w-2xl mx-auto leading-relaxed">
+            Discover what real tenants and homeowners are saying about local
+            properties around you
+          </p>
         </div>
         {/* Search Bar (button inside input) */}
         <div className="flex items-center justify-center mb-10">
@@ -367,10 +403,17 @@ const Listings = () => {
               className="w-full pl-14 pr-36 py-4 rounded-xl border border-gray-200 text-gray-700 bg-white shadow focus:ring-2 focus:ring-teal-200 focus:border-teal-400 transition outline-none text-lg font-medium"
               placeholder="Lagos, Nigeria"
               value={search}
-              onChange={e => setSearch(e.target.value)}
+              onChange={(e) => setSearch(e.target.value)}
             />
-            <Search size={22} className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-400" />
-            <button className="absolute right-3 top-1/2 -translate-y-1/2 bg-[#C85212] hover:bg-orange-600 text-white font-semibold px-8 py-2 rounded-lg flex items-center gap-2 transition text-lg shadow" style={{height: '48px'}} onClick={() => {}}>
+            <Search
+              size={22}
+              className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-400"
+            />
+            <button
+              className="absolute right-3 top-1/2 -translate-y-1/2 bg-[#C85212] hover:bg-orange-600 text-white font-semibold px-8 py-2 rounded-lg flex items-center gap-2 transition text-lg shadow"
+              style={{ height: "48px" }}
+              onClick={() => {}}
+            >
               <Search size={20} className="mr-2" />
               Search
             </button>
@@ -433,9 +476,14 @@ const Listings = () => {
             {"< Previous"}
           </button>
           <div className="flex items-center gap-1">
-            <button className="w-8 h-8 text-sm rounded bg-teal-600 text-white transition-colors">1</button>
+            <button className="w-8 h-8 text-sm rounded bg-teal-600 text-white transition-colors">
+              1
+            </button>
           </div>
-          <button className="text-gray-400 hover:text-teal-600 transition-colors px-2 py-1 rounded" disabled>
+          <button
+            className="text-gray-400 hover:text-teal-600 transition-colors px-2 py-1 rounded"
+            disabled
+          >
             {"Next >"}
           </button>
         </div>

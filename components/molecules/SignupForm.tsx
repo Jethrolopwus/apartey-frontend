@@ -56,7 +56,7 @@ const SignUpForm: React.FC<SignUpFormProps> = ({
             />
             {errors.name && (
               <p className="mt-1 text-xs text-red-600">{errors.name.message}</p>
-            )}
+            )}message
           </div>
         </div>
 
@@ -139,7 +139,10 @@ const SignUpForm: React.FC<SignUpFormProps> = ({
               placeholder="Enter password"
               className={`block w-full rounded-md border ${
                 errors.confirmPassword ? 'border-red-300' : 'border-gray-300'
-              } px-3 py-2 pr-10 placeholder-gray-400 shadow-sm focus:border-orange-500 focus:outline-none focus:ring-orange-500 sm:text-sm`}
+              } px-3 py-2 pr-10 placeholder-gray-400 shadowmin
+max
+minLength
+maxLength-sm focus:border-orange-500 focus:outline-none focus:ring-orange-500 sm:text-sm`}
               {...register('confirmPassword', {
                 required: 'Please confirm your password',
                 validate: value => value === password || 'Passwords do not match',

@@ -8,7 +8,7 @@ export const useClaimPropertyMutation = () => {
     globalThis.FormData
   >({
     mutationFn: (formData: globalThis.FormData) =>
-      http.httpCreateListings(formData),
+      http.httpClaimProperty("id", formData),
   });
 
   return {
