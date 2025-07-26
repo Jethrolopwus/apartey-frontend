@@ -65,7 +65,7 @@ export default function Hero() {
                   `/searchReview?q=${encodeURIComponent(place.description)}`
                 );
               }}
-              onChange={() => {}} // Empty function since we don't need to track the input
+              onChange={() => {}}
               onSubmit={(value) => {
                 if (value) {
                   router.push(`/searchReview?q=${encodeURIComponent(value)}`);

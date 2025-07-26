@@ -8,25 +8,36 @@ import { useRouter } from "next/navigation";
 import { toast } from "react-hot-toast";
 import Image from "next/image";
 
+interface Location {
+  lat?: number;
+  lng?: number;
+  apartment?: string;
+  apartmentUnitNumber?: string;
+  country?: string;
+  countryCode?: string;
+  stateOrRegion?: string;
+  street?: string;
+  district?: string;
+  streetAddress?: string;
+  fullAddress?: string;
+  postalCode?: string;
+}
+
+interface Reviewer {
+  _id?: string;
+  firstName?: string;
+  lastName?: string;
+}
+
 interface Review {
   id?: string;
   _id?: string;
-  location: {
-    lat: number;
-    lng: number;
-    apartment?: string;
-    apartmentUnitNumber?: string;
-    country?: string;
-    city?: string;
-    district?: string;
-    streetAddress?: string;
-    fullAddress?: string;
-  };
+  location: Location;
   linkedProperty?: {
     media?: {
       coverPhoto?: string;
     };
-  };
+  } | null;
   overallRating?: number;
   reviewCount?: number;
   detailedReview?: string;
@@ -36,6 +47,28 @@ interface Review {
     avatar?: string;
   };
   createdAt?: string;
+  submitAnonymously?: boolean;
+  reviewer?: Reviewer | null;
+  valueForMoney?: number;
+  costOfRepairsCoverage?: string;
+  overallExperience?: number;
+}
+
+interface SearchResponse {
+  matchedReviews: Review[];
+  suggestedReviews: Review[];
+  noSearchFound: boolean;
+  currentSearch: string;
+  message?: string;
+}
+
+interface PlacePrediction {
+  place_id: string;
+  description: string;
+  structured_formatting: {
+    main_text: string;
+    secondary_text: string;
+  };
 }
 
 const ReviewSearchContainer = () => {
@@ -52,31 +85,52 @@ const ReviewSearchContainer = () => {
   const { data, isLoading } = useSearchReviewsQuery(
     fullAddress,
     apartment !== "all" ? apartment : undefined
-  );
-  const reviews: Review[] = useMemo(() => data?.reviews || [], [data?.reviews]);
+  ) as { data: SearchResponse | undefined; isLoading: boolean };
+  const reviews: Review[] = useMemo(() => {
+    if (data?.noSearchFound) {
+      return data?.suggestedReviews || [];
+    }
+    return data?.matchedReviews || [];
+  }, [data]);
 
   const lastValidQuery = useRef({ fullAddress, apartment });
 
-  // Helper to get the best available address string
-  const getDisplayAddress = (loc: Review["location"]) => {
+  const searchInputValue = useMemo(() => {
+    if (data?.matchedReviews && data.matchedReviews.length > 0) {
+      return fullAddress;
+    }
+    return data?.currentSearch || fullAddress;
+  }, [data, fullAddress]);
+
+  const getDisplayAddress = (loc: Location) => {
     if (loc?.fullAddress && loc.fullAddress.trim() !== "")
       return loc.fullAddress;
     const parts = [
-      loc?.streetAddress || "",
-      loc?.apartmentUnitNumber || "",
+      loc?.street || loc?.streetAddress || "",
+      loc?.apartment || loc?.apartmentUnitNumber || "",
       loc?.district || "",
-      loc?.city || "",
+      loc?.stateOrRegion || "",
       loc?.country || "",
     ].filter(Boolean);
     return parts.length > 0 ? parts.join(", ") : "No Address";
   };
 
-  // Helper to get review ID (prioritize _id over id)
   const getReviewId = (review: Review) => {
     return review._id || review.id;
   };
 
-  // Handle review click navigation
+  const getReviewerName = (review: Review) => {
+    if (review.submitAnonymously) return "Anonymous";
+    if (review.reviewer) {
+      return (
+        `${review.reviewer.firstName || ""} ${
+          review.reviewer.lastName || ""
+        }`.trim() || "Anonymous"
+      );
+    }
+    return review.author?.name || "Anonymous";
+  };
+
   const handleReviewClick = (review: Review) => {
     const reviewId = getReviewId(review);
     if (reviewId) {
@@ -121,7 +175,7 @@ const ReviewSearchContainer = () => {
 
   useEffect(() => {
     if (!isLoading && (fullAddress || apartment !== "all")) {
-      if (reviews.length === 0) {
+      if (reviews.length === 0 && !data?.noSearchFound) {
         toast.error("No reviews found for this address or apartment.");
         if (
           lastValidQuery.current.fullAddress !== fullAddress ||
@@ -144,7 +198,7 @@ const ReviewSearchContainer = () => {
         lastValidQuery.current = { fullAddress, apartment };
       }
     }
-  }, [isLoading, reviews, fullAddress, apartment, router]);
+  }, [isLoading, reviews, fullAddress, apartment, router, data?.noSearchFound]);
 
   const [filteredReviews, setFilteredReviews] = useState<Review[]>([]);
 
@@ -171,7 +225,23 @@ const ReviewSearchContainer = () => {
   const handleSortChange = (value: string) => {
     setSortBy(value);
     setIsDropdownOpen(false);
-    // Add sorting logic here if needed
+    const sortedReviews = [...filteredReviews];
+    if (value === "highest_rating") {
+      sortedReviews.sort(
+        (a, b) => (b.overallRating || 0) - (a.overallRating || 0)
+      );
+    } else if (value === "lowest_rating") {
+      sortedReviews.sort(
+        (a, b) => (a.overallRating || 0) - (b.overallRating || 0)
+      );
+    } else {
+      sortedReviews.sort(
+        (a, b) =>
+          new Date(b.createdAt || 0).getTime() -
+          new Date(a.createdAt || 0).getTime()
+      );
+    }
+    setFilteredReviews(sortedReviews);
   };
 
   useEffect(() => {
@@ -194,6 +264,9 @@ const ReviewSearchContainer = () => {
         <h1 className="text-2xl font-semibold text-teal-800 mb-2">
           Read Trusted Reviews from Verified Tenants
         </h1>
+        {data?.noSearchFound && data?.message && (
+          <p className="text-sm text-red-600 mb-4">{data.message}</p>
+        )}
 
         {/* Sort Dropdown */}
         <div className="flex justify-end mb-6">
@@ -233,7 +306,7 @@ const ReviewSearchContainer = () => {
         </div>
 
         {/* Filter Section */}
-        <div className="flex justify-between items-center gap-8 mb-6 shadow-md  rounded-md ">
+        <div className="flex justify-between items-center gap-8 mb-6 shadow-md rounded-md">
           <div className="flex items-center gap-2">
             <Filter size={20} className="text-gray-600" />
             <span className="text-md font-medium text-gray-700">
@@ -243,7 +316,8 @@ const ReviewSearchContainer = () => {
 
           <SearchInput
             placeholder="Search by home address e.g 62 Peiga Epime Road, Peiga, Kwara"
-            onPlaceSelect={(place) => {
+            initialValue={searchInputValue}
+            onPlaceSelect={(place: PlacePrediction) => {
               router.push(
                 `/reviews?q=${encodeURIComponent(place.description)}${
                   apartment && apartment !== "all"
@@ -253,7 +327,7 @@ const ReviewSearchContainer = () => {
               );
             }}
             onChange={() => {}}
-            onSubmit={(value) => {
+            onSubmit={(value: string) => {
               if (value) {
                 router.push(
                   `/reviews?q=${encodeURIComponent(value)}${
@@ -291,7 +365,7 @@ const ReviewSearchContainer = () => {
               <p className="text-gray-600">Loading reviews...</p>
             </div>
           </div>
-        ) : filteredReviews.length === 0 ? (
+        ) : filteredReviews.length === 0 && !data?.noSearchFound ? (
           <div className="col-span-full text-center py-12">
             <p className="text-gray-500 text-lg">No reviews found.</p>
           </div>
@@ -315,7 +389,11 @@ const ReviewSearchContainer = () => {
                     review.linkedProperty?.media?.coverPhoto ||
                     "/placeholder-property.jpg"
                   }
-                  alt={`Property at ${review.location.streetAddress}`}
+                  alt={`Property at ${
+                    review.location.street ||
+                    review.location.streetAddress ||
+                    "Unknown"
+                  }`}
                   fill
                   className="object-cover"
                 />
@@ -345,7 +423,7 @@ const ReviewSearchContainer = () => {
                 </div>
 
                 <p className="text-sm text-gray-600 line-clamp-3 mb-4">
-                  {review.detailedReview}
+                  {review.detailedReview || "No review details provided."}
                 </p>
 
                 {/* Author Info */}
@@ -354,22 +432,20 @@ const ReviewSearchContainer = () => {
                     {review.author?.avatar ? (
                       <Image
                         src={review.author.avatar}
-                        alt={review.author.name || "User"}
+                        alt={getReviewerName(review)}
                         width={24}
                         height={24}
                         className="rounded-full"
                       />
                     ) : (
                       <span className="text-xs text-gray-600">
-                        {(review.author?.name || "Anonymous")
-                          .charAt(0)
-                          .toUpperCase()}
+                        {getReviewerName(review).charAt(0).toUpperCase()}
                       </span>
                     )}
                   </div>
                   <div className="flex-1">
                     <p className="text-xs font-medium text-gray-800">
-                      {review.author?.name || "Anonymous"}
+                      {getReviewerName(review)}
                     </p>
                     <p className="text-xs text-gray-500">
                       {review.createdAt
