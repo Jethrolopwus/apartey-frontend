@@ -2,9 +2,23 @@
 import React from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { Facebook, Instagram, Twitter, Linkedin } from "lucide-react";
+import { Facebook, Instagram, Linkedin, X } from "lucide-react";
+import { useLocation } from "@/app/userLocationContext";
 
 const Footer: React.FC = () => {
+  const { selectedCountryCode, setSelectedCountryCode } = useLocation();
+
+  const countries = [
+    { code: "EE", name: "Estonia" },
+    { code: "NG", name: "Nigeria" },
+    { code: "US", name: "United States" },
+    { code: "GB", name: "United Kingdom" },
+  ];
+
+  const handleCountryChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setSelectedCountryCode(event.target.value);
+  };
+
   return (
     <footer className="bg-white px-4 py-12 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-7xl">
@@ -70,10 +84,10 @@ const Footer: React.FC = () => {
             </nav>
           </div>
 
-          {/* Right Section - Contact */}
+          {/* Right Section - Contact and Country Selection */}
           <div className="lg:col-span-1">
             <h3 className="mb-6 text-lg font-semibold text-gray-900">
-              Contact:
+              Contact
             </h3>
             <div className="space-y-4">
               <Link
@@ -90,33 +104,64 @@ const Footer: React.FC = () => {
               </Link>
             </div>
 
+            {/* Country Selection */}
+            <div className="mt-6">
+              <h3 className="mb-4 text-lg font-semibold text-gray-900">
+                Select Your Country
+              </h3>
+              <div className="flex flex-wrap gap-4">
+                {countries.map((country) => (
+                  <label
+                    key={country.code}
+                    className="flex items-center space-x-2"
+                  >
+                    <input
+                      type="radio"
+                      value={country.code}
+                      checked={selectedCountryCode === country.code}
+                      onChange={handleCountryChange}
+                      className="form-radio text-blue-600"
+                      aria-label={`Select ${country.name}`}
+                    />
+                    <span className="text-sm text-gray-600 lg:text-base">
+                      {country.name}
+                    </span>
+                  </label>
+                ))}
+              </div>
+            </div>
+
             {/* Social Icons */}
             <div className="mt-6 flex space-x-4">
               <Link
-                href="https://facebook.com/apartey"
+                href="https://web.facebook.com/people/Apartey/61578878727888/?mibextid=wwXIfr&rdid=R6EjNcu0XiQfdFO4&share_url=https%3A%2F%2Fweb.facebook.com%2Fshare%2F16nciE51Yv%2F%3Fmibextid%3DwwXIfr%26_rdc%3D1%26_rdr"
                 className="text-gray-600 transition-colors hover:text-gray-900"
                 aria-label="Facebook"
+                target="_blank"
               >
                 <Facebook className="h-5 w-5" />
               </Link>
               <Link
-                href="https://instagram.com/apartey"
+                href="https://www.instagram.com/hey_apartey/"
                 className="text-gray-600 transition-colors hover:text-gray-900"
                 aria-label="Instagram"
+                target="_blank"
               >
                 <Instagram className="h-5 w-5" />
               </Link>
               <Link
-                href="https://twitter.com/apartey"
+                href="https://x.com/hey_apartey"
                 className="text-gray-600 transition-colors hover:text-gray-900"
                 aria-label="Twitter"
+                target="_blank"
               >
-                <Twitter className="h-5 w-5" />
+                <X className="h-5 w-5" />
               </Link>
               <Link
-                href="https://linkedin.com/company/apartey"
+                href="https://www.linkedin.com/company/apartey/"
                 className="text-gray-600 transition-colors hover:text-gray-900"
                 aria-label="LinkedIn"
+                target="_blank"
               >
                 <Linkedin className="h-5 w-5" />
               </Link>

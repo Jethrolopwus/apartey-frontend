@@ -638,5 +638,9 @@ export interface PropertiesResponse {
   hasNextPage: boolean;
   hasPreviousPage: boolean;
 }
+export interface userLocationData {
+  countryCode: string;
+  countryName: string;
+}
 
 export type PropertyCategory = "Swap" | "Rent" | "Buy";

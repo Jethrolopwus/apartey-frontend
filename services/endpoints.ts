@@ -17,6 +17,7 @@ export default Object.freeze({
   getOnboardingStatus: "user/onboarding/status",
   updateOnboardingStatus: "user/onboarding",
   getUserProfile: "user/profile",
+  getUserLocation: "/user/location?countryCode=EE",
   getProfileCompletionStat: "/user/profile-completion",
   updateProfile: "/user/profile",
   writeReviews: (id: string) => `reviews/${id}`,
