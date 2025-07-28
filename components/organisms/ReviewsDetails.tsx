@@ -150,13 +150,14 @@ export default function ReviewDetails({ id }: Props) {
 
   // Helper to get the best available address string
   const getDisplayAddress = (loc: ReviewLocation) => {
-    if (loc?.fullAddress && loc.fullAddress.trim() !== "") return loc.fullAddress;
+    if (loc?.fullAddress && loc.fullAddress.trim() !== "")
+      return loc.fullAddress;
     const parts = [
       loc?.streetAddress || "",
       loc?.apartmentUnitNumber || "",
       loc?.district || "",
       loc?.city || "",
-      loc?.country || ""
+      loc?.country || "",
     ].filter(Boolean);
     return parts.length > 0 ? parts.join(", ") : "No Address";
   };
@@ -276,81 +277,81 @@ export default function ReviewDetails({ id }: Props) {
           </div>
         </div> */}
 
-<div className="p-4 space-y-3">
-              <h1 className="text-gray-800 font-medium text-lg">
-                {getDisplayAddress(review.location)}
-              </h1>
-              <h3 className="font-medium text-gray-800 text-base line-clamp-2">
-                {review.location.streetAddress}
-                {review.location.apartmentUnitNumber &&
-                  `, ${review.location.apartmentUnitNumber}`}
-                {/* {review.location.district && `, ${review.location.district}`},{" "} */}
-                {review.location.city}
-              </h3>
+        <div className="p-4 space-y-3">
+          <h1 className="text-gray-800 font-medium text-lg">
+            {getDisplayAddress(review.location)}
+          </h1>
+          <h3 className="font-medium text-gray-800 text-base line-clamp-2">
+            {review.location.streetAddress}
+            {review.location.apartmentUnitNumber &&
+              `, ${review.location.apartmentUnitNumber}`}
+            {/* {review.location.district && `, ${review.location.district}`},{" "} */}
+            {review.location.city}
+          </h3>
 
-              <div className="flex items-center gap-2">
-                <div className="flex gap-0.5">
-                  {[...Array(5)].map((_, i) => (
-                    <Star
-                      key={i}
-                      size={14}
-                      className={
-                        i < Math.floor(review.overallRating)
-                          ? "fill-yellow-400 text-yellow-400"
-                          : "text-gray-300"
-                      }
-                    />
-                  ))}
-                </div>
-                <span className="text-sm font-medium text-gray-700">
-                  {review.overallRating.toFixed(1)}
-                </span>
-                <span className="text-xs text-gray-500">
-                  ({review.overallRating.toFixed(0)} reviews)
-                </span>
-              </div>
-
-              <p className="text-gray-600 text-sm line-clamp-3 leading-relaxed">
-                {review.detailedReview}
-              </p>
-
-              {/* Rating Details */}
-              <div className="flex items-center justify-between text-xs text-gray-500 pt-2 border-t border-gray-100">
-                <div className="flex items-center gap-1">
-                  <span className="font-medium">Value:</span>
-                  <span>{review.valueForMoney}/5</span>
-                </div>
-                <div className="flex items-center gap-1">
-                  <span className="font-medium">Experience:</span>
-                  <span>{review.overallExperience}/5</span>
-                </div>
-              </div>
-
-              {/* Footer */}
-              <div className="flex items-center justify-between pt-2">
-                <div className="flex items-center gap-2">
-                  <div className="w-7 h-7 rounded-full bg-gradient-to-br from-teal-400 to-teal-600 flex items-center justify-center">
-                    <span className="text-white text-xs font-semibold">
-                      {review.submitAnonymously ? "A" : "R"}
-                    </span>
-                  </div>
-                  <span className="text-sm font-medium text-gray-800">
-                    <p className="font-semibold text-gray-900">
-                      {review?.submitAnonymously
-                        ? "Anonymous Reviewer"
-                        : review?.reviewer?.firstName || ""}
-                    </p>
-                  </span>
-                </div>
-                <span className="text-xs text-gray-400">
-                  {new Date(review.createdAt).toLocaleDateString("en-US", {
-                    month: "short",
-                    day: "numeric",
-                    year: "numeric",
-                  })}
-                </span>
-              </div>
+          <div className="flex items-center gap-2">
+            <div className="flex gap-0.5">
+              {[...Array(5)].map((_, i) => (
+                <Star
+                  key={i}
+                  size={14}
+                  className={
+                    i < Math.floor(review.overallRating)
+                      ? "fill-yellow-400 text-yellow-400"
+                      : "text-gray-300"
+                  }
+                />
+              ))}
             </div>
+            <span className="text-sm font-medium text-gray-700">
+              {review.overallRating.toFixed(1)}
+            </span>
+            <span className="text-xs text-gray-500">
+              ({review.overallRating.toFixed(0)} reviews)
+            </span>
+          </div>
+
+          <p className="text-gray-600 text-sm line-clamp-3 leading-relaxed">
+            {review.detailedReview}
+          </p>
+
+          {/* Rating Details */}
+          <div className="flex items-center justify-between text-xs text-gray-500 pt-2 border-t border-gray-100">
+            <div className="flex items-center gap-1">
+              <span className="font-medium">Value:</span>
+              <span>{review.valueForMoney}/5</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <span className="font-medium">Experience:</span>
+              <span>{review.overallExperience}/5</span>
+            </div>
+          </div>
+
+          {/* Footer */}
+          <div className="flex items-center justify-between pt-2">
+            <div className="flex items-center gap-2">
+              <div className="w-7 h-7 rounded-full bg-gradient-to-br from-teal-400 to-teal-600 flex items-center justify-center">
+                <span className="text-white text-xs font-semibold">
+                  {review.submitAnonymously ? "A" : "R"}
+                </span>
+              </div>
+              <span className="text-sm font-medium text-gray-800">
+                <p className="font-semibold text-gray-900">
+                  {review?.submitAnonymously
+                    ? "Anonymous Reviewer"
+                    : review?.reviewer?.firstName || ""}
+                </p>
+              </span>
+            </div>
+            <span className="text-xs text-gray-400">
+              {new Date(review.createdAt).toLocaleDateString("en-US", {
+                month: "short",
+                day: "numeric",
+                year: "numeric",
+              })}
+            </span>
+          </div>
+        </div>
 
         {/* Stay Details Section */}
         {review?.stayDetails && (
@@ -802,13 +803,6 @@ export default function ReviewDetails({ id }: Props) {
               {review?.status || "Unknown"}
             </span>
           </p>
-
-          <ListingsButtons
-            variant="outline"
-            className="w-full text-center text-sm"
-          >
-            Contact Reviewer
-          </ListingsButtons>
         </div>
 
         {/* Related Reviews */}

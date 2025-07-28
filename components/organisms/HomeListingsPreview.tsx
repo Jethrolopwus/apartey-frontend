@@ -1,201 +1,105 @@
 "use client";
 import React from "react";
 import { useGetAllListingsQuery } from "@/Hooks/use-getAllListings.query";
-import { useUpdatePropertyToggleLikeMutation } from "@/Hooks/use.propertyLikeToggle.mutation";
-import { useGetUserFavoriteQuery } from "@/Hooks/use-getUsersFavorites.query";
-import { useRouter } from "next/navigation";
-import { toast } from "react-hot-toast";
 import Link from "next/link";
-import { ListingCard } from "./Listing";
-import type { ListingCardProps } from "./Listing";
+import Image from "next/image";
+import { Star, MapPin } from "lucide-react";
+import { Property, PropertiesResponse } from "@/types/generated";
 
-interface PropertyBackendType {
-  _id: string;
-  media: { coverPhoto: string };
-  adPromotion?: { certifiedByFinder?: boolean };
-  propertyDetails: {
-    description: string;
-    bedrooms: number;
-    bathrooms: number;
-    totalAreaSqM: number;
-    price: number;
-  };
-  propertyType: string;
-  location: { district?: string; city?: string; country?: string };
-  [key: string]: unknown;
+// Define the props for the card
+interface ListingCardProps {
+  id: string;
+  imageUrl: string;
+  title: string;
+  location: string;
+  rating: number;
+  reviewCount: number;
+  price: string;
 }
 
-interface Favorite {
-  _id: string;
-}
-
-// Define the structure for unknown property data from API
-interface UnknownProperty {
-  _id?: unknown;
-  media?: unknown;
-  propertyDetails?: unknown;
-  propertyType?: unknown;
-  location?: unknown;
-  [key: string]: unknown;
-}
-
-// Define the structure for API response
-interface ListingsApiResponse {
-  properties?: UnknownProperty[];
-  [key: string]: unknown;
-}
-
-const isValidProperty = (
-  property: UnknownProperty
-): property is PropertyBackendType => {
-  if (!property || typeof property !== "object") return false;
-
-  if (typeof property._id !== "string") return false;
-
-  if (
-    !property.media ||
-    typeof property.media !== "object" ||
-    property.media === null
-  )
-    return false;
-  const media = property.media as { coverPhoto?: unknown };
-  if (typeof media.coverPhoto !== "string") return false;
-  if (
-    !property.propertyDetails ||
-    typeof property.propertyDetails !== "object" ||
-    property.propertyDetails === null
-  )
-    return false;
-  const details = property.propertyDetails as {
-    description?: unknown;
-    bedrooms?: unknown;
-    bathrooms?: unknown;
-    totalAreaSqM?: unknown;
-    price?: unknown;
-  };
-  if (
-    typeof details.description !== "string" ||
-    typeof details.bedrooms !== "number" ||
-    typeof details.bathrooms !== "number" ||
-    typeof details.totalAreaSqM !== "number" ||
-    typeof details.price !== "number"
-  )
-    return false;
-
-  if (typeof property.propertyType !== "string") return false;
-
-  if (
-    !property.location ||
-    typeof property.location !== "object" ||
-    property.location === null
-  )
-    return false;
-
-  return true;
-};
-
-const transformPropertyToListing = (
-  property: PropertyBackendType,
-  likedIds: string[]
-): ListingCardProps => {
-  const formatPrice = (price: number) => {
-    if (typeof price !== "number" || isNaN(price)) return "N/A";
-    if (price >= 1_000_000) return `NGN${(price / 1_000_000).toFixed(1)}M/Year`;
-    if (price >= 1_000) return `NGN${(price / 1_000).toFixed(0)}K/Year`;
-    return `NGN${price.toLocaleString()}/Year`;
+const transformPropertyToListing = (property: Property): ListingCardProps => {
+  const getPropertyTitle = (property: Property) => {
+    return (
+      property.location?.streetAddress ||
+      property.propertyType ||
+      "Untitled Property"
+    );
   };
 
-  const truncateTitle = (text: string, maxLength: number) => {
-    if (text.length <= maxLength) return text;
-    const words = text.split(" ");
-    let result = "";
-    for (const word of words) {
-      if ((result + word).length > maxLength - 3) break;
-      result += (result ? " " : "") + word;
-    }
-    return result + "...";
+  const getPropertyLocation = (property: Property) => {
+    const { city, country } = property.location || {};
+    return (
+      [city, country].filter(Boolean).join(", ") || "Location not specified"
+    );
   };
 
-  const locationParts = [
-    property.location.district || "",
-    property.location.city || "",
-    property.location.country || "",
-  ].filter(Boolean);
-  const location =
-    locationParts.length > 0
-      ? locationParts.join(", ")
-      : "Location not specified";
+  const getPropertyPrice = (property: Property) => {
+    return property.propertyDetails?.price
+      ? `${property.propertyDetails.currency || "NGN"}${
+          property.propertyDetails.price
+        }/Year`
+      : "Price on request";
+  };
 
-  const title = property.propertyDetails.description
-    ? truncateTitle(property.propertyDetails.description, 20)
-    : `${property.propertyType} in ${
-        property.location.district ||
-        property.location.city ||
-        property.location.country ||
-        "Unknown"
-      }`;
+  const getPropertyImage = (property: Property) => {
+    return property.media?.coverPhoto || "/Estate2.png";
+  };
 
   return {
     id: property._id,
-    imageUrl: property.media.coverPhoto || "/fallback-image.jpg",
-    title,
-    location,
-    rating: 4.0, // Replace with backend data
-    reviewCount: 10, // Replace with backend data
-    beds: property.propertyDetails.bedrooms,
-    baths: property.propertyDetails.bathrooms,
-    size: `${property.propertyDetails.totalAreaSqM}m²`,
-    oldPrice: formatPrice(Math.round(property.propertyDetails.price * 1.3)),
-    newPrice: formatPrice(property.propertyDetails.price),
-    isLiked: likedIds.includes(property._id),
-    onLike: () => {},
-    onClick: () => {},
+    imageUrl: getPropertyImage(property),
+    title: getPropertyTitle(property),
+    location: getPropertyLocation(property),
+    rating: 4.5, // Hardcoded as in Listings; replace with backend data if available
+    reviewCount: 12, // Hardcoded as in Listings; replace with backend data if available
+    price: getPropertyPrice(property),
   };
 };
 
 const HomeListingsPreview: React.FC = () => {
-  const router = useRouter();
   const { data, isLoading, error, refetch } = useGetAllListingsQuery({
     limit: 3,
   }) as {
-    data?: ListingsApiResponse;
+    data: PropertiesResponse | undefined;
     isLoading: boolean;
     error: Error | null;
     refetch: () => void;
   };
-  const { data: favoritesData, refetch: refetchFavorites } =
-    useGetUserFavoriteQuery();
-  const { toggleLike } = useUpdatePropertyToggleLikeMutation();
-  const [likedIds, setLikedIds] = React.useState<string[]>([]);
-
-  React.useEffect(() => {
-    console.log("favoritesData:", favoritesData);
-    if (Array.isArray(favoritesData)) {
-      setLikedIds(favoritesData.map((fav: Favorite) => fav._id));
-    } else if (
-      favoritesData &&
-      typeof favoritesData === "object" &&
-      Array.isArray((favoritesData as { favorites?: Favorite[] }).favorites)
-    ) {
-      setLikedIds(
-        (favoritesData as { favorites: Favorite[] }).favorites.map(
-          (fav: Favorite) => fav._id
-        )
-      );
-    } else {
-      // Set to empty array if no valid data
-      setLikedIds([]);
-    }
-  }, [favoritesData]);
 
   const listings = React.useMemo(
     () =>
       (data?.properties || [])
-        .filter(isValidProperty)
-        .map((property: PropertyBackendType) =>
-          transformPropertyToListing(property, likedIds)
-        ),
-    [data, likedIds]
+        .filter((property): property is Property => {
+          if (!property || typeof property !== "object") return false;
+          if (typeof property._id !== "string") return false;
+          if (
+            !property.media ||
+            typeof property.media !== "object" ||
+            property.media === null ||
+            typeof property.media.coverPhoto !== "string"
+          )
+            return false;
+          if (
+            !property.propertyDetails ||
+            typeof property.propertyDetails !== "object" ||
+            property.propertyDetails === null
+          )
+            return false;
+          if (
+            typeof property.propertyDetails.price !== "number" ||
+            typeof property.propertyDetails.currency !== "string"
+          )
+            return false;
+          if (
+            !property.location ||
+            typeof property.location !== "object" ||
+            property.location === null
+          )
+            return false;
+          return true;
+        })
+        .map((property: Property) => transformPropertyToListing(property)),
+    [data]
   );
 
   return (
@@ -214,7 +118,7 @@ const HomeListingsPreview: React.FC = () => {
           className="flex items-center text-gray-600 hover:text-gray-900 transition-colors group"
           aria-label="View all listings"
         >
-          <span className="text-sm md:text-base mr-2">See all</span>
+          <span className=" Aparttext-sm md:text-base mr-2">See all</span>
           <span
             className="inline-block transform group-hover:translate-x-1 transition-transform"
             aria-hidden="true"
@@ -242,29 +146,74 @@ const HomeListingsPreview: React.FC = () => {
         </div>
       ) : (
         <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 md:grid-cols-3">
-          {listings.map((listing) => (
-            <ListingCard
+          {listings.length === 0 && (
+            <div className="col-span-full text-center text-gray-500 py-12">
+              No properties found.
+            </div>
+          )}
+          {listings.map((listing: ListingCardProps) => (
+            <div
               key={listing.id}
-              {...listing}
-              isLiked={likedIds.includes(listing.id)}
-              onLike={() => {
-                const newLikedIds = likedIds.includes(listing.id)
-                  ? likedIds.filter((id) => id !== listing.id)
-                  : [...likedIds, listing.id];
-                setLikedIds(newLikedIds);
-                toggleLike(listing.id, {
-                  onSuccess: () => {
-                    toast.success("Favorite updated!");
-                    refetchFavorites();
-                  },
-                  onError: () => {
-                    setLikedIds(likedIds); // Revert on error
-                    toast.error("Failed to update favorite.");
-                  },
-                });
-              }}
-              onClick={() => router.push(`/listings/${listing.id}`)}
-            />
+              className="bg-white rounded-lg border border-gray-200 overflow-hidden hover:shadow-lg transition-shadow"
+            >
+              <div className="relative">
+                <Link
+                  href={`/listings/rent/swap/${listing.id}`}
+                  className="block group"
+                >
+                  <Image
+                    src={listing.imageUrl}
+                    alt="Property"
+                    width={600}
+                    height={192}
+                    className="w-full h-48 object-cover rounded-t-lg group-hover:brightness-90 transition"
+                    priority={false}
+                  />
+                  <div className="absolute top-3 right-3 bg-white rounded-full p-2 shadow-sm">
+                    <Star className="w-4 h-4 text-gray-400" />
+                  </div>
+                </Link>
+              </div>
+              <div className="p-4">
+                <h3 className="font-semibold text-gray-900 mb-1">
+                  {listing.title}
+                </h3>
+                <p className="text-sm text-gray-600 mb-2 flex items-center">
+                  <MapPin className="w-4 h-4 mr-1" />
+                  {listing.location}
+                </p>
+                <div className="flex items-center mb-2">
+                  <div className="flex items-center">
+                    {[...Array(5)].map((_, i) => (
+                      <Star
+                        key={i}
+                        className={`w-4 h-4 ${
+                          i < Math.round(listing.rating)
+                            ? "text-yellow-400 fill-current"
+                            : "text-gray-300"
+                        }`}
+                      />
+                    ))}
+                  </div>
+                  <span className="text-sm text-gray-600 ml-2">
+                    {listing.rating} ({listing.reviewCount} reviews)
+                  </span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-gray-600">
+                    From {listing.price}
+                  </span>
+                  <button
+                    className="bg-[#C85212] text-white px-4 py-2 rounded-md text-sm hover:bg-[#A64310] transition-colors"
+                    onClick={() =>
+                      alert("Contact owner functionality coming soon!")
+                    }
+                  >
+                    Contact owner
+                  </button>
+                </div>
+              </div>
+            </div>
           ))}
         </div>
       )}

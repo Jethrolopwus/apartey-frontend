@@ -44,6 +44,7 @@ export interface PropertyMedia {
 
 export interface PropertyDetails {
   negotiatedPrice: boolean;
+  currency?: string;
   amenities: string[];
   infrastructure: string[];
   price: number;
@@ -87,6 +88,7 @@ export interface Property {
   createdAt: string;
   updatedAt: string;
   __v: number;
+  category: PropertyCategory;
 }
 
 export interface PropertiesResponse {
@@ -625,3 +627,16 @@ export interface StepProps {
   currentStep?: number;
   totalSteps?: number;
 }
+
+export interface PropertiesResponse {
+  message: string;
+  properties: Property[];
+  currentPage: number;
+  totalPages: number;
+  totalProperties: number;
+  limit: number;
+  hasNextPage: boolean;
+  hasPreviousPage: boolean;
+}
+
+export type PropertyCategory = "Swap" | "Rent" | "Buy";

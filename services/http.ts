@@ -1,9 +1,11 @@
 import axios from "axios";
 import endpoints from "./endpoints";
 import type {
+  Category,
   FormData,
   FormValues,
   OnboardingStatusResponse,
+  PropertyCategory,
   ReviewFormData,
   RoleSubmissionData,
   RoleSubmissionResponse,
@@ -11,7 +13,6 @@ import type {
   UnlistedPropertyReview,
 } from "@/types/generated";
 import { TokenManager } from "@/utils/tokenManager";
-import { LocationPayload } from "@/app/context/RevievFormContext";
 import {
   AdminClaimedPropertiesResponse,
   AdminClaimedProperty,
@@ -113,23 +114,19 @@ class BaseURL {
   ): Promise<RoleSubmissionResponse> => {
     try {
       const token = TokenManager.getToken();
-
       if (!token) {
         throw new Error("No authentication token found. Please login again.");
       }
-
       const response = await AxiosInstance.patch(endpoints.addRoles, data, {
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
         },
       });
-
       return response.data;
     } catch (error: any) {
       if (error.response?.status === 401) {
         TokenManager.clearAllTokens();
-
         window.location.href = "/signin";
       }
       throw error;
@@ -140,14 +137,12 @@ class BaseURL {
     try {
       const token = TokenManager.getToken();
       if (!token) throw new Error("No authentication token found.");
-
       const response = await AxiosInstance.get(endpoints.getUserProfile, {
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
         },
       });
-
       return response.data;
     } catch (error: any) {
       if (error.response?.status === 401) {
@@ -160,7 +155,6 @@ class BaseURL {
   httpGetAuthStatus = async () => {
     const token = TokenManager.getToken();
     if (!token) throw new Error("No authentication token found.");
-
     try {
       const { data } = await AxiosInstance.get(endpoints.getAuthStatus, {
         headers: {
@@ -168,7 +162,6 @@ class BaseURL {
           "Content-Type": "application/json",
         },
       });
-
       return data;
     } catch (error: any) {
       if (error.response?.status === 401) {
@@ -210,24 +203,19 @@ class BaseURL {
         localStorage.getItem("authToken") ||
         localStorage.getItem("token") ||
         localStorage.getItem("accessToken");
-
       if (!token) throw new Error("No authentication token found.");
-
       console.log("Update Data", data);
-
       let payloadToSend: any = data;
       let headers: any = {
         Authorization: `Bearer ${token}`,
         "Content-Type": "multipart/form-data",
       };
       payloadToSend = data;
-
       const response = await AxiosInstance.patch(
         endpoints.updateProfile,
         data,
         { headers }
       );
-
       return response.data;
     } catch (error: any) {
       if (error.response?.status === 401) {
@@ -246,9 +234,7 @@ class BaseURL {
         localStorage.getItem("authToken") ||
         localStorage.getItem("token") ||
         localStorage.getItem("accessToken");
-
       if (!token) throw new Error("No authentication token found.");
-
       const response = await AxiosInstance.patch(
         endpoints.propertyToggleLike(id),
         data,
@@ -259,7 +245,6 @@ class BaseURL {
           },
         }
       );
-
       return response.data;
     } catch (error: any) {
       if (error.response?.status === 401) {
@@ -276,9 +261,7 @@ class BaseURL {
           localStorage.getItem("authToken") ||
           localStorage.getItem("token") ||
           localStorage.getItem("accessToken");
-
         if (!token) throw new Error("No authentication token found.");
-
         const response = await AxiosInstance.patch(
           endpoints.updateAllNotificationsAsRead,
           {},
@@ -289,7 +272,6 @@ class BaseURL {
             },
           }
         );
-
         return response.data;
       } catch (error: any) {
         if (error.response?.status === 401) {
@@ -308,9 +290,7 @@ class BaseURL {
         localStorage.getItem("authToken") ||
         localStorage.getItem("token") ||
         localStorage.getItem("accessToken");
-
       if (!token) throw new Error("No authentication token found.");
-
       const response = await AxiosInstance.patch(
         endpoints.updateNotificationAsRead(id),
         data,
@@ -321,7 +301,6 @@ class BaseURL {
           },
         }
       );
-
       return response.data;
     } catch (error: any) {
       if (error.response?.status === 401) {
@@ -339,9 +318,7 @@ class BaseURL {
         localStorage.getItem("authToken") ||
         localStorage.getItem("token") ||
         localStorage.getItem("accessToken");
-
       if (!token) throw new Error("No authentication token found.");
-
       const response = await AxiosInstance.patch(
         `/notifications/${id}/read`,
         {},
@@ -352,7 +329,6 @@ class BaseURL {
           },
         }
       );
-
       return response.data;
     } catch (error: any) {
       if (error.response?.status === 401) {
@@ -364,11 +340,9 @@ class BaseURL {
   };
   httpDeleteNotifications = async (id: string) => {
     const token = localStorage.getItem("token");
-
     if (!token) {
       throw new Error("No authentication token found");
     }
-
     try {
       const response = await AxiosInstance.delete(
         endpoints.deleteNotificationById(id),
@@ -379,7 +353,6 @@ class BaseURL {
           },
         }
       );
-
       return response.data;
     } catch (error) {
       console.error("Failed to Delete Notification", error);
@@ -394,14 +367,12 @@ class BaseURL {
         localStorage.getItem("accessToken");
       console.log("Tonek", token);
       if (!token) throw new Error("No authentication token found.");
-
       const response = await AxiosInstance.get(endpoints.getUsersActivities, {
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
         },
       });
-
       return response.data;
     } catch (error: any) {
       if (error.response?.status === 401) {
@@ -419,14 +390,12 @@ class BaseURL {
         localStorage.getItem("accessToken");
       console.log("Tonek", token);
       if (!token) throw new Error("No authentication token found.");
-
       const response = await AxiosInstance.get(endpoints.getUsersActivities, {
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
         },
       });
-
       return response.data;
     } catch (error: any) {
       if (error.response?.status === 401) {
@@ -445,14 +414,12 @@ class BaseURL {
         localStorage.getItem("accessToken");
       console.log("Tonek", token);
       if (!token) throw new Error("No authentication token found.");
-
       const response = await AxiosInstance.get(endpoints.getUsersRole, {
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
         },
       });
-
       return response.data;
     } catch (error: any) {
       if (error.response?.status === 401) {
@@ -469,18 +436,14 @@ class BaseURL {
         localStorage.getItem("authToken") ||
         localStorage.getItem("token") ||
         localStorage.getItem("accessToken");
-
       console.log("Token for onboarding check:", token);
-
       if (!token) throw new Error("No authentication token found.");
-
       const response = await AxiosInstance.get(endpoints.getOnboardingStatus, {
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
         },
       });
-
       return response.data;
     } catch (error: any) {
       if (error.response?.status === 401) {
@@ -496,15 +459,11 @@ class BaseURL {
         localStorage.getItem("authToken") ||
         localStorage.getItem("token") ||
         localStorage.getItem("accessToken");
-
       console.log("Token", token);
-
       if (!token) throw new Error("No authentication token found.");
-
-      // Fix: Move headers to the correct position and use proper method
       const response = await AxiosInstance.patch(
         endpoints.updateOnboardingStatus,
-        {}, // Empty body for PATCH request
+        {},
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -512,7 +471,6 @@ class BaseURL {
           },
         }
       );
-
       return response.data;
     } catch (error: any) {
       if (error.response?.status === 401) {
@@ -529,11 +487,9 @@ class BaseURL {
         localStorage.getItem("authToken") ||
         localStorage.getItem("token") ||
         localStorage.getItem("accessToken");
-
       if (!token) {
         throw new Error("No authentication token found. Please login again.");
       }
-
       const response = await AxiosInstance.post(
         endpoints.writeReviews(id),
         data,
@@ -550,7 +506,6 @@ class BaseURL {
         localStorage.removeItem("authToken");
         localStorage.removeItem("token");
         localStorage.removeItem("accessToken");
-
         window.location.href = "/signin";
       }
       throw error;
@@ -562,11 +517,9 @@ class BaseURL {
         localStorage.getItem("authToken") ||
         localStorage.getItem("token") ||
         localStorage.getItem("accessToken");
-
       if (!token) {
         throw new Error("No authentication token found. Please login again.");
       }
-
       const response = await AxiosInstance.post(
         endpoints.claimProperties(id),
         data,
@@ -583,7 +536,6 @@ class BaseURL {
         localStorage.removeItem("authToken");
         localStorage.removeItem("token");
         localStorage.removeItem("accessToken");
-
         window.location.href = "/signin";
       }
       throw error;
@@ -595,27 +547,22 @@ class BaseURL {
         localStorage.getItem("authToken") ||
         localStorage.getItem("token") ||
         localStorage.getItem("accessToken");
-
       if (!token) {
         throw new Error("No authentication token found. Please login again.");
       }
       console.log(data);
-
-      // Use AxiosInstance to POST FormData, do NOT set Content-Type
       const response = await AxiosInstance.post(endpoints.createListing, data, {
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "multipart/form-data",
         },
       });
-
       return response.data;
     } catch (error: any) {
       if (error.response?.status === 401) {
         localStorage.removeItem("authToken");
         localStorage.removeItem("token");
         localStorage.removeItem("accessToken");
-
         window.location.href = "/signin";
       }
       throw error;
@@ -627,15 +574,12 @@ class BaseURL {
         localStorage.getItem("authToken") ||
         localStorage.getItem("token") ||
         localStorage.getItem("accessToken");
-
       if (!token) {
         localStorage.setItem("unlistedReviewData", JSON.stringify(data));
         window.location.href = "/signin";
         throw new Error("No authentication token found. Please login again.");
       }
-
       console.log(data);
-
       const response = await AxiosInstance.post(
         endpoints.writeUnlistedReview,
         data,
@@ -646,7 +590,6 @@ class BaseURL {
           },
         }
       );
-
       console.log(response.data);
       return response.data;
     } catch (error: any) {
@@ -654,7 +597,6 @@ class BaseURL {
         localStorage.removeItem("authToken");
         localStorage.removeItem("token");
         localStorage.removeItem("accessToken");
-
         window.location.href = "/signin";
       }
       throw error;
@@ -680,8 +622,6 @@ class BaseURL {
   ) => {
     try {
       let url = endpoints.getAllReviews;
-
-      // Build query parameters
       const params = new URLSearchParams();
       if (sortBy) {
         params.append("sortBy", sortBy);
@@ -689,16 +629,12 @@ class BaseURL {
       if (sortOrder) {
         params.append("sortOrder", sortOrder);
       }
-
       if (limit) {
         params.append("limit", limit.toString());
       }
-
-      // Add parameters to URL if they exist
       if (params.toString()) {
         url += `?${params.toString()}`;
       }
-
       const response = await AxiosInstance.get(url);
       return response.data;
     } catch (error: any) {
@@ -713,8 +649,6 @@ class BaseURL {
   ) => {
     try {
       let url = endpoints.getAllNotifications;
-
-      // Build query parameters
       const params = new URLSearchParams();
       if (sortBy) {
         params.append("sortBy", sortBy);
@@ -722,16 +656,12 @@ class BaseURL {
       if (sortOrder) {
         params.append("sortOrder", sortOrder);
       }
-
       if (limit) {
         params.append("limit", limit.toString());
       }
-
-      // Add parameters to URL if they exist
       if (params.toString()) {
         url += `?${params.toString()}`;
       }
-
       const response = await AxiosInstance.get(url);
       return response.data;
     } catch (error: any) {
@@ -740,9 +670,7 @@ class BaseURL {
   };
   httpGetAllProperties = async (limit?: number, byId?: number) => {
     try {
-      // Always start with the base endpoint (no query string)
       let url = "/listings";
-      // Always include category=Swap (capital S)
       const params = new URLSearchParams({ category: "Swap" });
       if (byId) {
         params.append("byId", byId.toString());
@@ -772,9 +700,7 @@ class BaseURL {
         localStorage.getItem("authToken") ||
         localStorage.getItem("token") ||
         localStorage.getItem("accessToken");
-
       if (!token) throw new Error("No authentication token found.");
-
       const response = await AxiosInstance.patch(
         endpoints.ReviewLikesToggle(id),
         data,
@@ -785,7 +711,6 @@ class BaseURL {
           },
         }
       );
-
       return response.data;
     } catch (error: any) {
       if (error.response?.status === 401) {
@@ -804,9 +729,7 @@ class BaseURL {
         localStorage.getItem("authToken") ||
         localStorage.getItem("token") ||
         localStorage.getItem("accessToken");
-
       if (!token) throw new Error("No authentication token found.");
-
       const response = await AxiosInstance.post(
         endpoints.flagReview(id),
         data,
@@ -817,7 +740,6 @@ class BaseURL {
           },
         }
       );
-
       return response.data;
     } catch (error: any) {
       if (error.response?.status === 401) {
@@ -845,11 +767,14 @@ class BaseURL {
       throw new Error(error.response?.data?.message || "Review not found");
     }
   };
-  httpGetAllListings = async (limit?: number, byId?: number) => {
+
+  httpGetAllListings = async (
+    limit?: number,
+    byId?: number,
+    category?: PropertyCategory
+  ) => {
     try {
       let url = endpoints.getAllListings;
-
-      // Build query parameters
       const params = new URLSearchParams();
       if (byId) {
         params.append("byId", byId.toString());
@@ -857,13 +782,22 @@ class BaseURL {
       if (limit) {
         params.append("limit", limit.toString());
       }
+      if (category) {
+        params.append("category", category);
+      }
       if (params.toString()) {
         url += `?${params.toString()}`;
       }
-
+      console.log("[httpGetAllListings] Requesting URL:", url);
       const response = await AxiosInstance.get(url);
+      console.log("[httpGetAllListings] Response data:", response.data);
       return response.data;
     } catch (error: any) {
+      console.error("[httpGetAllListings] Error fetching listings:", {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status,
+      });
       throw new Error(
         error.response?.data?.message || "Get all listings failed"
       );
@@ -872,8 +806,6 @@ class BaseURL {
   httpGetAllMyListings = async (limit?: number, byId?: number) => {
     try {
       let url = endpoints.getAllMyListings;
-
-      // Build query parameters
       const params = new URLSearchParams();
       if (byId) {
         params.append("byId", byId.toString());
@@ -884,7 +816,6 @@ class BaseURL {
       if (params.toString()) {
         url += `?${params.toString()}`;
       }
-
       const response = await AxiosInstance.get(url);
       return response.data;
     } catch (error: any) {
@@ -896,8 +827,6 @@ class BaseURL {
   httpGetAllBlogPost = async (limit?: number, byId?: number) => {
     try {
       let url = endpoints.getAllBlogPost;
-
-      // Build query parameters
       const params = new URLSearchParams();
       if (byId) {
         params.append("byId", byId.toString());
@@ -908,7 +837,6 @@ class BaseURL {
       if (params.toString()) {
         url += `?${params.toString()}`;
       }
-
       const response = await AxiosInstance.get(url);
       return response.data;
     } catch (error: any) {
@@ -956,9 +884,7 @@ class BaseURL {
       localStorage.getItem("authToken") ||
       localStorage.getItem("token") ||
       localStorage.getItem("accessToken");
-
     if (!token) throw new Error("No authentication token found.");
-
     await AxiosInstance.delete(`/notifications/${id}`, {
       headers: {
         Authorization: `Bearer ${token}`,
@@ -966,16 +892,14 @@ class BaseURL {
       },
     });
   };
-  // ==Admin methods====//
 
+  // ==Admin methods====//
   httpGetAdminOverviewStatus = async (
     limit?: number,
     byId?: number
   ): Promise<AdminOverviewResponse> => {
     try {
       let url = endpoints.getAdminOverviewStatus;
-
-      // Build query parameters
       const params = new URLSearchParams();
       if (byId) {
         params.append("byId", byId.toString());
@@ -986,7 +910,6 @@ class BaseURL {
       if (params.toString()) {
         url += `?${params.toString()}`;
       }
-
       const response = await AxiosInstance.get<AdminOverviewResponse>(url);
       return response.data;
     } catch (error: any) {
@@ -1039,7 +962,6 @@ class BaseURL {
         endpoints.updateAdminProperty(id)
       );
       console.log("Payload:", payload);
-
       const response = await AxiosInstance.patch(
         endpoints.updateAdminProperty(id),
         payload
@@ -1061,22 +983,6 @@ class BaseURL {
       );
     }
   };
-  //   id: string,
-  //   data: Partial<AdminProperty>
-  // ): Promise<AdminProperty> => {
-  //   try {
-  //     const response = await AxiosInstance.patch(
-  //       endpoints.updateAdminProperty(id),
-  //       data
-  //     );
-  //     console.log("Response Data", response.data);
-  //     return response.data;
-  //   } catch (error: any) {
-  //     throw new Error(
-  //       error.response?.data?.message || "Update property failed"
-  //     );
-  //   }
-  // };
   httpDeleteAdminProperty = async (id: string): Promise<void> => {
     try {
       await AxiosInstance.delete(endpoints.deleteAdminProperty(id));
@@ -1128,7 +1034,6 @@ class BaseURL {
         endpoints.toggleAdminUserDeactivate(id)
       );
       console.log("Payload:", payload);
-
       const response = await AxiosInstance.patch(
         endpoints.updateAdminProperty(id),
         payload
@@ -1245,7 +1150,6 @@ class BaseURL {
         endpoints.approvePropertyClaim(id)
       );
       console.log("Payload:", payload);
-
       const response = await AxiosInstance.patch(
         endpoints.approvePropertyClaim(id),
         payload
@@ -1274,14 +1178,12 @@ class BaseURL {
     try {
       const payload = {
         ...data,
-        // isActive: data. !== undefined ? data.isActive : undefined,
       };
       console.log(
         "Sending PATCH request to:",
         endpoints.rejectPropertyClaim(id)
       );
       console.log("Payload:", data);
-
       const response = await AxiosInstance.patch(
         endpoints.rejectPropertyClaim(id),
         payload

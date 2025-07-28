@@ -114,7 +114,7 @@ const SignInForm: React.FC<SignInFormProps> = ({
 
   return (
     <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-      <div className="space-y-4 shadow-xl">
+      <div className="space-y-4 shadow-md">
         <div>
           <label
             htmlFor="email"

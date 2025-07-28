@@ -59,6 +59,7 @@ interface SearchResponse {
   suggestedReviews: Review[];
   noSearchFound: boolean;
   currentSearch: string;
+  apartmentNumbers: string[];
   message?: string;
 }
 
@@ -80,10 +81,12 @@ const ReviewSearchContainer = () => {
   );
   const [sortBy, setSortBy] = useState<string>("recent");
   const [isDropdownOpen, setIsDropdownOpen] = useState<boolean>(false);
+  const [searchQuery, setSearchQuery] = useState<string>(
+    searchParams.get("q") || ""
+  );
 
-  const fullAddress = searchParams.get("q") || "";
   const { data, isLoading } = useSearchReviewsQuery(
-    fullAddress,
+    searchQuery,
     apartment !== "all" ? apartment : undefined
   ) as { data: SearchResponse | undefined; isLoading: boolean };
   const reviews: Review[] = useMemo(() => {
@@ -93,14 +96,14 @@ const ReviewSearchContainer = () => {
     return data?.matchedReviews || [];
   }, [data]);
 
-  const lastValidQuery = useRef({ fullAddress, apartment });
+  const lastValidQuery = useRef({ searchQuery, apartment });
 
   const searchInputValue = useMemo(() => {
     if (data?.matchedReviews && data.matchedReviews.length > 0) {
-      return fullAddress;
+      return searchQuery;
     }
-    return data?.currentSearch || fullAddress;
-  }, [data, fullAddress]);
+    return data?.currentSearch || searchQuery;
+  }, [data, searchQuery]);
 
   const getDisplayAddress = (loc: Location) => {
     if (loc?.fullAddress && loc.fullAddress.trim() !== "")
@@ -174,31 +177,15 @@ const ReviewSearchContainer = () => {
   };
 
   useEffect(() => {
-    if (!isLoading && (fullAddress || apartment !== "all")) {
+    if (!isLoading && (searchQuery || apartment !== "all")) {
       if (reviews.length === 0 && !data?.noSearchFound) {
         toast.error("No reviews found for this address or apartment.");
-        if (
-          lastValidQuery.current.fullAddress !== fullAddress ||
-          lastValidQuery.current.apartment !== apartment
-        ) {
-          router.replace(
-            `/reviews?q=${encodeURIComponent(
-              lastValidQuery.current.fullAddress
-            )}${
-              lastValidQuery.current.apartment &&
-              lastValidQuery.current.apartment !== "all"
-                ? `&apartment=${encodeURIComponent(
-                    lastValidQuery.current.apartment
-                  )}`
-                : ""
-            }`
-          );
-        }
+        lastValidQuery.current = { searchQuery, apartment };
       } else {
-        lastValidQuery.current = { fullAddress, apartment };
+        lastValidQuery.current = { searchQuery, apartment };
       }
     }
-  }, [isLoading, reviews, fullAddress, apartment, router, data?.noSearchFound]);
+  }, [isLoading, reviews, searchQuery, apartment, data?.noSearchFound]);
 
   const [filteredReviews, setFilteredReviews] = useState<Review[]>([]);
 
@@ -256,7 +243,7 @@ const ReviewSearchContainer = () => {
 
   return (
     <section
-      className="w-full max-w-7xl bg-white mx-auto px-4 py-8"
+      className="w-full max-w-7xl mx-auto px-4 py-8"
       aria-label="Property reviews"
     >
       {/* Header */}
@@ -265,7 +252,9 @@ const ReviewSearchContainer = () => {
           Read Trusted Reviews from Verified Tenants
         </h1>
         {data?.noSearchFound && data?.message && (
-          <p className="text-sm text-red-600 mb-4">{data.message}</p>
+          <p className="text-sm md:text-base text-red-600 mb-4">
+            {data.message}
+          </p>
         )}
 
         {/* Sort Dropdown */}
@@ -306,7 +295,7 @@ const ReviewSearchContainer = () => {
         </div>
 
         {/* Filter Section */}
-        <div className="flex justify-between items-center gap-8 mb-6 shadow-md rounded-md">
+        <div className="flex justify-between items-center gap-8 bg-white py-4 px-2 shadow-sm rounded-md">
           <div className="flex items-center gap-2">
             <Filter size={20} className="text-gray-600" />
             <span className="text-md font-medium text-gray-700">
@@ -318,24 +307,14 @@ const ReviewSearchContainer = () => {
             placeholder="Search by home address e.g 62 Peiga Epime Road, Peiga, Kwara"
             initialValue={searchInputValue}
             onPlaceSelect={(place: PlacePrediction) => {
-              router.push(
-                `/reviews?q=${encodeURIComponent(place.description)}${
-                  apartment && apartment !== "all"
-                    ? `&apartment=${encodeURIComponent(apartment)}`
-                    : ""
-                }`
-              );
+              setSearchQuery(place.description);
             }}
-            onChange={() => {}}
+            onChange={(value: string) => {
+              setSearchQuery(value);
+            }}
             onSubmit={(value: string) => {
               if (value) {
-                router.push(
-                  `/reviews?q=${encodeURIComponent(value)}${
-                    apartment && apartment !== "all"
-                      ? `&apartment=${encodeURIComponent(apartment)}`
-                      : ""
-                  }`
-                );
+                setSearchQuery(value);
               }
             }}
             onLocationSelect={() => {}}
@@ -348,10 +327,11 @@ const ReviewSearchContainer = () => {
             className="border border-gray-300 rounded-md px-3 py-2 text-sm bg-white"
           >
             <option value="all">All Apartments</option>
-            <option value="studio">Studio</option>
-            <option value="1bed">1 Bedroom</option>
-            <option value="2bed">2 Bedroom</option>
-            <option value="3bed">3 Bedroom</option>
+            {data?.apartmentNumbers.map((apt) => (
+              <option key={apt} value={apt}>
+                {apt}
+              </option>
+            ))}
           </select>
         </div>
       </div>

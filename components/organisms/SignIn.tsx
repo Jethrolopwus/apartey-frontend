@@ -141,7 +141,7 @@ const SignIn: React.FC = () => {
 
   return (
     <div className="flex min-h-screen bg-gray-50 items-center justify-center px-4 py-12 sm:px-6 lg:px-8">
-      <div className="w-full max-w-md space-y-8 px-6 py-8 shadow-xl bg-white rounded-xl border border-gray-100">
+      <div className="w-full max-w-md space-y-8 px-6 py-8  bg-white rounded-xl border border-gray-100">
         <div className="flex flex-col items-center">
           <div className="mb-6">
             <Image

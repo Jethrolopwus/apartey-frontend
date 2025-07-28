@@ -18,7 +18,7 @@ interface Review {
     streetAddress: string;
     apartmentUnitNumber?: string;
     displayOnMap?: boolean;
-    fullAddress?: string; // Added for the new helper
+    fullAddress?: string;
   };
   overallRating: number;
   detailedReview: string;
@@ -59,7 +59,7 @@ const getDisplayAddress = (loc: Review["location"]) => {
     loc?.apartmentUnitNumber || "",
     loc?.district || "",
     loc?.city || "",
-    loc?.country || ""
+    loc?.country || "",
   ].filter(Boolean);
   return parts.length > 0 ? parts.join(", ") : "No Address";
 };
@@ -229,10 +229,10 @@ const FeaturedReviews = () => {
                   ))}
                 </div>
                 <span className="text-sm font-medium text-gray-700">
-                  {review.overallRating.toFixed(1)}
+                  {review.overallRating}
                 </span>
                 <span className="text-xs text-gray-500">
-                  ({review.overallRating.toFixed(0)} reviews)
+                  {review.overallRating}
                 </span>
               </div>
 

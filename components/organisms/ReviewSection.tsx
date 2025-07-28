@@ -356,7 +356,7 @@ const ReviewsSection: React.FC<ReviewsSectionProps> = ({
                           {renderStars(review.overallRating)}
                         </div>
                         <span className="text-gray-700">
-                          {review.overallRating.toString()}
+                          {review.overallRating}
                         </span>
                       </div>
                       <p className="text-gray-500 text-sm">
