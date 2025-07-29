@@ -1,14 +1,37 @@
 "use client";
-import http from "@/services/http";
 import { useQuery } from "@tanstack/react-query";
-import { UseGetAllReviewsQueryParams } from "@/types/generated";
+import http from "@/services/http";
+import type {
+  UseGetAllReviewsQueryParams,
+  Review,
+  ReviewsQueryData,
+} from "@/types/generated";
 
-export const useGetAllReviewsQuery = (params?: UseGetAllReviewsQueryParams) => {
-  const { data, isLoading, error, refetch } = useQuery({
-    queryKey: ["reviews", params?.limit, params?.sortBy, params?.sortOrder],
-    queryFn: () =>
-      http.httpGetAllReviews(params?.limit, params?.sortBy, params?.sortOrder),
-  });
+export interface AllReviewsQueryParams extends UseGetAllReviewsQueryParams {
+  countryCode?: string;
+}
+
+export const useGetAllReviewsQuery = (params: AllReviewsQueryParams = {}) => {
+  const { data, isLoading, error, refetch } = useQuery<ReviewsQueryData, Error>(
+    {
+      queryKey: [
+        "reviews",
+        params.limit,
+        params.sortBy,
+        params.sortOrder,
+        params.countryCode,
+        params.page,
+      ],
+      queryFn: () =>
+        http.httpGetAllReviews(
+          params.limit,
+          params.sortBy,
+          params.sortOrder,
+          params.countryCode,
+          params.page
+        ),
+    }
+  );
 
   return { data, isLoading, error, refetch };
 };

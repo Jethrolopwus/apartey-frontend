@@ -1,6 +1,12 @@
 "use client";
-import React from "react";
-import { MessageCircle, Mail, Phone } from "lucide-react";
+import React, { useState } from "react";
+import {
+  MessageCircle,
+  Mail,
+  Phone,
+  PlusCircle,
+  MinusCircle,
+} from "lucide-react";
 
 export default function HelpCenter() {
   const faqs = [
@@ -35,6 +41,12 @@ export default function HelpCenter() {
         "We have partnerships with lenders who can provide mortgage assistance and advice.",
     },
   ];
+
+  const [openFaq, setOpenFaq] = useState<number | null>(null);
+
+  const toggleFaq = (index: number) => {
+    setOpenFaq(openFaq === index ? null : index);
+  };
 
   return (
     <div className="bg-gray-100 min-h-screen p-8">
@@ -104,12 +116,31 @@ export default function HelpCenter() {
                 key={index}
                 className="border-b border-gray-100 pb-6 last:border-b-0 last:pb-0"
               >
-                <h3 className="text-base font-medium text-gray-900 mb-2">
-                  {faq.question}
-                </h3>
-                <p className="text-sm text-gray-600 leading-relaxed">
-                  {faq.answer}
-                </p>
+                <button
+                  className="flex items-center justify-between w-full text-left"
+                  onClick={() => toggleFaq(index)}
+                  aria-expanded={openFaq === index}
+                  aria-controls={`faq-${index}-content`}
+                >
+                  <h3 className="text-base font-medium text-gray-900">
+                    {faq.question}
+                  </h3>
+                  {openFaq === index ? (
+                    <MinusCircle className="w-6 h-6 text-[#C85212] cursor-pointer" />
+                  ) : (
+                    <PlusCircle className="w-6 h-6 text-[#C85212] cursor-pointer" />
+                  )}
+                </button>
+                <div
+                  id={`faq-${index}-content`}
+                  className="mt-2 text-sm text-gray-600 leading-relaxed overflow-hidden transition-all duration-300 ease-in-out"
+                  style={{
+                    maxHeight: openFaq === index ? "1000px" : "0",
+                    opacity: openFaq === index ? 1 : 0,
+                  }}
+                >
+                  <p>{faq.answer}</p>
+                </div>
               </div>
             ))}
           </div>

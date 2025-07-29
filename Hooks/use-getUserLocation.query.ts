@@ -4,7 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import http from "@/services/http";
 import type { userLocationData } from "@/types/generated";
 
-export const useGetUserLocationQuery = (countryCode: string = "EE") => {
+export const useGetUserLocationQuery = (countryCode: string) => {
   return useQuery<userLocationData, Error>({
     queryKey: ["user-profile", countryCode],
     queryFn: () => http.httpGetUsersLocation(countryCode),

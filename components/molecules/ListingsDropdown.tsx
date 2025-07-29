@@ -18,21 +18,21 @@ const ListingsDropdown: React.FC<ListingsDropdownProps> = ({
   const listingItems = [
     {
       id: "rent-home",
-      label: "Rent Home",
+      label: "Rent a Home",
       description: "Find rental properties",
       icon: Home,
       href: "/listings?category=Rent",
     },
     {
       id: "bsale-home",
-      label: "Sale a Home",
+      label: "Sell a Home",
       description: "Find properties for sale",
       icon: ShoppingBag,
       href: "/listings?category=Sale",
     },
     {
       id: "swap-home",
-      label: "Swap Home",
+      label: "Swap a Home",
       description: "Exchange properties",
       icon: ArrowRightLeft,
       href: "/listings?category=Swap",

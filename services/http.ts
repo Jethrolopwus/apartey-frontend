@@ -2,6 +2,7 @@ import axios from "axios";
 import endpoints from "./endpoints";
 import type {
   Category,
+  userLocationData,
   FormData,
   FormValues,
   OnboardingStatusResponse,
@@ -11,6 +12,7 @@ import type {
   RoleSubmissionResponse,
   SignInResponse,
   UnlistedPropertyReview,
+  ReviewsQueryData,
 } from "@/types/generated";
 import { TokenManager } from "@/utils/tokenManager";
 import {
@@ -633,12 +635,13 @@ class BaseURL {
       throw new Error(error.response?.data?.message || "Search failed");
     }
   };
-
   httpGetAllReviews = async (
     limit?: number,
     sortBy?: string,
-    sortOrder?: string
-  ) => {
+    sortOrder?: string,
+    countryCode?: string,
+    page?: number
+  ): Promise<ReviewsQueryData> => {
     try {
       let url = endpoints.getAllReviews;
       const params = new URLSearchParams();
@@ -650,6 +653,12 @@ class BaseURL {
       }
       if (limit) {
         params.append("limit", limit.toString());
+      }
+      if (countryCode) {
+        params.append("countryCode", countryCode);
+      }
+      if (page) {
+        params.append("page", page.toString());
       }
       if (params.toString()) {
         url += `?${params.toString()}`;

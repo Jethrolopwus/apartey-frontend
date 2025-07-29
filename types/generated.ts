@@ -18,6 +18,15 @@ export interface UseGetAllReviewsQueryParams {
   limit?: number;
   sortBy?: string;
   sortOrder?: string;
+  countryCode?: string;
+  page?: number;
+}
+
+export interface ReviewsQueryData {
+  reviews: Review[];
+  totalPages: number;
+  currentPage: number;
+  totalReviews: number;
 }
 export interface useGetAllListingsQueryParams {
   limit?: number;

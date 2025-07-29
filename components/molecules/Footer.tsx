@@ -9,10 +9,8 @@ const Footer: React.FC = () => {
   const { selectedCountryCode, setSelectedCountryCode } = useLocation();
 
   const countries = [
-    { code: "EE", name: "Estonia" },
-    { code: "NG", name: "Nigeria" },
-    { code: "US", name: "United States" },
-    { code: "GB", name: "United Kingdom" },
+    { code: "EE", name: "Estonia", flag: "🇪🇪" },
+    { code: "NG", name: "Nigeria", flag: "🇳🇬" },
   ];
 
   const handleCountryChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -64,10 +62,10 @@ const Footer: React.FC = () => {
                 Insights
               </Link>
               <Link
-                href="/user-price-list"
+                href="/help-center"
                 className="block text-sm text-gray-600 transition-colors hover:text-gray-900 lg:text-base"
               >
-                User Price List
+                FAQs
               </Link>
               <Link
                 href="/about"
@@ -91,41 +89,62 @@ const Footer: React.FC = () => {
             </h3>
             <div className="space-y-4">
               <Link
-                href="tel:+11234567890"
+                href="+372 5612 9752"
+                target="_blank"
                 className="block text-sm text-gray-600 transition-colors hover:text-gray-900 lg:text-base"
               >
-                +1 (123) 456-7890
+                +372 5612 9752.
               </Link>
               <Link
                 href="mailto:hello@apartey.com"
+                target="_blank"
                 className="block text-sm text-gray-600 transition-colors hover:text-gray-900 lg:text-base"
               >
-                hello@apartey.com
+                admin@apartey.com
               </Link>
             </div>
 
-            {/* Country Selection */}
             <div className="mt-6">
               <h3 className="mb-4 text-lg font-semibold text-gray-900">
                 Select Your Country
               </h3>
-              <div className="flex flex-wrap gap-4">
+              <div className="flex flex-wrap gap-3">
                 {countries.map((country) => (
                   <label
                     key={country.code}
-                    className="flex items-center space-x-2"
+                    className={`flex items-center space-x-3 p-3 rounded-lg border-2 cursor-pointer transition-all duration-200 hover:shadow-md ${
+                      selectedCountryCode === country.code
+                        ? "border-[#C85212] bg-blue-50 hover:border-[#A64310]"
+                        : "border-gray-200 bg-white hover:border-gray-300"
+                    }`}
                   >
                     <input
                       type="radio"
                       value={country.code}
                       checked={selectedCountryCode === country.code}
                       onChange={handleCountryChange}
-                      className="form-radio text-blue-600"
+                      className="sr-only"
                       aria-label={`Select ${country.name}`}
                     />
-                    <span className="text-sm text-gray-600 lg:text-base">
+                    <span
+                      className="text-xl"
+                      role="img"
+                      aria-label={`${country.name} flag`}
+                    >
+                      {country.flag}
+                    </span>
+                    <span
+                      className={`text-sm font-medium lg:text-base ${
+                        selectedCountryCode === country.code
+                          ? "text-[#C85212]"
+                          : "text-gray-700"
+                      }`}
+                    >
                       {country.name}
                     </span>
+                    {selectedCountryCode === country.code && (
+                      <div className="w-2 h-2 bg-[#C85212] rounded-full ml-auto"></div>
+                    )}
                   </label>
                 ))}
               </div>

@@ -2,6 +2,7 @@
 import Image from "next/image";
 import { Star, ChevronDown, Filter } from "lucide-react";
 import { useGetAllReviewsQuery } from "@/Hooks/use-GetAllReviews.query";
+import { useLocation } from "@/app/userLocationContext";
 import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import { Review, AllReviewsProps } from "@/types/generated";
@@ -44,19 +45,49 @@ const AllReviews: React.FC<AllReviewsProps> = ({
   gridCols = "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3",
 }) => {
   const router = useRouter();
+  const { selectedCountryCode } = useLocation();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [sortBy, setSortBy] = useState<string>("recent");
+  const [apartment, setApartment] = useState<string>("all");
   const [filteredReviews, setFilteredReviews] = useState<Review[]>([]);
+  const [apartmentNumbers, setApartmentNumbers] = useState<string[]>([]);
 
   // Use the query hook
-  const { data, isLoading, error, refetch } = useGetAllReviewsQuery({});
+  const { data, isLoading, error, refetch } = useGetAllReviewsQuery({
+    sortBy,
+    countryCode: selectedCountryCode,
+  });
 
-  // Set initial reviews
+  // Extract unique apartment numbers and set initial reviews
   useEffect(() => {
     if (data?.reviews) {
+      // Get unique apartment numbers
+      const uniqueApts = Array.from(
+        new Set(
+          data.reviews
+            .map((review) => review.location?.apartmentUnitNumber || "")
+            .filter(Boolean)
+        )
+      );
+      setApartmentNumbers(uniqueApts);
       setFilteredReviews(data.reviews);
     }
   }, [data]);
+
+  // Handle apartment filter
+  const handleDropdownFilter = (selectedApartment: string) => {
+    setApartment(selectedApartment);
+    if (selectedApartment === "all") {
+      setFilteredReviews(data?.reviews || []);
+    } else {
+      const filtered = (data?.reviews || []).filter(
+        (review) =>
+          (review.location?.apartmentUnitNumber || "").toLowerCase() ===
+          selectedApartment.toLowerCase()
+      );
+      setFilteredReviews(filtered);
+    }
+  };
 
   // Handle sort change
   const handleSortChange = (value: string) => {
@@ -106,7 +137,9 @@ const AllReviews: React.FC<AllReviewsProps> = ({
                 <span className="text-red-600 text-2xl">⚠</span>
               </div>
               <p className="text-lg text-red-600 mb-2">Error loading reviews</p>
-              <p className="text-gray-500 text-sm">{error.message}</p>
+              <p className="text-gray-500 text-sm">
+                {error.message} for {selectedCountryCode}
+              </p>
             </div>
             <button
               onClick={() => refetch()}
@@ -127,15 +160,12 @@ const AllReviews: React.FC<AllReviewsProps> = ({
   return (
     <div className={`bg-gray-50 ${className}`}>
       <div className="max-w-7xl mx-auto px-4 py-8">
-        {/* Header with Sorting */}
         {showHeader && (
           <div className="mb-8">
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
               <h1 className="text-2xl md:text-3xl font-semibold text-teal-800 mb-2 md:mb-0">
                 Read Trusted Reviews from Verified Tenants
               </h1>
-
-              {/* Sort Dropdown */}
               <div className="flex justify-end mb-6">
                 <div className="flex items-center gap-2">
                   <span className="text-sm text-gray-600">Sort by</span>
@@ -173,45 +203,39 @@ const AllReviews: React.FC<AllReviewsProps> = ({
               </div>
             </div>
             <div className="flex items-center gap-4 mb-6 w-full bg-white mt-4 py-4 px-2 shadow-sm rounded-md">
-              {/* Filter Label with Icon */}
               <div className="flex items-center gap-2 flex-shrink-0">
                 <Filter size={20} className="text-gray-600" />
                 <span className="text-sm font-medium text-gray-700 whitespace-nowrap">
                   Filter Reviews:
                 </span>
               </div>
-
-              {/* Search Input - Takes up remaining space */}
               <div className="flex-1">
                 <SearchInput
                   placeholder="Search by home address e.g 62 Patigi-Ejebe Road, Patigi, Kwara"
-                  onPlaceSelect={() => {
-                    // Placeholder for future implementation
-                  }}
+                  onPlaceSelect={() => {}}
                   onChange={() => {}}
-                  onSubmit={() => {
-                    // Placeholder for future implementation
-                  }}
+                  onSubmit={() => {}}
                   onLocationSelect={() => {}}
                   className="w-full"
                 />
               </div>
-
-              {/* Apartment Dropdown */}
               <div className="flex-shrink-0">
-                <select className="border border-gray-300 rounded-md px-4 py-2.5 text-sm bg-white min-w-[140px] focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500">
+                <select
+                  value={apartment}
+                  onChange={(e) => handleDropdownFilter(e.target.value)}
+                  className="border border-gray-300 rounded-md px-4 py-2.5 text-sm bg-white min-w-[140px] focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+                >
                   <option value="all">All Apartments</option>
-                  <option value="studio">Studio</option>
-                  <option value="1bed">1 Bedroom</option>
-                  <option value="2bed">2 Bedroom</option>
-                  <option value="3bed">3 Bedroom</option>
+                  {apartmentNumbers.map((apt) => (
+                    <option key={apt} value={apt}>
+                      {apt}
+                    </option>
+                  ))}
                 </select>
               </div>
             </div>
           </div>
         )}
-
-        {/* Reviews Grid */}
         {displayReviews.length === 0 ? (
           <div className="text-center py-20">
             <div className="w-24 h-24 mx-auto mb-6 bg-gray-100 rounded-full flex items-center justify-center">
@@ -261,7 +285,6 @@ const AllReviews: React.FC<AllReviewsProps> = ({
                       </div>
                     </div>
                   )}
-                  {/* Status and Verification Badges */}
                   <div className="absolute top-3 left-3 right-3 flex justify-between">
                     {review.isLinkedToDatabaseProperty && (
                       <span className="bg-teal-600/90 backdrop-blur-sm text-white text-xs font-semibold px-3 py-1 rounded-full">
@@ -290,17 +313,16 @@ const AllReviews: React.FC<AllReviewsProps> = ({
                         ))}
                       </div>
                       <span className="text-sm font-medium text-gray-700">
-                        {review.overallRating.toFixed(1)}
+                        {review.overallRating}
                       </span>
                       <span className="text-xs text-gray-500">
-                        ({review.overallRating.toFixed(0)} reviews)
+                        {review.overallRating}
                       </span>
                     </div>
                     <p className="text-gray-600 text-sm line-clamp-3 leading-relaxed mb-2">
                       {review.detailedReview}
                     </p>
                   </div>
-                  {/* Rating Details */}
                   <div className="flex items-center justify-between text-xs text-gray-500 pt-2 border-t border-gray-100 mb-2">
                     <div className="flex items-center gap-1">
                       <span className="font-medium">Value:</span>
@@ -311,7 +333,6 @@ const AllReviews: React.FC<AllReviewsProps> = ({
                       <span>{review.overallExperience}/5</span>
                     </div>
                   </div>
-                  {/* Footer */}
                   <div className="flex items-center justify-between pt-2">
                     <div className="flex items-center gap-2">
                       <div className="w-7 h-7 rounded-full bg-gradient-to-br from-teal-400 to-teal-600 flex items-center justify-center">
@@ -340,14 +361,11 @@ const AllReviews: React.FC<AllReviewsProps> = ({
             ))}
           </div>
         )}
-
-        {/* Pagination */}
         {showHeader && data?.totalPages && data.totalPages > 1 && (
           <div className="flex items-center justify-center mt-12 gap-2">
             <button className="px-4 py-2 text-sm text-gray-500 hover:text-teal-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
               ← Previous
             </button>
-
             {[...Array(Math.min(data.totalPages, 10))].map((_, i) => (
               <button
                 key={i}
@@ -360,7 +378,6 @@ const AllReviews: React.FC<AllReviewsProps> = ({
                 {i + 1}
               </button>
             ))}
-
             {data.totalPages > 10 && (
               <>
                 <span className="px-2 text-gray-400">...</span>
@@ -369,7 +386,6 @@ const AllReviews: React.FC<AllReviewsProps> = ({
                 </button>
               </>
             )}
-
             <button className="px-4 py-2 text-sm text-gray-500 hover:text-teal-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
               Next →
             </button>

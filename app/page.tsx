@@ -13,9 +13,11 @@ import { userLocationData } from "@/types/generated";
 
 export default function Home() {
   const user = useAppSelector((state: RootState) => state.auth.user);
-  const [location, setLocation] = useState<userLocationData | null>(null);
+  // Use the user's countryCode or fallback to "EE"
+  const countryCode = user?.countryCode || "EE";
 
-  const { data, isLoading, error } = useGetUserLocationQuery();
+  const { data, isLoading, error } = useGetUserLocationQuery(countryCode);
+  const [location, setLocation] = useState<userLocationData | null>(null);
 
   useEffect(() => {
     if (user?._id) {
@@ -34,7 +36,6 @@ export default function Home() {
       return;
     }
 
-    // If API data is available, store it and update state
     if (data) {
       const locationData: userLocationData = {
         countryCode: data.countryCode,
@@ -44,7 +45,6 @@ export default function Home() {
       setLocation(locationData);
     }
 
-    // Handle errors by setting a default location
     if (error) {
       console.error("Error fetching location:", error);
       const defaultLocation: userLocationData = {
@@ -54,7 +54,7 @@ export default function Home() {
       localStorage.setItem("userLocation", JSON.stringify(defaultLocation));
       setLocation(defaultLocation);
     }
-  }, [data, error]); // Run when data or error changes
+  }, [data, error]);
 
   return (
     <div>

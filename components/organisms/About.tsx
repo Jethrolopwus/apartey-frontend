@@ -75,9 +75,9 @@ const About: React.FC = () => {
             {/* Quote */}
             <div className="border-l-4 border-orange-500 pl-6 py-4 bg-orange-50 rounded-r-lg">
               <p className="text-gray-800 italic mb-2">
-                &ldquo;We&apos;re looking like resource we wish we had when
-                searching for our own apartment. - Honest reviews from real
-                people who&apos;ve lived there.&rdquo;
+                &ldquo;We&apos;re building the resource we wish existed when we
+                were hunting for our own apartments — honest reviews from real
+                people who&apos;ve actually lived there.&rdquo;
               </p>
               <p className="text-gray-600 text-sm">- Apartey Founding Team</p>
             </div>

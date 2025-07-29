@@ -46,8 +46,9 @@ interface Review {
   } | null;
   isLinkedToDatabaseProperty: boolean;
   reviewer: {
-    [x: string]: string;
+    [key: string]: string;
     _id: string;
+    // firstName?: string;
   };
 }
 
@@ -130,7 +131,7 @@ const FeaturedReviews = () => {
             Reviews
           </p>
           <h2 className="text-xl md:text-xl font-semibold text-gray-800">
-            Featured reviews ({data?.totalReviews || reviews.length})
+            Featured reviews ({data?.totalReviews ?? reviews.length})
           </h2>
         </div>
         <Link href="/reviewsPage">
@@ -183,17 +184,6 @@ const FeaturedReviews = () => {
 
               {/* Status and Verification Badges */}
               <div className="absolute top-3 left-3 right-3 flex justify-between">
-                {/* <span
-                  className={`text-xs font-semibold px-2 py-1 rounded-full backdrop-blur-sm ${
-                    review.status === "pending"
-                      ? "bg-yellow-100/90 text-yellow-800"
-                      : "bg-green-100/90 text-green-800"
-                  }`}
-                >
-                  {review.status.charAt(0).toUpperCase() +
-                    review.status.slice(1)}
-                </span> */}
-
                 {review.isLinkedToDatabaseProperty && (
                   <span className="bg-teal-600/90 backdrop-blur-sm text-white text-xs font-semibold px-3 py-1 rounded-full">
                     Verified
@@ -210,7 +200,6 @@ const FeaturedReviews = () => {
                 {review.location.streetAddress}
                 {review.location.apartmentUnitNumber &&
                   `, ${review.location.apartmentUnitNumber}`}
-                {/* {review.location.district && `, ${review.location.district}`},{" "} */}
                 {review.location.city}
               </h3>
 
@@ -229,9 +218,6 @@ const FeaturedReviews = () => {
                   ))}
                 </div>
                 <span className="text-sm font-medium text-gray-700">
-                  {review.overallRating}
-                </span>
-                <span className="text-xs text-gray-500">
                   {review.overallRating}
                 </span>
               </div>
@@ -285,7 +271,8 @@ const FeaturedReviews = () => {
       {data?.totalPages && data.totalPages > 1 && (
         <div className="text-center mt-4">
           <p className="text-sm text-gray-600">
-            Showing {featuredReviews.length} of {data.totalReviews} reviews
+            Showing {featuredReviews.length} of{" "}
+            {data?.totalReviews ?? reviews.length} reviews
           </p>
         </div>
       )}
