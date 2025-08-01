@@ -9,7 +9,7 @@ import DateLeftInput from "@/components/molecules/DateInput";
 import FurnishedCheckbox from "@/components/molecules/FurnishedCheckBox";
 import CheckboxGroups from "@/components/molecules/CheckBoxGroup";
 import { toast } from "react-hot-toast";
-import { ReviewFormData, StayDetails } from "@/types/generated";
+import { ReviewFormData, StayDetails, UnlistedPropertyReview } from "@/types/generated";
 import CostDetails from "@/components/molecules/CostDetails";
 import Accessibility from "@/components/molecules/Accessibility";
 import RatingsAndReviews, { RatingsAndReviewsData } from "./RatingsAndReviews";
@@ -395,7 +395,7 @@ const PropertyReviewForm: React.FC<Props> = ({ id }) => {
       }
 
       mutate(
-        { id, data: submissionData as unknown as import("/home/jethro/apartey-frontend/types/generated").UnlistedPropertyReview },
+        { id, data: submissionData as unknown as UnlistedPropertyReview },
         {
           onSuccess: (data) => {
             clearPendingData();
