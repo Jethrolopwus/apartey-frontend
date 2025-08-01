@@ -30,6 +30,15 @@ const SignIn: React.FC = () => {
 
   useEffect(() => {
     if (session) {
+      // For Google OAuth users, set onboarding completion if they have a role
+      if (typeof window !== "undefined" && session.user) {
+        localStorage.setItem("authMode", "signin");
+        
+        // Check if user has completed onboarding (has a role)
+        // This will be determined by the backend onboarding status
+        console.log("NextAuth session user:", session.user);
+      }
+      
       setTimeout(() => {
         console.log("Calling handlePostLoginRedirect for NextAuth session");
         handlePostLoginRedirectRef.current();
@@ -54,6 +63,17 @@ const SignIn: React.FC = () => {
           localStorage.setItem("userRole", data.user.role);
         }
       }
+      // Set auth mode for signin (not signup)
+      if (typeof window !== "undefined") {
+        localStorage.setItem("authMode", "signin");
+        
+        // If user has a role, they've completed onboarding
+        if (data.user?.role) {
+          localStorage.setItem("hasCompletedOnboarding", "true");
+          localStorage.setItem("userRole", data.user.role);
+        }
+      }
+      
       toast.success("Signed in successfully!");
       reset();
       refetchAuthStatus();

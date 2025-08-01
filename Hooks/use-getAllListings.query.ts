@@ -8,6 +8,9 @@ export interface useGetAllListingsQueryParams {
   byId?: number;
   category?: PropertyCategory;
   country?: string;
+  propertyType?: string;
+  petPolicy?: string;
+  condition?: string;
 }
 
 export const useGetAllListingsQuery = (
@@ -20,13 +23,19 @@ export const useGetAllListingsQuery = (
       params?.byId,
       params?.category,
       params?.country,
+      params?.propertyType,
+      params?.petPolicy,
+      params?.condition,
     ],
     queryFn: () =>
       http.httpGetAllListings(
         params?.limit,
         params?.byId,
         params?.category,
-        params?.country
+        params?.country,
+        params?.propertyType,
+        params?.petPolicy,
+        params?.condition
       ),
     staleTime: 5 * 60 * 1000,
     retry: 2,

@@ -9,6 +9,7 @@ export const useGetOnboardingStatusQuery = () => {
     queryFn: () => http.httpGetOnboardingStatus(),
     retry: false,
     staleTime: 1000 * 60 * 5,
-    enabled: false,
+    enabled: true, // Enable the query to actually fetch onboarding status
+    refetchOnWindowFocus: false,
   });
 };

@@ -63,18 +63,44 @@ export default function RoleSelect() {
                 console.log("Token updated from onboarding response");
               }
 
+              // Set onboarding completion flag
+              if (typeof window !== "undefined") {
+                localStorage.setItem("hasCompletedOnboarding", "true");
+                // Also set the user role if available
+                if (onboardingResponse?.currentUserStatus?.role) {
+                  localStorage.setItem("userRole", onboardingResponse.currentUserStatus.role);
+                }
+              }
+              
               toast.success("Setup completed successfully!");
 
               // Check if there's pending review data and redirect accordingly
               if (localStorage.getItem("pendingReviewData")) {
                 router.push("/write-reviews/unlisted");
               } else {
-                router.push("/profile");
+                // Redirect based on user role
+                const userRole = onboardingResponse?.currentUserStatus?.role;
+                if (userRole === "homeowner") {
+                  router.push("/landlord");
+                } else if (userRole === "agent") {
+                  router.push("/agent-profile");
+                } else {
+                  router.push("/profile");
+                }
               }
             },
             onError: (onboardingError: unknown) => {
               console.error("Onboarding status update error:", onboardingError);
 
+              // Set onboarding completion flag even if backend update fails
+              if (typeof window !== "undefined") {
+                localStorage.setItem("hasCompletedOnboarding", "true");
+                // Also set the user role if available from the role response
+                if (addRoleData?.currentUserRole?.role) {
+                  localStorage.setItem("userRole", addRoleData.currentUserRole.role);
+                }
+              }
+              
               // Even if onboarding status update fails, we can still navigate
               // since the role was successfully set
               toast.success("Role selected successfully!");
@@ -83,7 +109,15 @@ export default function RoleSelect() {
               if (localStorage.getItem("pendingReviewData")) {
                 router.push("/write-reviews/unlisted");
               } else {
-                router.push("/profile");
+                // Redirect based on user role
+                const userRole = addRoleData?.currentUserRole?.role;
+                if (userRole === "homeowner") {
+                  router.push("/landlord");
+                } else if (userRole === "agent") {
+                  router.push("/agent-profile");
+                } else {
+                  router.push("/profile");
+                }
               }
             },
           });
@@ -115,9 +149,9 @@ export default function RoleSelect() {
 
   return (
     <div className="min-h-screen flex items-center justify-center px-4 bg-gray-50">
-      <div className="w-full max-w-2xl text-center px-8 py-12 shadow-md border border-gray-100 bg-white rounded-lg">
+      <div className="w-full max-w-2xl text-center px-4 sm:px-8 py-8 sm:py-12 shadow-md border border-gray-100 bg-white rounded-lg">
         {/* Logo */}
-        <div className="mb-12">
+        <div className="mb-8 sm:mb-12">
           <Image
             src="/logo.png"
             alt="Apartey Logo"
@@ -128,45 +162,45 @@ export default function RoleSelect() {
         </div>
 
         {/* Title */}
-        <h1 className="text-4xl font-bold text-gray-900 mb-4 tracking-tight">
+        <h1 className="text-2xl sm:text-4xl font-bold text-gray-900 mb-4 tracking-tight">
           Let&#39;s get started
         </h1>
-        <p className="text-base text-gray-600 mb-12 leading-relaxed">
+        <p className="text-sm sm:text-base text-gray-600 mb-8 sm:mb-12 leading-relaxed">
           Tell us a bit about yourself so we can tailor your experience
         </p>
 
         {/* Role selection */}
-        <div className="text-left mb-8 w-[560px]">
-          <p className="text-base font-medium text-gray-900 mb-6">I am a</p>
+        <div className="text-left mb-8 w-full max-w-md mx-auto">
+          <p className="text-sm sm:text-base font-medium text-gray-900 mb-4 sm:mb-6">I am a</p>
 
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
             {/* Renter */}
             <div
               onClick={() => setSelectedRole("renter")}
-              className={`cursor-pointer border-2 rounded-xl p-4 transition-all duration-200 h-full ${
+              className={`cursor-pointer border-2 rounded-xl p-3 sm:p-4 transition-all duration-200 h-full ${
                 selectedRole === "renter"
                   ? "border-[#C85212] bg-white shadow-sm"
                   : "border-gray-200 bg-white hover:border-gray-300"
               }`}
             >
-              <div className="flex items-center justify-center mb-3">
+              <div className="flex items-center justify-center mb-2 sm:mb-3">
                 <div
-                  className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
+                  className={`w-4 h-4 sm:w-5 sm:h-5 rounded-full border-2 flex items-center justify-center ${
                     selectedRole === "renter"
                       ? "border-orange-500 bg-[#C85212]"
                       : "border-gray-300 bg-white"
                   }`}
                 >
                   {selectedRole === "renter" && (
-                    <div className="w-2 h-2 rounded-full bg-white"></div>
+                    <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-white"></div>
                   )}
                 </div>
               </div>
               <div className="text-center">
-                <h3 className="font-semibold text-gray-900 text-base mb-2">
+                <h3 className="font-semibold text-gray-900 text-sm sm:text-base mb-1 sm:mb-2">
                   Renter
                 </h3>
-                <p className="text-gray-600 text-sm leading-relaxed">
+                <p className="text-gray-600 text-xs sm:text-sm leading-relaxed">
                   I want to find a home to rent
                 </p>
               </div>
@@ -175,30 +209,30 @@ export default function RoleSelect() {
             {/* Homeowner */}
             <div
               onClick={() => setSelectedRole("homeowner")}
-              className={`cursor-pointer border-2 rounded-xl p-4 transition-all duration-200 h-full ${
+              className={`cursor-pointer border-2 rounded-xl p-3 sm:p-4 transition-all duration-200 h-full ${
                 selectedRole === "homeowner"
                   ? "border-[#C85212] bg-white shadow-sm"
                   : "border-gray-200 bg-white hover:border-gray-300"
               }`}
             >
-              <div className="flex items-center justify-center mb-3">
+              <div className="flex items-center justify-center mb-2 sm:mb-3">
                 <div
-                  className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
+                  className={`w-4 h-4 sm:w-5 sm:h-5 rounded-full border-2 flex items-center justify-center ${
                     selectedRole === "homeowner"
                       ? "border-orange-500 bg-[#C85212]"
                       : "border-gray-300 bg-white"
                   }`}
                 >
                   {selectedRole === "homeowner" && (
-                    <div className="w-2 h-2 rounded-full bg-white"></div>
+                    <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-white"></div>
                   )}
                 </div>
               </div>
               <div className="text-center">
-                <h3 className="font-semibold text-gray-900 text-base mb-2">
+                <h3 className="font-semibold text-gray-900 text-sm sm:text-base mb-1 sm:mb-2">
                   Homeowner
                 </h3>
-                <p className="text-gray-600 text-sm leading-relaxed">
+                <p className="text-gray-600 text-xs sm:text-sm leading-relaxed">
                   I want to sell or rent out my property
                 </p>
               </div>
@@ -207,30 +241,30 @@ export default function RoleSelect() {
             {/* Developer/Agent */}
             <div
               onClick={() => setSelectedRole("agent")}
-              className={`cursor-pointer border-2 rounded-xl p-4 transition-all duration-200 h-full ${
+              className={`cursor-pointer border-2 rounded-xl p-3 sm:p-4 transition-all duration-200 h-full ${
                 selectedRole === "agent"
                   ? "border-[#C85212] bg-white shadow-sm"
                   : "border-gray-200 bg-white hover:border-gray-300"
               }`}
             >
-              <div className="flex items-center justify-center mb-3">
+              <div className="flex items-center justify-center mb-2 sm:mb-3">
                 <div
-                  className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
+                  className={`w-4 h-4 sm:w-5 sm:h-5 rounded-full border-2 flex items-center justify-center ${
                     selectedRole === "agent"
                       ? "border-[#C85212] bg-[#C85212]"
                       : "border-gray-300 bg-white"
                   }`}
                 >
                   {selectedRole === "agent" && (
-                    <div className="w-2 h-2 rounded-full bg-white"></div>
+                    <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-white"></div>
                   )}
                 </div>
               </div>
               <div className="text-center">
-                <h3 className="font-bold text-gray-900 text-sm mb-2">
+                <h3 className="font-bold text-gray-900 text-xs sm:text-sm mb-1 sm:mb-2">
                   Developer/Agent
                 </h3>
-                <p className="text-gray-600 text-sm leading-relaxed">
+                <p className="text-gray-600 text-xs sm:text-sm leading-relaxed">
                   I am a real estate professional
                 </p>
               </div>
@@ -239,13 +273,13 @@ export default function RoleSelect() {
         </div>
 
         {/* Terms checkbox */}
-        <div className="flex items-start space-x-3 mb-8 text-left">
+        <div className="flex items-start space-x-3 mb-6 sm:mb-8 text-left px-4 sm:px-0">
           <div
             onClick={() => setAgreedToTerms(!agreedToTerms)}
             className="flex-shrink-0 mt-0.5 cursor-pointer"
           >
             <div
-              className={`w-5 h-5 border-2 rounded flex items-center justify-center transition-colors ${
+              className={`w-4 h-4 sm:w-5 sm:h-5 border-2 rounded flex items-center justify-center transition-colors ${
                 agreedToTerms
                   ? "border-[#C85212] bg-[#C85212]"
                   : "border-gray-300 bg-white hover:border-gray-400"
@@ -253,7 +287,7 @@ export default function RoleSelect() {
             >
               {agreedToTerms && (
                 <svg
-                  className="w-3 h-3 text-white"
+                  className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-white"
                   fill="currentColor"
                   viewBox="0 0 20 20"
                 >
@@ -266,7 +300,7 @@ export default function RoleSelect() {
               )}
             </div>
           </div>
-          <p className="text-sm text-gray-600 leading-relaxed">
+          <p className="text-xs sm:text-sm text-gray-600 leading-relaxed">
             I agree to the{" "}
             <span className="text-[#C85212] hover:text-orange-700 cursor-pointer font-medium">
               terms of use
@@ -282,7 +316,7 @@ export default function RoleSelect() {
         <button
           onClick={handleContinue}
           disabled={!selectedRole || !agreedToTerms || isLoading}
-          className={`w-full py-3 px-6 cursor-pointer rounded-lg font-semibold text-base transition-all duration-200 ${
+          className={`w-full py-3 px-6 cursor-pointer rounded-lg font-semibold text-sm sm:text-base transition-all duration-200 ${
             selectedRole && agreedToTerms && !isLoading
               ? "bg-[#C85212] hover:bg-orange-700 cursor-pointer text-white shadow-sm"
               : "bg-gray-200 text-gray-400 cursor-not-allowed"

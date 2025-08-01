@@ -28,6 +28,7 @@ const SignUp: React.FC = () => {
     if (data) {
       localStorage.setItem("token", data?.token);
       localStorage.setItem("email", data?.user?.email);
+      localStorage.setItem("authMode", "signup"); // Set auth mode for signup
       toast.success("Account created successfully!");
       reset();
       router.push("/onboarding");

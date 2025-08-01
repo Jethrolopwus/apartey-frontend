@@ -26,6 +26,19 @@ export const useUserRole = () => {
     // Initialize role from localStorage or default to "Renter"
     const storedRole = localStorage.getItem("userRole");
     setRole(storedRole ? validateRole(storedRole) : "renter");
+
+    // Listen for localStorage changes
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === "userRole") {
+        const newRole = e.newValue ? validateRole(e.newValue) : "renter";
+        setRole(newRole);
+      }
+    };
+
+    window.addEventListener("storage", handleStorageChange);
+    return () => {
+      window.removeEventListener("storage", handleStorageChange);
+    };
   }, []);
 
   const updateRole = (newRole: UserRole) => {

@@ -14,6 +14,8 @@ import {
   Menu,
 } from "lucide-react";
 import Image from "next/image";
+import { TokenManager } from "@/utils/tokenManager";
+import { signOut } from "next-auth/react";
 
 const navItems = [
   { label: "Overview", icon: Home, href: "/admin/dashboard", active: false },
@@ -58,6 +60,35 @@ export default function AdminSidebar() {
       }))
     );
     setMobileOpen(false);
+  };
+
+  const handleLogout = async () => {
+    try {
+      // Clear all authentication data
+      TokenManager.clearAllTokens();
+      
+      // Clear additional auth-related localStorage items
+      if (typeof window !== "undefined") {
+        localStorage.removeItem("hasCompletedOnboarding");
+        localStorage.removeItem("authMode");
+        localStorage.removeItem("redirectAfterLogin");
+        localStorage.removeItem("pendingReviewData");
+        localStorage.removeItem("email");
+        localStorage.removeItem("userRole");
+      }
+      
+      await signOut({ redirect: false });
+      console.log("Admin logged out, redirecting to /signin");
+      
+      // Force a complete page refresh to clear all state
+      window.location.href = "/signin";
+    } catch (error) {
+      console.error("Admin logout error:", error);
+      // Fallback to manual redirect
+      if (typeof window !== "undefined") {
+        window.location.href = "/signin";
+      }
+    }
   };
 
   return (
@@ -114,6 +145,7 @@ export default function AdminSidebar() {
           ))}
         </nav>
         <button
+          onClick={handleLogout}
           className="flex items-center gap-5 px-7 py-4 rounded-2xl font-bold text-[18px] mt-auto mb-2 bg-[#F64E60] text-white hover:bg-[#e03d4e] transition-colors shadow-xl w-full"
           style={{ boxShadow: "0px 8px 24px 0px #F64E60" }}
         >
@@ -173,6 +205,7 @@ export default function AdminSidebar() {
               ))}
             </nav>
             <button
+              onClick={handleLogout}
               className="flex items-center gap-4 px-6 py-4 rounded-xl font-semibold text-lg mt-auto bg-[#F64E60] text-white hover:bg-[#e03d4e] transition-colors shadow-lg"
               style={{ boxShadow: "0px 8px 24px 0px #F64E60" }}
             >

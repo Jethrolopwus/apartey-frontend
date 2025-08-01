@@ -24,6 +24,10 @@ const Listings = () => {
   // Safely handle category and country parameters
   const categoryParam = searchParams.get("category");
   const countryParam = searchParams.get("country");
+  const propertyTypeParam = searchParams.get("propertyType");
+  const petPolicyParam = searchParams.get("petPolicy");
+  const conditionParam = searchParams.get("condition");
+  
   const category: PropertyCategory = ["Swap", "Rent", "Buy"].includes(
     categoryParam ?? ""
   )
@@ -35,6 +39,9 @@ const Listings = () => {
     category,
     country,
     limit,
+    propertyType: propertyTypeParam || undefined,
+    petPolicy: petPolicyParam || undefined,
+    condition: conditionParam || undefined,
   });
   console.log("[Listings] Properties data:", data);
 
@@ -115,6 +122,18 @@ const Listings = () => {
   };
 
   const getPageTitle = () => {
+    // Handle specific filter parameters first
+    if (propertyTypeParam === "Apartment") {
+      return "Apartments";
+    }
+    if (petPolicyParam === "Pets allowed") {
+      return "Pet Friendly Properties";
+    }
+    if (conditionParam === "New Building") {
+      return "New Development Properties";
+    }
+    
+    // Handle category-based titles
     switch (category) {
       case "Rent":
         return "Home Rentals";
@@ -127,6 +146,18 @@ const Listings = () => {
   };
 
   const getPageDescription = () => {
+    // Handle specific filter parameters first
+    if (propertyTypeParam === "Apartment") {
+      return "Discover modern apartments and condominiums for your next home.";
+    }
+    if (petPolicyParam === "Pets allowed") {
+      return "Find properties that welcome your furry friends.";
+    }
+    if (conditionParam === "New Building") {
+      return "Explore newly developed properties with modern amenities.";
+    }
+    
+    // Handle category-based descriptions
     switch (category) {
       case "Rent":
         return "Find your perfect rental home and experience new destinations.";

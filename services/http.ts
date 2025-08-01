@@ -859,7 +859,10 @@ class BaseURL {
     limit?: number,
     byId?: number,
     category?: PropertyCategory,
-    country: string = "Estonia"
+    country: string = "Estonia",
+    propertyType?: string,
+    petPolicy?: string,
+    condition?: string
   ) => {
     try {
       let url = endpoints.getAllListings;
@@ -875,6 +878,15 @@ class BaseURL {
       }
       if (country) {
         params.append("country", country);
+      }
+      if (propertyType) {
+        params.append("propertyType", propertyType);
+      }
+      if (petPolicy) {
+        params.append("petPolicy", petPolicy);
+      }
+      if (condition) {
+        params.append("condition", condition);
       }
       if (params.toString()) {
         url += `?${params.toString()}`;

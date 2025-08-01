@@ -49,6 +49,21 @@ const UserDropdownMenu: React.FC<UserDropdownMenuProps> = ({
     }
   }, [isOpen, isAuthenticated, checkAuthentication, router, onClose]);
 
+  // Listen for role changes to update menu items
+  useEffect(() => {
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === "userRole") {
+        // Force re-render by updating selectedItem
+        setSelectedItem(null);
+      }
+    };
+
+    window.addEventListener("storage", handleStorageChange);
+    return () => {
+      window.removeEventListener("storage", handleStorageChange);
+    };
+  }, []);
+
   const getProfileRoute = () => {
     switch (role?.toLowerCase()) {
       case "homeowner":
@@ -143,17 +158,30 @@ const UserDropdownMenu: React.FC<UserDropdownMenuProps> = ({
 
   const handleLogout = async () => {
     try {
-      // Clear tokens but preserve userRole
+      // Clear all authentication data
       TokenManager.clearAllTokens();
+      
+      // Clear additional auth-related localStorage items
+      if (typeof window !== "undefined") {
+        localStorage.removeItem("hasCompletedOnboarding");
+        localStorage.removeItem("authMode");
+        localStorage.removeItem("redirectAfterLogin");
+        localStorage.removeItem("pendingReviewData");
+        localStorage.removeItem("email");
+        localStorage.removeItem("userRole");
+      }
+      
       await signOut({ redirect: false });
       console.log("Logged out, redirecting to /signin");
-      router.push("/signin");
-      router.refresh();
-      onClose();
+      
+      // Force a complete page refresh to clear all state
+      window.location.href = "/signin";
     } catch (error) {
       console.error("Logout error:", error);
-      router.push("/signin");
-      onClose();
+      // Fallback to manual redirect
+      if (typeof window !== "undefined") {
+        window.location.href = "/signin";
+      }
     }
   };
 
@@ -193,7 +221,7 @@ const UserDropdownMenu: React.FC<UserDropdownMenuProps> = ({
           const isSelected = selectedItem === item.id;
           return (
             <button
-              key={item.id}
+              key={`${item.id}-${role}`} // Force re-render when role changes
               onClick={() => handleMenuItemClick(item)}
               className={`w-full px-4 py-3 text-left transition-colors flex items-center justify-between group ${
                 isSelected ? "bg-gray-100" : "hover:bg-gray-50"
