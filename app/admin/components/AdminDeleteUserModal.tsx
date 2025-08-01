@@ -39,7 +39,7 @@ export default function AdminDeleteUserModal({
           </button>
         </div>
         <p className="text-gray-600 mb-4">
-          Are you sure you want to delete {userName}? This action cannot be
+          Are you sure you want to Suspend {userName}? This action cannot be
           undone. All associated reviews and bookings will also be removed.
         </p>
         {error && <p className="text-red-500 text-sm">{error.message}</p>}
@@ -57,7 +57,7 @@ export default function AdminDeleteUserModal({
             disabled={isPending}
             className="px-4 py-2 bg-red-500 text-white rounded-lg disabled:opacity-50"
           >
-            {isPending ? "Deleting..." : "Delete User"}
+            {isPending ? "Suspending..." : "Suspend User"}
           </button>
         </div>
       </div>

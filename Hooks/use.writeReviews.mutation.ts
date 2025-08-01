@@ -1,10 +1,14 @@
 import { useMutation } from "@tanstack/react-query";
 import http from "@/services/http";
-import { ReviewFormData } from "@/types/generated";
+import { UnlistedPropertyReview } from "@/types/generated";
 
 export const useWriteReviewMutation = () => {
-  const { data, isPending, error, mutate } = useMutation({
-    mutationFn: (variables: { id: string; data: ReviewFormData }) =>
+  const { data, isPending, error, mutate } = useMutation<
+    any,
+    Error,
+    { id: string; data: UnlistedPropertyReview }
+  >({
+    mutationFn: (variables: { id: string; data: UnlistedPropertyReview }) =>
       http.httpWriteReview(variables.id, variables.data),
   });
 

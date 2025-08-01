@@ -242,41 +242,6 @@ export default function ReviewDetails({ id }: Props) {
           loading={isFlagging}
         />
 
-        {/* Property Header */}
-        {/* <div className="mb-6">
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">
-            {review?.location?.fullAddress}
-          </h1>
-          <p className="text-gray-600 mb-3">
-            {review?.location?.district && <>{review.location.district}, </>}
-            {review?.location?.city && <>{review.location.city}, </>}
-            {review?.location?.country}
-            {review?.location?.zipCode && <> {review.location.zipCode}</>}
-          </p>
-
-          <div className="flex items-center gap-4 mb-4">
-            <div className="flex items-center gap-2">
-              <div className="flex gap-0.5">
-                {[...Array(5)].map((_, i) => (
-                  <Star
-                    key={i}
-                    size={18}
-                    className={
-                      i < Math.floor(review?.overallRating || 0)
-                        ? "fill-yellow-400 text-yellow-400"
-                        : "text-gray-300"
-                    }
-                  />
-                ))}
-              </div>
-              <span className="font-semibold text-gray-900">
-                {review?.overallRating?.toFixed(1)}
-              </span>
-              <span className="text-gray-500">(1 review)</span>
-            </div>
-          </div>
-        </div> */}
-
         <div className="p-4 space-y-3">
           <h1 className="text-gray-800 font-medium text-lg">
             {getDisplayAddress(review.location)}
@@ -285,7 +250,6 @@ export default function ReviewDetails({ id }: Props) {
             {review.location.streetAddress}
             {review.location.apartmentUnitNumber &&
               `, ${review.location.apartmentUnitNumber}`}
-            {/* {review.location.district && `, ${review.location.district}`},{" "} */}
             {review.location.city}
           </h3>
 
@@ -381,7 +345,7 @@ export default function ReviewDetails({ id }: Props) {
               {review?.stayDetails?.dateLeft && (
                 <div className="flex items-center gap-2">
                   <Calendar size={16} className="text-gray-400" />
-                  <span className="text-sm text-gray-600">Date Left:</span>
+                  <span className="text-sm text-gray-600">Exit Date:</span>
                   <span className="font-medium">
                     {new Date(review.stayDetails.dateLeft).toLocaleDateString()}
                   </span>

@@ -3,54 +3,10 @@ import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight, Star } from "lucide-react";
 import { useGetAllReviewsQuery } from "@/Hooks/use-GetAllReviews.query";
+import { useLocation } from "@/app/userLocationContext";
+import { useRouter } from "next/navigation";
 
-interface Review {
-  _id: string;
-  submitAnonymously: boolean;
-  status: string;
-  createdAt: string;
-  updatedAt: string;
-  location: {
-    country: string;
-    city: string;
-    district: string;
-    zipCode?: string;
-    streetAddress: string;
-    apartmentUnitNumber?: string;
-    displayOnMap?: boolean;
-    fullAddress?: string;
-  };
-  overallRating: number;
-  detailedReview: string;
-  valueForMoney: number;
-  costOfRepairsCoverage: string;
-  overallExperience: number;
-  linkedProperty: {
-    _id: string;
-    propertyType: string;
-    location: {
-      country: string;
-      city: string;
-      district: string;
-      zipCode: string;
-      streetAddress: string;
-      displayOnMap: boolean;
-    };
-    price: number;
-    bedrooms: number;
-    bathrooms: number;
-    media: {
-      coverPhoto: string;
-      videoTourLink: string;
-    };
-  } | null;
-  isLinkedToDatabaseProperty: boolean;
-  reviewer: {
-    [key: string]: string;
-    _id: string;
-    // firstName?: string;
-  };
-}
+import type { Review } from "@/types/generated";
 
 // Helper to get the best available address string
 const getDisplayAddress = (loc: Review["location"]) => {
@@ -66,7 +22,14 @@ const getDisplayAddress = (loc: Review["location"]) => {
 };
 
 const FeaturedReviews = () => {
-  const { data, isLoading, error, refetch } = useGetAllReviewsQuery();
+  const router = useRouter();
+  const { selectedCountryCode } = useLocation();
+  const { data, isLoading, error, refetch } = useGetAllReviewsQuery({
+    sortBy: "createdAt",
+    sortOrder: "desc",
+    limit: 3,
+    countryCode: selectedCountryCode,
+  });
 
   if (isLoading) {
     return (
@@ -119,12 +82,12 @@ const FeaturedReviews = () => {
     );
   }
 
-  // Show only first 6 reviews on the featured section
-  const featuredReviews = reviews.slice(0, 6);
+  // Show only the three most recent reviews
+  const featuredReviews = reviews.slice(0, 3);
 
   return (
     <section className="max-w-7xl mx-auto px-4 py-10">
-      {/* Header - Keep original structure */}
+      {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
           <p className="text-sm font-medium text-gray-300 uppercase tracking-wide">
@@ -142,12 +105,23 @@ const FeaturedReviews = () => {
         </Link>
       </div>
 
-      {/* Enhanced Cards Grid - Matching AllReviews implementation */}
+      {/* Enhanced Cards Grid */}
       <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
         {featuredReviews.map((review: Review) => (
           <article
             key={review._id}
-            className="bg-white rounded-xl shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden border border-gray-100 group"
+            className="bg-white rounded-xl shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden border border-gray-100 group cursor-pointer"
+            onClick={() => router.push(`/reviewsPage/${review._id}`)}
+            tabIndex={0}
+            role="button"
+            aria-label={`View details for review at ${getDisplayAddress(
+              review.location
+            )}`}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                router.push(`/reviewsPage/${review._id}`);
+              }
+            }}
           >
             <div className="relative w-full h-48 overflow-hidden">
               {review.linkedProperty?.media?.coverPhoto ? (
@@ -210,7 +184,7 @@ const FeaturedReviews = () => {
                       key={i}
                       size={14}
                       className={
-                        i < Math.floor(review.overallRating)
+                        i < Math.floor(review.overallRating || 0)
                           ? "fill-yellow-400 text-yellow-400"
                           : "text-gray-300"
                       }
@@ -218,7 +192,7 @@ const FeaturedReviews = () => {
                   ))}
                 </div>
                 <span className="text-sm font-medium text-gray-700">
-                  {review.overallRating}
+                  {review.overallRating || 0}
                 </span>
               </div>
 
@@ -255,7 +229,7 @@ const FeaturedReviews = () => {
                   </span>
                 </div>
                 <span className="text-xs text-gray-400">
-                  {new Date(review.createdAt).toLocaleDateString("en-US", {
+                  {new Date(review.createdAt || "").toLocaleDateString("en-US", {
                     month: "short",
                     day: "numeric",
                     year: "numeric",
@@ -267,7 +241,7 @@ const FeaturedReviews = () => {
         ))}
       </div>
 
-      {/* Pagination info if needed */}
+      {/* Pagination info */}
       {data?.totalPages && data.totalPages > 1 && (
         <div className="text-center mt-4">
           <p className="text-sm text-gray-600">

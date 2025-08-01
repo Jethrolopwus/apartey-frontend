@@ -39,7 +39,7 @@ export default function AdminDeleteReviewModal({
       <div className="bg-white w-[400px] rounded-[8px] shadow-lg">
         <div className="flex justify-between items-center p-[16px] border-b border-gray-200 h-[40px]">
           <h3 className="text-[18px] font-semibold text-[#2D3A4A]">
-            Delete Review
+            Suspend Review
           </h3>
           <button
             onClick={onClose}
@@ -50,7 +50,7 @@ export default function AdminDeleteReviewModal({
         </div>
         <div className="p-[16px]">
           <p className="text-[14px] mb-[16px]">
-            Are you sure you want to delete the review for{" "}
+            Are you sure you want to Suspend the review for{" "}
             <strong>{reviewProperty}</strong>?
           </p>
           {error && (
@@ -71,7 +71,7 @@ export default function AdminDeleteReviewModal({
               onClick={handleDelete}
               disabled={isPending}
             >
-              {isPending ? "Deleting..." : "Delete"}
+              {isPending ? "Suspending..." : "Suspend"}
             </button>
           </div>
         </div>

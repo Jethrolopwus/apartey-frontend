@@ -40,20 +40,27 @@ const UserDropdownMenu: React.FC<UserDropdownMenuProps> = ({
   const { role } = useUserRole();
   const { isAuthenticated, checkAuthentication } = useAuthRedirect();
 
-  // Determine profile route based on role
+  // Prevent rendering if not authenticated
+  useEffect(() => {
+    if (isOpen && !isAuthenticated && !checkAuthentication()) {
+      console.log("User not authenticated, redirecting to /signin");
+      router.push("/signin");
+      onClose();
+    }
+  }, [isOpen, isAuthenticated, checkAuthentication, router, onClose]);
+
   const getProfileRoute = () => {
     switch (role?.toLowerCase()) {
-      case "landlord":
+      case "homeowner":
+      case "renter":
         return "/profile";
       case "agent":
         return "/agent-profile";
-      case "renter":
       default:
         return "/profile";
     }
   };
 
-  // Dynamic user details based on role
   const userName =
     userData?.userName ||
     `${role ? role.charAt(0).toUpperCase() + role.slice(1) : "Renter"} User`;
@@ -90,7 +97,7 @@ const UserDropdownMenu: React.FC<UserDropdownMenuProps> = ({
       label: "Favorites",
       icon: Heart,
       route:
-        role?.toLowerCase() === "landlord"
+        role?.toLowerCase() === "homeowner"
           ? "/landlord/favorites"
           : role?.toLowerCase() === "agent"
           ? "/agent/favorites"
@@ -131,18 +138,15 @@ const UserDropdownMenu: React.FC<UserDropdownMenuProps> = ({
 
   const handleSwitchProfile = () => {
     onSwitchProfile();
+    onClose();
   };
 
   const handleLogout = async () => {
     try {
-      // Clear all tokens and role
+      // Clear tokens but preserve userRole
       TokenManager.clearAllTokens();
-      localStorage.removeItem("userRole");
-
-      // Sign out from NextAuth
       await signOut({ redirect: false });
-
-      // Redirect to signin page
+      console.log("Logged out, redirecting to /signin");
       router.push("/signin");
       router.refresh();
       onClose();
@@ -153,28 +157,36 @@ const UserDropdownMenu: React.FC<UserDropdownMenuProps> = ({
     }
   };
 
-  // Redirect to signin if not authenticated
   useEffect(() => {
-    if (!isAuthenticated && !checkAuthentication()) {
-      router.push("/signin");
-      onClose();
-    }
-  }, [isAuthenticated, checkAuthentication, router, onClose]);
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(event.target as Node)
+      ) {
+        onClose();
+      }
+    };
 
-  if (!isOpen) return null;
+    if (isOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [isOpen, onClose]);
+
+  if (!isOpen || !isAuthenticated) return null;
 
   return (
     <div
       ref={dropdownRef}
       className="absolute right-0 top-full mt-2 w-72 bg-white rounded-xl shadow-2xl border border-gray-100 py-2 z-50"
     >
-      {/* User Info */}
       <div className="px-4 py-3 border-b border-gray-100">
         <p className="text-gray-900 font-medium">{userName}</p>
         <p className="text-sm text-gray-500">{userEmail}</p>
       </div>
 
-      {/* Menu Items */}
       <div className="py-2">
         {menuItems.map((item) => {
           const Icon = item.icon;
@@ -205,10 +217,8 @@ const UserDropdownMenu: React.FC<UserDropdownMenuProps> = ({
         })}
       </div>
 
-      {/* Divider */}
       <div className="border-t border-gray-100 my-2" />
 
-      {/* Switch Profile */}
       <button
         onClick={handleSwitchProfile}
         className="w-full px-4 py-3 text-left hover:bg-gray-50 transition-colors flex items-center space-x-3 group"
@@ -219,10 +229,8 @@ const UserDropdownMenu: React.FC<UserDropdownMenuProps> = ({
         </span>
       </button>
 
-      {/* Divider */}
       <div className="border-t border-gray-100 my-2" />
 
-      {/* Logout */}
       <button
         onClick={handleLogout}
         className="w-full px-4 py-3 text-left hover:bg-red-50 transition-colors flex items-center space-x-3 group"

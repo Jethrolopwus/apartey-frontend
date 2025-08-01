@@ -1,21 +1,18 @@
 "use client";
 import React, { useEffect, useRef } from "react";
 import { useForm } from "react-hook-form";
-import { useRouter } from "next/navigation";
-import { useSession } from "next-auth/react";
+import { useSession, signIn } from "next-auth/react";
 import Link from "next/link";
 import Image from "next/image";
 import SignInForm from "@/components/molecules/SigninForm";
 import GoogleAuthButton from "@/components/atoms/Buttons/GoogleAuthButton";
 import { FormData } from "@/types/generated";
 import { useSignInMutation } from "@/Hooks/use.login.mutation";
-import { useGetOnboardingStatusQuery } from "@/Hooks/get-onboardingStatus.query";
-import { toast } from "react-hot-toast";
 import { useAuthStatusQuery } from "@/Hooks/use-getAuthStatus.query";
 import { useAuthRedirect } from "@/Hooks/useAuthRedirect";
+import { toast } from "react-hot-toast";
 
 const SignIn: React.FC = () => {
-  const router = useRouter();
   const { data: session, status } = useSession();
   const {
     register,
@@ -25,12 +22,7 @@ const SignIn: React.FC = () => {
   } = useForm<FormData>();
 
   const { mutate, isLoading, error, data } = useSignInMutation();
-
-  const { data: onboardingData, isLoading: isCheckingOnboarding } =
-    useGetOnboardingStatusQuery();
-
   const { refetch: refetchAuthStatus } = useAuthStatusQuery();
-
   const { handlePostLoginRedirect } = useAuthRedirect();
 
   const handlePostLoginRedirectRef = useRef(handlePostLoginRedirect);
@@ -46,42 +38,25 @@ const SignIn: React.FC = () => {
   }, [session]);
 
   useEffect(() => {
-    if (onboardingData) {
-      const isOnboarded = onboardingData.currentUserStatus?.isOnboarded;
-
-      console.log("Onboarding status:", isOnboarded);
-
-      if (isOnboarded) {
-        toast.success("Welcome back!");
-        setTimeout(() => {
-          console.log("Calling handlePostLoginRedirect for onboarded user");
-          handlePostLoginRedirectRef.current();
-        }, 100);
-      } else {
-        toast.success("Please complete your setup");
-        router.push("/onboarding");
-      }
-    }
-  }, [onboardingData, router]);
-
-  useEffect(() => {
     if (data) {
       console.log("Sign in data:", data);
-
-      if (data.token) {
-        localStorage.setItem("token", data.token);
+      if (typeof window !== "undefined") {
+        if (data.token) {
+          localStorage.setItem("token", data.token);
+        }
+        if (data.accessToken) {
+          localStorage.setItem("accessToken", data.accessToken);
+        }
+        if (data.user?.email) {
+          localStorage.setItem("email", data.user.email);
+        }
+        if (data.user?.role) {
+          localStorage.setItem("userRole", data.user.role);
+        }
       }
-      if (data.accessToken) {
-        localStorage.setItem("accessToken", data.accessToken);
-      }
-      if (data.user?.email) {
-        localStorage.setItem("email", data.user.email);
-      }
-
       toast.success("Signed in successfully!");
       reset();
       refetchAuthStatus();
-
       setTimeout(() => {
         console.log("Calling handlePostLoginRedirect after token storage");
         handlePostLoginRedirectRef.current();
@@ -92,13 +67,11 @@ const SignIn: React.FC = () => {
   useEffect(() => {
     if (error) {
       console.error("Sign in error:", error);
-
       let errorMessage = "Failed to sign in. Please try again.";
-
       if (error instanceof Error) {
         errorMessage = error.message;
       } else if (error && typeof error === "object" && "response" in error) {
-        const apiError = error as unknown as {
+        const apiError = error as {
           response?: { status?: number; data?: { message?: string } };
         };
         if (apiError.response?.status === 401) {
@@ -109,7 +82,6 @@ const SignIn: React.FC = () => {
           errorMessage = apiError.response.data.message;
         }
       }
-
       toast.error(errorMessage);
     }
   }, [error]);
@@ -120,9 +92,12 @@ const SignIn: React.FC = () => {
 
   const handleGoogleSignIn = () => {
     console.log("Google sign in initiated");
+    if (typeof window !== "undefined") {
+      localStorage.setItem("authMode", "signin");
+    }
+    signIn("google", { callbackUrl: "/" });
   };
 
-  // Show loading during NextAuth session check
   if (status === "loading") {
     return (
       <div className="flex min-h-screen bg-gray-50 items-center justify-center">
@@ -131,17 +106,9 @@ const SignIn: React.FC = () => {
     );
   }
 
-  // Don't render if user is already authenticated via NextAuth
-  // if (session) {
-  //   return null;
-  // }
-
-  // Combined loading state for both sign in and onboarding check
-  const isProcessing = isLoading || isCheckingOnboarding;
-
   return (
     <div className="flex min-h-screen bg-gray-50 items-center justify-center px-4 py-12 sm:px-6 lg:px-8">
-      <div className="w-full max-w-md space-y-8 px-6 py-8  bg-white rounded-xl border border-gray-100">
+      <div className="w-full max-w-md space-y-8 px-6 py-8 bg-white rounded-xl border border-gray-100">
         <div className="flex flex-col items-center">
           <div className="mb-6">
             <Image
@@ -161,29 +128,15 @@ const SignIn: React.FC = () => {
         </div>
 
         <div className="space-y-6">
-          {/* Traditional Signin Form */}
           <div>
             <SignInForm
               onSubmit={onSubmit}
               register={register}
               errors={errors}
-              isSubmitting={isProcessing}
+              isSubmitting={isLoading}
             />
           </div>
 
-          {/* Loading indicator for onboarding check */}
-          {isCheckingOnboarding && (
-            <div className="text-center">
-              <div className="flex items-center justify-center space-x-2">
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-orange-600"></div>
-                <p className="text-sm text-gray-600">
-                  Checking your account status...
-                </p>
-              </div>
-            </div>
-          )}
-
-          {/* Divider */}
           <div className="relative">
             <div className="absolute inset-0 flex items-center">
               <div className="w-full border-t border-gray-300" />
@@ -195,10 +148,9 @@ const SignIn: React.FC = () => {
             </div>
           </div>
 
-          {/* Google Auth Button */}
           <GoogleAuthButton
             mode="signin"
-            callbackUrl="/onboardinng"
+            callbackUrl="/"
             onClick={handleGoogleSignIn}
           />
         </div>

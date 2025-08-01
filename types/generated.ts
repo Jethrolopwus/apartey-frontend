@@ -6,13 +6,57 @@ export interface FormValues {
   password: string;
   confirmPassword: string;
 }
+export interface Review {
+  _id?: string;
+  submitAnonymously?: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+  location: ReviewLocation;
+  linkedProperty?: {
+    media?: {
+      coverPhoto?: string;
+    };
+  } | null;
+  isLinkedToDatabaseProperty?: boolean;
+  reviewer?: Reviewer | null;
+  overallRating?: number;
+  valueForMoney?: number;
+  overallExperience?: number;
+  detailedReview?: string;
+}
 
+export interface Reviewer {
+  _id?: string;
+  firstName?: string;
+  lastName?: string;
+}
+
+// export interface ReviewLocation {
+//   streetAddress: any;
+//   district: string;
+//   city: string;
+//   lat: number;
+//   lng: number;
+// }
+
+export interface AllReviewsProps {
+  className?: string;
+  showHeader?: boolean;
+  maxItems?: number;
+  gridCols?: string;
+}
 export interface ReviewLocation {
-  streetAddress: any;
-  district: string;
-  city: string;
-  lat: number;
-  lng: number;
+  [x: string]: string | undefined;
+  fullAddress?: string;
+  streetAddress?: string;
+  apartmentUnitNumber?: string;
+  district?: string;
+  city?: string;
+  country?: string;
+  stateOrRegion?: string;
+  street?: string;
+  postalCode?: string;
+  countryCode?: string;
 }
 export interface UseGetAllReviewsQueryParams {
   limit?: number;
@@ -20,13 +64,19 @@ export interface UseGetAllReviewsQueryParams {
   sortOrder?: string;
   countryCode?: string;
   page?: number;
+  apartment?: string;
 }
 
 export interface ReviewsQueryData {
+  message: string;
   reviews: Review[];
-  totalPages: number;
   currentPage: number;
+  totalPages: number;
   totalReviews: number;
+  apartmentNumbers: string[];
+  limit: number;
+  hasNextPage: boolean;
+  hasPreviousPage: boolean;
 }
 export interface useGetAllListingsQueryParams {
   limit?: number;
@@ -40,6 +90,8 @@ export interface PropertyLocation {
   district: string;
   zipCode: string;
   streetAddress: string;
+  stateOrRegion: string;
+  fullAddress: string;
 }
 
 export interface PropertyMedia {
@@ -88,6 +140,8 @@ export interface Property {
   _id: string;
   lister: string;
   propertyType: string;
+  condition: string;
+  petPolicy: string;
   location: PropertyLocation;
   media: PropertyMedia;
   propertyDetails: PropertyDetails;
@@ -96,6 +150,8 @@ export interface Property {
   status: string;
   createdAt: string;
   updatedAt: string;
+  rating?: number;
+  reviewCount?: number;
   __v: number;
   category: PropertyCategory;
 }
@@ -228,8 +284,6 @@ export interface UnlistedPropertyReview {
     securityDepositRequired: boolean;
     agentBrokerFeeRequired: boolean;
     fixedUtilityCost: boolean;
-    julySummerUtilities: number;
-    januaryWinterUtilities: number;
   };
 
   // Form-specific cost fields
@@ -396,51 +450,7 @@ export interface AllReviewsProps {
   maxItems?: number;
   gridCols?: string;
 }
-export interface Review {
-  _id: string;
-  submitAnonymously: boolean;
-  status: string;
-  createdAt: string;
-  updatedAt: string;
-  location: {
-    country: string;
-    city: string;
-    district: string;
-    zipCode?: string;
-    streetAddress: string;
-    apartmentUnitNumber?: string;
-    displayOnMap?: boolean;
-  };
-  overallRating: number;
-  detailedReview: string;
-  valueForMoney: number;
-  costOfRepairsCoverage: string;
-  overallExperience: number;
-  linkedProperty: {
-    _id: string;
-    propertyType: string;
-    location: {
-      country: string;
-      city: string;
-      district: string;
-      zipCode: string;
-      streetAddress: string;
-      displayOnMap: boolean;
-    };
-    price: number;
-    bedrooms: number;
-    bathrooms: number;
-    media: {
-      coverPhoto: string;
-      videoTourLink: string;
-    };
-  } | null;
-  isLinkedToDatabaseProperty: boolean;
-  reviewer: {
-    [x: string]: string;
-    _id: string;
-  };
-}
+
 export interface Listing {
   id: string;
   imageUrl: string;
@@ -503,6 +513,7 @@ export interface RoleSubmissionResponse {
 
 export interface OnboardingStatusResponse {
   currentUserStatus: {
+    role: any;
     _id: string;
     isOnboarded: boolean;
   };
@@ -524,6 +535,7 @@ export interface SignInResponse {
 
 export interface OnboardingStatusResponse {
   currentUserStatus: {
+    role: any;
     _id: string;
     isOnboarded: boolean;
   };
@@ -548,7 +560,7 @@ export interface StayDetails {
 }
 
 export interface CostDetails {
-  rent: number;
+  rent: string;
   rentType: "Monthly" | "Yearly";
   securityDepositRequired: boolean;
   agentBrokerFeeRequired: boolean;
@@ -637,16 +649,6 @@ export interface StepProps {
   totalSteps?: number;
 }
 
-export interface PropertiesResponse {
-  message: string;
-  properties: Property[];
-  currentPage: number;
-  totalPages: number;
-  totalProperties: number;
-  limit: number;
-  hasNextPage: boolean;
-  hasPreviousPage: boolean;
-}
 export interface userLocationData {
   countryCode: string;
   countryName: string;

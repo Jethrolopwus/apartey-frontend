@@ -1,11 +1,11 @@
 "use client";
 import React, { useState, useRef, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useParams } from "next/navigation";
 import toast from "react-hot-toast";
 import { useAuthRedirect } from "@/Hooks/useAuthRedirect";
 import { Home } from "lucide-react";
 import AddressForm from "../molecules/AddressForm";
-import MoveOutDatePicker from "../atoms/MoveOutDatePicker";
+import MoveOutDatePicker from "@/components/atoms/MoveOutDatePicker";
 import RentInput from "../molecules/RentInput";
 import SecurityDepositToggle from "../molecules/SecurityDepositToggle";
 import AgentBrokerFeesToggle from "../molecules/AgentBrokers";
@@ -21,9 +21,22 @@ import {
   setMultipleFields,
   resetForm,
 } from "../../store/propertyReviewFormSlice";
-import { useWriteUnlistedReviewMutation } from "@/Hooks/use.writeUnlistedReviews.mutation";
+import { useWriteReviewMutation } from "@/Hooks/use.writeReviews.mutation";
+import { useGetListingsByIdQuery } from "@/Hooks/use-getAllListingsById.query";
 
-// Define the expected API payload type
+type PendingReviewData = {
+  id: string;
+  stayDetails: Record<string, unknown>;
+  costDetails: Record<string, unknown>;
+  accessibility: Record<string, unknown>;
+  ratingsAndReviews: Record<string, unknown>;
+  submitAnonymously: boolean;
+  location: {
+    landlordLanguages?: string[];
+    [key: string]: unknown;
+  };
+};
+
 interface UnlistedPropertyReview {
   location: {
     country: string;
@@ -49,11 +62,11 @@ interface UnlistedPropertyReview {
   };
   costDetails: {
     rentType: "Yearly" | "Monthly";
-    rent: string; // Changed to string to include currency like utilities
+    rent: number; // Changed back to number to match generated types
     securityDepositRequired: boolean;
     agentBrokerFeeRequired: boolean;
     fixedUtilityCost: boolean;
-    utilities: string;
+    Utilities: string;
   };
   accessibility: {
     nearestGroceryStore: string;
@@ -70,20 +83,6 @@ interface UnlistedPropertyReview {
   submitAnonymously: boolean;
 }
 
-type PendingReviewData = {
-  stayDetails: Record<string, unknown>;
-  costDetails: Record<string, unknown>;
-  accessibility: Record<string, unknown>;
-  ratingsAndReviews: Record<string, unknown>;
-  submitAnonymously: boolean;
-  location: {
-    landlordLanguages?: string[];
-    [key: string]: unknown;
-  };
-  onextLocation?: Record<string, unknown>;
-};
-
-// Allowed building facilities for backend
 const ALLOWED_BUILDING_FACILITIES = [
   "Parking lot",
   "Elevator",
@@ -96,7 +95,15 @@ function mapValidBuildingFacilities(facilities: string[]): string[] {
   );
 }
 
-const WriteUnlistedPropertyReviews: React.FC = () => {
+interface WriteListedPropertyReviewsProps {
+  prefilledAddress?: string;
+  propertyId?: string;
+}
+
+const WriteListedPropertyReviews: React.FC<WriteListedPropertyReviewsProps> = ({
+  prefilledAddress,
+  propertyId: propPropertyId,
+}) => {
   const [currentStep, setCurrentStep] = useState(1);
   const [currentSubStep, setCurrentSubStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -104,6 +111,9 @@ const WriteUnlistedPropertyReviews: React.FC = () => {
     null
   );
   const router = useRouter();
+  const { id } = useParams();
+  const propertyId = propPropertyId || (Array.isArray(id) ? id[0] : id);
+
   const restoredRef = useRef(false);
   const [restoring, setRestoring] = useState(true);
 
@@ -114,10 +124,14 @@ const WriteUnlistedPropertyReviews: React.FC = () => {
     handleAuthRedirect,
     clearPendingData,
   } = useAuthRedirect();
-
   const dispatch = useDispatch();
   const formData = useSelector((state: RootState) => state.propertyReviewForm);
-  const { mutate } = useWriteUnlistedReviewMutation();
+  const { mutate } = useWriteReviewMutation();
+  const {
+    data: propertyData,
+    isLoading: isPropertyLoading,
+    error: propertyError,
+  } = useGetListingsByIdQuery(propertyId || "");
 
   // Clear all localStorage keys related to the form
   const clearFormLocalStorage = () => {
@@ -135,7 +149,12 @@ const WriteUnlistedPropertyReviews: React.FC = () => {
     if (restoredRef.current) return;
     const pending: PendingReviewData | null =
       pendingReviewData as PendingReviewData;
-    if (pending && pending.location && isAuthenticated) {
+    if (
+      pending &&
+      pending.location &&
+      isAuthenticated &&
+      pending.id === propertyId
+    ) {
       dispatch(
         setMultipleFields({
           ...pending.location,
@@ -151,7 +170,44 @@ const WriteUnlistedPropertyReviews: React.FC = () => {
     }
     restoredRef.current = true;
     setRestoring(false);
-  }, [pendingReviewData, dispatch, isAuthenticated]);
+  }, [pendingReviewData, dispatch, isAuthenticated, propertyId]);
+
+  // Pre-fill address fields when property data is fetched or when prefilled address is provided
+  useEffect(() => {
+    if (propertyData && !isPropertyLoading && !propertyError) {
+      dispatch(
+        setMultipleFields({
+          country: propertyData.location?.country || "",
+          countryCode: propertyData.location?.countryCode || "NG",
+          stateOrRegion: propertyData.location?.stateOrRegion || "",
+          street: propertyData.location?.street || "",
+          apartment: propertyData.location?.apartment || "",
+          district: propertyData.location?.district || "",
+          postalCode: propertyData.location?.postalCode || "",
+          streetAddress: propertyData.location?.streetAddress || "",
+        })
+      );
+    } else if (prefilledAddress) {
+      // Parse the prefilled address and set it in the form
+      const addressParts = prefilledAddress.split(', ');
+      const streetAddress = addressParts[0] || "";
+      const country = addressParts[2] || "";
+      
+      dispatch(
+        setMultipleFields({
+          country: country,
+          countryCode: "NG",
+          stateOrRegion: "",
+          street: streetAddress,
+          apartment: "",
+          district: "",
+          postalCode: "",
+          streetAddress: streetAddress,
+          fullAddress: prefilledAddress,
+        })
+      );
+    }
+  }, [propertyData, isPropertyLoading, propertyError, prefilledAddress, dispatch]);
 
   // Navigation logic
   const nextStep = () => {
@@ -199,11 +255,11 @@ const WriteUnlistedPropertyReviews: React.FC = () => {
 
   const getCurrentStepMessage = () => {
     if (currentStep === 1)
-      return "Let's start your property review journey! Tell us about your place.";
+      return "Let's start your property review journey! The address details are pre-filled.";
     if (currentStep === 2 && currentSubStep === 1)
       return "You're doing great! Now let's dive into your experience.";
     if (currentStep === 2 && currentSubStep === 2)
-      return "Tell us about the property&apos;s amenities and location";
+      return "Tell us about the property's amenities and location";
     if (currentStep === 2 && currentSubStep === 3)
       return "Rate your experience with this property";
     if (currentStep === 3)
@@ -215,7 +271,6 @@ const WriteUnlistedPropertyReviews: React.FC = () => {
   const handleFinalSubmitWithValidation = async () => {
     setIsSubmitting(true);
     try {
-      // Build fullAddress as required by backend
       const fullAddress = [
         formData.street,
         formData.apartment,
@@ -230,7 +285,6 @@ const WriteUnlistedPropertyReviews: React.FC = () => {
       const rentCurrency = rentParts[0] || "NGN";
       const rentAmount = Number(rentParts[1] || 0) || 0;
 
-      // Build API payload matching UnlistedPropertyReview interface
       const payload: UnlistedPropertyReview = {
         location: {
           country: formData.country || "",
@@ -243,7 +297,7 @@ const WriteUnlistedPropertyReviews: React.FC = () => {
           postalCode: formData.postalCode || "",
           fullAddress: fullAddress || "",
           city: "",
-          streetAddress: formData.street || "",
+          streetAddress: formData.streetAddress || "", // Updated to use formData.streetAddress
         },
         stayDetails: {
           numberOfRooms: formData.numberOfRooms || 1,
@@ -264,11 +318,11 @@ const WriteUnlistedPropertyReviews: React.FC = () => {
         },
         costDetails: {
           rentType: formData.rentType === "actual" ? "Yearly" : "Monthly",
-          rent: formData.yearlyRent || "", // Send full string with currency like utilities
+          rent: Number(formData.yearlyRent?.split(" ")[1] || 0) || 0, // Extract number from rent string
           securityDepositRequired: formData.securityDepositRequired || false,
           agentBrokerFeeRequired: formData.agentFeeRequired || false,
           fixedUtilityCost: formData.fixedUtilityCost || false,
-          utilities: formData.utilities || "",
+          Utilities: formData.utilities || "",
         },
         accessibility: {
           nearestGroceryStore: formData.nearestGroceryStore || "",
@@ -288,19 +342,15 @@ const WriteUnlistedPropertyReviews: React.FC = () => {
       // Create the final payload with currency information
       const finalPayload = {
         ...payload,
-        costDetails: {
-          ...payload.costDetails,
-          rent: formData.yearlyRent || "", // Send full string with currency like utilities
-        },
         // Add additional currency info
         rentWithCurrency: `${rentCurrency} ${rentAmount}`,
-      } as unknown as UnlistedPropertyReview; // Type assertion for custom payload
+      } as UnlistedPropertyReview; // Type assertion for custom payload
 
       console.log("Submitting Payload:", JSON.stringify(finalPayload, null, 2));
 
-      // If not authenticated, save to localStorage and redirect
       if (!isAuthenticated) {
         const pendingData = {
+          id: propertyId,
           ...finalPayload,
           submitAnonymously: !!formData.isAnonymous,
           stayDetails: {
@@ -324,37 +374,42 @@ const WriteUnlistedPropertyReviews: React.FC = () => {
         return;
       }
 
-      // Submit to API
-      mutate(finalPayload as unknown as import("/home/jethro/apartey-frontend/types/generated").UnlistedPropertyReview, {
-        onSuccess: (response) => {
-          console.log("Mutation Success Response:", response);
-          clearPendingData();
-          clearFormLocalStorage();
-          dispatch(resetForm());
-          setCurrentStep(1);
-          setCurrentSubStep(1);
-          toast.success(
-            "Review submitted successfully! It may take a moment to appear."
-          );
-          router.push("/reviewsPage");
-        },
-        onError: (err: { message?: string } | unknown) => {
-          console.error("Mutation Error:", err);
-          const error = err as { message?: string };
-          if (error?.message?.includes("login")) {
-            toast.error("Session expired. Please log in again.");
-            handleAuthRedirect(finalPayload as unknown as PendingReviewData);
-          } else {
-            toast.error(
-              error?.message || "Failed to submit review. Please try again."
+      mutate(
+        { id: propertyId || "", data: finalPayload },
+        {
+          onSuccess: (response) => {
+            console.log("Mutation Success Response:", response);
+            clearPendingData();
+            clearFormLocalStorage();
+            dispatch(resetForm());
+            setCurrentStep(1);
+            setCurrentSubStep(1);
+            toast.success(
+              "Review submitted successfully! It may take a moment to appear."
             );
-          }
-          setIsSubmitting(false);
-        },
-        onSettled: () => {
-          setIsSubmitting(false);
-        },
-      });
+            router.push("/reviewsPage");
+          },
+          onError: (err: { message?: string } | unknown) => {
+            console.error("Mutation Error:", err);
+            const error = err as { message?: string };
+            if (error?.message?.includes("login")) {
+              toast.error("Session expired. Please log in again.");
+                      handleAuthRedirect({
+          id: propertyId,
+          ...finalPayload,
+        } as unknown as PendingReviewData);
+            } else {
+              toast.error(
+                error?.message || "Failed to submit review. Please try again."
+              );
+            }
+            setIsSubmitting(false);
+          },
+          onSettled: () => {
+            setIsSubmitting(false);
+          },
+        }
+      );
     } catch (error) {
       console.error("Submission Error:", error);
       toast.error("An unexpected error occurred. Please try again.");
@@ -362,8 +417,12 @@ const WriteUnlistedPropertyReviews: React.FC = () => {
     }
   };
 
-  if (restoring) {
+  if (restoring || isPropertyLoading) {
     return <div>Loading...</div>;
+  }
+
+  if (propertyError) {
+    return <div>Error loading property details. Please try again.</div>;
   }
 
   return (
@@ -382,7 +441,7 @@ const WriteUnlistedPropertyReviews: React.FC = () => {
             Write a Property Review
           </h1>
           <p className="text-gray-600">
-            Share your honest opinion about a property to help others make
+            Share your honest opinion about this property to help others make
             informed decisions.
           </p>
         </div>
@@ -464,7 +523,19 @@ const WriteUnlistedPropertyReviews: React.FC = () => {
               </div>
 
               <div className="space-y-6">
-                <AddressForm />
+                <AddressForm
+                  readOnly={true}
+                  prefilledData={propertyData?.location || (prefilledAddress ? {
+                    streetAddress: prefilledAddress,
+                    street: prefilledAddress.split(', ')[0] || "",
+                    country: prefilledAddress.split(', ')[2] || "",
+                    stateOrRegion: "",
+                    apartment: "",
+                    district: "",
+                    postalCode: "",
+                    city: prefilledAddress.split(', ')[1] || "",
+                  } : undefined)}
+                />
                 <div className="space-y-4">
                   <h3 className="text-lg font-medium text-gray-900">
                     Stay Details
@@ -673,4 +744,4 @@ const WriteUnlistedPropertyReviews: React.FC = () => {
   );
 };
 
-export default WriteUnlistedPropertyReviews;
+export default WriteListedPropertyReviews;

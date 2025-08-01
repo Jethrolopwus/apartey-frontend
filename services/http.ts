@@ -501,32 +501,30 @@ class BaseURL {
       throw error;
     }
   };
-
-  httpWriteReview = async (id: string, data: ReviewFormData) => {
+  httpWriteReview = async (id: string, data: UnlistedPropertyReview) => {
     try {
       const token =
         localStorage.getItem("authToken") ||
         localStorage.getItem("token") ||
         localStorage.getItem("accessToken");
       if (!token) {
+        localStorage.setItem("pendingReviewData", JSON.stringify({ id, data }));
+        window.location.href = "/signin";
         throw new Error("No authentication token found. Please login again.");
       }
-      const response = await AxiosInstance.post(
-        endpoints.writeReviews(id),
-        data,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-        }
-      );
+      const response = await AxiosInstance.post(`reviews/${id}`, data, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
       return response.data;
     } catch (error: any) {
       if (error.response?.status === 401) {
         localStorage.removeItem("authToken");
         localStorage.removeItem("token");
         localStorage.removeItem("accessToken");
+        localStorage.setItem("pendingReviewData", JSON.stringify({ id, data }));
         window.location.href = "/signin";
       }
       throw error;
@@ -635,41 +633,102 @@ class BaseURL {
       throw new Error(error.response?.data?.message || "Search failed");
     }
   };
-  httpGetAllReviews = async (
-    limit?: number,
-    sortBy?: string,
-    sortOrder?: string,
-    countryCode?: string,
-    page?: number
-  ): Promise<ReviewsQueryData> => {
+
+  // httpGetAllReviews = async ({
+  //   limit,
+  //   sortBy,
+  //   sortOrder,
+  //   countryCode,
+  //   page,
+  //   apartment,
+  //   searchQuery,
+  // }: {
+  //   limit?: number;
+  //   sortBy?: string;
+  //   sortOrder?: string;
+  //   countryCode?: string;
+  //   page?: number;
+  //   apartment?: string;
+  //   searchQuery?: string;
+  // }): Promise<ReviewsQueryData> => {
+  //   try {
+  //     let url = endpoints.getAllReviews;
+  //     const params = new URLSearchParams();
+  //     if (sortBy) {
+  //       params.append("sortBy", sortBy);
+  //     }
+  //     if (sortOrder) {
+  //       params.append("sortOrder", sortOrder);
+  //     }
+  //     if (limit) {
+  //       params.append("limit", limit.toString());
+  //     }
+  //     if (countryCode) {
+  //       params.append("countryCode", countryCode);
+  //     }
+  //     if (page) {
+  //       params.append("page", page.toString());
+  //     }
+  //     if (apartment) {
+  //       // Explicitly encode spaces as %20 to match Postman
+  //       params.append("apartment", encodeURIComponent(apartment));
+  //     }
+  //     if (searchQuery) {
+  //       params.append("q", encodeURIComponent(searchQuery));
+  //     }
+  //     if (params.toString()) {
+  //       url += `?${params.toString()}`;
+  //     }
+  //     console.log("API Request URL:", url); // Debug
+  //     const response = await AxiosInstance.get(url);
+  //     return response.data;
+  //   } catch (error: any) {
+  //     console.error("API Error:", error.response?.data || error.message); // Debug
+  //     throw new Error(
+  //       error.response?.data?.message || "Failed to fetch reviews"
+  //     );
+  //   }
+  // };
+
+  httpGetAllReviews = async ({
+    limit,
+    // sortBy,
+    // sortOrder,
+    countryCode,
+    page,
+    apartment,
+    searchQuery,
+  }: {
+    limit?: number;
+    sortBy?: string;
+    sortOrder?: string;
+    countryCode?: string;
+    page?: number;
+    apartment?: string;
+    searchQuery?: string;
+  }): Promise<ReviewsQueryData> => {
     try {
       let url = endpoints.getAllReviews;
       const params = new URLSearchParams();
-      if (sortBy) {
-        params.append("sortBy", sortBy);
-      }
-      if (sortOrder) {
-        params.append("sortOrder", sortOrder);
-      }
-      if (limit) {
-        params.append("limit", limit.toString());
-      }
-      if (countryCode) {
-        params.append("countryCode", countryCode);
-      }
-      if (page) {
-        params.append("page", page.toString());
-      }
-      if (params.toString()) {
-        url += `?${params.toString()}`;
-      }
+      // if (sortBy) params.append("sortBy", sortBy);
+      // if (sortOrder) params.append("sortOrder", sortOrder);
+      if (limit) params.append("limit", limit.toString());
+      if (countryCode) params.append("countryCode", countryCode);
+      if (page) params.append("page", page.toString());
+      if (apartment) params.append("apartment", encodeURIComponent(apartment));
+      if (searchQuery) params.append("q", encodeURIComponent(searchQuery));
+      if (params.toString()) url += `?${params.toString()}`;
+      console.log("API Request URL:", url); // Debug
       const response = await AxiosInstance.get(url);
+      console.log("API Response:", response.data); // Debug
       return response.data;
     } catch (error: any) {
-      throw new Error(error.response?.data?.message || "Search failed");
+      console.error("API Error:", error.response?.data || error.message); // Debug
+      throw new Error(
+        error.response?.data?.message || "Failed to fetch reviews"
+      );
     }
   };
-
   httpGetAllNotifications = async (
     limit?: number,
     sortBy?: string,
@@ -799,7 +858,8 @@ class BaseURL {
   httpGetAllListings = async (
     limit?: number,
     byId?: number,
-    category?: PropertyCategory
+    category?: PropertyCategory,
+    country: string = "Estonia"
   ) => {
     try {
       let url = endpoints.getAllListings;
@@ -812,6 +872,9 @@ class BaseURL {
       }
       if (category) {
         params.append("category", category);
+      }
+      if (country) {
+        params.append("country", country);
       }
       if (params.toString()) {
         url += `?${params.toString()}`;
@@ -875,12 +938,13 @@ class BaseURL {
   };
   httpGetListingsById = async (id: string) => {
     try {
-      const response = await AxiosInstance.get(`/listings/${id}`);
+      const response = await AxiosInstance.get(endpoints.getListingById(id));
       return response.data;
     } catch (error: any) {
       throw new Error(error.response?.data?.message || "Listing not found");
     }
   };
+
   httpGetPropertiesById = async (id: string) => {
     try {
       const response = await AxiosInstance.get(`/listings/${id}`);

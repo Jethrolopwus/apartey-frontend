@@ -1,7 +1,7 @@
 "use client";
 
 type CostDetailsData = {
-  rent: number;
+  rent: string;
   rentType: "Monthly" | "Yearly";
   securityDepositRequired: boolean;
   agentBrokerFeeRequired: boolean;
@@ -12,13 +12,17 @@ type CostDetailsData = {
 
 type Props = {
   costDetails: CostDetailsData;
-  onInputChange: (field: keyof CostDetailsData, value: number | boolean | 'Monthly' | 'Yearly') => void;
+  onInputChange: (field: keyof CostDetailsData, value: number | boolean | string | 'Monthly' | 'Yearly') => void;
 };
 
 export default function CostDetails({ costDetails, onInputChange }: Props) {
   const handleNumberChange = (field: keyof CostDetailsData, value: string) => {
-    const numValue = parseFloat(value) || 0;
-    onInputChange(field, numValue);
+    if (field === "rent") {
+      onInputChange(field, value);
+    } else {
+      const numValue = parseFloat(value) || 0;
+      onInputChange(field, numValue);
+    }
   };
 
   return (
@@ -34,9 +38,7 @@ export default function CostDetails({ costDetails, onInputChange }: Props) {
             Rent Amount
           </label>
           <input
-            type="number"
-            min="0"
-            step="0.01"
+            type="text"
             value={costDetails.rent ?? ""}
             onChange={(e) => handleNumberChange("rent", e.target.value)}
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"

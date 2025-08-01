@@ -3,21 +3,14 @@ import React from "react";
 import { useGetAllListingsQuery } from "@/Hooks/use-getAllListings.query";
 import Link from "next/link";
 import Image from "next/image";
-import { Star, MapPin } from "lucide-react";
-import { Property, PropertiesResponse } from "@/types/generated";
+import { Star, MapPin, Heart, Bed, Bath, SquareDot } from "lucide-react";
+import {
+  Property,
+  PropertiesResponse,
+  PropertyCategory,
+} from "@/types/generated";
 
-// Define the props for the card
-interface ListingCardProps {
-  id: string;
-  imageUrl: string;
-  title: string;
-  location: string;
-  rating: number;
-  reviewCount: number;
-  price: string;
-}
-
-const transformPropertyToListing = (property: Property): ListingCardProps => {
+const transformPropertyToListing = (property: Property) => {
   const getPropertyTitle = (property: Property) => {
     return (
       property.location?.streetAddress ||
@@ -46,13 +39,17 @@ const transformPropertyToListing = (property: Property): ListingCardProps => {
   };
 
   return {
-    id: property._id,
+    id: property._id || "",
     imageUrl: getPropertyImage(property),
     title: getPropertyTitle(property),
     location: getPropertyLocation(property),
-    rating: 4.5, // Hardcoded as in Listings; replace with backend data if available
-    reviewCount: 12, // Hardcoded as in Listings; replace with backend data if available
+    rating: property.rating || 0,
+    reviewCount: property.reviewCount || 0,
     price: getPropertyPrice(property),
+    category: property.category as PropertyCategory,
+    bedrooms: property.propertyDetails?.bedrooms,
+    bathrooms: property.propertyDetails?.bathrooms,
+    totalAreaSqM: property.propertyDetails?.totalAreaSqM,
   };
 };
 
@@ -118,7 +115,7 @@ const HomeListingsPreview: React.FC = () => {
           className="flex items-center text-gray-600 hover:text-gray-900 transition-colors group"
           aria-label="View all listings"
         >
-          <span className=" Aparttext-sm md:text-base mr-2">See all</span>
+          <span className="text-sm md:text-base mr-2">See all</span>
           <span
             className="inline-block transform group-hover:translate-x-1 transition-transform"
             aria-hidden="true"
@@ -151,36 +148,39 @@ const HomeListingsPreview: React.FC = () => {
               No properties found.
             </div>
           )}
-          {listings.map((listing: ListingCardProps) => (
+          {listings.map((listing) => (
             <div
               key={listing.id}
               className="bg-white rounded-lg border border-gray-200 overflow-hidden hover:shadow-lg transition-shadow"
             >
               <div className="relative">
                 <Link
-                  href={`/listings/rent/swap/${listing.id}`}
+                  href={`/listings/${listing.category?.toLowerCase()}/${
+                    listing.id
+                  }`}
                   className="block group"
                 >
                   <Image
                     src={listing.imageUrl}
-                    alt="Property"
+                    alt={listing.title}
                     width={600}
                     height={192}
                     className="w-full h-48 object-cover rounded-t-lg group-hover:brightness-90 transition"
                     priority={false}
                   />
-                  <div className="absolute top-3 right-3 bg-white rounded-full p-2 shadow-sm">
-                    <Star className="w-4 h-4 text-gray-400" />
-                  </div>
                 </Link>
               </div>
               <div className="p-4">
                 <h3 className="font-semibold text-gray-900 mb-1">
                   {listing.title}
                 </h3>
-                <p className="text-sm text-gray-600 mb-2 flex items-center">
-                  <MapPin className="w-4 h-4 mr-1" />
-                  {listing.location}
+                <p className="text-sm text-gray-600 mb-2 flex items-center justify-between">
+                  <span className="flex items-center">
+                    <MapPin className="w-4 h-4 mr-1" />
+                    {listing.location}
+                  </span>
+                  <Heart className="w-4 h-4 text-gray-400" />{" "}
+                  {/* Moved here, static */}
                 </p>
                 <div className="flex items-center mb-2">
                   <div className="flex items-center">
@@ -199,6 +199,26 @@ const HomeListingsPreview: React.FC = () => {
                     {listing.rating} ({listing.reviewCount} reviews)
                   </span>
                 </div>
+                <div className="flex items-center gap-2 mb-2 text-sm text-gray-600">
+                  {listing.bedrooms && (
+                    <span className="flex items-center">
+                      <Bed className="w-4 h-4 mr-1" />
+                      {listing.bedrooms} Beds
+                    </span>
+                  )}
+                  {listing.bathrooms && (
+                    <span className="flex items-center">
+                      <Bath className="w-4 h-4 mr-1" />
+                      {listing.bathrooms} Baths
+                    </span>
+                  )}
+                  {listing.totalAreaSqM && (
+                    <span className="flex items-center">
+                      <SquareDot className="w-4 h-4 mr-1" />
+                      {listing.totalAreaSqM} m²
+                    </span>
+                  )}
+                </div>
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-gray-600">
                     From {listing.price}
@@ -212,6 +232,9 @@ const HomeListingsPreview: React.FC = () => {
                     Contact owner
                   </button>
                 </div>
+                <span className="inline-block bg-[#12B34759] text-white text-xs font-medium px-2 py-1 rounded mt-2">
+                  Available
+                </span>
               </div>
             </div>
           ))}

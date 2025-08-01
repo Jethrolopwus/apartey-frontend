@@ -27,7 +27,7 @@ const AmenitiesAccessibility: React.FC<AmenitiesAccessibilityProps> = ({
     oven: "Oven",
     washingMachine: "Washing machine",
     refrigerator: "Refrigerator",
-    garbageDisposal: "Garbage disposal",
+    Dishwasher: "Dishwasher",
     airConditioner: "Air Conditioning",
     dryer: "Dryer",
     microwave: "Microwave",
@@ -105,8 +105,6 @@ const AmenitiesAccessibility: React.FC<AmenitiesAccessibilityProps> = ({
     }
   };
 
-  const LANGUAGE_OPTIONS = ["English", "Yoruba", "Hausa", "Igbo", "Other"];
-
   return (
     <div>
       <div className="space-y-6">
@@ -124,7 +122,7 @@ const AmenitiesAccessibility: React.FC<AmenitiesAccessibilityProps> = ({
               "oven",
               "washingMachine",
               "refrigerator",
-              "garbageDisposal",
+              "Dishwasher",
               "airConditioner",
               "dryer",
               "microwave",
@@ -208,8 +206,8 @@ const AmenitiesAccessibility: React.FC<AmenitiesAccessibilityProps> = ({
             {[
               "wheelchairAccessible",
               "elevator",
-              "brailleSigns",
-              "audioAssistance",
+              "intercom",
+              "storage",
               "gym",
               "pool",
               "parking",
@@ -280,15 +278,21 @@ const AmenitiesAccessibility: React.FC<AmenitiesAccessibilityProps> = ({
             </div>
           )}
         </div>
-
         {/* Landlord Languages */}
         <div className="border border-gray-200 rounded-lg p-4">
           <h3 className="font-medium text-gray-900 mb-2">Landlord Languages</h3>
           <p className="text-sm text-gray-600 mb-4">
-            Select the languages spoken by the landlord
+            Languages spoken by the landlord/property management
           </p>
-          <div className="flex flex-wrap gap-4">
-            {LANGUAGE_OPTIONS.map((lang) => (
+          <div className="grid grid-cols-3 gap-4">
+            {[
+              "English",
+              "French",
+              "Italian",
+              "Estonian",
+              "Spanish",
+              "German",
+            ].map((lang) => (
               <label key={lang} className="flex items-center gap-2">
                 <input
                   type="checkbox"
@@ -309,6 +313,43 @@ const AmenitiesAccessibility: React.FC<AmenitiesAccessibilityProps> = ({
                 <span className="text-sm text-gray-700">{lang}</span>
               </label>
             ))}
+          </div>
+          <div className="mt-4">
+            <label className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                value="Other"
+                checked={landlordLanguages.includes("Other")}
+                onChange={(e) => {
+                  if (e.target.checked) {
+                    onLandlordLanguagesChange([...landlordLanguages, "Other"]);
+                  } else {
+                    onLandlordLanguagesChange(
+                      landlordLanguages.filter((l) => l !== "Other")
+                    );
+                  }
+                  console.log("Landlord Language:", "Other", e.target.checked);
+                }}
+                className="w-4 h-4 text-[#C85212] bg-gray-100 border-gray-300 rounded focus:ring-[#C85212] focus:ring-2"
+              />
+              <span className="text-sm text-gray-700">Others:</span>
+              <input
+                type="text"
+                placeholder="Enter language"
+                className="border border-gray-300 py-1 px-3 focus:outline-none text-sm text-gray-700 bg-transparent"
+                style={{ borderBottom: "", width: "120px" }}
+                onBlur={(e) => {
+                  const value = e.target.value.trim();
+                  if (value && landlordLanguages.includes("Other")) {
+                    const updatedLanguages = landlordLanguages
+                      .filter((l) => l !== "Other")
+                      .concat(value);
+                    onLandlordLanguagesChange(updatedLanguages);
+                  }
+                  e.target.value = "";
+                }}
+              />
+            </label>
           </div>
           {/* Selected Languages Display */}
           {landlordLanguages.length > 0 && (

@@ -24,7 +24,7 @@ export default Object.freeze({
   writeUnlistedReview: "/reviews/unlisted",
   searchReviews: "/reviews/search?fullAddress=abuja",
   getAllReviews: "/reviews",
-  getAllProperties: "/listings?category=swap",
+  getAllProperties: "/listings?category=Swap",
   getAllBlogPost: "/blog",
   getAllNotifications: "/notifications",
   updateAllNotificationsAsRead: "/notifications/mark-all",

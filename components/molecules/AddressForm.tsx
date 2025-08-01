@@ -1,9 +1,9 @@
 "use client";
-
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useCallback } from "react"; // Add useCallback
 import { useSelector, useDispatch } from "react-redux";
 import { RootState } from "../../store";
 import { setMultipleFields } from "../../store/propertyReviewFormSlice";
+import { useLocation } from "@/app/userLocationContext";
 
 interface Apartment {
   adr_id: string;
@@ -25,78 +25,198 @@ interface Coordinates {
   lng: number;
 }
 
+interface AddressFormProps {
+  readOnly?: boolean;
+  prefilledData?: {
+    country: string;
+    countryCode: string;
+    stateOrRegion: string;
+    street: string;
+    apartment: string;
+    district: string;
+    postalCode: string;
+    city: string;
+    streetAddress: string;
+    coordinates?: Coordinates | null;
+  };
+}
+
 declare global {
   interface Window {
     google: unknown;
   }
 }
 
-const AddressForm: React.FC = () => {
+const AddressForm: React.FC<AddressFormProps> = ({
+  readOnly = false,
+  prefilledData,
+}) => {
   const dispatch = useDispatch();
   const location = useSelector((state: RootState) => state.propertyReviewForm);
+  const { selectedCountryCode, location: userLocation } = useLocation();
   const inputRef = useRef<HTMLInputElement>(null);
   const autocompleteRef = useRef<google.maps.places.Autocomplete | null>(null);
+  const didPrefillRef = useRef<boolean>(false);
 
-  // Local state for UI only, but always sync with Redux
   const [selectedAddress, setSelectedAddress] = useState<string>("");
   const [matchedAddresses, setMatchedAddresses] = useState<Building[]>([]);
   const [apartments, setApartments] = useState<Apartment[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [countryCode, setCountryCode] = useState<string>(
-    location.countryCode?.toLowerCase() || "ng"
+    prefilledData?.countryCode?.toLowerCase() ||
+      location.countryCode?.toLowerCase() ||
+      selectedCountryCode ||
+      "ng"
   );
-  const [streetName, setStreetName] = useState(location.street || "");
-  const [streetNumber, setStreetNumber] = useState("");
+  const [streetName, setStreetName] = useState(
+    prefilledData?.street || location.street || ""
+  );
+  const [streetNumber, setStreetNumber] = useState(
+    prefilledData?.streetAddress || ""
+  );
   const [manualApartment, setManualApartment] = useState(
-    location.apartment || ""
+    prefilledData?.apartment || location.apartment || ""
   );
-  const [apartment, setApartment] = useState(location.apartment || "");
+  const [apartment, setApartment] = useState(
+    prefilledData?.apartment || location.apartment || ""
+  );
   const [addressLine, setAddressLine] = useState(
-    location.street ? `${location.street}` : ""
+    prefilledData?.street
+      ? `${prefilledData.street}`
+      : location.street
+      ? `${location.street}`
+      : ""
   );
-  const [district, setDistrict] = useState(location.district || "");
-  const [state, setState] = useState(location.stateOrRegion || "");
-  const [country, setCountry] = useState(location.country || "");
-  const [postalCode, setPostalCode] = useState(location.postalCode || "");
+  const [district, setDistrict] = useState(
+    prefilledData?.district || location.district || ""
+  );
+  const [state, setState] = useState(
+    prefilledData?.stateOrRegion || location.stateOrRegion || ""
+  );
+  const [country, setCountry] = useState(
+    prefilledData?.country ||
+      location.country ||
+      userLocation?.countryName ||
+      ""
+  );
+  const [postalCode, setPostalCode] = useState(
+    prefilledData?.postalCode || location.postalCode || ""
+  );
   const [coordinates, setCoordinates] = useState<Coordinates | null>(
-    location.coordinates || null
+    prefilledData?.coordinates || location.coordinates || null
   );
 
-  // Only prefill from Redux on first mount/restore
-  const didPrefillRef = useRef(false);
+  // Prefill from Redux or props on first mount
   useEffect(() => {
-    if (location && !didPrefillRef.current) {
-      setCountry(location.country || "");
-      setState(location.stateOrRegion || "");
-      setDistrict(location.district || "");
-      setPostalCode(location.postalCode || "");
-      setAddressLine(location.street ? `${location.street}` : "");
-      setStreetName(location.street || "");
-      setApartment(location.apartment || "");
-      setManualApartment(location.apartment || "");
-      setCountryCode(location.countryCode?.toLowerCase() || "ng");
-      setCoordinates(location.coordinates || null);
-      didPrefillRef.current = true;
+    if (didPrefillRef.current) return;
+    const source = readOnly && prefilledData ? prefilledData : location;
+    setCountry(source.country || userLocation?.countryName || "");
+    setState(source.stateOrRegion || "");
+    setDistrict(source.district || "");
+    setPostalCode(source.postalCode || "");
+    setAddressLine(source.street ? `${source.street}` : "");
+    setStreetName(source.street || "");
+    setApartment(source.apartment || "");
+    setManualApartment(source.apartment || "");
+    setCountryCode(
+      source.countryCode?.toLowerCase() || selectedCountryCode || "ng"
+    );
+    setCoordinates(source.coordinates || null);
+    didPrefillRef.current = true;
+
+    // Dispatch prefilled data to Redux if provided
+    if (readOnly && prefilledData) {
+      const fullAddress = [
+        prefilledData.street,
+        prefilledData.apartment,
+        prefilledData.district,
+        prefilledData.stateOrRegion,
+      ]
+        .filter(Boolean)
+        .join(", ");
+      dispatch(
+        setMultipleFields({
+          country: prefilledData.country || "",
+          countryCode: prefilledData.countryCode?.toUpperCase() || "NG",
+          stateOrRegion: prefilledData.stateOrRegion || "",
+          street: prefilledData.street || "",
+          district: prefilledData.district || "",
+          apartment: prefilledData.apartment || "",
+          postalCode: prefilledData.postalCode || "",
+          fullAddress,
+          coordinates: prefilledData.coordinates || null,
+        })
+      );
     }
-  }, [location]);
+  }, [
+    prefilledData,
+    location,
+    userLocation,
+    selectedCountryCode,
+    readOnly,
+    dispatch,
+  ]);
 
+  // Sync countryCode with selectedCountryCode from context (if not read-only)
   useEffect(() => {
-    fetch("https://ipapi.co/json")
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.country === "EE" || data.country === "NG") {
-          setCountryCode(data.country.toLowerCase());
-        } else {
-          setCountryCode("ng"); // fallback
+    if (readOnly) return;
+    setCountryCode(selectedCountryCode.toLowerCase() || "ng");
+    if (userLocation?.countryName) {
+      setCountry(userLocation.countryName);
+      dispatch(
+        setMultipleFields({
+          country: userLocation.countryName,
+          countryCode: selectedCountryCode.toUpperCase(),
+        })
+      );
+    }
+  }, [selectedCountryCode, userLocation, dispatch, readOnly]);
+
+  // Memoize fetchApartments to stabilize its reference
+  const fetchApartments = useCallback(
+    async (address: string) => {
+      if (readOnly) return;
+      setLoading(true);
+      setApartments([]);
+      setMatchedAddresses([]);
+      setSelectedAddress(address);
+
+      try {
+        const encoded = encodeURIComponent(address);
+        const response = await fetch(
+          `https://inaadress.maaamet.ee/inaadress/gazetteer?address=${encoded}`,
+          {
+            headers: {
+              "Content-Type": "application/json",
+            },
+          }
+        );
+        const text = await response.text();
+        const jsonStr = text.replace(/^callback\(|\);$/g, "");
+        const data: ApiResponse = JSON.parse(jsonStr);
+
+        const buildings = data.addresses?.filter(
+          (b) => b.onkort === "1" && Array.isArray(b.appartments)
+        );
+
+        setMatchedAddresses(buildings);
+
+        if (buildings?.length > 0) {
+          setApartments(buildings[0].appartments);
+          setSelectedAddress(buildings[0].pikkaadress);
         }
-      })
-      .catch(() => {
-        setCountryCode("ng"); // fallback
-      });
-  }, []);
+      } catch (err) {
+        console.error("Failed to fetch apartments:", err);
+      } finally {
+        setLoading(false);
+      }
+    },
+    [readOnly]
+  ); // Dependencies of fetchApartments
 
+  // Google Maps Autocomplete (disabled in read-only mode)
   useEffect(() => {
-    if (!window.google) return;
+    if (readOnly || !window.google) return;
     const googleObj = window.google as typeof google | undefined;
     if (inputRef.current && googleObj?.maps?.places?.Autocomplete) {
       autocompleteRef.current = new googleObj.maps.places.Autocomplete(
@@ -143,11 +263,11 @@ const AddressForm: React.FC = () => {
         setState(state);
         setDistrict(district);
         setPostalCode(postal);
-        setAddressLine(`${streetName} ${streetNumber}`);
+        setAddressLine(`${streetName} ${streetNumber}`.trim());
         setStreetName(streetName);
         setStreetNumber(streetNumber);
         setApartment("");
-        await fetchApartments(`${streetName} ${streetNumber}`);
+        await fetchApartments(`${streetName} ${streetNumber}`.trim());
         const apt = apartment || manualApartment;
         const fullAddress = [
           streetNumber && streetName
@@ -183,10 +303,18 @@ const AddressForm: React.FC = () => {
         googleObj.maps.event.clearInstanceListeners(autocompleteRef.current);
       }
     };
-  }, [countryCode, dispatch, apartment, manualApartment]);
+  }, [
+    countryCode,
+    dispatch,
+    apartment,
+    manualApartment,
+    readOnly,
+    fetchApartments,
+  ]); // Added fetchApartments
 
+  // Sync form data with Redux (disabled in read-only mode)
   useEffect(() => {
-    if (!addressLine) return;
+    if (readOnly || !addressLine) return;
     const apt = apartment || manualApartment;
     const fullAddress = [
       streetNumber && streetName ? `${streetNumber} ${streetName}` : streetName,
@@ -222,59 +350,22 @@ const AddressForm: React.FC = () => {
     postalCode,
     coordinates,
     dispatch,
+    readOnly,
   ]);
 
   const handleManualSearch = async (
     e: React.KeyboardEvent<HTMLInputElement>
   ) => {
-    if (e.key === "Enter") {
-      const value = (e.target as HTMLInputElement).value.trim();
-      if (!value) return;
+    if (readOnly || e.key !== "Enter") return;
+    const value = (e.target as HTMLInputElement).value.trim();
+    if (!value) return;
 
-      const cleaned = value
-        .replace(/,\s*(Estonia|Eesti)\s*$/i, "")
-        .replace(/\d{5}/g, "")
-        .trim();
+    const cleaned = value
+      .replace(/,\s*(Estonia|Eesti|Nigeria)\s*$/i, "")
+      .replace(/\d{5}/g, "")
+      .trim();
 
-      await fetchApartments(cleaned);
-    }
-  };
-
-  const fetchApartments = async (address: string) => {
-    setLoading(true);
-    setApartments([]);
-    setMatchedAddresses([]);
-    setSelectedAddress(address);
-
-    try {
-      const encoded = encodeURIComponent(address);
-      const response = await fetch(
-        `https://inaadress.maaamet.ee/inaadress/gazetteer?address=${encoded}`,
-        {
-          headers: {
-            "Content-Type": "application/json",
-          },
-        }
-      );
-      const text = await response.text();
-      const jsonStr = text.replace(/^callback\(|\);$/g, "");
-      const data: ApiResponse = JSON.parse(jsonStr);
-
-      const buildings = data.addresses?.filter(
-        (b) => b.onkort === "1" && Array.isArray(b.appartments)
-      );
-
-      setMatchedAddresses(buildings);
-
-      if (buildings?.length > 0) {
-        setApartments(buildings[0].appartments);
-        setSelectedAddress(buildings[0].pikkaadress);
-      }
-    } catch (err) {
-      console.error("Failed to fetch apartments:", err);
-    } finally {
-      setLoading(false);
-    }
+    await fetchApartments(cleaned);
   };
 
   const addressIndicator = selectedAddress.split(",");
@@ -282,29 +373,32 @@ const AddressForm: React.FC = () => {
   const mark = addressIndicator[arrLength - 1];
 
   return (
-    <div className="flex justify-center bg-gray-50 py-8 ">
+    <div className="flex justify-center bg-gray-50 py-8">
       <div className="w-full max-w-2xl bg-white border border-gray-100 rounded-lg p-6 shadow-sm">
         <div className="space-y-4">
-          {/* Address Input */}
-          <div>
-            <label className="block mb-2 text-sm font-medium text-gray-700">
-              Enter Your country Address
-            </label>
-            <input
-              ref={inputRef}
-              className="w-full p-3 border border-gray-300 rounded-md frounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 outline-none"
-              placeholder="apartment address"
-              onKeyDown={handleManualSearch}
-            />
-          </div>
+          {/* Address Input (Hidden in read-only mode) */}
+          {!readOnly && (
+            <div>
+              <label className="block mb-2 text-sm font-medium text-gray-700">
+                Enter Your {country || "Country"} Address
+              </label>
+              <input
+                ref={inputRef}
+                className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 outline-none"
+                placeholder="Apartment address"
+                onKeyDown={handleManualSearch}
+                readOnly={readOnly}
+              />
+            </div>
+          )}
 
           {/* Loading State */}
           {loading && (
             <p className="text-orange-600 text-sm">Fetching apartments...</p>
           )}
 
-          {/* Multiple Addresses Dropdown */}
-          {!loading && matchedAddresses?.length > 1 && (
+          {/* Multiple Addresses Dropdown (Hidden in read-only mode) */}
+          {!readOnly && !loading && matchedAddresses?.length > 1 && (
             <div>
               <label className="block mb-2 text-sm font-medium text-gray-700">
                 Matched Addresses:
@@ -326,13 +420,26 @@ const AddressForm: React.FC = () => {
             </div>
           )}
 
-          {/* Apartment Selection */}
-          {!loading && apartments.length > 0 && (
+          {/* Apartment Selection (Hidden in read-only mode) */}
+          {!readOnly && !loading && apartments.length > 0 && (
             <div>
               <label className="block mb-2 text-sm font-medium text-gray-700">
                 Select Apartment:
               </label>
-              <select className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 outline-none">
+              <select
+                className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 outline-none"
+                onChange={(e) => {
+                  const selectedApt = apartments.find(
+                    (apt) => apt.adr_id === e.target.value
+                  );
+                  setApartment(selectedApt?.kort_nr || "");
+                  dispatch(
+                    setMultipleFields({
+                      apartment: selectedApt?.kort_nr || "",
+                    })
+                  );
+                }}
+              >
                 {apartments.map((apt, idx) => (
                   <option key={idx} value={apt.adr_id}>
                     {mark}–{apt.kort_nr || `${idx + 1}`}
@@ -343,27 +450,40 @@ const AddressForm: React.FC = () => {
           )}
 
           {/* Manual Apartment Entry */}
-          {!loading && selectedAddress && apartments.length === 0 && (
-            <div>
-              <p className="text-gray-500 mb-2 text-sm">
-                No registered apartments found. You can manually enter the
-                apartment number.
-              </p>
-              <label className="block mb-2 text-sm font-medium text-gray-700">
-                Apartment Number:
-              </label>
-              <input
-                type="text"
-                placeholder="e.g., Flat 2A, Room 3B, Left Wing"
-                value={manualApartment}
-                onChange={(e) => setManualApartment(e.target.value)}
-                className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 outline-none"
-              />
-            </div>
-          )}
+          {!readOnly &&
+            !loading &&
+            apartments.length === 0 &&
+            selectedAddress && (
+              <div>
+                <p className="text-gray-500 mb-2 text-sm">
+                  No registered apartments found. You can manually enter the
+                  apartment number.
+                </p>
+                <label className="block mb-2 text-sm font-medium text-gray-700">
+                  Apartment Number:
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g., Flat 2A, Room 3B, Left Wing"
+                  value={manualApartment}
+                  onChange={(e) => {
+                    setManualApartment(e.target.value);
+                    dispatch(
+                      setMultipleFields({
+                        apartment: e.target.value,
+                      })
+                    );
+                  }}
+                  readOnly={readOnly}
+                  className={`w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 outline-none ${
+                    readOnly ? "bg-gray-50 cursor-not-allowed" : "bg-white"
+                  }`}
+                />
+              </div>
+            )}
 
           {/* Address Details Form */}
-          {addressLine && (
+          {(addressLine || readOnly) && (
             <div className="space-y-4 pt-4 border-t border-gray-200">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
@@ -373,10 +493,19 @@ const AddressForm: React.FC = () => {
                   <input
                     type="text"
                     value={country}
-                    onChange={(e) => setCountry(e.target.value)}
-                    readOnly={!!country}
+                    onChange={(e) => {
+                      setCountry(e.target.value);
+                      dispatch(
+                        setMultipleFields({
+                          country: e.target.value,
+                        })
+                      );
+                    }}
+                    readOnly={readOnly || !!country}
                     className={`w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 outline-none ${
-                      country ? "bg-gray-50 cursor-not-allowed" : "bg-white"
+                      readOnly || country
+                        ? "bg-gray-50 cursor-not-allowed"
+                        : "bg-white"
                     }`}
                   />
                 </div>
@@ -388,10 +517,19 @@ const AddressForm: React.FC = () => {
                   <input
                     type="text"
                     value={state}
-                    onChange={(e) => setState(e.target.value)}
-                    readOnly={!!state}
+                    onChange={(e) => {
+                      setState(e.target.value);
+                      dispatch(
+                        setMultipleFields({
+                          stateOrRegion: e.target.value,
+                        })
+                      );
+                    }}
+                    readOnly={readOnly || !!state}
                     className={`w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 outline-none ${
-                      state ? "bg-gray-50 cursor-not-allowed" : "bg-white"
+                      readOnly || state
+                        ? "bg-gray-50 cursor-not-allowed"
+                        : "bg-white"
                     }`}
                   />
                 </div>
@@ -405,10 +543,17 @@ const AddressForm: React.FC = () => {
                   <input
                     type="text"
                     value={district}
-                    onChange={(e) => setDistrict(e.target.value)}
-                    // readOnly={!!district}
+                    onChange={(e) => {
+                      setDistrict(e.target.value);
+                      dispatch(
+                        setMultipleFields({
+                          district: e.target.value,
+                        })
+                      );
+                    }}
+                    readOnly={readOnly}
                     className={`w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 outline-none ${
-                      district ? "bg-gray-50 cursor-not-allowed" : "bg-white"
+                      readOnly ? "bg-gray-50 cursor-not-allowed" : "bg-white"
                     }`}
                   />
                 </div>
@@ -420,10 +565,17 @@ const AddressForm: React.FC = () => {
                   <input
                     type="text"
                     value={postalCode}
-                    onChange={(e) => setPostalCode(e.target.value)}
-                    readOnly={!!postalCode}
+                    onChange={(e) => {
+                      setPostalCode(e.target.value);
+                      dispatch(
+                        setMultipleFields({
+                          postalCode: e.target.value,
+                        })
+                      );
+                    }}
+                    readOnly={readOnly}
                     className={`w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 outline-none ${
-                      postalCode ? "bg-gray-50 cursor-not-allowed" : "bg-white"
+                      readOnly ? "bg-gray-50 cursor-not-allowed" : "bg-white"
                     }`}
                   />
                 </div>
@@ -436,29 +588,41 @@ const AddressForm: React.FC = () => {
                 <input
                   type="text"
                   value={addressLine}
-                  onChange={(e) => setAddressLine(e.target.value)}
-                  readOnly={!!addressLine}
+                  onChange={(e) => {
+                    setAddressLine(e.target.value);
+                    setStreetName(e.target.value);
+                    dispatch(
+                      setMultipleFields({
+                        street: e.target.value,
+                      })
+                    );
+                  }}
+                  readOnly={readOnly || !!addressLine}
                   className={`w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 outline-none ${
-                    addressLine ? "bg-gray-50 cursor-not-allowed" : "bg-white"
+                    readOnly || addressLine
+                      ? "bg-gray-50 cursor-not-allowed"
+                      : "bg-white"
                   }`}
                 />
               </div>
+
+              {readOnly && (
+                <div>
+                  <label className="block mb-2 text-sm font-medium text-gray-700">
+                    Apartment Number
+                  </label>
+                  <input
+                    type="text"
+                    value={manualApartment}
+                    readOnly={readOnly}
+                    className={`w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 outline-none ${
+                      readOnly ? "bg-gray-50 cursor-not-allowed" : "bg-white"
+                    }`}
+                  />
+                </div>
+              )}
             </div>
           )}
-
-          {/* Map Preview */}
-          {/* {coordinates && (
-            <div className="pt-4 border-t border-gray-200">
-               <label className="block mb-2 text-sm font-medium text-gray-700">
-                Location Preview
-              </label> *
-               <img
-                className="w-full h-64 object-cover rounded-lg border border-gray-300"
-                alt="Map preview"
-                src={`https://maps.googleapis.com/maps/api/staticmap?center=${coordinates.lat},${coordinates.lng}&zoom=16&size=600x300&markers=color:red%7C${coordinates.lat},${coordinates.lng}&key=AIzaSyC_mwAjirr_vXt1xL1WlL-entKBwD7FkqY`}
-              /> 
-            </div>
-          )} */}
         </div>
       </div>
     </div>

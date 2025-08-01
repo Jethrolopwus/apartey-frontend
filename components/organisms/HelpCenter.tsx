@@ -11,34 +11,64 @@ import {
 export default function HelpCenter() {
   const faqs = [
     {
-      question: "How do I search for properties?",
+      question: "What is Apartey?",
       answer:
-        "Use our search filters to find properties by location, price range, and amenities.",
+        "Apartey is a community-powered platform that helps people make smarter housing decisions. You can find honest home reviews, swap homes, list or rent properties, and connect with trusted service providers, all in one place.",
     },
     {
-      question: "What types of properties are available?",
+      question: "Is Apartey free to use?",
       answer:
-        "We offer a variety of properties including apartments, houses, and commercial spaces.",
+        "Yes! Most features are free to use. We also offer a free trial for premium features like advanced housing insights and direct landlord messaging. You can choose to upgrade later.",
     },
     {
-      question: "Can I schedule a property tour?",
+      question: "Who can use Apartey?",
       answer:
-        "Yes, you can schedule a tour through our website or by contacting our agents.",
+        "Renters, landlords/homeowners, developers, and agents. You can even switch profiles (e.g., from renter to landlord) without registering again—as long as you provide the necessary documentation.",
     },
     {
-      question: "What is the process for making an offer?",
+      question: "What are Apartey Keys?",
       answer:
-        "You can submit an offer directly through our platform after viewing a property.",
+        "Apartey Keys are reward tokens you earn by using the platform—like leaving reviews, referring friends, or completing your profile. You can redeem them for discounts, premium access, and other perks.",
     },
     {
-      question: "Are there any fees associated with buying a property?",
+      question: "How do I leave a review for a home I've lived in?",
       answer:
-        "Property buyers typically incur closing costs, inspection fees, and agent commissions.",
+        "Simply search or add the property, then follow the review prompts to rate your experience—like rent, neighborhood, landlord response, etc.",
     },
     {
-      question: "How can I get assistance with financing?",
+      question: "What if my apartment was in a block of flats with no number?",
       answer:
-        "We have partnerships with lenders who can provide mortgage assistance and advice.",
+        "We've made it easy! You can select the building and then use our guided description tool to describe your exact flat's location (e.g., \"middle flat upstairs, left of entrance\").",
+    },
+    {
+      question: "Can I trust the reviews on Apartey?",
+      answer:
+        "Yes. Reviews are verified using multiple signals, including address data, cross-checks with utility data, and community flags.",
+    },
+    {
+      question: "How do I list my property?",
+      answer:
+        "Once you switch to a landlord or agent profile, go to your dashboard and click \"Create Listing.\" You'll be guided through uploading photos, setting terms, and adding your property's location.",
+    },
+    {
+      question: "Can I respond to reviews about my property?",
+      answer:
+        "Yes. Verified property owners and managers can respond professionally to reviews and flag inaccuracies for investigation.",
+    },
+    {
+      question: "How does pricing work for landlords and agents?",
+      answer:
+        "We offer both free and premium listing options. You can also subscribe to insights on tenant preferences and market trends.",
+    },
+    {
+      question: "How do you protect my personal data?",
+      answer:
+        "We use encrypted storage, strict verification processes, and never share your personal info without consent. You control your privacy settings.",
+    },
+    {
+      question: "Can I delete or edit my review later?",
+      answer:
+        "Yes, you can edit or delete reviews from your profile. We encourage transparency, but we respect your right to update your experience.",
     },
   ];
 

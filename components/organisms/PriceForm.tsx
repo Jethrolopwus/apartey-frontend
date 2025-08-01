@@ -61,9 +61,11 @@ const PriceForm = ({ formData, setFormData }: PriceFormProps) => {
             id="currency"
             name="currency"
             value={localData.currency}
-            onChange={(e) => setLocalData((p) => ({ ...p, currency: e.target.value }))}
+            onChange={(e) =>
+              setLocalData((p) => ({ ...p, currency: e.target.value }))
+            }
             className="rounded-lg border border-gray-300 bg-white py-2 px-3 text-base text-gray-700 focus:border-orange-500 focus:ring-orange-500 outline-none"
-            style={{ borderRight: '', minWidth: 60 }}
+            style={{ borderRight: "", minWidth: 60 }}
           >
             <option>$</option>
             <option>€</option>

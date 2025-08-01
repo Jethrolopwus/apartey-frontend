@@ -14,7 +14,12 @@ import { userLocationData } from "@/types/generated";
 export default function Home() {
   const user = useAppSelector((state: RootState) => state.auth.user);
   // Use the user's countryCode or fallback to "EE"
-  const countryCode = user?.countryCode || "EE";
+  const initialCountryCode = user?.countryCode || "EE";
+  // Restrict country code to "NG" or "EE", default to "EE" if neither
+  const countryCode =
+    initialCountryCode === "NG" || initialCountryCode === "EE"
+      ? initialCountryCode
+      : "EE";
 
   const { data, isLoading, error } = useGetUserLocationQuery(countryCode);
   const [location, setLocation] = useState<userLocationData | null>(null);
@@ -32,14 +37,29 @@ export default function Home() {
   useEffect(() => {
     const storedLocation = localStorage.getItem("userLocation");
     if (storedLocation) {
-      setLocation(JSON.parse(storedLocation));
+      const parsedLocation = JSON.parse(storedLocation);
+      // Ensure stored location is either "NG" or "EE", else default to "EE"
+      const validCountryCode =
+        parsedLocation.countryCode === "NG" ||
+        parsedLocation.countryCode === "EE"
+          ? parsedLocation.countryCode
+          : "EE";
+      setLocation({
+        countryCode: validCountryCode,
+        countryName: validCountryCode === "NG" ? "Nigeria" : "Estonia",
+      });
       return;
     }
 
     if (data) {
+      // Restrict to "NG" or "EE", default to "EE" if neither
+      const validCountryCode =
+        data.countryCode === "NG" || data.countryCode === "EE"
+          ? data.countryCode
+          : "EE";
       const locationData: userLocationData = {
-        countryCode: data.countryCode,
-        countryName: data.countryName,
+        countryCode: validCountryCode,
+        countryName: validCountryCode === "NG" ? "Nigeria" : "Estonia",
       };
       localStorage.setItem("userLocation", JSON.stringify(locationData));
       setLocation(locationData);
@@ -48,8 +68,8 @@ export default function Home() {
     if (error) {
       console.error("Error fetching location:", error);
       const defaultLocation: userLocationData = {
-        countryCode: "UNKNOWN",
-        countryName: "Unknown",
+        countryCode: "EE",
+        countryName: "Estonia",
       };
       localStorage.setItem("userLocation", JSON.stringify(defaultLocation));
       setLocation(defaultLocation);

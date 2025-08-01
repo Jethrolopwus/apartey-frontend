@@ -2,10 +2,11 @@
 import { useState, useMemo, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { Loader } from "@googlemaps/js-api-loader";
-import { Star, ChevronDown, Maximize } from "lucide-react"; // Removed unused 'Navigation' import
+import { Star, ChevronDown, Maximize } from "lucide-react";
 import { ReviewsSectionProps, SortOption } from "@/types/generated";
 import { useGetAllReviewsQuery } from "@/Hooks/use-GetAllReviews.query";
 import { Review, SortComponentProps, ReviewLocation } from "@/types/generated";
+import { useLocation } from "@/app/userLocationContext";
 import Image from "next/image";
 
 interface Coordinates {
@@ -88,6 +89,7 @@ const ReviewsSection: React.FC<ReviewsSectionProps> = ({
   });
   const mapRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
+  const { selectedCountryCode } = useLocation();
 
   const sortOptions: SortOption[] = useMemo(
     () => [
@@ -99,15 +101,15 @@ const ReviewsSection: React.FC<ReviewsSectionProps> = ({
 
   const { data, isLoading, error, refetch } = useGetAllReviewsQuery({
     limit: 2,
-    sortBy: "mostRecent",
-    sortOrder: "highestRating",
+    sortBy: "createdAt",
+    sortOrder: "desc",
+    countryCode: selectedCountryCode,
   });
 
   const reviews: Review[] = useMemo(() => data?.reviews || [], [data?.reviews]);
 
   // Initialize Google Map
   useEffect(() => {
-    // Capture the current ref value at the start of the effect
     const currentMapRef = mapRef.current;
 
     const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
@@ -132,17 +134,17 @@ const ReviewsSection: React.FC<ReviewsSectionProps> = ({
             zoom: 12,
           });
 
-          // Add markers for reviews with valid coordinates
           const validReviews = reviews.filter((review: Review) =>
             hasLatLng(review.location)
           );
           validReviews.forEach((review) => {
-            // Removed unused 'index' parameter
             if (hasLatLng(review.location)) {
+              const lat = typeof review.location.lat === 'number' ? review.location.lat : 0;
+              const lng = typeof review.location.lng === 'number' ? review.location.lng : 0;
               new google.maps.Marker({
                 position: {
-                  lat: review.location.lat,
-                  lng: review.location.lng,
+                  lat,
+                  lng,
                 },
                 map,
                 title: getDisplayAddress(
@@ -157,16 +159,15 @@ const ReviewsSection: React.FC<ReviewsSectionProps> = ({
             }
           });
 
-          // Update map center based on valid reviews
           if (validReviews.length > 0) {
             const totalLat = validReviews.reduce(
               (sum, review) =>
-                sum + (hasLatLng(review.location) ? review.location.lat : 0),
+                sum + (hasLatLng(review.location) && typeof review.location.lat === 'number' ? review.location.lat : 0),
               0
             );
             const totalLng = validReviews.reduce(
               (sum, review) =>
-                sum + (hasLatLng(review.location) ? review.location.lng : 0),
+                sum + (hasLatLng(review.location) && typeof review.location.lng === 'number' ? review.location.lng : 0),
               0
             );
             const centerLat = totalLat / validReviews.length;
@@ -183,7 +184,6 @@ const ReviewsSection: React.FC<ReviewsSectionProps> = ({
         console.error("Failed to load Google Maps:", error);
       });
 
-    // Cleanup to prevent memory leaks - using captured ref value
     return () => {
       if (currentMapRef) {
         currentMapRef.innerHTML = "";
@@ -305,67 +305,63 @@ const ReviewsSection: React.FC<ReviewsSectionProps> = ({
           </div>
           <div className="space-y-10">
             {reviews.length > 0 ? (
-              reviews.map(
-                (
-                  review // Removed unused 'index' parameter
-                ) => (
-                  <article
-                    key={review._id} // Use review._id as key instead of index
-                    className="flex gap-4 group cursor-pointer hover:bg-gray-50 p-2 rounded-lg transition-colors"
-                    onClick={() => router.push(`/reviewsPage/${review._id}`)}
-                    tabIndex={0}
-                    role="button"
-                    aria-label={`View details for review at ${getDisplayAddress(
-                      review.location as typeof review.location & {
-                        fullAddress?: string;
+              reviews.map((review) => (
+                <article
+                  key={review._id}
+                  className="flex gap-4 group cursor-pointer hover:bg-gray-50 p-2 rounded-lg transition-colors"
+                  onClick={() => router.push(`/reviewsPage/${review._id}`)}
+                  tabIndex={0}
+                  role="button"
+                  aria-label={`View details for review at ${getDisplayAddress(
+                    review.location as typeof review.location & {
+                      fullAddress?: string;
+                    }
+                  )}`}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      router.push(`/reviewsPage/${review._id}`);
+                    }
+                  }}
+                >
+                  <div className="w-[180px] h-[120px] flex-shrink-0 rounded-md overflow-hidden relative">
+                    <Image
+                      src={
+                        review.linkedProperty?.media?.coverPhoto ||
+                        "/placeholder-property.jpg"
                       }
-                    )}`}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter" || e.key === " ") {
-                        router.push(`/reviewsPage/${review._id}`);
-                      }
-                    }}
-                  >
-                    <div className="w-[180px] h-[120px] flex-shrink-0 rounded-md overflow-hidden relative">
-                      <Image
-                        src={
-                          review.linkedProperty?.media?.coverPhoto ||
-                          "/placeholder-property.jpg"
+                      alt={`Property at ${review.location.streetAddress}`}
+                      width={180}
+                      height={120}
+                      className="object-cover w-full h-full"
+                    />
+                    {review.isLinkedToDatabaseProperty && (
+                      <span className="absolute top-2 right-2 bg-teal-600 text-white text-xs font-semibold px-2 py-1 rounded-full">
+                        Verified
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex flex-col">
+                    <h1 className="text-gray-800 font-medium text-lg">
+                      {getDisplayAddress(
+                        review.location as typeof review.location & {
+                          fullAddress?: string;
                         }
-                        alt={`Property at ${review.location.streetAddress}`}
-                        width={180}
-                        height={120}
-                        className="object-cover w-full h-full"
-                      />
-                      {review.isLinkedToDatabaseProperty && (
-                        <span className="absolute top-2 right-2 bg-teal-600 text-white text-xs font-semibold px-2 py-1 rounded-full">
-                          Verified
-                        </span>
                       )}
-                    </div>
-                    <div className="flex flex-col">
-                      <h1 className="text-gray-800 font-medium text-lg">
-                        {getDisplayAddress(
-                          review.location as typeof review.location & {
-                            fullAddress?: string;
-                          }
-                        )}
-                      </h1>
-                      <div className="flex items-center gap-2 my-1">
-                        <div className="flex">
-                          {renderStars(review.overallRating)}
-                        </div>
-                        <span className="text-gray-700">
-                          {review.overallRating}
-                        </span>
+                    </h1>
+                    <div className="flex items-center gap-2 my-1">
+                      <div className="flex">
+                        {renderStars(review.overallRating || 0)}
                       </div>
-                      <p className="text-gray-500 text-sm">
-                        {review.detailedReview}
-                      </p>
+                      <span className="text-gray-700">
+                        {review.overallRating || 0}
+                      </span>
                     </div>
-                  </article>
-                )
-              )
+                    <p className="text-gray-500 text-sm">
+                      {review.detailedReview}
+                    </p>
+                  </div>
+                </article>
+              ))
             ) : (
               <p className="text-gray-500">No reviews found.</p>
             )}
