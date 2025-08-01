@@ -22,6 +22,7 @@ import {
   resetForm,
 } from "../../store/propertyReviewFormSlice";
 import { useWriteUnlistedReviewMutation } from "@/Hooks/use.writeUnlistedReviews.mutation";
+import type { UnlistedPropertyReview as GeneratedUnlistedPropertyReview } from "@/types/generated";
 
 // Define the expected API payload type
 interface UnlistedPropertyReview {
@@ -325,7 +326,7 @@ const WriteUnlistedPropertyReviews: React.FC = () => {
       }
 
       // Submit to API
-      mutate(finalPayload as unknown as import("/home/jethro/apartey-frontend/types/generated").UnlistedPropertyReview, {
+      mutate(finalPayload as unknown as GeneratedUnlistedPropertyReview, {
         onSuccess: (response) => {
           console.log("Mutation Success Response:", response);
           clearPendingData();
