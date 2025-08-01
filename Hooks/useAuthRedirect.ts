@@ -229,7 +229,22 @@ export const useAuthRedirect = (
         console.log("Local onboarding status:", hasCompletedOnboardingLocal);
         console.log("Backend onboarding status:", hasCompletedOnboardingBackend);
         
-        if (!hasCompletedOnboardingLocal && !hasCompletedOnboardingBackend) {
+        // For signin users (both traditional and Google OAuth), assume they have completed onboarding
+        // since they already have an account
+        if (authMode === "signin") {
+          console.log("User signed in, assuming onboarding is complete");
+          // Redirect based on user role
+          if (role === "homeowner") {
+            finalRedirect = "/landlord";
+            console.log("Redirecting to /landlord for homeowner role");
+          } else if (role === "agent") {
+            finalRedirect = "/agent-profile";
+            console.log("Redirecting to /agent-profile for agent role");
+          } else {
+            finalRedirect = "/profile";
+            console.log("Redirecting to /profile for renter role");
+          }
+        } else if (!hasCompletedOnboardingLocal && !hasCompletedOnboardingBackend) {
           console.log(
             "Redirecting to /onboarding due to incomplete onboarding"
           );
@@ -260,7 +275,10 @@ export const useAuthRedirect = (
         window.location.pathname !== finalRedirect
       ) {
         console.log("Redirecting to:", finalRedirect);
-        router.push(finalRedirect);
+        // Add a small delay to ensure token is properly set
+        setTimeout(() => {
+          router.push(finalRedirect);
+        }, 200);
       } else {
         console.log("Already on target page, no redirect needed");
       }

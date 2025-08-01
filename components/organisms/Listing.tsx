@@ -10,7 +10,6 @@ import { Property, PropertyCategory } from "@/types/generated";
 
 const Listings = () => {
   const searchParams = useSearchParams();
-  const [showDisclaimer, setShowDisclaimer] = useState(true);
   const [contactModalOpen, setContactModalOpen] = useState(false);
   const [contactProperty, setContactProperty] = useState<string | undefined>(
     undefined
@@ -28,12 +27,14 @@ const Listings = () => {
   const petPolicyParam = searchParams.get("petPolicy");
   const conditionParam = searchParams.get("condition");
   
-  const category: PropertyCategory = ["Swap", "Rent", "Buy"].includes(
+  const category: PropertyCategory = ["Swap", "Rent", "Buy", "Sale"].includes(
     categoryParam ?? ""
   )
     ? (categoryParam as PropertyCategory)
     : "Swap";
   const country: string = countryParam ?? "Estonia";
+
+  const [showDisclaimer, setShowDisclaimer] = useState(false);
 
   const { data, isLoading, error } = useGetAllListingsQuery({
     category,
@@ -47,6 +48,8 @@ const Listings = () => {
 
   useEffect(() => {
     console.log("[Listings] Category:", category, "Country:", country);
+    // Only show disclaimer for Swap category
+    setShowDisclaimer(category === "Swap");
   }, [category, country]);
 
   const handleUnderstand = () => {
@@ -197,7 +200,7 @@ const Listings = () => {
           </button>
         </div>
       )}
-      {showDisclaimer && (
+      {showDisclaimer && category === "Swap" && (
         <div className="fixed inset-0 bg-black opacity-80 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg max-w-md w-full p-6">
             <h2 className="text-xl font-semibold text-gray-900 mb-4">

@@ -12,7 +12,7 @@ import Image from "next/image";
 const GoogleAuthButton: React.FC<GoogleAuthButtonProps> = ({
   mode,
   onClick,
-  callbackUrl = mode === "signin" ? "/" : "/onboarding",
+  callbackUrl = mode === "signin" ? "/signin" : "/onboarding",
 }) => {
   const { data: session, status } = useSession();
   const router = useRouter();
@@ -66,7 +66,30 @@ const GoogleAuthButton: React.FC<GoogleAuthButtonProps> = ({
               "renter";
             console.log("User role:", role);
 
-            if (mode === "signup" || !hasCompletedOnboarding) {
+            // For signin users, assume they have completed onboarding
+            if (mode === "signin") {
+              console.log("Google signin - assuming onboarding is complete");
+              localStorage.setItem("authMode", "signin");
+              localStorage.setItem("hasCompletedOnboarding", "true");
+              
+              if (localStorage.getItem("pendingReviewData")) {
+                console.log(
+                  "Redirecting to /write-reviews/unlisted due to pendingReviewData"
+                );
+                router.push("/write-reviews/unlisted");
+              } else {
+                if (role === "homeowner") {
+                  console.log("Redirecting to /landlord for homeowner role");
+                  router.push("/landlord");
+                } else if (role === "agent") {
+                  console.log("Redirecting to /agent-profile for agent role");
+                  router.push("/agent-profile");
+                } else {
+                  console.log("Redirecting to /profile for renter or default role");
+                  router.push("/profile");
+                }
+              }
+            } else if (mode === "signup" || !hasCompletedOnboarding) {
               console.log(
                 "Redirecting to /onboarding for signup or incomplete onboarding"
               );
@@ -107,6 +130,9 @@ const GoogleAuthButton: React.FC<GoogleAuthButtonProps> = ({
       onClick();
     }
     localStorage.setItem("authMode", mode);
+    if (mode === "signin") {
+      localStorage.setItem("hasCompletedOnboarding", "true");
+    }
     await signIn("google", { callbackUrl });
     setIsLoading(false);
   };

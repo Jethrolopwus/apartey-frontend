@@ -20,7 +20,11 @@ const ProfilePage = () => {
   const user = data?.currentUser;
   const token = useAuthToken();
 
-  if (!token || isLoading) {
+  if (!token) {
+    return <p className="p-4 text-gray-500">No authentication token found. Please sign in.</p>;
+  }
+
+  if (isLoading) {
     return <p className="p-4 text-gray-500">Loading profile...</p>;
   }
 

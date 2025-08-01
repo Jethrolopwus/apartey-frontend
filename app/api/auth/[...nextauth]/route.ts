@@ -125,10 +125,15 @@ const authOptions = {
       }
     },
     async redirect({ url, baseUrl }: { url: string; baseUrl: string }) {
-      // Prevent automatic redirects - let the component handle the flow
+      // Allow the component to handle redirects after authentication
       console.log("Redirect callback - url:", url, "baseUrl:", baseUrl);
 
-      // Return the current page to prevent automatic redirect
+      // For Google OAuth, let the component handle the redirect
+      if (url.startsWith(baseUrl)) {
+        return url;
+      }
+      
+      // Default to signin page
       return `${baseUrl}/signin`;
     },
   },

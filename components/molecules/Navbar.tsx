@@ -125,10 +125,12 @@ const Navbar: React.FC<NavbarProps> = () => {
               <Image
                 src={logo}
                 alt="Logo"
-                className="object-cover w-20 md:w-32 lg:w-40"
-                width={64}
-                height={64}
-                sizes="(max-width: 768px) 48px, 64px"
+                className="object-contain w-24 md:w-32 lg:w-36 h-8 md:h-10 lg:h-12"
+                width={144}
+                height={48}
+                sizes="(max-width: 768px) 96px, (max-width: 1024px) 128px, 144px"
+                priority
+                quality={100}
               />
             </a>
 

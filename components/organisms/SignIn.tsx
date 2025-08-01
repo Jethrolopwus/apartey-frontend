@@ -34,8 +34,16 @@ const SignIn: React.FC = () => {
       if (typeof window !== "undefined" && session.user) {
         localStorage.setItem("authMode", "signin");
         
-        // Check if user has completed onboarding (has a role)
-        // This will be determined by the backend onboarding status
+        // For Google OAuth users, assume they have completed onboarding
+        // since they already have an account
+        localStorage.setItem("hasCompletedOnboarding", "true");
+        
+        // Check if user has a role in the session (if available)
+        const userWithRole = session.user as { role?: string };
+        if (userWithRole.role) {
+          localStorage.setItem("userRole", userWithRole.role);
+        }
+        
         console.log("NextAuth session user:", session.user);
       }
       
@@ -114,8 +122,9 @@ const SignIn: React.FC = () => {
     console.log("Google sign in initiated");
     if (typeof window !== "undefined") {
       localStorage.setItem("authMode", "signin");
+      localStorage.setItem("hasCompletedOnboarding", "true");
     }
-    signIn("google", { callbackUrl: "/" });
+    signIn("google", { callbackUrl: "/signin" });
   };
 
   if (status === "loading") {
