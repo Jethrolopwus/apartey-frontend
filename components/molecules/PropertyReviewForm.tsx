@@ -231,7 +231,10 @@ const PropertyReviewForm: React.FC<Props> = ({ id }) => {
       landlordLanguages: [],
     },
     costDetails: {
-      rent: "",
+      rent: {
+        amount: 0,
+        currency: "NGN"
+      },
       rentType: "Monthly",
       securityDepositRequired: false,
       agentBrokerFeeRequired: false,
@@ -349,7 +352,7 @@ const PropertyReviewForm: React.FC<Props> = ({ id }) => {
   const handleInputChange = (
     section: keyof ReviewFormData,
     field: string,
-    value: string | number | boolean | string[] | number[] | undefined
+    value: string | number | boolean | string[] | number[] | { amount: number; currency: string } | undefined
   ) => {
     setFormData((prev) => ({
       ...prev,
@@ -366,7 +369,7 @@ const PropertyReviewForm: React.FC<Props> = ({ id }) => {
       return false;
     }
 
-    if (!formData.costDetails.rent || formData.costDetails.rent.trim() === "") {
+    if (!formData.costDetails.rent?.amount || formData.costDetails.rent.amount <= 0) {
       toast.error("Please enter a valid rent amount");
       return false;
     }

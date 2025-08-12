@@ -279,11 +279,22 @@ export interface UnlistedPropertyReview {
 
   // Cost details
   costDetails: {
-    rent: number;
-    rentType: "Daily" | "Monthly" | "Yearly";
+    rent: {
+      amount: number;
+      currency: string;
+    };
+    rentType: string;
     securityDepositRequired: boolean;
     agentBrokerFeeRequired: boolean;
     fixedUtilityCost: boolean;
+    julyUtilities?: {
+      amount: number;
+      currency: string;
+    };
+    januaryUtilities?: {
+      amount: number;
+      currency: string;
+    };
   };
 
   // Form-specific cost fields
@@ -560,8 +571,11 @@ export interface StayDetails {
 }
 
 export interface CostDetails {
-  rent: string;
-  rentType: "Monthly" | "Yearly";
+  rent: {
+    amount: number;
+    currency: string;
+  };
+  rentType: string;
   securityDepositRequired: boolean;
   agentBrokerFeeRequired: boolean;
   fixedUtilityCost: boolean;

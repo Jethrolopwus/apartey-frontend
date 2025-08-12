@@ -85,7 +85,7 @@ const PropertyDetails = () => {
             <Flag className="w-5 h-5 text-gray-600" />
           </button>
           <button className="bg-[#C85212] text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-[#A64310]">
-            Next
+            Swap
           </button>
         </div>
       </div>

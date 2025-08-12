@@ -49,12 +49,22 @@ interface UnlistedPropertyReview {
     landlordLanguages: string[];
   };
   costDetails: {
-    rentType: "Yearly" | "Monthly";
-    rent: string; // Changed to string to include currency like utilities
+    rentType: string;
+    rent: {
+      amount: number;
+      currency: string;
+    };
     securityDepositRequired: boolean;
     agentBrokerFeeRequired: boolean;
     fixedUtilityCost: boolean;
-    utilities: string;
+    julyUtilities: {
+      amount: number;
+      currency: string;
+    };
+    januaryUtilities: {
+      amount: number;
+      currency: string;
+    };
   };
   accessibility: {
     nearestGroceryStore: string;
@@ -110,6 +120,7 @@ const WriteUnlistedPropertyReviews: React.FC = () => {
 
   const {
     isAuthenticated,
+    isLoading: authLoading,
     hasPendingData,
     pendingReviewData,
     handleAuthRedirect,
@@ -123,20 +134,27 @@ const WriteUnlistedPropertyReviews: React.FC = () => {
   // Clear all localStorage keys related to the form
   const clearFormLocalStorage = () => {
     if (typeof window === "undefined") return;
-    console.log("Clearing localStorage for form");
     const formKeys = Object.keys(formData).map(
       (key) => `propertyReviewForm_${key}`
     );
     formKeys.forEach((key) => localStorage.removeItem(key));
-    localStorage.removeItem("pendingReviewData");
   };
 
   // Restore pending data on mount (if redirected after login)
   useEffect(() => {
     if (restoredRef.current) return;
+    
     const pending: PendingReviewData | null =
       pendingReviewData as PendingReviewData;
-    if (pending && pending.location && isAuthenticated) {
+    
+   
+    
+    // Wait for authentication to be fully loaded
+    if (authLoading) {
+      return;
+    }
+    
+    if (pending && pending.location && isAuthenticated && hasPendingData) {
       dispatch(
         setMultipleFields({
           ...pending.location,
@@ -148,11 +166,16 @@ const WriteUnlistedPropertyReviews: React.FC = () => {
           isAnonymous: pending.submitAnonymously,
         })
       );
+      // Set to step 3 (final submission) when data is restored after authentication
       setCurrentStep(3);
+      setCurrentSubStep(3); // Ensure we're on the final substep
+      restoredRef.current = true;
+      setRestoring(false);
+    } else if (!authLoading) {
+      // Only set restoring to false if auth is not loading and we don't have pending data
+      setRestoring(false);
     }
-    restoredRef.current = true;
-    setRestoring(false);
-  }, [pendingReviewData, dispatch, isAuthenticated]);
+  }, [pendingReviewData, dispatch, isAuthenticated, hasPendingData, authLoading]);
 
   // Navigation logic
   const nextStep = () => {
@@ -226,10 +249,9 @@ const WriteUnlistedPropertyReviews: React.FC = () => {
         .filter(Boolean)
         .join(", ");
 
-      // Extract currency from rent string
-      const rentParts = formData.yearlyRent.split(" ");
-      const rentCurrency = rentParts[0] || "NGN";
-      const rentAmount = Number(rentParts[1] || 0) || 0;
+      // Extract currency and amount from rent object
+      const rentCurrency = formData.rent.currency || "NGN";
+      const rentAmount = formData.rent.amount || 0;
 
       // Build API payload matching UnlistedPropertyReview interface
       const payload: UnlistedPropertyReview = {
@@ -264,12 +286,16 @@ const WriteUnlistedPropertyReviews: React.FC = () => {
             : [],
         },
         costDetails: {
-          rentType: formData.rentType === "actual" ? "Yearly" : "Monthly",
-          rent: formData.yearlyRent || "", // Send full string with currency like utilities
+          rentType: formData.rentType,
+          rent: {
+            amount: formData.rent.amount || 0,
+            currency: formData.rent.currency || "NGN"
+          },
           securityDepositRequired: formData.securityDepositRequired || false,
           agentBrokerFeeRequired: formData.agentFeeRequired || false,
           fixedUtilityCost: formData.fixedUtilityCost || false,
-          utilities: formData.utilities || "",
+          julyUtilities: formData.julyUtilities,
+          januaryUtilities: formData.januaryUtilities,
         },
         accessibility: {
           nearestGroceryStore: formData.nearestGroceryStore || "",
@@ -291,13 +317,15 @@ const WriteUnlistedPropertyReviews: React.FC = () => {
         ...payload,
         costDetails: {
           ...payload.costDetails,
-          rent: formData.yearlyRent || "", // Send full string with currency like utilities
+          rent: {
+            amount: formData.rent.amount || 0,
+            currency: formData.rent.currency || "NGN"
+          },
         },
         // Add additional currency info
         rentWithCurrency: `${rentCurrency} ${rentAmount}`,
-      } as unknown as UnlistedPropertyReview; // Type assertion for custom payload
+      } as unknown as UnlistedPropertyReview; 
 
-      console.log("Submitting Payload:", JSON.stringify(finalPayload, null, 2));
 
       // If not authenticated, save to localStorage and redirect
       if (!isAuthenticated) {
@@ -327,8 +355,7 @@ const WriteUnlistedPropertyReviews: React.FC = () => {
 
       // Submit to API
       mutate(finalPayload as unknown as GeneratedUnlistedPropertyReview, {
-        onSuccess: (response) => {
-          console.log("Mutation Success Response:", response);
+        onSuccess: () => {
           clearPendingData();
           clearFormLocalStorage();
           dispatch(resetForm());
@@ -340,7 +367,6 @@ const WriteUnlistedPropertyReviews: React.FC = () => {
           router.push("/reviewsPage");
         },
         onError: (err: { message?: string } | unknown) => {
-          console.error("Mutation Error:", err);
           const error = err as { message?: string };
           if (error?.message?.includes("login")) {
             toast.error("Session expired. Please log in again.");
@@ -356,14 +382,13 @@ const WriteUnlistedPropertyReviews: React.FC = () => {
           setIsSubmitting(false);
         },
       });
-    } catch (error) {
-      console.error("Submission Error:", error);
+    } catch {
       toast.error("An unexpected error occurred. Please try again.");
       setIsSubmitting(false);
     }
   };
 
-  if (restoring) {
+  if (restoring || authLoading) {
     return <div>Loading...</div>;
   }
 
@@ -525,12 +550,12 @@ const WriteUnlistedPropertyReviews: React.FC = () => {
                   <div className="space-y-6">
                     <RentInput
                       rentType={formData.rentType}
-                      yearlyRent={formData.yearlyRent}
+                      rent={formData.rent}
                       onRentTypeChange={(val) =>
                         dispatch(setField({ key: "rentType", value: val }))
                       }
-                      onYearlyRentChange={(val) =>
-                        dispatch(setField({ key: "yearlyRent", value: val }))
+                      onRentChange={(val) =>
+                        dispatch(setField({ key: "rent", value: val }))
                       }
                     />
                     <SecurityDepositToggle
@@ -556,7 +581,8 @@ const WriteUnlistedPropertyReviews: React.FC = () => {
                       fixedUtilityCost={formData.fixedUtilityCost}
                       centralHeating={formData.centralHeating}
                       furnished={formData.furnished}
-                      utilities={formData.utilities}
+                      julyUtilities={formData.julyUtilities}
+                      januaryUtilities={formData.januaryUtilities}
                       onFixedUtilityCostChange={(val) =>
                         dispatch(
                           setField({ key: "fixedUtilityCost", value: val })
@@ -570,8 +596,11 @@ const WriteUnlistedPropertyReviews: React.FC = () => {
                       onFurnishedChange={(val) =>
                         dispatch(setField({ key: "furnished", value: val }))
                       }
-                      onUtilitiesChange={(val) =>
-                        dispatch(setField({ key: "utilities", value: val }))
+                      onJulyUtilitiesChange={(val) =>
+                        dispatch(setField({ key: "julyUtilities", value: val }))
+                      }
+                      onJanuaryUtilitiesChange={(val) =>
+                        dispatch(setField({ key: "januaryUtilities", value: val }))
                       }
                     />
                   </div>

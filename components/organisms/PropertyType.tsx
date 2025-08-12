@@ -24,9 +24,6 @@ const PropertyTypeForm: React.FC = () => {
 
   const petPolicies = [
     { id: "pet-friendly", label: "Pet-Friendly (All pets welcome)" },
-    { id: "cats-only", label: "Cats Only" },
-    { id: "dogs-only", label: "Dogs Only" },
-    { id: "small-pets", label: "Small Pets Only (under 25 lbs)" },
     { id: "no-pets", label: "No Pets Allowed" },
   ];
 

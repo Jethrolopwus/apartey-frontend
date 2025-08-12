@@ -95,6 +95,23 @@ const PropertyListings = () => {
   };
 
   const handleSubmit = async () => {
+    // Check user role and authentication
+    const token = localStorage.getItem("token") || localStorage.getItem("authToken") || localStorage.getItem("accessToken");
+    const userRole = localStorage.getItem("userRole");
+    
+    console.log("Submit - Token:", token ? "Present" : "Missing");
+    console.log("Submit - User Role:", userRole);
+    
+    if (!token) {
+      toast.error("Please sign in to create a listing");
+      return;
+    }
+    
+    if (userRole !== "homeowner" && userRole !== "agent") {
+      toast.error("Only homeowners and agents can create property listings");
+      return;
+    }
+    
     // Updated enums to match backend expectations
     const PropertyTypeEnum = [
       "House",
@@ -232,6 +249,11 @@ const PropertyListings = () => {
 
     // Build FormData
     const form = new FormData();
+    
+    // Add user role to the request
+    if (userRole) {
+      form.append("userRole", userRole);
+    }
 
     // Contact Info (dot notation)
     if (formData.firstName) form.append("contactInfo.firstName", formData.firstName);

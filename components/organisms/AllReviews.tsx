@@ -62,7 +62,7 @@ const AllReviews: React.FC<AllReviewsProps> = ({
   const [apartmentNumbers, setApartmentNumbers] = useState<string[]>([]);
   const lastValidQuery = useRef({ searchQuery, apartment });
 
-  // Use the query hook without apartment parameter to fetch all reviews
+  // Use the query hook without apartment parameter to fetch all reviews //
   const { data, isLoading, error, refetch } = useGetAllReviewsQuery({
     sortBy: "createdAt",
     sortOrder: "desc",
@@ -72,7 +72,7 @@ const AllReviews: React.FC<AllReviewsProps> = ({
     searchQuery: searchQuery || undefined,
   });
 
-  // Compute searchInputValue for SearchInput component
+  // Compute searchInputValue for SearchInput component//
   const searchInputValue = useMemo(() => {
     return searchQuery;
   }, [searchQuery]);
@@ -81,7 +81,7 @@ const AllReviews: React.FC<AllReviewsProps> = ({
   useEffect(() => {
     if (data) {
       console.log("API Response:", data);
-      // Extract unique apartment numbers
+
       const uniqueApts = Array.from(
         new Set(
           (data.reviews || [])

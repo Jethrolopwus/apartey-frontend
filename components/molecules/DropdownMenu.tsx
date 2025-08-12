@@ -68,7 +68,7 @@ const UserDropdownMenu: React.FC<UserDropdownMenuProps> = ({
     switch (role?.toLowerCase()) {
       case "homeowner":
       case "renter":
-        return "/profile";
+        return "/homeowner-profile";
       case "agent":
         return "/agent-profile";
       default:

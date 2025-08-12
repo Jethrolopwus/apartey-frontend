@@ -61,12 +61,22 @@ interface UnlistedPropertyReview {
     landlordLanguages: string[];
   };
   costDetails: {
-    rentType: "Yearly" | "Monthly";
-    rent: number; // Changed back to number to match generated types
+    rentType: string;
+    rent: {
+      amount: number;
+      currency: string;
+    };
     securityDepositRequired: boolean;
     agentBrokerFeeRequired: boolean;
     fixedUtilityCost: boolean;
-    Utilities: string;
+    julyUtilities: {
+      amount: number;
+      currency: string;
+    };
+    januaryUtilities: {
+      amount: number;
+      currency: string;
+    };
   };
   accessibility: {
     nearestGroceryStore: string;
@@ -280,10 +290,9 @@ const WriteListedPropertyReviews: React.FC<WriteListedPropertyReviewsProps> = ({
         .filter(Boolean)
         .join(", ");
 
-      // Extract currency from rent string
-      const rentParts = formData.yearlyRent.split(" ");
-      const rentCurrency = rentParts[0] || "NGN";
-      const rentAmount = Number(rentParts[1] || 0) || 0;
+      // Extract currency and amount from rent object
+      const rentCurrency = formData.rent.currency || "NGN";
+      const rentAmount = formData.rent.amount || 0;
 
       const payload: UnlistedPropertyReview = {
         location: {
@@ -317,12 +326,16 @@ const WriteListedPropertyReviews: React.FC<WriteListedPropertyReviewsProps> = ({
             : [],
         },
         costDetails: {
-          rentType: formData.rentType === "actual" ? "Yearly" : "Monthly",
-          rent: Number(formData.yearlyRent?.split(" ")[1] || 0) || 0, // Extract number from rent string
+          rentType: formData.rentType,
+          rent: {
+            amount: formData.rent.amount || 0,
+            currency: formData.rent.currency || "NGN"
+          },
           securityDepositRequired: formData.securityDepositRequired || false,
           agentBrokerFeeRequired: formData.agentFeeRequired || false,
           fixedUtilityCost: formData.fixedUtilityCost || false,
-          Utilities: formData.utilities || "",
+          julyUtilities: formData.julyUtilities,
+          januaryUtilities: formData.januaryUtilities,
         },
         accessibility: {
           nearestGroceryStore: formData.nearestGroceryStore || "",
@@ -595,12 +608,12 @@ const WriteListedPropertyReviews: React.FC<WriteListedPropertyReviewsProps> = ({
                   <div className="space-y-6">
                     <RentInput
                       rentType={formData.rentType}
-                      yearlyRent={formData.yearlyRent}
+                      rent={formData.rent}
                       onRentTypeChange={(val) =>
                         dispatch(setField({ key: "rentType", value: val }))
                       }
-                      onYearlyRentChange={(val) =>
-                        dispatch(setField({ key: "yearlyRent", value: val }))
+                      onRentChange={(val) =>
+                        dispatch(setField({ key: "rent", value: val }))
                       }
                     />
                     <SecurityDepositToggle
@@ -626,7 +639,8 @@ const WriteListedPropertyReviews: React.FC<WriteListedPropertyReviewsProps> = ({
                       fixedUtilityCost={formData.fixedUtilityCost}
                       centralHeating={formData.centralHeating}
                       furnished={formData.furnished}
-                      utilities={formData.utilities}
+                      julyUtilities={formData.julyUtilities}
+                      januaryUtilities={formData.januaryUtilities}
                       onFixedUtilityCostChange={(val) =>
                         dispatch(
                           setField({ key: "fixedUtilityCost", value: val })
@@ -640,8 +654,11 @@ const WriteListedPropertyReviews: React.FC<WriteListedPropertyReviewsProps> = ({
                       onFurnishedChange={(val) =>
                         dispatch(setField({ key: "furnished", value: val }))
                       }
-                      onUtilitiesChange={(val) =>
-                        dispatch(setField({ key: "utilities", value: val }))
+                      onJulyUtilitiesChange={(val) =>
+                        dispatch(setField({ key: "julyUtilities", value: val }))
+                      }
+                      onJanuaryUtilitiesChange={(val) =>
+                        dispatch(setField({ key: "januaryUtilities", value: val }))
                       }
                     />
                   </div>

@@ -1,47 +1,28 @@
 "use client";
 import React from "react";
+
 interface RentInputProps {
-  rentType: "actual" | "range";
-  yearlyRent: string;
-  onRentTypeChange: (rentType: "actual" | "range") => void;
-  onYearlyRentChange: (yearlyRent: string) => void;
+  rentType: string;
+  rent: {
+    amount: number;
+    currency: string;
+  };
+  onRentTypeChange: (rentType: string) => void;
+  onRentChange: (rent: { amount: number; currency: string }) => void;
 }
 
 const RentInput: React.FC<RentInputProps> = ({
   rentType,
-  yearlyRent,
+  rent,
   onRentTypeChange,
-  onYearlyRentChange,
+  onRentChange,
 }) => {
-  // Parse current values
-  const parseRentValue = (rentString: string) => {
-    const parts = rentString.split(" ");
-    const currency = parts[0] || "NGN";
-    const amount = parts.slice(1).join(" ") || "";
-    return { currency, amount };
-  };
-
-  const { currency, amount } = parseRentValue(yearlyRent);
-
-  // Format display value with currency prefix
-  const getDisplayValue = () => {
-    if (!amount) return "";
-
-    switch (currency) {
-      case "NGN":
-        return `NGN ${amount}`;
-      case "$":
-        return `$ ${amount}`;
-      case "€":
-        return `€ ${amount}`;
-      default:
-        return `${currency} ${amount}`;
-    }
-  };
-
   // Handle currency change
   const handleCurrencyChange = (newCurrency: string) => {
-    onYearlyRentChange(`${newCurrency} ${amount}`);
+    onRentChange({
+      amount: rent.amount,
+      currency: newCurrency
+    });
     console.log("Currency changed to:", newCurrency);
   };
 
@@ -52,8 +33,29 @@ const RentInput: React.FC<RentInputProps> = ({
       .replace(/^(NGN|₦|\$|€)\s*/, "") // Remove currency prefixes
       .replace(/[^\d,.-]/g, ""); // Keep only numbers, commas, dots, and hyphens
 
-    onYearlyRentChange(`${currency} ${cleanAmount}`);
-    console.log("Amount changed to:", `${currency} ${cleanAmount}`);
+    const numericAmount = parseFloat(cleanAmount.replace(/,/g, "")) || 0;
+    
+    onRentChange({
+      amount: numericAmount,
+      currency: rent.currency
+    });
+    console.log("Amount changed to:", numericAmount);
+  };
+
+  // Format display value with currency prefix
+  const getDisplayValue = () => {
+    if (!rent.amount) return "";
+
+    switch (rent.currency) {
+      case "NGN":
+        return `NGN ${rent.amount.toLocaleString()}`;
+      case "$":
+        return `$ ${rent.amount.toLocaleString()}`;
+      case "€":
+        return `€ ${rent.amount.toLocaleString()}`;
+      default:
+        return `${rent.currency} ${rent.amount.toLocaleString()}`;
+    }
   };
 
   return (
@@ -65,32 +67,32 @@ const RentInput: React.FC<RentInputProps> = ({
         <div className="flex items-center space-x-2">
           <input
             type="radio"
-            id="actual"
+            id="yearly"
             name="rentType"
-            checked={rentType === "actual"}
+            checked={rentType === "Yearly"}
             onChange={() => {
-              onRentTypeChange("actual");
-              console.log("Rent Type:", "actual");
+              onRentTypeChange("Yearly");
+              console.log("Rent Type:", "Yearly");
             }}
             className="w-4 h-4 text-orange-600"
           />
-          <label htmlFor="actual" className="text-sm text-gray-700">
+          <label htmlFor="yearly" className="text-sm text-gray-700">
             Yearly
           </label>
         </div>
         <div className="flex items-center space-x-2">
           <input
             type="radio"
-            id="range"
+            id="monthly"
             name="rentType"
-            checked={rentType === "range"}
+            checked={rentType === "Monthly"}
             onChange={() => {
-              onRentTypeChange("range");
-              console.log("Rent Type:", "range");
+              onRentTypeChange("Monthly");
+              console.log("Rent Type:", "Monthly");
             }}
             className="w-4 h-4 text-orange-600"
           />
-          <label htmlFor="range" className="text-sm text-gray-700">
+          <label htmlFor="monthly" className="text-sm text-gray-700">
             Monthly
           </label>
         </div>
@@ -98,11 +100,11 @@ const RentInput: React.FC<RentInputProps> = ({
 
       <div className="mt-4">
         <label className="block text-sm font-medium text-gray-700 mb-2">
-          {rentType === "actual" ? "Yearly" : "Monthly"} Rent
+          {rentType} Rent
         </label>
         <div className="flex items-center border border-gray-300 rounded-md focus-within:ring-2 focus-within:ring-orange-500">
           <select
-            value={currency}
+            value={rent.currency}
             onChange={(e) => handleCurrencyChange(e.target.value)}
             className="w-20 px-2 py-2 border-r border-gray-300 rounded-l-md focus:outline-none appearance-none bg-white text-sm text-gray-700"
           >
@@ -114,12 +116,12 @@ const RentInput: React.FC<RentInputProps> = ({
             type="text"
             value={getDisplayValue()}
             onChange={(e) => handleAmountChange(e.target.value)}
-            placeholder={`${currency} 300,000`}
+            placeholder={`${rent.currency} 300,000`}
             className="w-full px-3 py-2 border-0 rounded-r-md focus:outline-none focus:ring-0 text-sm text-gray-700"
           />
         </div>
         <p className="text-xs text-gray-500 mt-1">
-          Enter your {rentType === "actual" ? "yearly" : "monthly"} rent amount
+          Enter your {rentType.toLowerCase()} rent amount
         </p>
       </div>
     </div>

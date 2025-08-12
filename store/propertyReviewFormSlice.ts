@@ -3,14 +3,24 @@ export interface PropertyReviewFormState {
   propertyType: string;
   propertyName: string;
   propertyDescription: string;
-  rentType: "actual" | "range";
-  yearlyRent: string;
+  rentType: string; // Changed from "actual" | "range" to string
+  rent: {
+    amount: number;
+    currency: string;
+  }; // Changed from yearlyRent: string to rent object
   securityDepositRequired: boolean;
   agentFeeRequired: boolean;
   fixedUtilityCost: boolean;
   centralHeating: boolean;
   furnished: boolean;
-  utilities: string;
+  julyUtilities: {
+    amount: number;
+    currency: string;
+  };
+  januaryUtilities: {
+    amount: number;
+    currency: string;
+  };
   appliances: string[];
   buildingFacilities: string[];
   costOfRepairsCoverage: string[]; // Keep as string[] to avoid type changes
@@ -60,15 +70,24 @@ const initialState: PropertyReviewFormState = {
   propertyType: "",
   propertyName: "",
   propertyDescription: "",
-  rentType: "actual",
-  yearlyRent: "",
+  rentType: "Yearly", // Changed from "actual" to "Yearly"
+  rent: {
+    amount: 0,
+    currency: "NGN"
+  }, // Changed from yearlyRent: "" to rent object
   securityDepositRequired: false,
   agentFeeRequired: false,
   fixedUtilityCost: false,
   centralHeating: false,
   furnished: false,
-
-  utilities: "",
+  julyUtilities: {
+    amount: 0,
+    currency: "NGN"
+  },
+  januaryUtilities: {
+    amount: 0,
+    currency: "NGN"
+  },
   appliances: [],
   buildingFacilities: [],
   costOfRepairsCoverage: [],

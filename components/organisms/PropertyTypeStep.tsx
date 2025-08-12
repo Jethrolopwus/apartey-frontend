@@ -174,41 +174,6 @@ const PropertyTypeStep: React.FC<StepProps> = ({
             <input
               type="radio"
               name="petPolicy"
-              value="cats-only"
-              checked={petPolicy === "cats-only"}
-              onChange={() => setPetPolicy("cats-only")}
-              className="w-4 h-4 text-orange-500 border-gray-300 focus:ring-orange-500"
-            />
-            <span className="ml-3 text-sm text-gray-700">Cats Only</span>
-          </label>
-          <label className="flex items-center">
-            <input
-              type="radio"
-              name="petPolicy"
-              value="dogs-only"
-              checked={petPolicy === "dogs-only"}
-              onChange={() => setPetPolicy("dogs-only")}
-              className="w-4 h-4 text-orange-500 border-gray-300 focus:ring-orange-500"
-            />
-            <span className="ml-3 text-sm text-gray-700">Dogs Only</span>
-          </label>
-          <label className="flex items-center">
-            <input
-              type="radio"
-              name="petPolicy"
-              value="small-pets"
-              checked={petPolicy === "small-pets"}
-              onChange={() => setPetPolicy("small-pets")}
-              className="w-4 h-4 text-orange-500 border-gray-300 focus:ring-orange-500"
-            />
-            <span className="ml-3 text-sm text-gray-700">
-              Small Pets Only (under 25 lbs)
-            </span>
-          </label>
-          <label className="flex items-center">
-            <input
-              type="radio"
-              name="petPolicy"
               value="no-pets"
               checked={petPolicy === "no-pets"}
               onChange={() => setPetPolicy("no-pets")}

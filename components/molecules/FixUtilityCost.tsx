@@ -2,68 +2,78 @@
 
 import React from "react";
 
+interface UtilityCost {
+  amount: number;
+  currency: string;
+}
+
 interface FixedUtilityCostsToggleProps {
   fixedUtilityCost: boolean;
   centralHeating: boolean;
   furnished: boolean;
-  utilities?: string;
+  julyUtilities: UtilityCost;
+  januaryUtilities: UtilityCost;
   onFixedUtilityCostChange: (value: boolean) => void;
   onCentralHeatingChange: (value: boolean) => void;
   onFurnishedChange: (value: boolean) => void;
-  onUtilitiesChange: (value: string) => void;
+  onJulyUtilitiesChange: (value: UtilityCost) => void;
+  onJanuaryUtilitiesChange: (value: UtilityCost) => void;
 }
 
 const FixedUtilityCostsToggle: React.FC<FixedUtilityCostsToggleProps> = ({
   fixedUtilityCost,
   centralHeating,
   furnished,
-  utilities = "", // Default to empty string
+  julyUtilities,
+  januaryUtilities,
   onFixedUtilityCostChange,
   onCentralHeatingChange,
   onFurnishedChange,
-  onUtilitiesChange,
+  onJulyUtilitiesChange,
+  onJanuaryUtilitiesChange,
 }) => {
-  // Utility functions for parsing and formatting values
-  const parseUtilityValue = (utilityString: string) => {
-    const parts = utilityString.split(" ");
-    const currency = parts[0] || "NGN";
-    const amount = parts.slice(1).join(" ") || "";
-    return { currency, amount };
+  // Format number with commas for display
+  const formatNumber = (num: number): string => {
+    if (!num) return "";
+    return num.toLocaleString();
   };
 
-  const getDisplayValue = (utilityString: string) => {
-    const { currency, amount } = parseUtilityValue(utilityString);
-    if (!amount) return "";
+  // Parse formatted number back to number
+  const parseFormattedNumber = (formatted: string): number => {
+    const clean = formatted.replace(/[^\d]/g, '');
+    return clean ? parseInt(clean, 10) : 0;
+  };
 
-    switch (currency) {
-      case "NGN":
-        return `NGN ${amount}`;
-      case "$":
-        return `$ ${amount}`;
-      case "€":
-        return `€ ${amount}`;
-      default:
-        return `${currency} ${amount}`;
+  // Handle currency change
+  const handleCurrencyChange = (season: 'july' | 'january', newCurrency: string) => {
+    if (season === 'july') {
+      onJulyUtilitiesChange({
+        ...julyUtilities,
+        currency: newCurrency
+      });
+    } else {
+      onJanuaryUtilitiesChange({
+        ...januaryUtilities,
+        currency: newCurrency
+      });
     }
   };
 
-  // Handle currency change for Utilities
-  const handleUtilityCurrencyChange = (newCurrency: string) => {
-    const { amount } = parseUtilityValue(utilities);
-    onUtilitiesChange(`${newCurrency} ${amount}`);
-    console.log("Utility currency changed to:", newCurrency);
-  };
-
-  // Handle amount change for Utilities
-  const handleUtilityAmountChange = (newAmount: string) => {
-    const { currency } = parseUtilityValue(utilities);
-    // Remove any currency symbols that might be typed
-    const cleanAmount = newAmount
-      .replace(/^(NGN|₦|\$|€)\s*/, "") // Remove currency prefixes
-      .replace(/[^\d,.-]/g, ""); // Keep only numbers, commas, dots, and hyphens
-
-    onUtilitiesChange(`${currency} ${cleanAmount}`);
-    console.log("Utility amount changed to:", `${currency} ${cleanAmount}`);
+  // Handle amount change
+  const handleAmountChange = (season: 'july' | 'january', newAmount: string) => {
+    const parsedAmount = parseFormattedNumber(newAmount);
+    
+    if (season === 'july') {
+      onJulyUtilitiesChange({
+        ...julyUtilities,
+        amount: parsedAmount
+      });
+    } else {
+      onJanuaryUtilitiesChange({
+        ...januaryUtilities,
+        amount: parsedAmount
+      });
+    }
   };
 
   return (
@@ -151,35 +161,57 @@ const FixedUtilityCostsToggle: React.FC<FixedUtilityCostsToggleProps> = ({
       {/* Utility Costs Section */}
       <div>
         <h3 className="font-medium text-gray-900 mb-2">Utility Costs</h3>
-        <p className="text-sm text-gray-600 mb-4">Share your utility costs</p>
+        <p className="text-sm text-gray-600 mb-4">Share your seasonal utility costs</p>
 
         <div className="space-y-4">
-          {/* Utilities */}
+          {/* July (Summer) Utilities */}
           <div>
-            <label className="block text-sm text-gray-700 mb-2">
-              Utilities
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              July (Summer) Utilities
             </label>
             <div className="flex items-center border border-gray-300 rounded-md focus-within:ring-2 focus-within:ring-orange-500">
               <select
-                value={parseUtilityValue(utilities).currency}
-                onChange={(e) => handleUtilityCurrencyChange(e.target.value)}
+                value={julyUtilities.currency}
+                onChange={(e) => handleCurrencyChange('july', e.target.value)}
                 className="w-20 px-2 py-2 border-r border-gray-300 rounded-l-md focus:outline-none appearance-none bg-white text-sm text-gray-700"
               >
                 <option value="NGN">NGN &#9660;</option>
-                <option value="$">USD &#9660;</option>
-                <option value="€">EUR &#9660;</option>
+            <option value="$">USD &#9660;</option>
+            <option value="€">EUR &#9660;</option>
               </select>
               <input
                 type="text"
-                value={getDisplayValue(utilities)}
-                onChange={(e) => handleUtilityAmountChange(e.target.value)}
-                placeholder={`${parseUtilityValue(utilities).currency} 80,000`}
+                value={formatNumber(julyUtilities.amount)}
+                onChange={(e) => handleAmountChange('july', e.target.value)}
+                placeholder={`${julyUtilities.currency} 300,000`}
                 className="w-full px-3 py-2 border-0 rounded-r-md focus:outline-none focus:ring-0 text-sm text-gray-700"
               />
             </div>
-            <p className="text-xs text-gray-500 mt-1">
-              Enter your utility costs
-            </p>
+          </div>
+
+          {/* January (Winter) Utilities */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              January (Winter) Utilities
+            </label>
+            <div className="flex items-center border border-gray-300 rounded-md focus-within:ring-2 focus-within:ring-orange-500">
+              <select
+                value={januaryUtilities.currency}
+                onChange={(e) => handleCurrencyChange('january', e.target.value)}
+                className="w-20 px-2 py-2 border-r border-gray-300 rounded-l-md focus:outline-none appearance-none bg-white text-sm text-gray-700"
+              >
+                 <option value="NGN">NGN &#9660;</option>
+            <option value="$">USD &#9660;</option>
+            <option value="€">EUR &#9660;</option>
+              </select>
+              <input
+                type="text"
+                value={formatNumber(januaryUtilities.amount)}
+                onChange={(e) => handleAmountChange('january', e.target.value)}
+                placeholder={`${januaryUtilities.currency} 300,000`}
+                className="w-full px-3 py-2 border-0 rounded-r-md focus:outline-none focus:ring-0 text-sm text-gray-700"
+              />
+            </div>
           </div>
         </div>
       </div>

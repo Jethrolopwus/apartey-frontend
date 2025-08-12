@@ -1,8 +1,11 @@
 "use client";
 
 type CostDetailsData = {
-  rent: string;
-  rentType: "Monthly" | "Yearly";
+  rent: {
+    amount: number;
+    currency: string;
+  };
+  rentType: string;
   securityDepositRequired: boolean;
   agentBrokerFeeRequired: boolean;
   fixedUtilityCost: boolean;
@@ -12,13 +15,14 @@ type CostDetailsData = {
 
 type Props = {
   costDetails: CostDetailsData;
-  onInputChange: (field: keyof CostDetailsData, value: number | boolean | string | 'Monthly' | 'Yearly') => void;
+  onInputChange: (field: keyof CostDetailsData, value: number | boolean | string | { amount: number; currency: string }) => void;
 };
 
 export default function CostDetails({ costDetails, onInputChange }: Props) {
   const handleNumberChange = (field: keyof CostDetailsData, value: string) => {
     if (field === "rent") {
-      onInputChange(field, value);
+      const numValue = parseFloat(value) || 0;
+      onInputChange(field, { amount: numValue, currency: "NGN" });
     } else {
       const numValue = parseFloat(value) || 0;
       onInputChange(field, numValue);
@@ -39,7 +43,7 @@ export default function CostDetails({ costDetails, onInputChange }: Props) {
           </label>
           <input
             type="text"
-            value={costDetails.rent ?? ""}
+            value={costDetails.rent?.amount?.toString() ?? ""}
             onChange={(e) => handleNumberChange("rent", e.target.value)}
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             required
@@ -52,7 +56,7 @@ export default function CostDetails({ costDetails, onInputChange }: Props) {
           </label>
           <select
             value={costDetails.rentType}
-            onChange={(e) => onInputChange("rentType", e.target.value as "Monthly" | "Yearly")}
+            onChange={(e) => onInputChange("rentType", e.target.value)}
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
             <option value="Monthly">Monthly</option>
