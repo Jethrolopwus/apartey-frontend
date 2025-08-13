@@ -75,18 +75,20 @@ export default function AdminSidebar() {
         localStorage.removeItem("pendingReviewData");
         localStorage.removeItem("email");
         localStorage.removeItem("userRole");
+        // Clear admin-specific data
+        localStorage.removeItem("isAdminLogin");
       }
       
       await signOut({ redirect: false });
-      console.log("Admin logged out, redirecting to /signin");
+      console.log("Admin logged out, redirecting to admin login");
       
-      // Force a complete page refresh to clear all state
-      window.location.href = "/signin";
+      // Redirect to admin login page instead of regular signin
+      window.location.href = "/admin/admin-login";
     } catch (error) {
       console.error("Admin logout error:", error);
-      // Fallback to manual redirect
+      // Fallback to manual redirect to admin login
       if (typeof window !== "undefined") {
-        window.location.href = "/signin";
+        window.location.href = "/admin/admin-login";
       }
     }
   };
@@ -168,6 +170,8 @@ export default function AdminSidebar() {
               <Image
                 src="/aparteyLogo.png"
                 alt="Apartey Logo"
+                width={100}
+                height={50}
                 className="h-10"
               />
               <button

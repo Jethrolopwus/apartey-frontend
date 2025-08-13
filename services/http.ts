@@ -72,6 +72,17 @@ class BaseURL {
       throw error;
     }
   };
+  httpAdminLogin = async (data: FormData): Promise<SignInResponse> => {
+    try {
+      const response = await AxiosInstance.post(endpoints.adminLogin, {
+        email: data.email,
+        password: data.password,
+      });
+      return response.data;
+    } catch (error: any) {
+      throw error;
+    }
+  };
 
   httpGoogleAuthCallback = async (googleData: any): Promise<SignInResponse> => {
     try {

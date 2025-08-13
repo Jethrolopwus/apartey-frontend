@@ -10,9 +10,12 @@ import TotalRevenueCard from "@/components/molecules/TotalRevenueCard";
 import UserDistributionCard from "@/components/molecules/UserDistributionCard";
 import PropertyTypesCard from "@/components/molecules/PropertyTypesCard";
 import SalesMappingCard from "@/components/molecules/SalesMappingCard";
+import HomeswapActivityTracker from "@/components/molecules/HomeswapActivityTracker";
+import SwapSaleTrends from "@/components/molecules/SwapSaleTrends";
+import AdminAuthGuard from "@/components/molecules/AdminAuthGuard";
 import { useAdminOverviewStatusQuery } from "@/Hooks/use-getAdminOverviewStatus.query";
 
-export default function AdminDashboardPage() {
+const AdminDashboardContent: React.FC = () => {
   const {
     data: overviewData,
     isLoading,
@@ -31,7 +34,7 @@ export default function AdminDashboardPage() {
   }
 
   if (error) {
-    console.error("Error fetching dashboard data:", error); // Debug: Log the error
+    console.error("Error fetching dashboard data:", error); 
     return (
       <div className="w-full min-h-screen bg-[#F8F9FB] flex items-center justify-center">
         <div className="text-red-500 text-lg">Error loading dashboard data</div>
@@ -89,11 +92,25 @@ export default function AdminDashboardPage() {
         </div>
 
         {/* Property Types and Sales Mapping side by side */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-7">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-7 mb-10">
           <PropertyTypesCard propertyTypes={trends?.propertyTypes || []} />
           <SalesMappingCard countrySales={trends?.countrySales || []} />
         </div>
+
+        {/* Homeswap Activity Tracker and Swap Sale Trends side by side */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-7">
+          <HomeswapActivityTracker />
+          <SwapSaleTrends />
+        </div>
       </div>
     </div>
+  );
+};
+
+export default function AdminDashboardPage() {
+  return (
+    <AdminAuthGuard>
+      <AdminDashboardContent />
+    </AdminAuthGuard>
   );
 }

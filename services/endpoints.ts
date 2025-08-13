@@ -45,6 +45,7 @@ export default Object.freeze({
   getRelatedListing: (id: string) => `/listings/${id}`,
 
   // ====ADMIN ENDPOINTS=====//
+  adminLogin: "/admin/auth/signin",
 
   getAdminOverviewStatus: "/admin/overview",
   getAdminProperties: "/admin/properties",

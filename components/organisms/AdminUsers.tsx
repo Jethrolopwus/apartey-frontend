@@ -1,6 +1,6 @@
 "use client";
 import React, { useState } from "react";
-import { Eye, Pencil, Trash2 } from "lucide-react";
+import { Eye, CirclePower } from "lucide-react";
 import { useGetAllAdminUsersQuery } from "@/Hooks/use-getAllAdminUsers.query";
 import AdminViewUserModal from "@/app/admin/components/AdminViewUsersModal";
 import AdminEditUserModal from "@/app/admin/components/AdminEditUserModal";
@@ -8,6 +8,9 @@ import AdminDeleteUserModal from "@/app/admin/components/AdminDeleteUserModal";
 import { AdminUser } from "@/types/admin";
 
 const typeColors: Record<string, string> = {
+  landlord: "bg-blue-100 text-blue-700",
+  developer: "bg-purple-100 text-purple-700",
+  tenant: "bg-pink-100 text-pink-700",
   agent: "bg-blue-100 text-blue-700",
   renter: "bg-green-100 text-green-700",
 };
@@ -37,9 +40,9 @@ export default function AdminUsers() {
     setSelectedUserId(id);
   };
 
-  const handleEditUser = (user: AdminUser) => {
-    setSelectedUser(user);
-  };
+  // const handleEditUser = (user: AdminUser) => {
+  //   setSelectedUser(user);
+  // };
 
   const handleDeleteUser = (id: string) => {
     setSelectedUserId(id);
@@ -53,156 +56,176 @@ export default function AdminUsers() {
   };
 
   return (
-    <div className="w-full max-w-5xl mx-auto bg-white rounded-2xl shadow-lg p-8 mt-4">
-      <h2 className="text-xl font-semibold text-[#2D3A4A] mb-8">Users</h2>
-      <div className="flex items-center justify-between mb-6 w-full">
-        <div className="relative w-64">
-          <input
-            type="text"
-            placeholder="Search Users"
-            className="w-full pl-10 pr-4 py-2 rounded-lg border border-gray-200 bg-gray-50 focus:outline-none placeholder-gray-400 text-base"
-          />
-          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
-            <Eye className="w-5 h-5" />
-          </span>
+    <div className="w-full min-h-screen bg-[#F8F9FB] flex flex-col items-center">
+      <div className="w-full max-w-[1440px] px-6 md:px-10 pt-2 pb-8">
+        <h1 className="text-2xl font-bold text-gray-800 mb-6">Users</h1>
+        
+        {/* Search and Sort Bar */}
+        <div className="flex items-center justify-between mb-6">
+          <div className="relative w-64">
+            <input
+              type="text"
+              placeholder="Search Users"
+              className="w-full pl-10 pr-4 py-2 rounded-lg border border-gray-200 bg-gray-50 focus:outline-none placeholder-gray-400 text-base"
+            />
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
+              <svg
+                width="20"
+                height="20"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                viewBox="0 0 24 24"
+              >
+                <circle cx="11" cy="11" r="8" />
+                <path d="M21 21l-4.35-4.35" />
+              </svg>
+            </span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-gray-500 text-sm">Sort by</span>
+            <select className="border border-gray-200 rounded-lg px-3 py-2 bg-white text-gray-700 text-sm focus:outline-none">
+              <option>Newest</option>
+              <option>Oldest</option>
+            </select>
+          </div>
         </div>
-        <div className="flex items-center gap-2">
-          <span className="text-gray-500 text-sm">Sort by</span>
-          <select className="border border-gray-200 rounded-lg px-3 py-2 bg-white text-gray-700 text-sm focus:outline-none">
-            <option>Newest</option>
-            <option>Oldest</option>
-          </select>
-        </div>
-      </div>
-      <div className="overflow-x-auto rounded-xl border border-gray-100">
-        <table className="min-w-full text-left text-sm">
-          <thead className="bg-gray-50">
-            <tr className="text-[#2D3A4A] font-semibold text-base">
-              <th className="py-4 px-4">USER</th>
-              <th className="py-4 px-4">TYPE</th>
-              <th className="py-4 px-4">STATUS</th>
-              <th className="py-4 px-4">PROPERTIES</th>
-              <th className="py-4 px-4">JOIN DATE</th>
-              <th className="py-4 px-4">ACTIONS</th>
-            </tr>
-          </thead>
-          <tbody>
-            {isLoading ? (
-              <tr>
-                <td colSpan={6} className="py-3 px-4 text-center">
-                  Loading...
-                </td>
-              </tr>
-            ) : error ? (
-              <tr>
-                <td colSpan={6} className="py-3 px-4 text-center text-red-500">
-                  Error: {error.message}
-                </td>
-              </tr>
-            ) : paginated.length === 0 ? (
-              <tr>
-                <td colSpan={6} className="py-3 px-4 text-center">
-                  No users found
-                </td>
-              </tr>
-            ) : (
-              paginated.map((user) => (
-                <tr
-                  key={user.id}
-                  className="border-b last:border-b-0 hover:bg-gray-50 transition"
-                >
-                  <td className="py-3 px-4">
-                    <div className="font-semibold text-[#2D3A4A]">
-                      {user.fullName}
-                    </div>
-                    <div className="text-xs text-gray-400">{user.email}</div>
-                  </td>
-                  <td className="py-3 px-4">
-                    <span
-                      className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${
-                        typeColors[user.role] || "bg-gray-100 text-gray-700"
-                      }`}
-                    >
-                      {user.role.charAt(0).toUpperCase() + user.role.slice(1)}
-                    </span>
-                  </td>
-                  <td className="py-3 px-4">
-                    <span
-                      className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${
-                        statusColors[user.status.toLowerCase()] ||
-                        "bg-gray-100 text-gray-700"
-                      }`}
-                    >
-                      {user.status.charAt(0).toUpperCase() +
-                        user.status.slice(1)}
-                    </span>
-                  </td>
-                  <td className="py-3 px-4">{user.propertiesCount}</td>
-                  <td className="py-3 px-4">{user.createdAt}</td>
-                  <td className="py-3 px-4">
-                    <div className="flex gap-3">
-                      <Eye
-                        className="w-5 h-5 text-gray-400 hover:text-[#2D3A4A] cursor-pointer"
-                        onClick={() => handleViewUser(user.id)}
-                      />
-                      <Pencil
-                        className="w-5 h-5 text-gray-400 hover:text-[#2D3A4A] cursor-pointer"
-                        onClick={() => handleEditUser(user)}
-                      />
-                      <Trash2
-                        className="w-5 h-5 text-red-400 hover:text-red-600 cursor-pointer"
-                        onClick={() => handleDeleteUser(user.id)}
-                      />
-                    </div>
-                  </td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-      </div>
 
-      <AdminViewUserModal userId={selectedUserId} onClose={handleCloseModal} />
-      <AdminEditUserModal user={selectedUser} onClose={handleCloseModal} />
-      <AdminDeleteUserModal
-        userId={isDeleteModalOpen ? selectedUserId : null}
-        userName={
-          isDeleteModalOpen
-            ? users.find((u) => u.id === selectedUserId)?.fullName || null
-            : null
-        }
-        onClose={handleCloseModal}
-      />
-      <div className="flex items-center justify-between mt-6">
-        <button
-          className="text-gray-400 px-3 py-1 rounded hover:bg-gray-100 disabled:opacity-50"
-          onClick={() => setPage(page - 1)}
-          disabled={page === 1}
-        >
-          &lt; Previous
-        </button>
-        <div className="flex gap-1">
-          {Array.from({ length: totalPages }, (_, i) => (
-            <button
-              key={i}
-              className={`px-3 py-1 rounded ${
-                page === i + 1
-                  ? "bg-[#2D3A4A] text-white"
-                  : "text-gray-700 hover:bg-gray-100"
-              }`}
-              onClick={() => setPage(i + 1)}
-            >
-              {i + 1}
-            </button>
-          ))}
-        </div>
-        <button
-          className="text-gray-400 px-3 py-1 rounded hover:bg-gray-100 disabled:opacity-50"
-          onClick={() => setPage(page + 1)}
-          disabled={page === totalPages}
-        >
-          Next &gt;
-        </button>
+        {isLoading && <p>Loading users...</p>}
+        {error && <p className="text-red-500">Error: {error.message}</p>}
+
+        {!isLoading && !error && (
+          <>
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="min-w-full">
+                  <thead>
+                    <tr className="bg-gray-50 border-b border-gray-200">
+                      <th className="py-4 px-6 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        USER
+                      </th>
+                      <th className="py-4 px-6 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        TYPE
+                      </th>
+                      <th className="py-4 px-6 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        STATUS
+                      </th>
+                      <th className="py-4 px-6 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        PROPERTIES
+                      </th>
+                      <th className="py-4 px-6 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        JOIN DATE
+                      </th>
+                      <th className="py-4 px-6 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        ACTIONS
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {paginated.length === 0 ? (
+                      <tr>
+                        <td colSpan={6} className="py-8 px-6 text-center text-gray-500">
+                          No users found
+                        </td>
+                      </tr>
+                    ) : (
+                      paginated.map((user) => (
+                        <tr key={user.id} className="hover:bg-gray-50">
+                          <td className="py-4 px-6">
+                            <div>
+                              <div className="text-sm font-semibold text-gray-900">
+                                {user.fullName}
+                              </div>
+                              <div className="text-sm text-gray-500">
+                                {user.email}
+                              </div>
+                            </div>
+                          </td>
+                          <td className="py-4 px-6">
+                            <span
+                              className={`inline-flex px-3 py-1 text-xs font-medium rounded-full ${
+                                typeColors[user.role.toLowerCase()] || "bg-gray-100 text-gray-700"
+                              }`}
+                            >
+                              {user.role.charAt(0).toUpperCase() + user.role.slice(1)}
+                            </span>
+                          </td>
+                          <td className="py-4 px-6">
+                            <span
+                              className={`inline-flex px-3 py-1 text-xs font-medium rounded-full ${
+                                statusColors[user.status.toLowerCase()] ||
+                                "bg-gray-100 text-gray-700"
+                              }`}
+                            >
+                              {user.status.charAt(0).toUpperCase() + user.status.slice(1)}
+                            </span>
+                          </td>
+                          <td className="py-4 px-6 text-sm text-gray-900">
+                            {user.propertiesCount}
+                          </td>
+                          <td className="py-4 px-6 text-sm text-gray-900">
+                            {user.createdAt}
+                          </td>
+                          <td className="py-4 px-6">
+                            <div className="flex items-center space-x-3">
+                              <button
+                                onClick={() => handleViewUser(user.id)}
+                                className="text-gray-400 hover:text-gray-600"
+                                title="View"
+                              >
+                                <Eye className="h-5 w-5" />
+                              </button>
+                              <button
+                                onClick={() => handleDeleteUser(user.id)}
+                                className="text-gray-400 hover:text-gray-600"
+                                title="Deactivate"
+                              >
+                                <CirclePower className="h-5 w-5" />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {/* Pagination */}
+            <div className="mt-6 flex justify-center items-center space-x-2">
+              <button
+                onClick={() => setPage(page - 1)}
+                disabled={page === 1}
+                className="px-4 py-2 bg-gray-200 text-gray-700 rounded disabled:opacity-50"
+              >
+                Previous
+              </button>
+              <span>
+                Page {page} of {totalPages}
+              </span>
+              <button
+                onClick={() => setPage(page + 1)}
+                disabled={page === totalPages}
+                className="px-4 py-2 bg-gray-200 text-gray-700 rounded disabled:opacity-50"
+              >
+                Next
+              </button>
+            </div>
+          </>
+        )}
+
+        <AdminViewUserModal userId={selectedUserId} onClose={handleCloseModal} />
+        <AdminEditUserModal user={selectedUser} onClose={handleCloseModal} />
+        <AdminDeleteUserModal
+          userId={isDeleteModalOpen ? selectedUserId : null}
+          userName={
+            isDeleteModalOpen
+              ? users.find((u) => u.id === selectedUserId)?.fullName || null
+              : null
+          }
+          onClose={handleCloseModal}
+        />
       </div>
     </div>
   );

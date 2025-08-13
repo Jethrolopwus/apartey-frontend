@@ -31,7 +31,6 @@ const GoogleAuthButton: React.FC<GoogleAuthButtonProps> = ({
       session?.user &&
       !TokenManager.hasToken()
     ) {
-      console.log("Calling Backend sync for Google auth", session.user);
       const googleData: {
         email: string;
         avatar: string;
@@ -46,9 +45,7 @@ const GoogleAuthButton: React.FC<GoogleAuthButtonProps> = ({
 
       googleAuth(googleData, {
         onSuccess: (response) => {
-          console.log("Backend Response", response);
           if (response?.token) {
-            console.log("Setting token in localStorage:", response.token);
             TokenManager.setToken(response.token, "token");
             if (response?.user?.email) {
               localStorage.setItem("email", response.user.email);
@@ -64,60 +61,51 @@ const GoogleAuthButton: React.FC<GoogleAuthButtonProps> = ({
               response?.user?.role ||
               localStorage.getItem("userRole") ||
               "renter";
-            console.log("User role:", role);
+
+            // Check if this is an admin login
+            const isAdminLogin = localStorage.getItem("isAdminLogin") === "true";
+            
+            if (isAdminLogin) {
+              router.push("/admin/dashboard");
+              return;
+            }
 
             // For signin users, assume they have completed onboarding
             if (mode === "signin") {
-              console.log("Google signin - assuming onboarding is complete");
               localStorage.setItem("authMode", "signin");
               localStorage.setItem("hasCompletedOnboarding", "true");
               
               if (localStorage.getItem("pendingReviewData")) {
-                console.log(
-                  "Redirecting to /write-reviews/unlisted due to pendingReviewData"
-                );
                 router.push("/write-reviews/unlisted");
               } else {
                 if (role === "homeowner") {
-                  console.log("Redirecting to /landlord for homeowner role");
+                
                   router.push("/landlord");
                 } else if (role === "agent") {
-                  console.log("Redirecting to /agent-profile for agent role");
                   router.push("/agent-profile");
                 } else {
-                  console.log("Redirecting to /profile for renter or default role");
                   router.push("/profile");
                 }
               }
             } else if (mode === "signup" || !hasCompletedOnboarding) {
-              console.log(
-                "Redirecting to /onboarding for signup or incomplete onboarding"
-              );
               localStorage.setItem("authMode", "signup");
               router.push("/onboarding");
             } else {
               if (localStorage.getItem("pendingReviewData")) {
-                console.log(
-                  "Redirecting to /write-reviews/unlisted due to pendingReviewData"
-                );
                 router.push("/write-reviews/unlisted");
               } else {
                 if (role === "homeowner") {
-                  console.log("Redirecting to /landlord for homeowner role");
                   router.push("/landlord");
                 } else if (role === "agent") {
-                  console.log("Redirecting to /agent for agent role");
                   router.push("/agent");
                 } else {
-                  console.log("Redirecting to / for renter or default role");
                   router.push("/");
                 }
               }
             }
           }
         },
-        onError: (error) => {
-          console.error("Google Auth mutation error:", error);
+        onError: () => {
           toast.error("Backend authentication failed. Please try again.");
         },
       });

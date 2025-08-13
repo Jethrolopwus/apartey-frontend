@@ -23,7 +23,7 @@ const AdminDeletePropertyModal: React.FC<AdminDeletePropertyModalProps> = ({
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div className="bg-white p-6 rounded-lg shadow-lg w-[400px] max-w-md">
-        <h2 className="text-lg font-semibold mb-2">Delete Property</h2>
+        <h2 className="text-lg font-semibold mb-2">Deactivate Property</h2>
         <p className="text-sm text-gray-600 mb-4">
           Are you sure you want to Suspend {property.title}? This action cannot
           be undone. All associated reviews and bookings will also be removed.
