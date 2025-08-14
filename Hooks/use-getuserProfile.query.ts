@@ -11,7 +11,7 @@ export const useGetUserProfileQuery = () => {
     queryFn: () => http.httpGetUsersProfile(),
     retry: 1,
     staleTime: 1000 * 60 * 5,
-    enabled: !!token, // Only run query if token is available
+    enabled: !!token, 
     refetchOnWindowFocus: false,
   });
 };

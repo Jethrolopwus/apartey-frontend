@@ -67,4 +67,10 @@ export default Object.freeze({
   getAdminPropertyClaimDetails: (id: string) => `/admin/claims/${id}`,
   approvePropertyClaim: (id: string) => `/admin/claims/${id}`,
   rejectPropertyClaim: (id: string) => `/admin/claims/${id}/reject`,
+
+  // ==ADMIN ANALYTICS ENDPOINTS===//
+  getAdminAnalytics: "/admin/analytics",
+  // ==ADMIN STATS ENDPOINTS===//
+  updateProfilePic: "/admin/settings",
+  // 
 });

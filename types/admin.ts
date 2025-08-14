@@ -205,3 +205,74 @@ export interface UseClaimPropertyQueryParams {
   page?: number;
   limit?: number;
 }
+
+// ==== ADMIN ANALYTICS INTERFACES ====
+
+export interface AdminAnalyticsTotals {
+  totalRevenue: number;
+  views: number;
+  newUsers: number;
+  reviews: number;
+}
+
+export interface AdminAnalyticsGrowth {
+  registrations: {
+    value: number;
+    isIncrease: boolean;
+  };
+  reviews: {
+    value: number;
+    isIncrease: boolean;
+  };
+  propertiesListed: {
+    value: number;
+    isIncrease: boolean;
+  };
+}
+
+export interface AdminAnalyticsMetrics {
+  averageRent: number;
+  activeUsers: number;
+  responseRate: number;
+  customerSatisfaction: number;
+  propertiesListed: number;
+}
+
+export interface AdminAnalyticsDistribution {
+  type: string;
+  count: number;
+}
+
+export interface AdminAnalyticsTrendData {
+  label: string;
+  count: number;
+}
+
+export interface AdminAnalyticsRevenueData {
+  month: string;
+  total: number;
+}
+
+export interface AdminAnalyticsTrends {
+  userGrowth: AdminAnalyticsTrendData[];
+  revenue: AdminAnalyticsRevenueData[];
+}
+
+export interface AdminAnalyticsResponse {
+  totals: AdminAnalyticsTotals;
+  growth: AdminAnalyticsGrowth;
+  metrics: AdminAnalyticsMetrics;
+  distribution: AdminAnalyticsDistribution[];
+  trends: AdminAnalyticsTrends;
+}
+
+// ==== ADMIN PROFILE UPDATE INTERFACES ====
+
+export interface AdminProfileUpdateData {
+  profilePicture?: File;
+}
+
+export interface AdminProfileUpdateResponse {
+  message: string;
+  profilePicture?: string;
+}

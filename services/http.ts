@@ -16,9 +16,11 @@ import type {
 } from "@/types/generated";
 import { TokenManager } from "@/utils/tokenManager";
 import {
+  AdminAnalyticsResponse,
   AdminClaimedPropertiesResponse,
   AdminClaimedProperty,
   AdminOverviewResponse,
+  AdminProfileUpdateResponse,
   AdminReviews,
   AdminReviewsResponse,
   ApiClaimResponse,
@@ -1122,6 +1124,18 @@ class BaseURL {
       );
     }
   };
+  httpUpdateAdminProfile = async (data: globalThis.FormData): Promise<AdminProfileUpdateResponse> => {
+    try {
+      const response = await AxiosInstance.patch(endpoints.updateProfilePic, data, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+      return response.data;
+    } catch (error: any) {
+      throw new Error(error.response?.data?.message || "Update profile failed");
+    }
+  };
   httpDeleteAdminUserById = async (id: string): Promise<void> => {
     try {
       await AxiosInstance.delete(endpoints.deleteAdminUser(id));
@@ -1149,6 +1163,14 @@ class BaseURL {
       throw new Error(
         error.response?.data?.message || "Get all Admin Reviews failed"
       );
+    }
+  };
+  httpGetAdminAnalytics = async (): Promise<AdminAnalyticsResponse> => {
+    try {
+      const response = await AxiosInstance.get(endpoints.getAdminAnalytics);
+      return response.data;
+    } catch (error: any) {
+      throw new Error(error.response?.data?.message || "Get Admin Analytics failed");
     }
   };
   httpGetAdminReviewById = async (id: string): Promise<AdminReviews> => {
