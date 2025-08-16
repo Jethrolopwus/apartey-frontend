@@ -273,7 +273,7 @@ export default function CreateBlogPost() {
           )}
 
           {/* Action Buttons */}
-          <div className="flex justify-end gap-4 pt-6">
+          <div className="flex justify-between  gap-4 pt-6">
             <button
               type="button"
               onClick={handleCancel}
