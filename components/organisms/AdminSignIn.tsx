@@ -26,6 +26,17 @@ const AdminSignIn: React.FC = () => {
   const { refetch: refetchAuthStatus } = useAuthStatusQuery();
 
   useEffect(() => {
+    // Check if user is already authenticated
+    const token = localStorage.getItem('token') || localStorage.getItem('accessToken');
+    const isAdminLogin = localStorage.getItem('isAdminLogin') === 'true';
+    const userRole = localStorage.getItem('userRole');
+    
+    if (token && isAdminLogin && userRole && userRole.toLowerCase().includes('admin')) {
+      // User is already authenticated, redirect to dashboard
+      router.push('/admin/dashboard');
+      return;
+    }
+
     if (session) {
       // For Google OAuth users, set onboarding completion if they have a role
       if (typeof window !== "undefined" && session.user) {
@@ -49,7 +60,7 @@ const AdminSignIn: React.FC = () => {
       setTimeout(() => {
         console.log("Redirecting admin to dashboard after Google OAuth");
         router.push("/admin/dashboard");
-      }, 100);
+      }, 500);
     }
   }, [session, router]);
 
@@ -65,6 +76,13 @@ const AdminSignIn: React.FC = () => {
         }
         if (data.user?.email) {
           localStorage.setItem("email", data.user.email);
+        }
+        if (data.user?.firstName) {
+          localStorage.setItem("adminName", data.user.firstName);
+        } else if (data.user?.email) {
+          // Use email prefix as name if no name is provided
+          const name = data.user.email.split('@')[0];
+          localStorage.setItem("adminName", name);
         }
         if (data.user?.role) {
           localStorage.setItem("userRole", data.user.role);
@@ -90,7 +108,7 @@ const AdminSignIn: React.FC = () => {
       setTimeout(() => {
         console.log("Redirecting admin to dashboard after successful login");
         router.push("/admin/dashboard");
-      }, 100);
+      }, 500);
     }
   }, [data, reset, refetchAuthStatus, router]);
 

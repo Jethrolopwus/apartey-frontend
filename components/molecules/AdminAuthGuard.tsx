@@ -1,100 +1,76 @@
 "use client";
-import React, { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
-import { useSession } from "next-auth/react";
-import { TokenManager } from "@/utils/tokenManager";
+import React, { useEffect, useState } from 'react';
+import { useRouter, usePathname } from 'next/navigation';
 
 interface AdminAuthGuardProps {
   children: React.ReactNode;
 }
 
-const AdminAuthGuard: React.FC<AdminAuthGuardProps> = ({ children }) => {
-  const { data: session, status } = useSession();
+export default function AdminAuthGuard({ children }: AdminAuthGuardProps) {
   const router = useRouter();
+  const pathname = usePathname();
   const [isLoading, setIsLoading] = useState(true);
-  const [isAuthorized, setIsAuthorized] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   useEffect(() => {
-    const checkAuth = async () => {
-
-      
-      // Check if user is authenticated
-      const hasToken = TokenManager.hasToken();
-      const isAdminLogin = localStorage.getItem("isAdminLogin") === "true";
-      const userRole = localStorage.getItem("userRole");
-
-      // For NextAuth session
-      if (status === "authenticated" && session?.user) {
-        const userWithRole = session.user as { role?: string };
-        
-        if (userWithRole.role === "admin" || userRole === "admin") {
-          setIsAuthorized(true);
-          setIsLoading(false);
-          return;
-        }
-      }
-
-      // For regular token-based auth
-      if (hasToken && isAdminLogin && userRole === "admin") {
-        setIsAuthorized(true);
+    const checkAuth = () => {
+      // Check if we're on the login page
+      if (pathname === '/admin/login') {
         setIsLoading(false);
         return;
       }
 
-      // If not authenticated or not admin, redirect to admin login
-      if (status === "unauthenticated" || !hasToken || !isAdminLogin || userRole !== "admin") {
-        
-        // Clear any conflicting data
-        if (typeof window !== "undefined") {
-          localStorage.removeItem("redirectAfterLogin");
-          localStorage.removeItem("authMode");
-        }
-        
-        router.push("/admin/admin-login");
+      // Check for admin authentication
+      const token = localStorage.getItem('token') || localStorage.getItem('accessToken');
+      const isAdminLogin = localStorage.getItem('isAdminLogin') === 'true';
+      const userRole = localStorage.getItem('userRole');
+
+      if (!token || !isAdminLogin) {
+        // Not authenticated, redirect to login
+        router.push('/admin/login');
+        setIsLoading(false);
         return;
       }
 
-      setIsLoading(false);
+      // Check if user has admin role
+      if (userRole && userRole.toLowerCase().includes('admin')) {
+        setIsAuthenticated(true);
+        setIsLoading(false);
+      } else {
+        // Not an admin, redirect to login
+        localStorage.removeItem('token');
+        localStorage.removeItem('accessToken');
+        localStorage.removeItem('isAdminLogin');
+        localStorage.removeItem('userRole');
+        router.push('/admin/login');
+        setIsLoading(false);
+      }
     };
 
-    // Add a small delay to ensure all auth checks are complete
-    const timer = setTimeout(() => {
-      checkAuth();
-    }, 100);
-
+    // Small delay to ensure localStorage is available
+    const timer = setTimeout(checkAuth, 100);
     return () => clearTimeout(timer);
-  }, [session, status, router]);
+  }, [pathname, router]);
 
-  // Prevent any automatic redirects while we're checking
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      // Clear any stored redirect paths that might interfere
-      localStorage.removeItem("redirectAfterLogin");
-      
-      // If we're on admin dashboard and authorized, don't let other redirects happen
-      if (isAuthorized && window.location.pathname === "/admin/dashboard") {
-        localStorage.setItem("isAdminLogin", "true");
-        localStorage.setItem("userRole", "admin");
-      }
-    }
-  }, [isAuthorized]);
-
+  // Show loading spinner while checking authentication
   if (isLoading) {
     return (
-      <div className="w-full min-h-screen bg-[#F8F9FB] flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-600 mx-auto mb-4"></div>
-          <div className="text-lg">Verifying admin access...</div>
-        </div>
+      <div className="flex min-h-screen bg-gray-50 items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-600"></div>
       </div>
     );
   }
 
-  if (!isAuthorized) {
-    return null; // Will redirect to login
+  // If on login page, don't show the guard
+  if (pathname === '/admin/login') {
+    return <>{children}</>;
   }
 
-  return <>{children}</>;
-};
+  // If not authenticated, don't render children
+  if (!isAuthenticated) {
+    return null;
+  }
 
-export default AdminAuthGuard; 
+  // If authenticated, render children
+  return <>{children}</>;
+} 

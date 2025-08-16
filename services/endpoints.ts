@@ -72,5 +72,11 @@ export default Object.freeze({
   getAdminAnalytics: "/admin/analytics",
   // ==ADMIN STATS ENDPOINTS===//
   updateProfilePic: "/admin/settings",
-  // 
+  // ==ADMIN GET ALL BLOG POSTS ENDPOINTS===//
+  getAllAdminBlogPosts: "/admin/blog",
+  createAdminBlogPost: "/admin/blog",
+  getAdminBlogPostById: (id: string) => `/admin/blog/${id}`,
+  updateAdminBlogPost: (id: string) => `/admin/blog/${id}`,
+  deleteAdminBlogPost: (id: string) => `/admin/blog/${id}`,
+
 });

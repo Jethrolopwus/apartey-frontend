@@ -46,9 +46,15 @@ export default function AdminSettings() {
     formData.append('profilePicture', selectedFile);
 
     updateProfile(formData, {
-      onSuccess: () => {
+      onSuccess: (response) => {
         setUploadSuccess("Profile picture updated successfully!");
         setUploadError(null);
+        
+        // Save the profile picture URL to localStorage for the header
+        if (response.profilePicture) {
+          localStorage.setItem('adminProfilePicture', response.profilePicture);
+        }
+        
         // Clear the file input
         if (fileInputRef.current) {
           fileInputRef.current.value = '';

@@ -276,3 +276,55 @@ export interface AdminProfileUpdateResponse {
   message: string;
   profilePicture?: string;
 }
+
+// ==== ADMIN BLOG POST INTERFACES ====
+
+export interface AdminPost {
+  id: string;
+  title: string;
+  subtitle: string;
+  content: string;
+  author: string;
+  date: string;
+  category: string;
+  views: number;
+  comments: number;
+  likes: number;
+  tags: string[];
+  status: "Published" | "Draft" | "Archived";
+  published: string;
+  image: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AdminPostsResponse {
+  posts: AdminPost[];
+  pagination: Pagination;
+}
+
+export interface useGetAdminAllBlogPostQueryParams {
+  limit?: number;
+  byId?: number;
+  page?: number;
+  search?: string;
+  sortBy?: "newest" | "oldest" | "title" | "author";
+  status?: "Published" | "Draft" | "Archived";
+}
+
+export interface CreateAdminPostData {
+  title: string;
+  subtitle: string;
+  content: string;
+  author: string;
+  category: string;
+  tags: string[];
+  status: "Published" | "Draft" | "Archived";
+  image?: File;
+}
+
+export interface UpdateAdminPostData extends Partial<CreateAdminPostData> {
+  id: string;
+}
+
+

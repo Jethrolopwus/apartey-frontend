@@ -24,6 +24,9 @@ import {
   AdminReviews,
   AdminReviewsResponse,
   ApiClaimResponse,
+  AdminPost,
+  AdminPostsResponse,
+  CreateAdminPostData,
 } from "@/types/admin";
 import {
   AdminPropertiesResponse,
@@ -470,7 +473,7 @@ class BaseURL {
         localStorage.getItem("authToken") ||
         localStorage.getItem("token") ||
         localStorage.getItem("accessToken");
-      console.log("Token for onboarding check:", token);
+      // console.log("Token for onboarding check:", token);
       if (!token) throw new Error("No authentication token found.");
       const response = await AxiosInstance.get(endpoints.getOnboardingStatus, {
         headers: {
@@ -1292,6 +1295,46 @@ class BaseURL {
       throw new Error(
         error.response?.data?.message || "Update claimed property failed"
       );
+    }
+  };
+  // === ADMIN POSTS ==== //
+  httpGetAdminAllBlogPosts = async (): Promise<AdminPostsResponse> => {
+    try {
+      const response = await AxiosInstance.get(endpoints.getAllAdminBlogPosts);
+      return response.data;
+    } catch (error: any) {
+      throw new Error(error.response?.data?.message || "Get all Admin Posts failed");
+    }
+  };
+  httpCreateAdminBlogPost = async (data: CreateAdminPostData | globalThis.FormData): Promise<AdminPost> => {
+    try {
+      const response = await AxiosInstance.post(endpoints.createAdminBlogPost, data);
+      return response.data;
+    } catch (error: any) {
+      throw new Error(error.response?.data?.message || "Create Admin Post failed");
+    }
+  };
+  httpGetAdminBlogPostById = async (id: string): Promise<AdminPost> => {
+    try {
+      const response = await AxiosInstance.get(endpoints.getAdminBlogPostById(id));
+      return response.data;
+    } catch (error: any) {
+      throw new Error(error.response?.data?.message || "Get Admin Post failed");
+    }
+  };
+  httpUpdateAdminBlogPost = async (id: string, data: Partial<CreateAdminPostData> | globalThis.FormData): Promise<AdminPost> => {
+    try {
+      const response = await AxiosInstance.put(endpoints.updateAdminBlogPost(id), data);
+      return response.data;
+    } catch (error: any) {
+      throw new Error(error.response?.data?.message || "Update Admin Post failed");
+    }
+  };
+  httpDeleteAdminBlogPost = async (id: string): Promise<void> => {
+    try {
+      await AxiosInstance.delete(endpoints.deleteAdminBlogPost(id));
+    } catch (error: any) {
+      throw new Error(error.response?.data?.message || "Delete Admin Post failed");
     }
   };
 }

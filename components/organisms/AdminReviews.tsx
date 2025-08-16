@@ -85,43 +85,112 @@ export default function AdminReviews() {
 
   if (isLoading) {
     return (
-      <div className="w-full max-w-5xl mx-auto bg-white rounded-2xl shadow-lg p-8 mt-4">
-        Loading...
+      <div className="w-full max-w-5xl mx-auto bg-white rounded-2xl shadow-lg p-4 md:p-8 mt-4">
+        <div className="text-sm md:text-base">Loading...</div>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="w-full max-w-5xl mx-auto bg-white rounded-2xl shadow-lg p-8 mt-4">
-        Error: {(error as Error).message}
+      <div className="w-full max-w-5xl mx-auto bg-white rounded-2xl shadow-lg p-4 md:p-8 mt-4">
+        <div className="text-red-500 text-sm md:text-base">Error: {(error as Error).message}</div>
       </div>
     );
   }
 
   return (
-    <div className="w-full max-w-5xl mx-auto bg-white rounded-2xl shadow-lg p-8 mt-4">
-      <h2 className="text-xl font-semibold text-[#2D3A4A] mb-8">Reviews</h2>
-      <div className="flex items-center justify-between mb-6 w-full">
-        <div className="relative w-64">
+    <div className="w-full max-w-5xl mx-auto bg-white rounded-2xl shadow-lg p-4 md:p-8 mt-4">
+      <h2 className="text-lg md:text-xl font-semibold text-[#2D3A4A] mb-4 md:mb-8">Reviews</h2>
+      
+      {/* Search and Sort Bar */}
+      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-4 md:mb-6 w-full">
+        <div className="relative w-full md:w-64">
           <input
             type="text"
             placeholder="Search Reviews"
-            className="w-full pl-10 pr-4 py-2 rounded-lg border border-gray-200 bg-gray-50 focus:outline-none placeholder-gray-400 text-base"
+            className="w-full pl-10 pr-4 py-2 rounded-lg border border-gray-200 bg-gray-50 focus:outline-none placeholder-gray-400 text-sm md:text-base"
           />
           <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
             <Eye className="w-5 h-5" />
           </span>
         </div>
         <div className="flex items-center gap-2">
-          <span className="text-gray-500 text-sm">Sort by</span>
-          <select className="border border-gray-200 rounded-lg px-3 py-2 bg-white text-gray-700 text-sm focus:outline-none">
+          <span className="text-gray-500 text-xs md:text-sm">Sort by</span>
+          <select className="border border-gray-200 rounded-lg px-2 md:px-3 py-2 bg-white text-gray-700 text-xs md:text-sm focus:outline-none">
             <option>Newest</option>
             <option>Oldest</option>
           </select>
         </div>
       </div>
-      <div className="overflow-x-auto rounded-xl border border-gray-100">
+
+      {/* Mobile Card View */}
+      <div className="md:hidden space-y-3">
+        {reviews.map((review, idx) => {
+          const ratingValue =
+            review.rating && typeof review.rating === "string"
+              ? parseFloat(review.rating.split("/")[0])
+              : 0;
+          const maxRating = 5;
+          return (
+            <div key={review.id || idx} className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+              <div className="flex justify-between items-start mb-3">
+                <div className="flex-1 min-w-0">
+                  <h3 className="text-sm font-semibold text-[#2D3A4A] truncate">
+                    {review.property}
+                  </h3>
+                  <p className="text-xs text-gray-500">
+                    By {review.reviewer}
+                  </p>
+                </div>
+                <div className="flex items-center space-x-2 ml-2">
+                  <button
+                    onClick={() => handleViewReview(review?.id)}
+                    className="text-gray-400 hover:text-[#2D3A4A] p-1"
+                    title="View"
+                  >
+                    <Eye className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={() => handleDeleteReview(review.id, review.property || "N/A")}
+                    className="text-red-400 hover:text-red-600 p-1"
+                    title="Delete"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+              <div className="space-y-2 text-xs">
+                <div className="flex items-center gap-2">
+                  {renderStars(ratingValue, maxRating)}
+                  <span className="text-gray-500 font-medium">
+                    {review.rating}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-gray-500">Comment:</span>
+                  <p className="text-gray-900 mt-1 line-clamp-2">
+                    {review.comment}
+                  </p>
+                </div>
+                <div>
+                  <span
+                    className={`inline-block px-2 py-1 rounded-full text-xs font-semibold ${
+                      statusColors[String(review.status)] ||
+                      statusColors["Flagged"]
+                    }`}
+                  >
+                    {review.status === "flaaged" ? "Flagged" : review.status}
+                  </span>
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Desktop Table View */}
+      <div className="hidden md:block overflow-x-auto rounded-xl border border-gray-100">
         <table className="min-w-full text-left text-sm">
           <thead className="bg-gray-50">
             <tr className="text-[#2D3A4A] font-semibold text-base">
@@ -145,10 +214,10 @@ export default function AdminReviews() {
                   key={review.id || idx}
                   className="border-b last:border-b-0 hover:bg-gray-50 transition"
                 >
-                  <td className="py-3 px-4 font-semibold text-[#2D3A4A]">
+                  <td className="py-3 px-4 font-semibold text-[#2D3A4A] truncate max-w-[150px]">
                     {review.property}
                   </td>
-                  <td className="py-3 px-4">{review.reviewer}</td>
+                  <td className="py-3 px-4 truncate max-w-[120px]">{review.reviewer}</td>
                   <td className="py-3 px-4">
                     <div className="flex items-center gap-2">
                       {renderStars(ratingValue, maxRating)}
@@ -203,9 +272,11 @@ export default function AdminReviews() {
         reviewProperty={isDeleteModalOpen ? selectedReviewProperty : null}
         onClose={handleCloseModal}
       />
+      
+      {/* Pagination */}
       <div className="flex items-center justify-between mt-6">
         <button
-          className="text-gray-400 px-3 py-1 rounded hover:bg-gray-100 disabled:opacity-50"
+          className="text-gray-400 px-2 md:px-3 py-1 rounded hover:bg-gray-100 disabled:opacity-50 text-sm md:text-base"
           onClick={() => setPage(page - 1)}
           disabled={page === 1}
         >
@@ -215,7 +286,7 @@ export default function AdminReviews() {
           {Array.from({ length: totalPages }, (_, i) => (
             <button
               key={i}
-              className={`px-3 py-1 rounded ${
+              className={`px-2 md:px-3 py-1 rounded text-sm md:text-base ${
                 page === i + 1
                   ? "bg-[#2D3A4A] text-white"
                   : "text-gray-700 hover:bg-gray-100"
@@ -227,7 +298,7 @@ export default function AdminReviews() {
           ))}
         </div>
         <button
-          className="text-gray-400 px-3 py-1 rounded hover:bg-gray-100 disabled:opacity-50"
+          className="text-gray-400 px-2 md:px-3 py-1 rounded hover:bg-gray-100 disabled:opacity-50 text-sm md:text-base"
           onClick={() => setPage(page + 1)}
           disabled={page === totalPages}
         >
