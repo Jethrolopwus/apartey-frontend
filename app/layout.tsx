@@ -3,7 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import Script from "next/script";
 import "./globals.css";
 import Navbar from "@/components/molecules/Navbar";
-import Footer from "@/components/molecules/Footer";
+import ConditionalFooter from "@/components/molecules/ConditionalFooter";
 import QueryProvider from "@/app/QueryProvider";
 import ToastProvider from "@/app/ToastProvider";
 import NextProvider from "@/app/NextProvider";
@@ -55,7 +55,7 @@ export default function RootLayout({
               <LocationProvider>
                 <Navbar />
                 {children}
-                <Footer />
+                <ConditionalFooter />
               </LocationProvider>
               <ToastProvider />
             </QueryProvider>

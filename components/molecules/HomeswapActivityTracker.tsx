@@ -5,8 +5,9 @@ import {
   CurrencyDollarIcon, 
   CheckCircleIcon, 
   ClockIcon, 
-  ExclamationTriangleIcon 
+  ExclamationTriangleIcon
 } from "@heroicons/react/24/outline";
+import { MessageSquare } from "lucide-react";
 
 interface ActivityEntry {
   id: string;
@@ -134,15 +135,14 @@ const HomeswapActivityTracker: React.FC = () => {
     <div className="bg-white shadow rounded-xl p-6 h-full">
       {/* Header */}
       <div className="flex items-center mb-6">
-        <div className="w-8 h-8 bg-gray-900 rounded-full flex items-center justify-center mr-3">
-          <ArrowPathIcon className="w-4 h-4 text-white" />
-        </div>
+          <MessageSquare className="w-8 h-8 text-gray-900 mr-3" />
+      
         <div>
           <h3 className="text-base font-semibold text-gray-800">
-            Homeswap Activity Tracker
+            Recent Homeswap Activities
           </h3>
           <p className="text-sm text-gray-500">
-            Real-time tracking of property swaps and sales on the platform
+            Latest responses from users who deactivated their homeswap status
           </p>
         </div>
       </div>

@@ -21,7 +21,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         // Dashboard pages - with sidebar/header
         <div className="flex min-h-screen bg-[#F8F9FB]">
           <Sidebar />
-          <div className="flex flex-col flex-1 min-h-screen lg:ml-[280px] bg-[#F8F9FB]">
+          <div className="flex flex-col flex-1 min-h-screen lg:ml-[240px] bg-[#F8F9FB]">
             <Header />
             <main className="flex-1 w-full max-w-full px-0 pt-20 pb-8 mx-auto overflow-y-auto">
               {children}

@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Eye, Trash2, Star } from "lucide-react";
 import { useGetAllAdminReviewsQuery } from "@/Hooks/use-getAllAdminReviews.query";
 import AdminViewReviewModal from "@/app/admin/components/AdminViewReviewModal";
@@ -11,7 +11,7 @@ const statusColors: Record<string, string> = {
   flaaged: "bg-red-100 text-red-600",
 };
 
-const pageSize = 6;
+// const pageSize = 6; // Removed unused variable
 
 function renderStars(rating: number, max: number) {
   const fullStars = Math.floor(rating);
@@ -46,38 +46,89 @@ function renderStars(rating: number, max: number) {
 
 export default function AdminReviews() {
   const [page, setPage] = useState(1);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [sortBy, setSortBy] = useState("newest");
   const [selectedReviewId, setSelectedReviewId] = useState<string | null>(null);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [selectedReviewProperty, setSelectedReviewProperty] = useState<
     string | null
   >(null);
 
-  const { data, isLoading, error } = useGetAllAdminReviewsQuery({
-    limit: pageSize,
-    page,
+  // Debounced search term for API calls
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
+
+  // Debounce search term to avoid too many API calls
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
+      setPage(1); // Reset to first page when searching
+    }, 800);
+
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
+
+  // Reset page when sort changes
+  useEffect(() => {
+    setPage(1);
+  }, [sortBy]);
+
+  // Get initial data without search for client-side filtering
+  const { data: initialData, isLoading: initialLoading, error: initialError } = useGetAllAdminReviewsQuery({
+    sort: sortBy as "newest" | "oldest"
   });
 
-  const reviews = data?.reviews || [];
+  // Get search results
+  const { data: searchData, isLoading: searchLoading, error: searchError } = useGetAllAdminReviewsQuery({
+    search: debouncedSearchTerm && debouncedSearchTerm.trim().length >= 2 ? debouncedSearchTerm.trim() : undefined,
+    sort: sortBy as "newest" | "oldest"
+  });
+
+  // Use search results if available, otherwise use initial data for client-side filtering
+  const data = debouncedSearchTerm && debouncedSearchTerm.trim().length >= 2 ? searchData : initialData;
+  const isLoading = debouncedSearchTerm && debouncedSearchTerm.trim().length >= 2 ? searchLoading : initialLoading;
+  const error = debouncedSearchTerm && debouncedSearchTerm.trim().length >= 2 ? searchError : initialError;
+
+  // Client-side filtering as fallback (for debugging)
+  const filteredReviews = React.useMemo(() => {
+    const reviews = data?.reviews || [];
+    
+    // Use initial data for client-side filtering when backend search fails
+    const reviewsToFilter = debouncedSearchTerm && debouncedSearchTerm.trim().length >= 2 && reviews.length === 0 
+      ? (initialData?.reviews || [])
+      : reviews;
+    
+    if (!debouncedSearchTerm || debouncedSearchTerm.trim().length < 2) {
+      return reviewsToFilter;
+    }
+    
+    const filtered = reviewsToFilter.filter(review => 
+      review.reviewer?.toLowerCase().trim().includes(debouncedSearchTerm.toLowerCase().trim())
+    );
+    
+    return filtered;
+  }, [data?.reviews, debouncedSearchTerm, initialData?.reviews]);
+
   const totalPages = data?.pagination?.totalPages || 1;
 
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchTerm(e.target.value);
+  };
+
+  const handleSortChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setSortBy(e.target.value);
+  };
+
   const handleViewReview = (id: string) => {
-    console.log("AdminReviews Debug: Viewing review:", id);
     setSelectedReviewId(id);
   };
 
   const handleDeleteReview = (id: string, property: string) => {
-    console.log(
-      "AdminReviews Debug: Opening delete modal for review:",
-      id,
-      property
-    );
     setSelectedReviewId(id);
     setSelectedReviewProperty(property);
     setIsDeleteModalOpen(true);
   };
 
   const handleCloseModal = () => {
-    console.log("AdminReviews Debug: Closing modals");
     setSelectedReviewId(null);
     setSelectedReviewProperty(null);
     setIsDeleteModalOpen(false);
@@ -108,7 +159,9 @@ export default function AdminReviews() {
         <div className="relative w-full md:w-64">
           <input
             type="text"
-            placeholder="Search Reviews"
+            placeholder="Search by reviewer first name"
+            value={searchTerm}
+            onChange={handleSearchChange}
             className="w-full pl-10 pr-4 py-2 rounded-lg border border-gray-200 bg-gray-50 focus:outline-none placeholder-gray-400 text-sm md:text-base"
           />
           <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
@@ -117,16 +170,26 @@ export default function AdminReviews() {
         </div>
         <div className="flex items-center gap-2">
           <span className="text-gray-500 text-xs md:text-sm">Sort by</span>
-          <select className="border border-gray-200 rounded-lg px-2 md:px-3 py-2 bg-white text-gray-700 text-xs md:text-sm focus:outline-none">
-            <option>Newest</option>
-            <option>Oldest</option>
+          <select 
+            value={sortBy}
+            onChange={handleSortChange}
+            className="border border-gray-200 rounded-lg px-2 md:px-3 py-2 bg-white text-gray-700 text-xs md:text-sm focus:outline-none"
+          >
+            <option value="newest">Newest</option>
+            <option value="oldest">Oldest</option>
           </select>
         </div>
       </div>
 
       {/* Mobile Card View */}
       <div className="md:hidden space-y-3">
-        {reviews.map((review, idx) => {
+        {filteredReviews.length === 0 && searchTerm && (
+          <div className="bg-gray-50 rounded-lg p-4 border border-gray-200 text-center">
+            <p className="text-gray-500 text-sm">No reviews found for &ldquo;{searchTerm}&rdquo;</p>
+            <p className="text-gray-400 text-xs mt-1">Try searching with the reviewer&apos;s first name</p>
+          </div>
+        )}
+        {filteredReviews.map((review, idx) => {
           const ratingValue =
             review.rating && typeof review.rating === "string"
               ? parseFloat(review.rating.split("/")[0])
@@ -203,7 +266,23 @@ export default function AdminReviews() {
             </tr>
           </thead>
           <tbody>
-            {reviews.map((review, idx) => {
+            {filteredReviews.length === 0 && searchTerm ? (
+              <tr>
+                <td colSpan={6} className="py-8 px-4 text-center text-gray-500">
+                  <div>
+                    <p>No reviews found for &ldquo;{searchTerm}&rdquo;</p>
+                    <p className="text-sm text-gray-400 mt-1">Try searching with the reviewer&apos;s first name</p>
+                  </div>
+                </td>
+              </tr>
+            ) : filteredReviews.length === 0 ? (
+              <tr>
+                <td colSpan={6} className="py-8 px-4 text-center text-gray-500">
+                  No reviews found
+                </td>
+              </tr>
+            ) : (
+              filteredReviews.map((review, idx) => {
               const ratingValue =
                 review.rating && typeof review.rating === "string"
                   ? parseFloat(review.rating.split("/")[0])
@@ -258,7 +337,8 @@ export default function AdminReviews() {
                   </td>
                 </tr>
               );
-            })}
+            }))
+          }
           </tbody>
         </table>
       </div>

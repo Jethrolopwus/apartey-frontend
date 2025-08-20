@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useGetAdminPropertiesQuery } from "@/Hooks/use-getAdminAllProperties.query";
 import { useDeleteAdminPropertyById } from "@/Hooks/use-deleteAdminPropertyById.query";
@@ -25,6 +25,8 @@ export interface Property {
 
 export default function AdminPropertiesPage() {
   const [currentPage, setCurrentPage] = useState(1);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [sortBy, setSortBy] = useState("newest");
   const [selectedProperty, setSelectedProperty] = useState<Property | null>(
     null
   );
@@ -34,9 +36,29 @@ export default function AdminPropertiesPage() {
   const limit = 10;
   const router = useRouter();
 
+  // Debounced search term for API calls
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
+
+  // Debounce search term to avoid too many API calls
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
+      setCurrentPage(1); // Reset to first page when searching
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
+
+  // Reset page when sort changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [sortBy]);
+
   const { data, isLoading, error, refetch } = useGetAdminPropertiesQuery({
     limit,
     byId: currentPage,
+    search: debouncedSearchTerm || undefined,
+    sort: sortBy as "newest" | "oldest"
   });
 
   const {
@@ -57,6 +79,14 @@ export default function AdminPropertiesPage() {
       setCurrentPage(page);
       refetch();
     }
+  };
+
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchTerm(e.target.value);
+  };
+
+  const handleSortChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setSortBy(e.target.value);
   };
 
   const handleView = (property: Property) => {
@@ -158,7 +188,7 @@ export default function AdminPropertiesPage() {
           </button>
           <button
             className="px-3 md:px-5 py-2 text-sm md:text-base font-semibold text-gray-400 bg-gray-50 border border-gray-200 rounded-lg hover:bg-gray-100 whitespace-nowrap"
-            onClick={() => router.push("/admin/admin-property-claim")}
+            onClick={() => router.push("/admin/property-claim")}
           >
             Property Claims
           </button>
@@ -170,6 +200,8 @@ export default function AdminPropertiesPage() {
             <input
               type="text"
               placeholder="Search properties"
+              value={searchTerm}
+              onChange={handleSearchChange}
               className="w-full pl-10 pr-4 py-2 rounded-lg border border-gray-200 bg-gray-50 focus:outline-none placeholder-gray-400 text-sm md:text-base"
             />
             <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
@@ -188,9 +220,13 @@ export default function AdminPropertiesPage() {
           </div>
           <div className="flex items-center gap-2">
             <span className="text-gray-500 text-xs md:text-sm">Sort by</span>
-            <select className="border border-gray-200 rounded-lg px-2 md:px-3 py-2 bg-white text-gray-700 text-xs md:text-sm focus:outline-none">
-              <option>Newest</option>
-              <option>Oldest</option>
+            <select 
+              value={sortBy}
+              onChange={handleSortChange}
+              className="border border-gray-200 rounded-lg px-2 md:px-3 py-2 bg-white text-gray-700 text-xs md:text-sm focus:outline-none"
+            >
+              <option value="newest">Newest</option>
+              <option value="oldest">Oldest</option>
             </select>
           </div>
         </div>

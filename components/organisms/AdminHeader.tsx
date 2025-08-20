@@ -84,7 +84,7 @@ export default function Header() {
   };
 
   return (
-    <header className="flex items-center h-8 justify-between bg-white px-8 py-4 min-h-[60px] lg:shadow-md w-full max-w-full lg:border-b lg:border-gray-100 fixed top-0 right-0 lg:left-[280px] z-10 lg:w-[calc(100%-280px)]">
+    <header className="flex items-center h-8 justify-between bg-white px-8 py-4 min-h-[60px] lg:shadow-md w-full max-w-full lg:border-b lg:border-gray-100 fixed top-0 right-0 lg:left-[240px] z-10 lg:w-[calc(100%-240px)]">
       <h1 className="text-2xl font-bold">DashBoard</h1>
       <div className="relative w-[320px]">
         <span className="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none">

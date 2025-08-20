@@ -38,6 +38,7 @@ const AdminSignIn: React.FC = () => {
     }
 
     if (session) {
+      console.log("AdminSignIn - Session detected:", session);
       // For Google OAuth users, set onboarding completion if they have a role
       if (typeof window !== "undefined" && session.user) {
         localStorage.setItem("authMode", "signin");
@@ -54,13 +55,17 @@ const AdminSignIn: React.FC = () => {
         }
         
         console.log("NextAuth session user:", session.user);
+        console.log("Admin login flags set in session:", {
+          authMode: localStorage.getItem("authMode"),
+          hasCompletedOnboarding: localStorage.getItem("hasCompletedOnboarding"),
+          isAdminLogin: localStorage.getItem("isAdminLogin"),
+          userRole: localStorage.getItem("userRole")
+        });
       }
       
       // Redirect to admin dashboard for admin users
-      setTimeout(() => {
-        console.log("Redirecting admin to dashboard after Google OAuth");
-        router.push("/admin/dashboard");
-      }, 500);
+      console.log("Redirecting admin to dashboard after Google OAuth");
+      router.push("/admin/dashboard");
     }
   }, [session, router]);
 
@@ -105,10 +110,8 @@ const AdminSignIn: React.FC = () => {
       refetchAuthStatus();
       
       // Redirect to admin dashboard
-      setTimeout(() => {
-        console.log("Redirecting admin to dashboard after successful login");
-        router.push("/admin/dashboard");
-      }, 500);
+      console.log("Redirecting admin to dashboard after successful login");
+      router.push("/admin/dashboard");
     }
   }, [data, reset, refetchAuthStatus, router]);
 
@@ -144,8 +147,13 @@ const AdminSignIn: React.FC = () => {
       localStorage.setItem("authMode", "signin");
       localStorage.setItem("hasCompletedOnboarding", "true");
       localStorage.setItem("isAdminLogin", "true");
+      console.log("Admin login flags set:", {
+        authMode: localStorage.getItem("authMode"),
+        hasCompletedOnboarding: localStorage.getItem("hasCompletedOnboarding"),
+        isAdminLogin: localStorage.getItem("isAdminLogin")
+      });
     }
-    signIn("google", { callbackUrl: "/admin/admin-login" });
+    signIn("google", { callbackUrl: "/admin/dashboard" });
   };
 
   if (status === "loading") {
@@ -200,7 +208,7 @@ const AdminSignIn: React.FC = () => {
 
           <GoogleAuthButton
             mode="signin"
-            callbackUrl="/admin/admin-login"
+            callbackUrl="/admin/dashboard"
             onClick={handleGoogleSignIn}
           />
         </div>

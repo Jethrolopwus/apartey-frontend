@@ -57,7 +57,7 @@ const AdminDashboardContent: React.FC = () => {
   console.log("propertyTypes for PropertyTypesCard:", trends?.propertyTypes);
 
   return (
-    <div className="w-full min-h-screen bg-[#F8F9FB] flex flex-col items-center ">
+    <div className="w-full min-h-screen bg-[#F8F9FB] flex flex-col items-center">
       <div className="w-full max-w-[1440px] px-6 md:px-10 pt-2 pb-8">
         {/* Top summary cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-7 mb-10">
@@ -83,7 +83,7 @@ const AdminDashboardContent: React.FC = () => {
           />
         </div>
 
-        {/* Revenue and User Distribution side by side */}
+        {/* Top section: Revenue and User Distribution side by side */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-7 mb-10">
           <TotalRevenueCard totalRevenue={stats?.totalRevenue || 0} />
           <UserDistributionCard
@@ -91,16 +91,16 @@ const AdminDashboardContent: React.FC = () => {
           />
         </div>
 
-        {/* Property Types and Sales Mapping side by side */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-7 mb-10">
-          <PropertyTypesCard propertyTypes={trends?.propertyTypes || []} />
-          <SalesMappingCard countrySales={trends?.countrySales || []} />
-        </div>
-
-        {/* Homeswap Activity Tracker and Swap Sale Trends side by side */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-7">
+        {/* Middle section: Homeswap Activity Tracker and Swap Sale Trends side by side */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-7 mb-10">
           <HomeswapActivityTracker />
           <SwapSaleTrends />
+        </div>
+
+        {/* Bottom section: Property Types and Sales Mapping side by side */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-7">
+          <PropertyTypesCard propertyTypes={trends?.propertyTypes || []} />
+          <SalesMappingCard countrySales={trends?.countrySales || []} />
         </div>
       </div>
     </div>

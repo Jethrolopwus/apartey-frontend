@@ -30,13 +30,12 @@ import { AdminReviewsResponse, GetAllUserQueryParams } from "@/types/admin";
 
 export const useGetAllAdminReviewsQuery = (params?: GetAllUserQueryParams) => {
   const query = useQuery<AdminReviewsResponse>({
-    queryKey: ["Reviews", params?.limit, params?.page],
+    queryKey: ["Reviews", params],
     queryFn: async () => {
       const res = await http.httpGetAdminAllReviews(
-        params?.limit,
-        params?.page
+        params?.search,
+        params?.sort
       );
-      console.log("useGetAllAdminReviewsQuery Debug: Raw response:", res);
       if (!res || !res.reviews) {
         throw new Error("Failed to fetch reviews");
       }
@@ -52,10 +51,6 @@ export const useGetAllAdminReviewsQuery = (params?: GetAllUserQueryParams) => {
         })),
         pagination: res.pagination,
       };
-      console.log(
-        "useGetAllAdminReviewsQuery Debug: Mapped response:",
-        mappedResponse
-      );
       return mappedResponse;
     },
   });

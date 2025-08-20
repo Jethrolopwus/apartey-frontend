@@ -10,8 +10,13 @@ export const useGetAllAdminUsersQuery = (
   params?: UseGetAllAdminUsersQueryParams
 ) => {
   const { data, isLoading, error, refetch } = useQuery<AdminUsersResponse>({
-    queryKey: ["Users", params?.limit, params?.byId],
-    queryFn: () => http.httpGetAdminAllUsers(params?.limit, params?.byId),
+    queryKey: ["Users", params],
+    queryFn: () => http.httpGetAdminAllUsers(
+      params?.limit, 
+      params?.byId, 
+      params?.search, 
+      params?.sort
+    ),
   });
 
   return { data, isLoading, error, refetch };

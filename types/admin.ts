@@ -78,6 +78,9 @@ export interface AdminUsersResponse {
 export interface UseGetAllAdminUsersQueryParams {
   limit?: number;
   byId?: number;
+  page?: number;
+  search?: string;
+  sort?: "newest" | "oldest";
 }
 
 // ==== ADMIN REVIEWS INTERFACES ====
@@ -108,10 +111,12 @@ export interface AdminReviews {
 }
 
 export interface Pagination {
-  total: number;
-  page: number;
-  limit: number;
+  totalPosts: number;
   totalPages: number;
+  currentPage: number;
+  postsPerPage: number;
+  hasNextPage: boolean;
+  hasPreviousPage: boolean;
 }
 
 export interface AdminReviewsResponse {
@@ -127,6 +132,8 @@ export interface GetAllUserQueryParams {
   byId?: string;
   status?: "verified" | "flagged" | "flaaged";
   rating?: string;
+  search?: string;
+  sort?: "newest" | "oldest";
   sortBy?: "date" | "rating" | "reviewer";
   sortOrder?: "asc" | "desc";
   startDate?: string;
@@ -190,10 +197,12 @@ export interface AdminClaimedProperty {
 }
 
 export interface Pagination {
-  total: number;
-  page: number;
-  limit: number;
+  totalPosts: number;
   totalPages: number;
+  currentPage: number;
+  postsPerPage: number;
+  hasNextPage: boolean;
+  hasPreviousPage: boolean;
 }
 
 export interface AdminClaimedPropertiesResponse {
@@ -308,18 +317,26 @@ export interface useGetAdminAllBlogPostQueryParams {
   byId?: number;
   page?: number;
   search?: string;
-  sortBy?: "newest" | "oldest" | "title" | "author";
+  sort?: "newest" | "oldest" | "most-liked" | "most-viewed";
   status?: "Published" | "Draft" | "Archived";
+}
+
+export interface useGetAdminAllPropertiesQueryParams {
+  limit?: number;
+  byId?: number;
+  page?: number;
+  search?: string;
+  sort?: "newest" | "oldest";
 }
 
 export interface CreateAdminPostData {
   title: string;
-  subtitle: string;
   content: string;
-  author: string;
-  category: string;
   tags: string[];
-  status: "Published" | "Draft" | "Archived";
+  status: 'draft' | 'published';
+  excerpt?: string;
+  category: 'Renting' | 'Selling' | 'Buying' | 'Investment' | 'Maintenance' | 'Tips' | 'News';
+  imageUrl?: string;
   image?: File;
 }
 

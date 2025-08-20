@@ -1,37 +1,53 @@
-import React from "react";
-import Image from "next/image";
+"use client";
 
-interface TeamMember {
-  name: string;
-  role: string;
-  description: string;
-  image: string;
-}
+import React from "react";
+import { useContactUsMutation } from '@/Hooks/use-contactUs.mutation';
+import toast from 'react-hot-toast';
 
 const About: React.FC = () => {
-  const teamMembers: TeamMember[] = [
-    {
-      name: "Olivia",
-      role: "Founder & CEO",
-      description:
-        "Former co-founder of Opendoor. Early staff at Spotify and ClassPa.",
-      image: "/Ellipse-2.png",
-    },
-    {
-      name: "Olivia Rhye",
-      role: "Founder & CEO",
-      description:
-        "Former co-founder of Opendoor. Early staff at Spotify and ClassPa.",
-      image: "/Ellipse-1.png",
-    },
-    {
-      name: "Olivia Rhye",
-      role: "Founder & CEO",
-      description:
-        "Former co-founder of Opendoor. Early staff at Spotify and ClassPa.",
-      image: "/Ellipse-2.png",
-    },
-  ];
+  const { mutate: sendMessage, isLoading } = useContactUsMutation();
+
+  const handleContactClick = () => {
+    // Create a default contact message
+    const contactData = new FormData();
+    contactData.append('fullName', 'Website Visitor');
+    contactData.append('email', 'visitor@apartey.com');
+    contactData.append('message', 'I would like to get in touch with the Apartey team regarding your services.');
+
+    sendMessage(contactData, {
+      onSuccess: () => {
+        toast.success('Message sent successfully! We\'ll get back to you soon.');
+      },
+      onError: (error) => {
+        toast.error('Failed to send message. Please try again.');
+        console.error('Contact error:', error);
+      }
+    });
+  };
+
+  // const teamMembers: TeamMember[] = [
+  //   {
+  //     name: "Olivia",
+  //     role: "Founder & CEO",
+  //     description:
+  //       "Former co-founder of Opendoor. Early staff at Spotify and ClassPa.",
+  //     image: "/Ellipse-2.png",
+  //   },
+  //   {
+  //     name: "Olivia Rhye",
+  //     role: "Founder & CEO",
+  //     description:
+  //       "Former co-founder of Opendoor. Early staff at Spotify and ClassPa.",
+  //     image: "/Ellipse-1.png",
+  //   },
+  //   {
+  //     name: "Olivia Rhye",
+  //     role: "Founder & CEO",
+  //     description:
+  //       "Former co-founder of Opendoor. Early staff at Spotify and ClassPa.",
+  //     image: "/Ellipse-2.png",
+  //   },
+  // ];
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -127,8 +143,7 @@ const About: React.FC = () => {
           </div>
         </section>
 
-        {/* Team Section */}
-        <section className="mb-20">
+        {/* <section className="mb-20">
           <h2 className="text-2xl font-semibold text-gray-900 mb-12 text-center">
             Meet our team
           </h2>
@@ -154,7 +169,7 @@ const About: React.FC = () => {
                   {member.description}
                 </p>
 
-                {/* Social Links */}
+            
                 <div className="flex justify-center space-x-4">
                   <a href="#" className="text-gray-400 hover:text-gray-600">
                     <svg
@@ -187,9 +202,8 @@ const About: React.FC = () => {
               </div>
             ))}
           </div>
-        </section>
+        </section> */}
 
-        {/* Get in Touch */}
         <section className="text-center">
           <h2 className="text-2xl font-semibold text-gray-900 mb-4">
             Get in touch
@@ -200,10 +214,12 @@ const About: React.FC = () => {
           <p className="text-gray-600 mb-8">We&apos;d love to hear from you!</p>
 
           <button
-            className="px-14 py-3 text-sm font-medium text-white rounded-md hover:opacity-90 transition-opacity inline-flex items-center gap-2"
+            onClick={handleContactClick}
+            disabled={isLoading}
+            className="px-14 py-3 text-sm font-medium text-white rounded-md hover:opacity-90 transition-opacity inline-flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
             style={{ backgroundColor: "#C85212" }}
           >
-            Contact us
+            {isLoading ? 'Sending...' : 'Contact us'}
             <svg
               className="w-4 h-4"
               fill="none"

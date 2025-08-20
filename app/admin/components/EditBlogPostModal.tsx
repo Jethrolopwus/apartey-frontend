@@ -7,14 +7,16 @@ import { useUpdateAdminBlogPostMutation } from '@/Hooks/use-updateAdminBlogPost.
 import { UpdateAdminPostData } from '@/types/admin';
 import Image from 'next/image';
 import toast from 'react-hot-toast';
+import RichTextEditor from '@/components/molecules/RichTextEditor';
 
 const categories = [
   "Renting",
-  "Buying Guide", 
-  "Property Management",
+  "Selling",
+  "Buying",
   "Investment",
-  "Legal",
-  "Tips & Advice"
+  "Maintenance",
+  "Tips",
+  "News"
 ];
 
 interface EditBlogPostModalProps {
@@ -36,12 +38,10 @@ export default function EditBlogPostModal({ postId, isOpen, onClose }: EditBlogP
   const [formData, setFormData] = useState<UpdateAdminPostData>({
     id: postId,
     title: "",
-    subtitle: "",
     content: "",
-    author: "",
     category: "Renting",
     tags: [],
-    status: "Draft"
+    status: "draft"
   });
 
   // Update form data when post data is loaded
@@ -50,12 +50,10 @@ export default function EditBlogPostModal({ postId, isOpen, onClose }: EditBlogP
       setFormData({
         id: postId,
         title: post.title,
-        subtitle: post.subtitle,
         content: post.content,
-        author: post.author,
-        category: post.category,
+        category: post.category as "Renting" | "Selling" | "Buying" | "Investment" | "Maintenance" | "Tips" | "News",
         tags: post.tags,
-        status: post.status
+        status: post.status === "Published" ? "published" : "draft"
       });
       setImageUrl(post.image || "");
     }
@@ -131,12 +129,10 @@ export default function EditBlogPostModal({ postId, isOpen, onClose }: EditBlogP
     const updateData: UpdateAdminPostData = {
       id: postId,
       title: formData.title || '',
-      subtitle: formData.subtitle || '',
       content: formData.content || '',
-      author: formData.author || '',
-      category: formData.category || '',
+      category: formData.category || 'Renting',
       tags: formData.tags || [],
-      status: formData.status || 'Draft'
+      status: formData.status || 'draft'
     };
 
     // If there's a new file, we need to handle it differently
@@ -144,13 +140,11 @@ export default function EditBlogPostModal({ postId, isOpen, onClose }: EditBlogP
       // For file upload, we might need to use FormData
       const formDataToSend = new FormData();
       formDataToSend.append('title', formData.title || '');
-      formDataToSend.append('subtitle', formData.subtitle || '');
       formDataToSend.append('content', formData.content || '');
-      formDataToSend.append('author', formData.author || '');
-      formDataToSend.append('category', formData.category || '');
+      formDataToSend.append('category', formData.category || 'Renting');
       formDataToSend.append('tags', JSON.stringify(formData.tags || []));
-      formDataToSend.append('status', formData.status || 'Draft');
-      formDataToSend.append('image', selectedFile);
+      formDataToSend.append('status', formData.status || 'draft');
+      formDataToSend.append('blog-image', selectedFile);
       
       updatePost(formDataToSend, {
         onSuccess: () => {
@@ -250,13 +244,11 @@ export default function EditBlogPostModal({ postId, isOpen, onClose }: EditBlogP
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Content
               </label>
-              <textarea
+              <RichTextEditor
                 value={formData.content || ''}
-                onChange={(e) => handleInputChange('content', e.target.value)}
-                placeholder="Create Blog Content"
-                rows={8}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C85212] focus:border-transparent resize-vertical"
-                required
+                onChange={(value) => handleInputChange('content', value)}
+                placeholder="Create your blog content here..."
+                className="min-h-[300px]"
               />
             </div>
 

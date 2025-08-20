@@ -110,8 +110,11 @@ export default function BlogPostDetail({ params }: { params: Promise<{ id: strin
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Content
                 </label>
-                <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
-                  <p className="text-gray-700 whitespace-pre-wrap">{post.content}</p>
+                <div className="bg-gray-50 p-4 rounded-lg border border-gray-200 prose prose-sm max-w-none">
+                  <div 
+                    className="text-gray-700"
+                    dangerouslySetInnerHTML={{ __html: post.content }}
+                  />
                 </div>
               </div>
 

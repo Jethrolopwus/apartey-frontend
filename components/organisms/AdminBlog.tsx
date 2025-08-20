@@ -1,6 +1,6 @@
 "use client";
-import React, { useState } from "react";
-import { Archive, Plus, Search, Trash2, Edit } from "lucide-react";
+import React, { useState, useEffect } from "react";
+import { Archive, Plus, Search, Trash2, Edit, ChevronLeft, ChevronRight } from "lucide-react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useGetAdminAllBlogPostQuery } from "@/Hooks/use-getAdminAllBlogPost.query";
@@ -20,13 +20,38 @@ export default function AdminBlog() {
   const [searchTerm, setSearchTerm] = useState("");
   const [sortBy, setSortBy] = useState("newest");
   const [selectedStatus, setSelectedStatus] = useState<string>("all");
+  const [currentPage, setCurrentPage] = useState(1);
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [selectedPostId, setSelectedPostId] = useState<string>("");
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [selectedPostForDelete, setSelectedPostForDelete] = useState<{ id: string; title: string } | null>(null);
 
-  // Fetch blog posts
-  const { data: blogPostsData, isLoading, error } = useGetAdminAllBlogPostQuery();
+  // Debounced search term for API calls
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
+
+  // Debounce search term to avoid too many API calls
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
+      setCurrentPage(1); // Reset to first page when searching
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
+
+  // Reset page when sort or status changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [sortBy, selectedStatus]);
+
+  // Fetch blog posts with search, sort, and pagination
+  const { data: blogPostsData, isLoading, error } = useGetAdminAllBlogPostQuery({
+    page: currentPage,
+    limit: 10,
+    search: debouncedSearchTerm || undefined,
+    sort: sortBy as "newest" | "oldest" | "most-liked" | "most-viewed",
+    status: selectedStatus !== "all" ? selectedStatus as "Published" | "Draft" | "Archived" : undefined
+  });
   
   const handleDelete = (post: AdminPost) => {
     setSelectedPostForDelete({ id: post.id, title: post.title });
@@ -51,46 +76,21 @@ export default function AdminBlog() {
     router.push('/admin/create-blogpost');
   };
 
-  // Filter and sort blog posts
-  const filteredAndSortedPosts = React.useMemo(() => {
-    if (!blogPostsData?.posts) return [];
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+  };
 
-    let filtered = blogPostsData.posts;
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchTerm(e.target.value);
+  };
 
-    // Filter by search term
-    if (searchTerm) {
-      filtered = filtered.filter(post =>
-        post.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        post.subtitle.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        post.author.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-    }
+  const handleSortChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setSortBy(e.target.value);
+  };
 
-    // Filter by status
-    if (selectedStatus !== "all") {
-      filtered = filtered.filter(post => post.status === selectedStatus);
-    }
-
-    // Sort posts
-    switch (sortBy) {
-      case "newest":
-        filtered.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-        break;
-      case "oldest":
-        filtered.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
-        break;
-      case "title":
-        filtered.sort((a, b) => a.title.localeCompare(b.title));
-        break;
-      case "author":
-        filtered.sort((a, b) => a.author.localeCompare(b.author));
-        break;
-      default:
-        break;
-    }
-
-    return filtered;
-  }, [blogPostsData?.posts, searchTerm, sortBy, selectedStatus]);
+  const handleStatusChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setSelectedStatus(e.target.value);
+  };
 
   if (isLoading) {
     return (
@@ -112,6 +112,9 @@ export default function AdminBlog() {
     );
   }
 
+  const pagination = blogPostsData?.pagination;
+  const posts = blogPostsData?.posts || [];
+
   return (
     <div className="w-full max-w-5xl mx-auto bg-transparent p-0 mt-4">
       <h2 className="text-2xl font-semibold text-[#2D3A4A] mb-8">
@@ -123,9 +126,9 @@ export default function AdminBlog() {
         <div className="relative w-64">
           <input
             type="text"
-            placeholder="Search Blog posts"
+            placeholder="Search "
             value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
+            onChange={handleSearchChange}
             className="w-full pl-10 pr-4 py-2 rounded-lg border border-gray-200 bg-gray-50 focus:outline-none placeholder-gray-400 text-base"
           />
           <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
@@ -137,18 +140,18 @@ export default function AdminBlog() {
           <span className="text-gray-500 text-sm">Sort by</span>
           <select 
             value={sortBy}
-            onChange={(e) => setSortBy(e.target.value)}
+            onChange={handleSortChange}
             className="border border-gray-200 rounded-lg px-3 py-2 bg-white text-gray-700 text-sm focus:outline-none"
           >
             <option value="newest">Newest</option>
             <option value="oldest">Oldest</option>
-            <option value="title">Title</option>
-            <option value="author">Author</option>
+            <option value="most-liked">Most Liked</option>
+            <option value="most-viewed">Most Viewed</option>
           </select>
           
           <select 
             value={selectedStatus}
-            onChange={(e) => setSelectedStatus(e.target.value)}
+            onChange={handleStatusChange}
             className="border border-gray-200 rounded-lg px-3 py-2 bg-white text-gray-700 text-sm focus:outline-none"
           >
             <option value="all">All Status</option>
@@ -169,7 +172,7 @@ export default function AdminBlog() {
 
       {/* Blog Posts List */}
       <div className="flex flex-col gap-6">
-        {filteredAndSortedPosts.length === 0 ? (
+        {posts.length === 0 ? (
           <div className="bg-white rounded-2xl shadow p-8 text-center">
             <div className="text-gray-500 text-lg">No blog posts found</div>
             <div className="text-gray-400 text-sm mt-2">
@@ -180,7 +183,7 @@ export default function AdminBlog() {
             </div>
           </div>
         ) : (
-          filteredAndSortedPosts.map((post) => (
+          posts.map((post) => (
             <div
               key={post.id}
               className="bg-white rounded-2xl shadow p-6 flex gap-6 items-start"
@@ -271,6 +274,53 @@ export default function AdminBlog() {
           ))
         )}
       </div>
+
+      {/* Pagination */}
+      {pagination && pagination.totalPages > 1 && (
+        <div className="flex items-center justify-between mt-8 px-4">
+          <div className="text-sm text-gray-500">
+            Showing {((pagination.currentPage - 1) * pagination.postsPerPage) + 1} to{" "}
+            {Math.min(pagination.currentPage * pagination.postsPerPage, pagination.totalPosts)} of{" "}
+            {pagination.totalPosts} posts
+          </div>
+          
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => handlePageChange(pagination.currentPage - 1)}
+              disabled={!pagination.hasPreviousPage}
+              className="flex items-center gap-1 px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <ChevronLeft className="w-4 h-4" />
+              Previous
+            </button>
+            
+            <div className="flex items-center gap-1">
+              {Array.from({ length: pagination.totalPages }, (_, i) => i + 1).map((page) => (
+                <button
+                  key={page}
+                  onClick={() => handlePageChange(page)}
+                  className={`px-3 py-2 text-sm font-medium rounded-lg ${
+                    page === pagination.currentPage
+                      ? "bg-[#C85212] text-white"
+                      : "text-gray-500 bg-white border border-gray-300 hover:bg-gray-50"
+                  }`}
+                >
+                  {page}
+                </button>
+              ))}
+            </div>
+            
+            <button
+              onClick={() => handlePageChange(pagination.currentPage + 1)}
+              disabled={!pagination.hasNextPage}
+              className="flex items-center gap-1 px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Next
+              <ChevronRight className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Edit Modal */}
       <EditBlogPostModal

@@ -150,6 +150,14 @@ class BaseURL {
       throw error;
     }
   };
+  httpContactUs = async (data: any) => {
+    try {
+      const response = await AxiosInstance.post(endpoints.contactUs, data);
+      return response.data;
+    } catch (error: any) {
+      throw error;
+    }
+  };
 
   httpGetUsersProfile = async () => {
     try {
@@ -993,19 +1001,23 @@ class BaseURL {
 
   httpGetAdminAllProperties = async (
     limit?: number,
-    byId?: number
+    byId?: number,
+    search?: string,
+    sort?: string
   ): Promise<AdminPropertiesResponse> => {
     try {
       let url = endpoints.getAdminProperties;
       const params = new URLSearchParams();
       if (byId) params.append("byId", byId.toString());
       if (limit) params.append("limit", limit.toString());
+      if (search) params.append("search", search);
+      if (sort) params.append("sort", sort);
       if (params.toString()) url += `?${params.toString()}`;
       const response = await AxiosInstance.get(url);
       return response.data;
     } catch (error: any) {
       throw new Error(
-        error.response?.data?.message || "Get all Propertyies failed"
+        error.response?.data?.message || "Get all Properties failed"
       );
     }
   };
@@ -1068,13 +1080,17 @@ class BaseURL {
   // ==== ADMIN USERS ======
   httpGetAdminAllUsers = async (
     limit?: number,
-    byId?: number
+    byId?: number,
+    search?: string,
+    sort?: string
   ): Promise<AdminUsersResponse> => {
     try {
       let url = endpoints.getAllAdminUsers;
       const params = new URLSearchParams();
       if (byId) params.append("byId", byId.toString());
       if (limit) params.append("limit", limit.toString());
+      if (search) params.append("search", search);
+      if (sort) params.append("sort", sort);
       if (params.toString()) url += `?${params.toString()}`;
       const response = await AxiosInstance.get(url);
       return response.data;
@@ -1151,15 +1167,16 @@ class BaseURL {
 
   // ADMIN REVIEWS ====
   httpGetAdminAllReviews = async (
-    limit?: number,
-    byId?: number
+    search?: string,
+    sort?: string
   ): Promise<AdminReviewsResponse> => {
     try {
       let url = endpoints.getAllAdminReviews;
       const params = new URLSearchParams();
-      if (byId) params.append("byId", byId.toString());
-      if (limit) params.append("limit", limit.toString());
+      if (search) params.append("search", encodeURIComponent(search));
+      if (sort) params.append("sort", sort);
       if (params.toString()) url += `?${params.toString()}`;
+      
       const response = await AxiosInstance.get(url);
       return response.data;
     } catch (error: any) {

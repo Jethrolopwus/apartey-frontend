@@ -62,10 +62,16 @@ const GoogleAuthButton: React.FC<GoogleAuthButtonProps> = ({
               localStorage.getItem("userRole") ||
               "renter";
 
-            // Check if this is an admin login
+            // Check if this is an admin login - check multiple sources
             const isAdminLogin = localStorage.getItem("isAdminLogin") === "true";
+            const isAdminRole = role?.toLowerCase().includes('admin');
+            const isAdminCallback = callbackUrl?.includes('/admin/');
             
-            if (isAdminLogin) {
+            console.log("Google Auth - Admin check:", { isAdminLogin, isAdminRole, isAdminCallback, role, callbackUrl });
+            
+            if (isAdminLogin || isAdminRole || isAdminCallback) {
+              console.log("Redirecting to admin dashboard from Google Auth");
+              localStorage.setItem("isAdminLogin", "true");
               router.push("/admin/dashboard");
               return;
             }
@@ -110,7 +116,7 @@ const GoogleAuthButton: React.FC<GoogleAuthButtonProps> = ({
         },
       });
     }
-  }, [status, session, googleAuth, onboardingStatus, router, mode]);
+  }, [status, session, googleAuth, onboardingStatus, router, mode, callbackUrl]);
 
   const handleGoogleAuth = async () => {
     setIsLoading(true);

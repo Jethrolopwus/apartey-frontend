@@ -1,17 +1,20 @@
 "use client";
 import React, { useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 import { Upload, X } from 'lucide-react';
 import { useCreateAdminBlogPostMutation } from '@/Hooks/use-createAdminBlogPost.mutation';
 import { CreateAdminPostData } from '@/types/admin';
+import RichTextEditor from '@/components/molecules/RichTextEditor';
 
 const categories = [
   "Renting",
-  "Buying Guide", 
-  "Property Management",
+  "Selling",
+  "Buying",
   "Investment",
-  "Legal",
-  "Tips & Advice"
+  "Maintenance",
+  "Tips",
+  "News"
 ];
 
 export default function CreateBlogPost() {
@@ -25,12 +28,10 @@ export default function CreateBlogPost() {
 
   const [formData, setFormData] = useState<CreateAdminPostData>({
     title: "",
-    subtitle: "",
     content: "",
-    author: "Admin", // Default author
     category: "Renting",
     tags: [],
-    status: "Draft"
+    status: "draft"
   });
 
   const handleInputChange = (field: keyof CreateAdminPostData, value: string | string[]) => {
@@ -81,7 +82,7 @@ export default function CreateBlogPost() {
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent, status: 'draft' | 'published') => {
     e.preventDefault();
     
     if (!formData.title.trim()) {
@@ -102,15 +103,13 @@ export default function CreateBlogPost() {
     // Create FormData for file upload
     const submitData = new FormData();
     submitData.append('title', formData.title);
-    submitData.append('subtitle', formData.subtitle);
     submitData.append('content', formData.content);
-    submitData.append('author', formData.author);
     submitData.append('category', formData.category);
     submitData.append('tags', JSON.stringify(formData.tags));
-    submitData.append('status', formData.status);
+    submitData.append('status', status);
     
     if (selectedFile) {
-      submitData.append('image', selectedFile);
+      submitData.append('blog-image', selectedFile);
     } else if (imageUrl.trim()) {
       submitData.append('imageUrl', imageUrl);
     }
@@ -125,6 +124,14 @@ export default function CreateBlogPost() {
     });
   };
 
+  const handleDraft = (e: React.FormEvent) => {
+    handleSubmit(e, 'draft');
+  };
+
+  const handlePublish = (e: React.FormEvent) => {
+    handleSubmit(e, 'published');
+  };
+
   const handleCancel = () => {
     router.push('/admin/blog');
   };
@@ -134,7 +141,7 @@ export default function CreateBlogPost() {
       <div className="bg-white rounded-2xl shadow-lg w-full max-w-4xl p-8">
         <h1 className="text-2xl font-bold text-[#2D3A4A] mb-8">Create New Blog Post</h1>
         
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <form onSubmit={handlePublish} className="space-y-6">
           {/* Title and Category Row */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="md:col-span-2">
@@ -173,13 +180,11 @@ export default function CreateBlogPost() {
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Content
             </label>
-            <textarea
+            <RichTextEditor
               value={formData.content}
-              onChange={(e) => handleInputChange('content', e.target.value)}
-              placeholder="Create Blog Content"
-              rows={8}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C85212] focus:border-transparent resize-vertical"
-              required
+              onChange={(value) => handleInputChange('content', value)}
+              placeholder="Create your blog content here..."
+              className="min-h-[300px]"
             />
           </div>
 
@@ -206,9 +211,11 @@ export default function CreateBlogPost() {
             {previewUrl ? (
               <div className="space-y-4">
                 <div className="relative">
-                  <img
+                  <Image
                     src={previewUrl}
                     alt="Preview"
+                    width={400}
+                    height={192}
                     className="w-full h-48 object-cover rounded-lg border border-gray-200"
                   />
                   <button
@@ -273,7 +280,7 @@ export default function CreateBlogPost() {
           )}
 
           {/* Action Buttons */}
-          <div className="flex justify-between  gap-4 pt-6">
+          <div className="flex justify-between gap-4 pt-6">
             <button
               type="button"
               onClick={handleCancel}
@@ -281,13 +288,23 @@ export default function CreateBlogPost() {
             >
               Cancel
             </button>
-            <button
-              type="submit"
-              disabled={isLoading}
-              className="px-6 py-3 bg-[#C85212] text-white rounded-lg hover:bg-[#a63e0a] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {isLoading ? 'Publishing...' : 'Publish'}
-            </button>
+            <div className="flex gap-3">
+              <button
+                type="button"
+                onClick={handleDraft}
+                disabled={isLoading}
+                className="px-6 py-3 border border-gray-300 text-gray-700 bg-white rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isLoading ? 'Saving...' : 'Draft'}
+              </button>
+              <button
+                type="submit"
+                disabled={isLoading}
+                className="px-6 py-3 bg-[#C85212] text-white rounded-lg hover:bg-[#a63e0a] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isLoading ? 'Publishing...' : 'Publish'}
+              </button>
+            </div>
           </div>
         </form>
       </div>

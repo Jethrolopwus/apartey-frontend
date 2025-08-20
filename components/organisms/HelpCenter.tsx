@@ -113,7 +113,7 @@ export default function HelpCenter() {
             </h3>
             <p className="text-sm text-gray-600 mb-4">Send us an email</p>
             <button className="text-sm text-[#C85212] hover:text-[#A64310] font-medium transition-colors">
-              example@email.com
+              admin@apartey.com
             </button>
           </div>
 
@@ -129,7 +129,7 @@ export default function HelpCenter() {
               Call us for immediate help
             </p>
             <button className="text-sm text-[#C85212] hover:text-[#A64310] font-medium transition-colors">
-              +2348454492
+              +372 5612 9752
             </button>
           </div>
         </div>

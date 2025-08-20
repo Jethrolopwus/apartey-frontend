@@ -96,50 +96,49 @@ export default function AdminSidebar() {
   return (
     <>
       {/* Mobile top bar */}
-      <div className="lg:hidden flex items-center justify-between bg-white border-b border-gray-200 px-4 py-3 shadow-md fixed top-0 left-0 right-0 z-30">
+      <div className="lg:hidden flex items-center justify-between bg-white border-b border-gray-200 px-4 py-1 shadow-md fixed top-0 left-0 right-0 z-30 h-8 opacity-0 pointer-events-none">
         <Image
           src="/aparteyLogo.png"
           alt="Apartey Logo"
           width={100}
           height={50}
-          className="h-8"
+          className="h-6"
         />
         <button onClick={() => setMobileOpen(true)} aria-label="Open menu">
-          <Menu className="w-7 h-7 text-[#C85212]" />
+          <Menu className="w-5 h-5 text-[#C85212]" />
         </button>
       </div>
 
       {/* Sidebar for desktop */}
-      <aside className="hidden lg:flex w-[280px] min-w-[280px] max-w-[280px] h-screen bg-white border-r border-gray-200 flex-col py-6 px-7 shadow-xl fixed top-0 left-0 z-20">
-        <Link href={"/admin/dashboard"} className="flex items-center mb-6">
-          <div className="mb-6 flex items-center justify-center">
+      <aside className="hidden lg:flex w-[240px] min-w-[240px] max-w-[240px] h-screen bg-white border-r border-gray-100 flex-col py-6 px-4 shadow-sm fixed top-0 left-0 z-20">
+        <Link href={"/admin/dashboard"} className="flex items-center mb-8">
+          <div className="flex items-center justify-center">
             <Image
               src="/aparteyLogo.png"
               alt="Apartey Logo"
               width={100}
               height={50}
-              className="h-12"
+              className="h-10"
             />
           </div>
         </Link>
-        <nav className="flex-1 flex flex-col gap-1 -mt-4">
+        <nav className="flex-1 flex flex-col gap-2">
           {items.map(({ label, icon: Icon, href, active }) => (
             <Link
               key={label}
               href={href}
               onClick={() => handleItemClick(label)}
-              className={`flex items-center gap-5 px-7 py-4 rounded-2xl font-bold text-[18px] transition-colors mb-1 tracking-tight
+              className={`flex items-center gap-3 px-4 py-3 rounded-xl font-medium text-sm transition-colors
                 ${
                   active
-                    ? "bg-[#C85212] text-white"
-                    : "text-gray-700 hover:bg-orange-50"
+                    ? "bg-[#C85212] text-white shadow-sm"
+                    : "text-gray-600 hover:bg-gray-50"
                 }
               `}
-              style={active ? { boxShadow: "0px 8px 24px 0px #C8521233" } : {}}
             >
               <Icon
-                className={`w-7 h-7 ${
-                  active ? "text-white" : "text-[#737791]"
+                className={`w-5 h-5 ${
+                  active ? "text-white" : "text-gray-500"
                 }`}
               />
               {label}
@@ -148,10 +147,9 @@ export default function AdminSidebar() {
         </nav>
         <button
           onClick={handleLogout}
-          className="flex items-center gap-5 px-7 py-4 rounded-2xl font-bold text-[18px] mt-2 bg-[#F64E60] text-white hover:bg-[#e03d4e] transition-colors shadow-xl w-full"
-          style={{ boxShadow: "0px 8px 24px 0px #F64E60" }}
+          className="flex items-center gap-3 px-4 py-3 rounded-xl font-medium text-sm mt-8 bg-red-50 text-red-600 hover:bg-red-100 transition-colors w-full"
         >
-          <LogOut className="w-7 h-7 text-white" />
+          <LogOut className="w-5 h-5 text-red-600" />
           Sign Out
         </button>
       </aside>
@@ -192,20 +190,17 @@ export default function AdminSidebar() {
                     key={label}
                     href={href}
                     onClick={() => handleItemClick(label)}
-                    className={`flex items-center gap-4 px-4 py-3 rounded-xl font-semibold text-base transition-colors
+                    className={`flex items-center gap-4 px-4 py-3 rounded-xl font-medium text-sm transition-colors
                       ${
                         active
-                          ? "bg-[#C85212] text-white shadow-lg"
-                          : "text-gray-700 hover:bg-orange-50"
+                          ? "bg-[#C85212] text-white shadow-sm"
+                          : "text-gray-600 hover:bg-gray-50"
                       }
                     `}
-                    style={
-                      active ? { boxShadow: "0px 8px 24px 0px #C8521233" } : {}
-                    }
                   >
                     <Icon
                       className={`w-5 h-5 ${
-                        active ? "text-white" : "text-[#737791]"
+                        active ? "text-white" : "text-gray-500"
                       }`}
                     />
                     {label}
@@ -218,10 +213,9 @@ export default function AdminSidebar() {
             <div className="p-4 border-t border-gray-200 bg-white">
               <button
                 onClick={handleLogout}
-                className="flex items-center gap-4 px-4 py-3 rounded-xl font-semibold text-base w-full bg-[#F64E60] text-white hover:bg-[#e03d4e] transition-colors shadow-lg"
-                style={{ boxShadow: "0px 8px 24px 0px #F64E60" }}
+                className="flex items-center gap-4 px-4 py-3 rounded-xl font-medium text-sm w-full bg-red-50 text-red-600 hover:bg-red-100 transition-colors"
               >
-                <LogOut className="w-5 h-5 text-white" />
+                <LogOut className="w-5 h-5 text-red-600" />
                 Sign Out
               </button>
             </div>
@@ -230,7 +224,7 @@ export default function AdminSidebar() {
       )}
       
       {/* Spacer for mobile top bar */}
-      <div className="lg:hidden h-14" />
+      <div className="lg:hidden h-8" />
     </>
   );
 }

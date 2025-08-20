@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Eye, CirclePower } from "lucide-react";
 import { useGetAllAdminUsersQuery } from "@/Hooks/use-getAllAdminUsers.query";
 import AdminViewUserModal from "@/app/admin/components/AdminViewUsersModal";
@@ -24,17 +24,48 @@ const pageSize = 6;
 
 export default function AdminUsers() {
   const [page, setPage] = useState(1);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [sortBy, setSortBy] = useState("newest");
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
   const [selectedUser, setSelectedUser] = useState<AdminUser | null>(null);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+
+  // Debounced search term for API calls
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
+
+  // Debounce search term to avoid too many API calls
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
+      setPage(1); // Reset to first page when searching
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
+
+  // Reset page when sort changes
+  useEffect(() => {
+    setPage(1);
+  }, [sortBy]);
+
   const { data, isLoading, error } = useGetAllAdminUsersQuery({
     limit: pageSize,
     byId: undefined,
+    search: debouncedSearchTerm || undefined,
+    sort: sortBy as "newest" | "oldest"
   });
 
   const users = data?.users || [];
   const totalPages = data?.pagination.totalPages || 1;
   const paginated = users.slice((page - 1) * pageSize, page * pageSize);
+
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchTerm(e.target.value);
+  };
+
+  const handleSortChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setSortBy(e.target.value);
+  };
 
   const handleViewUser = (id: string) => {
     setSelectedUserId(id);
@@ -61,7 +92,9 @@ export default function AdminUsers() {
           <div className="relative w-full md:w-64">
             <input
               type="text"
-              placeholder="Search Users"
+              placeholder="Search users"
+              value={searchTerm}
+              onChange={handleSearchChange}
               className="w-full pl-10 pr-4 py-2 rounded-lg border border-gray-200 bg-gray-50 focus:outline-none placeholder-gray-400 text-sm md:text-base"
             />
             <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
@@ -80,9 +113,13 @@ export default function AdminUsers() {
           </div>
           <div className="flex items-center gap-2">
             <span className="text-gray-500 text-xs md:text-sm">Sort by</span>
-            <select className="border border-gray-200 rounded-lg px-2 md:px-3 py-2 bg-white text-gray-700 text-xs md:text-sm focus:outline-none">
-              <option>Newest</option>
-              <option>Oldest</option>
+            <select 
+              value={sortBy}
+              onChange={handleSortChange}
+              className="border border-gray-200 rounded-lg px-2 md:px-3 py-2 bg-white text-gray-700 text-xs md:text-sm focus:outline-none"
+            >
+              <option value="newest">Newest</option>
+              <option value="oldest">Oldest</option>
             </select>
           </div>
         </div>

@@ -44,13 +44,13 @@ const Footer: React.FC = () => {
             <h3 className="mb-6 text-lg font-semibold text-gray-900">Links</h3>
             <nav className="space-y-4">
               <Link
-                href="/reviews"
+                href="/reviewsPage"
                 className="block text-sm text-gray-600 transition-colors hover:text-gray-900 lg:text-base"
               >
                 Reviews
               </Link>
               <Link
-                href="/home-listings"
+                href="/listings"
                 className="block text-sm text-gray-600 transition-colors hover:text-gray-900 lg:text-base"
               >
                 Home listings
@@ -99,7 +99,7 @@ const Footer: React.FC = () => {
                 target="_blank"
                 className="block text-sm text-gray-600 transition-colors hover:text-gray-900 lg:text-base"
               >
-                +372 5612 9752.
+                +372 5612 9752
               </Link>
               <Link
                 href="mailto:hello@apartey.com"

@@ -1,6 +1,8 @@
 "use client";
 import Image from 'next/image';
 import { useState } from 'react';
+import { useContactUsMutation } from '@/Hooks/use-contactUs.mutation';
+import toast from 'react-hot-toast';
 
 interface FormData {
   fullName: string;
@@ -23,6 +25,8 @@ const ContactForm: React.FC<ContactFormProps> = ({
     message: ''
   });
 
+  const { mutate: sendMessage, isLoading } = useContactUsMutation();
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({
@@ -33,16 +37,31 @@ const ContactForm: React.FC<ContactFormProps> = ({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (onSubmit) {
-      onSubmit(formData);
-    } else {
-      console.log('Form submitted:', formData);
-    }
-    // Reset form after submission
-    setFormData({
-      fullName: '',
-      email: '',
-      message: ''
+    
+    // Create FormData for API
+    const submitData = new FormData();
+    submitData.append('fullName', formData.fullName);
+    submitData.append('email', formData.email);
+    submitData.append('message', formData.message);
+
+    sendMessage(submitData, {
+      onSuccess: () => {
+        toast.success('Message sent successfully!');
+        // Reset form after successful submission
+        setFormData({
+          fullName: '',
+          email: '',
+          message: ''
+        });
+        // Call custom onSubmit if provided
+        if (onSubmit) {
+          onSubmit(formData);
+        }
+      },
+      onError: (error) => {
+        toast.error('Failed to send message. Please try again.');
+        console.error('Contact form error:', error);
+      }
     });
   };
 
@@ -80,6 +99,7 @@ const ContactForm: React.FC<ContactFormProps> = ({
                 onChange={handleInputChange}
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none transition-all"
                 required
+                disabled={isLoading}
               />
             </div>
 
@@ -92,6 +112,7 @@ const ContactForm: React.FC<ContactFormProps> = ({
                 onChange={handleInputChange}
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none transition-all"
                 required
+                disabled={isLoading}
               />
             </div>
 
@@ -104,14 +125,16 @@ const ContactForm: React.FC<ContactFormProps> = ({
                 rows={5}
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none transition-all resize-none"
                 required
+                disabled={isLoading}
               />
             </div>
 
             <button
               type="submit"
-              className="w-full bg-orange-500 text-white py-3 px-6 rounded-lg font-semibold hover:bg-orange-600 transition-colors"
+              disabled={isLoading}
+              className="w-full bg-[#C85212] text-white py-3 px-6 rounded-lg font-semibold hover:bg-orange-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Submit form
+              {isLoading ? 'Sending...' : 'Submit form'}
             </button>
           </form>
         </div>
