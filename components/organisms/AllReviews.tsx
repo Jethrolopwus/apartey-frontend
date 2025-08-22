@@ -424,6 +424,7 @@ const AllReviews: React.FC<AllReviewsProps> = ({
                       width={400}
                       height={270}
                       className="object-cover w-full h-full"
+                      style={{ width: 'auto', height: 'auto' }}
                       priority={false}
                     />
                   ) : (

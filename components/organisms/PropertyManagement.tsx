@@ -182,12 +182,12 @@ export default function AdminPropertiesPage() {
         <h1 className="text-xl md:text-2xl font-bold text-gray-800 mb-4 md:mb-6">Property Management</h1>
         
         {/* Navigation Tabs */}
-        <div className="flex gap-2 mb-4 md:mb-6 overflow-x-auto">
-          <button className="px-3 md:px-5 py-2 text-sm md:text-base font-semibold text-gray-700 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 whitespace-nowrap">
+        <div className="flex mb-4 md:mb-6 overflow-x-auto">
+          <button className="flex-1 px-3 md:px-5 py-2 text-sm md:text-base font-semibold text-gray-700 bg-white border border-gray-200 rounded-l-full shadow-sm hover:bg-gray-50 whitespace-nowrap transition-all duration-200">
             All Properties
           </button>
           <button
-            className="px-3 md:px-5 py-2 text-sm md:text-base font-semibold text-gray-400 bg-gray-50 border border-gray-200 rounded-lg hover:bg-gray-100 whitespace-nowrap"
+            className="flex-1 px-3 md:px-5 py-2 text-sm md:text-base font-semibold text-gray-400 bg-gray-200 border border-gray-200 rounded-r-full hover:bg-gray-100 whitespace-nowrap transition-all duration-200"
             onClick={() => router.push("/admin/property-claim")}
           >
             Property Claims

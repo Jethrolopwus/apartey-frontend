@@ -14,13 +14,15 @@ export default function AdminAnalytics() {
 
   if (isLoading) {
     return (
-      <div className="w-full max-w-7xl mx-auto bg-transparent p-0 mt-4">
-        <div className="animate-pulse">
-          <div className="h-8 bg-gray-200 rounded w-48 mb-8"></div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6 mb-8">
-            {[...Array(4)].map((_, idx) => (
-              <div key={idx} className="bg-gray-200 rounded-2xl h-28"></div>
-            ))}
+      <div className="w-full min-h-screen bg-[#F8F9FB] flex flex-col items-center">
+        <div className="w-full max-w-[1440px] px-4 md:px-6 lg:px-10 pt-2 pb-8">
+          <div className="animate-pulse">
+            <div className="h-8 bg-gray-200 rounded w-48 mb-8"></div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6 mb-8">
+              {[...Array(4)].map((_, idx) => (
+                <div key={idx} className="bg-gray-200 rounded-2xl h-28"></div>
+              ))}
+            </div>
           </div>
         </div>
       </div>
@@ -29,9 +31,11 @@ export default function AdminAnalytics() {
 
   if (error) {
     return (
-      <div className="w-full max-w-7xl mx-auto bg-transparent p-0 mt-4">
-        <div className="text-red-500 text-center py-8">
-          Error loading analytics data. Please try again.
+      <div className="w-full min-h-screen bg-[#F8F9FB] flex flex-col items-center">
+        <div className="w-full max-w-[1440px] px-4 md:px-6 lg:px-10 pt-2 pb-8">
+          <div className="text-red-500 text-center py-8">
+            Error loading analytics data. Please try again.
+          </div>
         </div>
       </div>
     );
@@ -93,15 +97,16 @@ export default function AdminAnalytics() {
   ];
 
   return (
-    <div className="w-full max-w-7xl mx-auto bg-transparent p-0 mt-4">
-      <h2 className="text-2xl font-semibold text-[#2D3A4A] mb-8">Analytics</h2>
+    <div className="w-full min-h-screen bg-[#F8F9FB] flex flex-col items-center">
+      <div className="w-full max-w-[1440px] px-4 md:px-6 lg:px-10 pt-2 pb-8">
+        <h1 className="text-xl md:text-2xl font-bold text-gray-800 mb-4 md:mb-6">Analytics</h1>
       {/* Summary Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6 mb-8">
         {summaryCards.map((card, idx) => (
           <div key={idx} className="bg-white rounded-2xl shadow p-6 flex flex-col gap-2 min-h-[110px]">
             <span className="text-sm text-gray-500 font-medium">{card.label}</span>
             <span className="text-2xl font-bold text-[#2D3A4A]">{card.value}</span>
-            <span className={`text-xs font-semibold ${card.change.includes('Increase') ? 'text-green-500' : 'text-red-500'}`}>
+            <span className={`text-xs font-semibold ${card.change.includes('Increase') ? 'text-green-500' : 'text-[#0D4949]'}`}>
               {card.change}
             </span>
           </div>
@@ -170,6 +175,7 @@ export default function AdminAnalytics() {
             ))}
           </div>
         </div>
+      </div>
       </div>
     </div>
   );

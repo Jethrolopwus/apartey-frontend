@@ -129,10 +129,11 @@ const ReviewsSection: React.FC<ReviewsSectionProps> = ({
       .load()
       .then((google) => {
         if (currentMapRef) {
-          const map = new google.maps.Map(currentMapRef, {
-            center: mapCenter,
-            zoom: 12,
-          });
+          try {
+            const map = new google.maps.Map(currentMapRef, {
+              center: mapCenter,
+              zoom: 12,
+            });
 
           const validReviews = reviews.filter((review: Review) =>
             hasLatLng(review.location)
@@ -178,10 +179,21 @@ const ReviewsSection: React.FC<ReviewsSectionProps> = ({
               map.setCenter({ lat: centerLat, lng: centerLng });
             }
           }
+        } catch (error) {
+          console.warn("Google Maps billing error - map disabled:", error);
+          // Hide the map container when billing is not enabled
+          if (currentMapRef) {
+            currentMapRef.style.display = 'none';
+          }
         }
+      }
       })
       .catch((error) => {
         console.error("Failed to load Google Maps:", error);
+        // Hide the map container when there's any error
+        if (currentMapRef) {
+          currentMapRef.style.display = 'none';
+        }
       });
 
     return () => {

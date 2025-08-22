@@ -70,8 +70,17 @@ export default function AdminSettings() {
   };
 
   return (
-    <div className="w-full max-w-5xl mx-auto bg-transparent p-0 mt-4">
-      <h2 className="text-2xl font-semibold text-[#2D3A4A] mb-8">Settings</h2>
+    <div className="w-full min-h-screen bg-[#F8F9FB] flex flex-col items-center">
+      <div className="w-full max-w-[1440px] px-4 md:px-6 lg:px-10 pt-2 pb-8">
+        <div className="flex justify-between items-center mb-4 md:mb-6">
+          <h1 className="text-xl md:text-2xl font-bold text-gray-800">Settings</h1>
+          <button 
+            type="button" 
+            className="bg-[#C85212] text-white font-semibold px-6 py-2 rounded-lg hover:bg-[#a63e0a] transition-colors"
+          >
+            Save all settings
+          </button>
+        </div>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
         {/* Left: Profile & Company Info */}
         <div className="md:col-span-2 bg-white rounded-2xl shadow p-8 flex flex-col gap-6">
@@ -130,60 +139,88 @@ export default function AdminSettings() {
             )}
           </div>
           <div>
-            <h3 className="text-lg font-semibold text-[#2D3A4A] mb-4">Company Information</h3>
+            <h3 className="text-lg font-semibold text-[#2D3A4A] mb-4">Platform Configuration</h3>
             <form className="flex flex-col gap-4">
               <div>
-                <label className="block text-sm text-gray-500 mb-1">Company Name</label>
-                <input className="w-full border border-gray-200 rounded-lg px-4 py-2 focus:outline-none" defaultValue="Apartey" />
+                <label className="block text-sm text-gray-500 mb-1">Platform Name</label>
+                <input className="w-full border border-gray-200 rounded-lg px-4 py-2 focus:outline-none bg-gray-50" defaultValue="Apartey" />
               </div>
               <div>
-                <label className="block text-sm text-gray-500 mb-1">Email</label>
-                <input className="w-full border border-gray-200 rounded-lg px-4 py-2 focus:outline-none" defaultValue="Apartey" />
+                <label className="block text-sm text-gray-500 mb-1">Admin Email</label>
+                <input className="w-full border border-gray-200 rounded-lg px-4 py-2 focus:outline-none bg-gray-50" defaultValue="admin@apartey.com" />
               </div>
               <div>
-                <label className="block text-sm text-gray-500 mb-1">Phone</label>
-                <input className="w-full border border-gray-200 rounded-lg px-4 py-2 focus:outline-none" defaultValue="Apartey" />
+                <label className="block text-sm text-gray-500 mb-1">Support Email</label>
+                <input className="w-full border border-gray-200 rounded-lg px-4 py-2 focus:outline-none bg-gray-50" defaultValue="support@apartey.com" />
               </div>
               <div>
-                <label className="block text-sm text-gray-500 mb-1">Address</label>
-                <input className="w-full border border-gray-200 rounded-lg px-4 py-2 focus:outline-none" defaultValue="Apartey" />
+                <label className="block text-sm text-gray-500 mb-1">Contact Phone</label>
+                <input className="w-full border border-gray-200 rounded-lg px-4 py-2 focus:outline-none bg-gray-50" defaultValue="+234 800 123 4567" />
               </div>
-              <button type="submit" className="mt-2 bg-[#C85212] text-white font-semibold px-6 py-2 rounded-lg hover:bg-[#a63e0a] transition-colors self-start">Save Settings</button>
             </form>
           </div>
         </div>
-        {/* Right: System Preference */}
+        {/* Right: System Preference & Notifications */}
         <div className="bg-white rounded-2xl shadow p-8 flex flex-col gap-6 h-fit">
-          <h3 className="text-lg font-semibold text-[#C85212] mb-4">System Preference</h3>
+          <h3 className="text-lg font-semibold text-[#2D3A4A] mb-4">System Preference</h3>
           <div className="mb-4">
             <label className="block text-sm text-gray-500 mb-1">Currency</label>
-            <select className="w-full border border-gray-200 rounded-lg px-4 py-2 focus:outline-none">
+            <select className="w-full border border-gray-200 rounded-lg px-4 py-2 focus:outline-none bg-gray-50">
               <option>NGN - Nigerian Naira</option>
               <option>USD - US Dollar</option>
             </select>
           </div>
-          <div className="mb-4">
+          <div className="mb-6">
             <label className="block text-sm text-gray-500 mb-1">Timezone</label>
-            <select className="w-full border border-gray-200 rounded-lg px-4 py-2 focus:outline-none">
+            <select className="w-full border border-gray-200 rounded-lg px-4 py-2 focus:outline-none bg-gray-50">
               <option>GMT +0 (West African Time)</option>
               <option>GMT +1 (Central European Time)</option>
             </select>
           </div>
-          <div className="flex flex-col gap-2">
-            <label className="inline-flex items-center gap-2 text-sm text-gray-600">
-              <input type="checkbox" className="accent-[#C85212]" defaultChecked />
-              Email Notifications
-            </label>
-            <label className="inline-flex items-center gap-2 text-sm text-gray-600">
-              <input type="checkbox" className="accent-[#C85212]" />
-              SMS Notifications
-            </label>
-            <label className="inline-flex items-center gap-2 text-sm text-gray-600">
-              <input type="checkbox" className="accent-[#C85212]" />
-              Maintenance Mode
-            </label>
+          
+          <h3 className="text-lg font-semibold text-[#2D3A4A] mb-4">Notification Settings</h3>
+          <div className="flex flex-col gap-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="text-sm font-medium text-gray-700">Admin Email Alerts</div>
+                <div className="text-xs text-gray-500">Receive email notifications for admin actions</div>
+              </div>
+              <label className="relative inline-flex items-center cursor-pointer">
+                <input type="checkbox" className="sr-only peer" defaultChecked />
+                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-gray-800"></div>
+              </label>
+            </div>
+            
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="text-sm font-medium text-gray-700">User Activity Notifications</div>
+                <div className="text-xs text-gray-500">Get notified about user registrations and activities</div>
+              </div>
+              <label className="relative inline-flex items-center cursor-pointer">
+                <input type="checkbox" className="sr-only peer" defaultChecked />
+                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-gray-800"></div>
+              </label>
+            </div>
+            
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="text-sm font-medium text-gray-700">System Alerts</div>
+                <div className="text-xs text-gray-500">Receive alerts for system issues and updates</div>
+              </div>
+              <label className="relative inline-flex items-center cursor-pointer">
+                <input type="checkbox" className="sr-only peer" defaultChecked />
+                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-gray-800"></div>
+              </label>
+            </div>
+          </div>
+          
+          <div className="mt-6 pt-4 border-t border-gray-200">
+            <button type="button" className="text-red-600 text-sm font-medium hover:text-red-700">
+              Change Password
+            </button>
           </div>
         </div>
+      </div>
       </div>
     </div>
   );

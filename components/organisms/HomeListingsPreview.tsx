@@ -148,9 +148,9 @@ const HomeListingsPreview: React.FC = () => {
               No properties found.
             </div>
           )}
-          {listings.map((listing) => (
+          {listings.map((listing, index) => (
             <div
-              key={listing.id}
+              key={`${listing.id}-${index}`}
               className="bg-white rounded-lg border border-gray-200 overflow-hidden hover:shadow-lg transition-shadow"
             >
               <div className="relative">
@@ -166,6 +166,7 @@ const HomeListingsPreview: React.FC = () => {
                     width={600}
                     height={192}
                     className="w-full h-48 object-cover rounded-t-lg group-hover:brightness-90 transition"
+                    style={{ width: 'auto', height: 'auto' }}
                     priority={false}
                   />
                 </Link>

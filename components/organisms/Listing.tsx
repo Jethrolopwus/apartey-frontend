@@ -419,6 +419,7 @@ const Listings = () => {
                             width={600}
                             height={192}
                             className="w-full h-48 object-cover rounded-t-lg group-hover:brightness-90 transition"
+                            style={{ width: 'auto', height: 'auto' }}
                             priority={false}
                             onError={(e) => {
                               e.currentTarget.src = "/fallback-image.jpg";

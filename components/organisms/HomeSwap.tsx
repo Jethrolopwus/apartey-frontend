@@ -299,6 +299,7 @@ const HomeSwap = () => {
                             width={600}
                             height={192}
                             className="w-full h-48 object-cover rounded-t-lg group-hover:brightness-90 transition"
+                            style={{ width: 'auto', height: 'auto' }}
                             priority={false}
                           />
                           <div className="absolute top-3 right-3 bg-white rounded-full p-2 shadow-sm">

@@ -1,11 +1,13 @@
 "use client";
 import React, { useState, useEffect } from "react";
-import { Eye, Trash2, Star } from "lucide-react";
+import { Eye, Trash2, Star, Power } from "lucide-react";
 import { useGetAllAdminReviewsQuery } from "@/Hooks/use-getAllAdminReviews.query";
 import AdminViewReviewModal from "@/app/admin/components/AdminViewReviewModal";
 import AdminDeleteReviewModal from "@/app/admin/components/AdminDeleteReviewModal";
 
 const statusColors: Record<string, string> = {
+  Active: "bg-green-100 text-green-700",
+  Inactive: "bg-yellow-100 text-yellow-700",
   Verified: "bg-green-100 text-green-700",
   Flagged: "bg-red-100 text-red-600",
   flaaged: "bg-red-100 text-red-600",
@@ -136,30 +138,35 @@ export default function AdminReviews() {
 
   if (isLoading) {
     return (
-      <div className="w-full max-w-5xl mx-auto bg-white rounded-2xl shadow-lg p-4 md:p-8 mt-4">
-        <div className="text-sm md:text-base">Loading...</div>
+      <div className="w-full min-h-screen bg-[#F8F9FB] flex flex-col items-center">
+        <div className="w-full max-w-[1440px] px-4 md:px-6 lg:px-10 pt-2 pb-8">
+          <div className="text-sm md:text-base">Loading...</div>
+        </div>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="w-full max-w-5xl mx-auto bg-white rounded-2xl shadow-lg p-4 md:p-8 mt-4">
-        <div className="text-red-500 text-sm md:text-base">Error: {(error as Error).message}</div>
+      <div className="w-full min-h-screen bg-[#F8F9FB] flex flex-col items-center">
+        <div className="w-full max-w-[1440px] px-4 md:px-6 lg:px-10 pt-2 pb-8">
+          <div className="text-red-500 text-sm md:text-base">Error: {(error as Error).message}</div>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="w-full max-w-5xl mx-auto bg-white rounded-2xl shadow-lg p-4 md:p-8 mt-4">
-      <h2 className="text-lg md:text-xl font-semibold text-[#2D3A4A] mb-4 md:mb-8">Reviews</h2>
+    <div className="w-full min-h-screen bg-[#F8F9FB] flex flex-col items-center">
+      <div className="w-full max-w-[1440px] px-4 md:px-6 lg:px-10 pt-2 pb-8">
+        <h1 className="text-xl md:text-2xl font-bold text-gray-800 mb-4 md:mb-6">Reviews</h1>
       
       {/* Search and Sort Bar */}
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-4 md:mb-6 w-full">
         <div className="relative w-full md:w-64">
           <input
             type="text"
-            placeholder="Search by reviewer first name"
+            placeholder="Search Reviews"
             value={searchTerm}
             onChange={handleSearchChange}
             className="w-full pl-10 pr-4 py-2 rounded-lg border border-gray-200 bg-gray-50 focus:outline-none placeholder-gray-400 text-sm md:text-base"
@@ -196,7 +203,7 @@ export default function AdminReviews() {
               : 0;
           const maxRating = 5;
           return (
-            <div key={review.id || idx} className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+            <div key={`${review.id}-${idx}`} className="bg-gray-50 rounded-lg p-4 border border-gray-200">
               <div className="flex justify-between items-start mb-3">
                 <div className="flex-1 min-w-0">
                   <h3 className="text-sm font-semibold text-[#2D3A4A] truncate">
@@ -253,9 +260,9 @@ export default function AdminReviews() {
       </div>
 
       {/* Desktop Table View */}
-      <div className="hidden md:block overflow-x-auto rounded-xl border border-gray-100">
+      <div className="hidden md:block bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
         <table className="min-w-full text-left text-sm">
-          <thead className="bg-gray-50">
+          <thead className="bg-gray-50 border-b border-gray-200">
             <tr className="text-[#2D3A4A] font-semibold text-base">
               <th className="py-4 px-4">PROPERTY</th>
               <th className="py-4 px-4">REVIEWER</th>
@@ -265,7 +272,7 @@ export default function AdminReviews() {
               <th className="py-4 px-4">ACTIONS</th>
             </tr>
           </thead>
-          <tbody>
+          <tbody className="bg-white divide-y divide-gray-200">
             {filteredReviews.length === 0 && searchTerm ? (
               <tr>
                 <td colSpan={6} className="py-8 px-4 text-center text-gray-500">
@@ -290,8 +297,8 @@ export default function AdminReviews() {
               const maxRating = 5;
               return (
                 <tr
-                  key={review.id || idx}
-                  className="border-b last:border-b-0 hover:bg-gray-50 transition"
+                  key={`${review.id}-${idx}`}
+                  className="hover:bg-gray-50"
                 >
                   <td className="py-3 px-4 font-semibold text-[#2D3A4A] truncate max-w-[150px]">
                     {review.property}
@@ -309,14 +316,17 @@ export default function AdminReviews() {
                     {review.comment}
                   </td>
                   <td className="py-3 px-4">
-                    <span
-                      className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${
-                        statusColors[String(review.status)] ||
-                        statusColors["Flagged"]
-                      }`}
-                    >
-                      {review.status === "flaaged" ? "Flagged" : review.status}
-                    </span>
+                                      <span
+                    className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${
+                      statusColors[String(review.status)] ||
+                      statusColors["Active"]
+                    }`}
+                  >
+                    {review.status === "flaaged" ? "Flagged" : 
+                     review.status === "verified" ? "Active" : 
+                     review.status === "flagged" ? "Inactive" : 
+                     review.status}
+                  </span>
                   </td>
                   <td className="py-3 px-4">
                     <div className="flex gap-3">
@@ -324,8 +334,8 @@ export default function AdminReviews() {
                         className="w-5 h-5 text-gray-400 hover:text-[#2D3A4A] cursor-pointer"
                         onClick={() => handleViewReview(review?.id)}
                       />
-                      <Trash2
-                        className="w-5 h-5 text-red-400 hover:text-red-600 cursor-pointer"
+                      <Power
+                        className="w-5 h-5 text-gray-400 hover:text-gray-600 cursor-pointer"
                         onClick={() =>
                           handleDeleteReview(
                             review.id,
@@ -384,6 +394,7 @@ export default function AdminReviews() {
         >
           Next &gt;
         </button>
+      </div>
       </div>
     </div>
   );

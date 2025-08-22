@@ -53,6 +53,7 @@ export default function BlogComponent() {
                 width={400}
                 height={250}
                 className="w-full h-full object-cover"
+                style={{ width: 'auto', height: 'auto' }}
                 priority={false}
               />
             </div>

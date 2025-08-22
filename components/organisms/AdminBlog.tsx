@@ -116,17 +116,16 @@ export default function AdminBlog() {
   const posts = blogPostsData?.posts || [];
 
   return (
-    <div className="w-full max-w-5xl mx-auto bg-transparent p-0 mt-4">
-      <h2 className="text-2xl font-semibold text-[#2D3A4A] mb-8">
-        Blog Management
-      </h2>
+    <div className="w-full min-h-screen bg-[#F8F9FB] flex flex-col items-center">
+      <div className="w-full max-w-[1440px] px-4 md:px-6 lg:px-10 pt-2 pb-8">
+        <h1 className="text-xl md:text-2xl font-bold text-gray-800 mb-4 md:mb-6">Blog Management</h1>
       
       {/* Search and Filter Section */}
       <div className="flex items-center justify-between mb-6 w-full">
         <div className="relative w-64">
           <input
             type="text"
-            placeholder="Search "
+            placeholder="Search Blog Post "
             value={searchTerm}
             onChange={handleSearchChange}
             className="w-full pl-10 pr-4 py-2 rounded-lg border border-gray-200 bg-gray-50 focus:outline-none placeholder-gray-400 text-base"
@@ -341,6 +340,7 @@ export default function AdminBlog() {
           }}
         />
       )}
+      </div>
     </div>
   );
 }

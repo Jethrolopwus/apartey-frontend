@@ -65,6 +65,7 @@ export default function CategoryComponent() {
                 width={120}
                 height={120}
                 className="w-full h-full object-cover"
+                style={{ width: 'auto', height: 'auto' }}
                 priority={false}
               />
             </div>
