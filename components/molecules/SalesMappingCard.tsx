@@ -16,10 +16,7 @@ const SalesMappingCard: React.FC<SalesMappingCardProps> = ({
     percentage: (country.listings / maxListings) * 100,
   }));
 
-  const totalListings = countrySales.reduce(
-    (sum, country) => sum + country.listings,
-    0
-  );
+
 
   // Color mapping for different countries
   const getCountryColor = (country: string, percentage: number) => {
@@ -40,52 +37,26 @@ const SalesMappingCard: React.FC<SalesMappingCardProps> = ({
   };
 
   return (
-    <div className="bg-white shadow rounded-xl p-6 h-full flex flex-col">
-      <h3 className="text-base font-semibold text-gray-800 mb-4">
-        Sales Mapping by Country
-      </h3>
-
-      {/* Visual representation using bars */}
-      <div className="flex-1 space-y-3">
-        {countriesWithPercentage.map((country) => (
-          <div key={country.country} className="relative">
-            <div className="flex justify-between items-center mb-1">
-              <span className="text-sm font-medium text-gray-700">
-                {country.country}
-              </span>
-              <span className="text-sm text-gray-500">
-                {country.listings} listings
-              </span>
-            </div>
-            <div className="w-full bg-gray-200 rounded-full h-3 relative overflow-hidden">
-              <div
-                className="h-full rounded-full transition-all duration-500 ease-out"
-                style={{
-                  width: `${country.percentage}%`,
-                  backgroundColor: getCountryColor(
-                    country.country,
-                    country.percentage
-                  ),
-                }}
-              />
-            </div>
-            <div className="text-xs text-gray-400 mt-1">
-              {((country.listings / totalListings) * 100).toFixed(1)}% of total
-            </div>
-          </div>
-        ))}
+    <div className="bg-white rounded-xl p-4 md:p-6 shadow-sm border border-gray-100">
+      <div className="mb-4 md:mb-6">
+        <h3 className="text-base md:text-lg font-semibold text-gray-800 mb-1">
+          Sales Mapping by Country
+        </h3>
+        <p className="text-xs md:text-sm text-gray-500">
+          Global property sales distribution
+        </p>
       </div>
 
       {/* World map representation using CSS */}
-      <div className="mt-6 mb-4">
-        <div className="relative bg-blue-50 rounded-lg p-4 h-32 overflow-hidden">
+      <div className="mb-4 md:mb-6">
+        <div className="relative bg-gray-50 rounded-lg p-3 md:p-4 h-32 md:h-40 overflow-hidden">
           {/* Simple world representation */}
           <div className="flex justify-center items-center h-full">
-            <div className="grid grid-cols-3 gap-2 text-xs">
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-1 md:gap-2 text-xs">
               {countriesWithPercentage.map((country) => (
                 <div
                   key={country.country}
-                  className="flex flex-col items-center p-2 rounded-md transition-all hover:scale-105"
+                  className="flex flex-col items-center p-1 md:p-2 rounded-md transition-all hover:scale-105"
                   style={{
                     backgroundColor: getCountryColor(
                       country.country,
@@ -107,11 +78,11 @@ const SalesMappingCard: React.FC<SalesMappingCardProps> = ({
       </div>
 
       {/* Legend */}
-      <div className="flex justify-center gap-3 mt-4 flex-wrap">
+      <div className="flex justify-center gap-2 md:gap-3 flex-wrap">
         {countriesWithPercentage.map((country) => (
           <div
             key={country.country}
-            className="flex items-center gap-2 text-xs text-gray-600"
+            className="flex items-center gap-1 md:gap-2 text-xs text-gray-600"
           >
             <div
               className="w-3 h-3 rounded-full"
@@ -127,32 +98,6 @@ const SalesMappingCard: React.FC<SalesMappingCardProps> = ({
           </div>
         ))}
       </div>
-
-      {/* Summary */}
-      {countrySales.length > 0 && (
-        <div className="mt-4 text-center text-xs text-gray-500 border-t pt-3">
-          <div className="grid grid-cols-3 gap-4 text-center">
-            <div>
-              <div className="font-semibold text-lg text-gray-800">
-                {totalListings}
-              </div>
-              <div>Total Listings</div>
-            </div>
-            <div>
-              <div className="font-semibold text-lg text-gray-800">
-                {countrySales.length}
-              </div>
-              <div>Countries</div>
-            </div>
-            <div>
-              <div className="font-semibold text-lg text-gray-800">
-                {Math.round(totalListings / countrySales.length)}
-              </div>
-              <div>Avg per Country</div>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };

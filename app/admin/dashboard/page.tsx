@@ -8,10 +8,12 @@ import {
 } from "@/components/molecules/AdminCards";
 import TotalRevenueCard from "@/components/molecules/TotalRevenueCard";
 import UserDistributionCard from "@/components/molecules/UserDistributionCard";
-import PropertyTypesCard from "@/components/molecules/PropertyTypesCard";
+
 import SalesMappingCard from "@/components/molecules/SalesMappingCard";
-import HomeswapActivityTracker from "@/components/molecules/HomeswapActivityTracker";
+
 import SwapSaleTrends from "@/components/molecules/SwapSaleTrends";
+import RecentCompletedListings from "@/components/molecules/RecentCompletedListings";
+import CompletionDistribution from "@/components/molecules/CompletionDistribution";
 import AdminAuthGuard from "@/components/molecules/AdminAuthGuard";
 import { useAdminOverviewStatusQuery } from "@/Hooks/use-getAdminOverviewStatus.query";
 
@@ -58,9 +60,9 @@ const AdminDashboardContent: React.FC = () => {
 
   return (
     <div className="w-full min-h-screen bg-[#F8F9FB] flex flex-col items-center">
-      <div className="w-full max-w-[1440px] px-6 md:px-10 pt-2 pb-8">
+      <div className="w-full max-w-[1440px] px-4 md:px-6 lg:px-10 pt-2 pb-8">
         {/* Top summary cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-7 mb-10">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 md:gap-7 mb-6 md:mb-10">
           <TotalPropertiesCard
             label="Total properties"
             value={stats?.totalProperties || 0}
@@ -84,23 +86,56 @@ const AdminDashboardContent: React.FC = () => {
         </div>
 
         {/* Top section: Revenue and User Distribution side by side */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-7 mb-10">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-7 mb-6 md:mb-10">
           <TotalRevenueCard totalRevenue={stats?.totalRevenue || 0} />
           <UserDistributionCard
             userDistribution={trends?.userDistribution || []}
           />
         </div>
+{/* design for totalcompletedListings, success Rent, success Sale, success Swap cards */}
+        {/* Transaction Performance Cards */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 md:gap-7 mb-6 md:mb-10">
+          {/* Total Completed Listings */}
+          <div className="bg-white rounded-xl p-4 md:p-6 shadow-sm border border-gray-100">
+            <h3 className="text-gray-600 text-sm font-medium mb-2">Total Completed Listings</h3>
+            <div className="text-3xl font-bold text-gray-800 mb-1">1,847</div>
+            <p className="text-gray-400 text-xs">Successfully completed transactions</p>
+          </div>
 
-        {/* Middle section: Homeswap Activity Tracker and Swap Sale Trends side by side */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-7 mb-10">
-          <HomeswapActivityTracker />
-          <SwapSaleTrends />
+          {/* Successful Rents */}
+          <div className="bg-white rounded-xl p-4 md:p-6 shadow-sm border border-gray-100">
+            <h3 className="text-gray-600 text-sm font-medium mb-2">Successful Rents</h3>
+            <div className="text-2xl md:text-3xl font-bold text-green-600 mb-1">891</div>
+            <p className="text-gray-400 text-xs">+8% Success rate</p>
+          </div>
+
+          {/* Successful Sales */}
+          <div className="bg-white rounded-xl p-4 md:p-6 shadow-sm border border-gray-100">
+            <h3 className="text-gray-600 text-sm font-medium mb-2">Successful Sales</h3>
+            <div className="text-2xl md:text-3xl font-bold text-blue-600 mb-1">722</div>
+            <p className="text-gray-400 text-xs">+10% Success rate</p>
+          </div>
+
+          {/* Successful Swaps */}
+          <div className="bg-white rounded-xl p-4 md:p-6 shadow-sm border border-gray-100">
+            <h3 className="text-gray-600 text-sm font-medium mb-2">Successful Swaps</h3>
+            <div className="text-2xl md:text-3xl font-bold text-orange-500 mb-1">120</div>
+            <p className="text-gray-400 text-xs">+15% Success rate</p>
+          </div>
         </div>
 
-        {/* Bottom section: Property Types and Sales Mapping side by side */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-7">
-          <PropertyTypesCard propertyTypes={trends?.propertyTypes || []} />
-          <SalesMappingCard countrySales={trends?.countrySales || []} />
+        {/* Middle section: Recent Completed Listings and Right Column (Completion Distribution + Sales Mapping) */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-7 mb-6 md:mb-10">
+          <RecentCompletedListings />
+          <div className="space-y-4 md:space-y-7">
+            <CompletionDistribution />
+            <SalesMappingCard countrySales={trends?.countrySales || []} />
+          </div>
+        </div>
+
+        {/* Bottom section: Swap vs Sale Trends (full width) */}
+        <div className="w-full">
+          <SwapSaleTrends />
         </div>
       </div>
     </div>

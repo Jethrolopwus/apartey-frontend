@@ -90,7 +90,7 @@ export default function AdminReviews() {
 
   // Client-side filtering as fallback (for debugging)
   const filteredReviews = React.useMemo(() => {
-    const reviews = data?.reviews || [];
+  const reviews = data?.reviews || [];
     
     // Use initial data for client-side filtering when backend search fails
     const reviewsToFilter = debouncedSearchTerm && debouncedSearchTerm.trim().length >= 2 && reviews.length === 0 

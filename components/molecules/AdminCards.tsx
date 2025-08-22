@@ -10,10 +10,10 @@ interface AdminCardProps {
   percentageColor?: string;
 }
 
-const cardBg = "bg-white shadow-sm border border-gray-100 rounded-2xl p-6";
-const labelStyle = "text-gray-500 text-sm font-medium mb-1";
-const valueStyle = "text-3xl font-bold text-gray-900 mb-2";
-const percentStyle = "text-sm font-semibold";
+const cardBg = "bg-white shadow-sm border border-gray-100 rounded-2xl p-4 md:p-6";
+const labelStyle = "text-gray-500 text-xs md:text-sm font-medium mb-1";
+const valueStyle = "text-2xl md:text-3xl font-bold text-gray-900 mb-2";
+const percentStyle = "text-xs md:text-sm font-semibold";
 
 export const TotalPropertiesCard: React.FC<AdminCardProps> = ({ 
   value, 
@@ -28,8 +28,8 @@ export const TotalPropertiesCard: React.FC<AdminCardProps> = ({
         <div className={valueStyle}>{value.toLocaleString()}</div>
         <div className={`${percentStyle} ${percentageColor}`}>+{percentage} Increase</div>
       </div>
-      <div className="bg-blue-50 p-3 rounded-xl">
-        <HomeIcon className="h-6 w-6 text-blue-600" />
+      <div className="bg-blue-50 p-2 md:p-3 rounded-xl">
+        <HomeIcon className="h-5 w-5 md:h-6 md:w-6 text-blue-600" />
       </div>
     </div>
   </div>
@@ -48,8 +48,8 @@ export const TotalUsersCard: React.FC<AdminCardProps> = ({
         <div className={valueStyle}>{value.toLocaleString()}</div>
         <div className={`${percentStyle} ${percentageColor}`}>+{percentage} Increase</div>
       </div>
-      <div className="bg-green-50 p-3 rounded-xl">
-        <UsersIcon className="h-6 w-6 text-green-600" />
+      <div className="bg-green-50 p-2 md:p-3 rounded-xl">
+        <UsersIcon className="h-5 w-5 md:h-6 md:w-6 text-green-600" />
       </div>
     </div>
   </div>
@@ -68,8 +68,8 @@ export const ActiveListingsCard: React.FC<AdminCardProps> = ({
         <div className={valueStyle}>{value.toLocaleString()}</div>
         <div className={`${percentStyle} ${percentageColor}`}>+{percentage} Increase</div>
       </div>
-      <div className="bg-purple-50 p-3 rounded-xl">
-        <TrendingUpIcon className="h-6 w-6 text-purple-600" />
+      <div className="bg-purple-50 p-2 md:p-3 rounded-xl">
+        <TrendingUpIcon className="h-5 w-5 md:h-6 md:w-6 text-purple-600" />
       </div>
     </div>
   </div>
@@ -88,8 +88,8 @@ export const NewUsersThisMonthCard: React.FC<AdminCardProps> = ({
         <div className={valueStyle}>{value.toLocaleString()}</div>
         <div className={`${percentStyle} ${percentageColor}`}>+{percentage} Increase</div>
       </div>
-      <div className="bg-orange-50 p-3 rounded-xl">
-        <UserPlusIcon className="h-6 w-6 text-orange-600" />
+      <div className="bg-orange-50 p-2 md:p-3 rounded-xl">
+        <UserPlusIcon className="h-5 w-5 md:h-6 md:w-6 text-orange-600" />
       </div>
     </div>
   </div>

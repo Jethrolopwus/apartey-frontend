@@ -22,12 +22,12 @@ const TotalRevenueCard: React.FC<TotalRevenueCardProps> = ({
   const yAxisLabels = [0, 7000, 14000, 21000, 28000];
 
   return (
-    <div className="bg-white shadow rounded-xl p-6 h-full">
-      <h3 className="text-base font-semibold text-gray-800 mb-6">
+    <div className="bg-white shadow rounded-xl p-4 md:p-6 h-full">
+      <h3 className="text-sm md:text-base font-semibold text-gray-800 mb-4 md:mb-6">
         Total Revenue
       </h3>
       
-      <div className="relative h-64">
+      <div className="relative h-48 md:h-64">
         {/* Y-axis labels */}
         <div className="absolute left-0 top-0 bottom-0 flex flex-col justify-between text-xs text-gray-500 pr-2">
           {yAxisLabels.map((label) => (

@@ -22,12 +22,12 @@ const UserDistributionCard: React.FC<UserDistributionCardProps> = ({
   const yAxisLabels = [0, 300, 600, 900, 1200];
 
   return (
-    <div className="bg-white shadow rounded-xl p-6 h-full">
-      <h3 className="text-base font-semibold text-gray-800 mb-6">
+    <div className="bg-white shadow rounded-xl p-4 md:p-6 h-full">
+      <h3 className="text-sm md:text-base font-semibold text-gray-800 mb-4 md:mb-6">
         User Distribution
       </h3>
       
-      <div className="relative h-64">
+      <div className="relative h-48 md:h-64">
         {/* Y-axis labels */}
         <div className="absolute left-0 top-0 bottom-0 flex flex-col justify-between text-xs text-gray-500 pr-2">
           {yAxisLabels.map((label) => (
