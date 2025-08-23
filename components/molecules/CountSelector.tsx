@@ -7,11 +7,11 @@ interface CountSelectorProps {
 }
 
 const CountSelector: React.FC<CountSelectorProps> = ({ label, value, onChange }) => {
-  const options = [null, 1, 2, 3, 4, 5]; // null represents "Any"
+  const options = [null, 1, 2, 3, 4, 5];
 
   return (
     <div>
-      <label className="block text-sm font-medium text-gray-700 mb-2">{label}</label>
+      <label className="block text-sm font-medium  text-gray-700 mb-2">{label}</label>
       <div className="flex items-center space-x-2">
         {options.map((option, index) => (
           <button

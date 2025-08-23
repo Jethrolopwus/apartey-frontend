@@ -124,10 +124,7 @@ const PropertyDetailsForm = ({
     setLocalData((prev: unknown) => ({ ...(prev as object || {}), [name]: newValue }));
   };
 
-  const handleSelectChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const { name, value } = e.target;
-    setLocalData((prev: unknown) => ({ ...(prev as object || {}), [name]: value }));
-  };
+
 
   return (
     <div className="w-full space-y-8">
@@ -293,7 +290,7 @@ const PropertyDetailsForm = ({
         ></textarea>
       </div>
 
-      <div>
+      {/* <div>
         <label
           htmlFor="condition"
           className="block text-sm font-medium text-gray-700"
@@ -311,7 +308,7 @@ const PropertyDetailsForm = ({
           <option value="New Building">New Building</option>
           <option value="Renovated">Renovated</option>
         </select>
-      </div>
+      </div> */}
     </div>
   );
 };

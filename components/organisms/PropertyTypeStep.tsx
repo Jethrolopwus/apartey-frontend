@@ -10,8 +10,8 @@ const PropertyTypeStep: React.FC<StepProps> = ({
   setFormData,
 }) => {
   const propertyTypes = [
-    { id: "House", label: "House", icon: Home },
     { id: "Apartment", label: "Apartment", icon: Building2 },
+    { id: "House", label: "House", icon: Home },
     { id: "Room", label: "Room", icon: Building2 },
     { id: "Commercial", label: "Commercial", icon: Building },
     { id: "Garage", label: "Garage", icon: Car },
@@ -69,21 +69,18 @@ const PropertyTypeStep: React.FC<StepProps> = ({
               onClick={() => setCategory(cat.id)}
               className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
                 category === cat.id
-                  ? "bg-white text-gray-900 shadow-sm"
+                  ? "text-gray-900 shadow-sm"
                   : "text-gray-600 hover:text-gray-900"
               }`}
               style={{
-                backgroundColor:
-                  category === cat.id && cat.id === "Rent"
-                    ? "#FED7C3"
-                    : undefined,
+                backgroundColor: category === cat.id ? "#FED7C3" : undefined,
               }}
             >
               {cat.label === "Sale"
-                ? "Sell property"
+                ? "Sell Home"
                 : cat.label === "Rent"
-                ? "List for Rent"
-                : "Home Swap"}
+                ? "Rent Home"
+                : "Swap Home"}
             </button>
           ))}
         </div>
