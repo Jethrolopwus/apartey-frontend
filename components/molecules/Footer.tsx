@@ -62,7 +62,7 @@ const Footer: React.FC = () => {
                 Insights
               </Link>
               <Link
-                href="/error-page"
+                href="/pricing"
                 className="block text-sm text-gray-600 transition-colors hover:text-gray-900 lg:text-base"
               >
                 Pricing

@@ -79,6 +79,10 @@ interface RawProperty {
   city?: string;
   state?: string;
   country?: string;
+  category?: string;
+  propertyType?: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 interface Agent {
@@ -96,6 +100,9 @@ interface Agent {
 
 const AgentProfile: React.FC = () => {
   const router = useRouter();
+  
+  // User role is available but not currently used in this component
+  
   const {
     data: userData,
     isLoading: userLoading,
@@ -107,86 +114,14 @@ const AgentProfile: React.FC = () => {
     error: listingsError,
   } = useGetAllMyListingsQuery();
 
-  // DEBUG: Log the raw listings data
-  React.useEffect(() => {
-    if (listingsData) {
-      console.log("=== LISTINGS DATA DEBUG ===");
-      console.log("Full listingsData:", JSON.stringify(listingsData, null, 2));
-
-      if (listingsData.properties && Array.isArray(listingsData.properties)) {
-        console.log("Properties array length:", listingsData.properties.length);
-
-        listingsData.properties.forEach(
-          (property: RawProperty, index: number) => {
-            console.log(`\n--- Property ${index + 1} ---`);
-            console.log(
-              "Full property object:",
-              JSON.stringify(property, null, 2)
-            );
-            console.log("Property ID:", property._id || property.id);
-
-            // More detailed location debugging
-            console.log("Location object:", property.location);
-            console.log(
-              "Location keys:",
-              property.location
-                ? Object.keys(property.location)
-                : "No location object"
-            );
-            console.log("Street Address:", property.location?.streetAddress);
-            console.log("City:", property.location?.city);
-            console.log("Country:", property.location?.country);
-            console.log("State:", property.location?.state);
-            console.log("Area:", property.location?.area);
-
-            // Check for alternative location field names
-            console.log("Alternative location fields:");
-            console.log("- location.address:", property.location?.address);
-            console.log(
-              "- location.fullAddress:",
-              property.location?.fullAddress
-            );
-            console.log("- location.street:", property.location?.street);
-            console.log("- location.locality:", property.location?.locality);
-            console.log("- location.region:", property.location?.region);
-            console.log(
-              "- location.postalCode:",
-              property.location?.postalCode
-            );
-
-            console.log("Root level address:", property.address);
-            console.log("Title:", property.title);
-            console.log("Name:", property.name);
-            console.log("Status:", property.status);
-            console.log("Media:", property.media);
-            console.log("Property Details:", property.propertyDetails);
-
-            // Check all root level keys for potential address fields
-            console.log("All property keys:", Object.keys(property));
-          }
-        );
-      } else {
-        console.log("Properties is not an array or doesn't exist");
-        console.log(
-          "Available keys in listingsData:",
-          Object.keys(listingsData)
-        );
-      }
-      console.log("=== END LISTINGS DEBUG ===\n");
-    } else {
-      console.log("listingsData is null/undefined");
-    }
-  }, [listingsData]);
+  // No debug logging needed - component is working correctly
 
   // Extract agent info from userData with better fallback handling
   const agent: Agent = useMemo(() => {
     const currentUser = userData?.currentUser;
 
     // Debug log the user data
-    console.log("=== USER DATA DEBUG ===");
-    console.log("Full userData:", JSON.stringify(userData, null, 2));
-    console.log("currentUser:", JSON.stringify(currentUser, null, 2));
-    console.log("=== END USER DEBUG ===\n");
+    // No debug logging needed
 
     return {
       name: currentUser?.name || "Sarah Abba",
@@ -287,14 +222,7 @@ const AgentProfile: React.FC = () => {
           isActive: property.status === "active",
         };
 
-        // Debug log for each mapped property
-        console.log(`Mapped property ${mappedProperty.id}:`, {
-          originalTitle: property.title,
-          originalName: property.name,
-          originalLocation: property.location,
-          mappedTitle: mappedProperty.title,
-          mappedLocation: mappedProperty.location,
-        });
+        // No debug logging needed
 
         return mappedProperty;
       });
@@ -360,6 +288,7 @@ const AgentProfile: React.FC = () => {
           src={agent.coverImage || DEFAULT_COVER_IMAGE}
           alt="cover"
           fill
+          sizes="100vw"
           className="object-cover w-full h-full rounded-b-2xl"
           priority
         />
@@ -374,6 +303,7 @@ const AgentProfile: React.FC = () => {
               src={agent.profileImage || DEFAULT_PROFILE_IMAGE}
               alt="profile"
               fill
+              sizes="128px"
               className="object-cover"
               priority
             />
@@ -465,13 +395,13 @@ const AgentProfile: React.FC = () => {
 
         {/* Properties Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {properties.map((property) => {
+          {properties.map((property, index) => {
             const state = propertyStates.find((p) => p.id === property.id);
             const isRented = state ? state.isRented : property.isActive;
 
             return (
               <div
-                key={property.id}
+                key={`${property.id}-${index}`}
                 className="bg-white rounded-xl shadow border border-gray-100 overflow-hidden flex flex-col"
               >
                 <div className="relative w-full h-40">
@@ -479,6 +409,7 @@ const AgentProfile: React.FC = () => {
                     src={property.image}
                     alt={property.title}
                     fill
+                    sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
                     className="object-cover w-full h-full"
                   />
                   <span

@@ -12,7 +12,6 @@ import {
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useCreateListingsMutation } from "../../Hooks/use.createListings.mutation";
-import { PropertyListingPayload } from "../../types/propertyListing";
 import type { LocationPayload } from "../../types/generated";
 
 import PropertyTypeStep from "./PropertyTypeStep";
@@ -33,12 +32,30 @@ function hasPropertyDetails(obj: unknown): obj is { propertyDetails: unknown } {
   );
 }
 
+// Flexible form data type that can handle all step components
+type FlexibleFormData = Record<string, unknown> & {
+  propertyType?: string;
+  category?: string;
+  condition?: string;
+  firstName?: string;
+  lastName?: string;
+  email?: string;
+  phoneNumber?: string;
+  openForTourSchedule?: boolean;
+  offerType?: string;
+  location?: unknown;
+  media?: unknown;
+  propertyDetails?: unknown;
+  adPromotion?: unknown;
+  [key: string]: unknown;
+};
+
+
+
 // Main Wizard Component
 const SwapPropertyListings = () => {
   const [currentStep, setCurrentStep] = useState(0);
-  const [formData, setFormData] = useState<
-    PropertyListingPayload | Partial<PropertyListingPayload>
-  >({});
+  const [formData, setFormData] = useState<FlexibleFormData>({});
   const router = useRouter();
   const { mutate } = useCreateListingsMutation();
 
@@ -154,25 +171,28 @@ const SwapPropertyListings = () => {
     ];
 
     // Validate enums
-    if (!PropertyTypeEnum.includes(formData.propertyType || "")) {
+    const formDataTyped = formData as unknown as Record<string, unknown>;
+    if (!PropertyTypeEnum.includes((formDataTyped.propertyType as string) || "")) {
       toast.error("Invalid property type.");
       return;
     }
 
-    if (!CategoriesEnum.includes(formData.category || "")) {
+    if (!CategoriesEnum.includes((formDataTyped.category as string) || "")) {
       toast.error("Invalid category.");
       return;
     }
 
     // Validate offer type
-    if (!ValidOfferTypes.includes(formData.typeOfOffer || "")) {
+    const typeOfOffer = (formDataTyped.offerType as string) || "";
+    if (!ValidOfferTypes.includes(typeOfOffer)) {
       toast.error(
         `Invalid offer type. Valid options are: Private person, Real estate agent`
       );
       return;
     }
 
-    const invalidAmenities = (formData.amenities || []).filter(
+    const propertyDetails = formDataTyped.propertyDetails as Record<string, unknown> | undefined;
+    const invalidAmenities = ((propertyDetails?.amenities as string[]) || []).filter(
       (a: string) => !AmenitiesEnum.includes(a)
     );
     if (invalidAmenities.length > 0) {
@@ -180,7 +200,7 @@ const SwapPropertyListings = () => {
       return;
     }
 
-    const invalidInfrastructure = (formData.infrastructure || []).filter(
+    const invalidInfrastructure = ((propertyDetails?.infrastructure as string[]) || []).filter(
       (i: string) => !InfrastructureEnum.includes(i)
     );
     if (invalidInfrastructure.length > 0) {
@@ -190,28 +210,28 @@ const SwapPropertyListings = () => {
       return;
     }
 
-    if (!PropertyConditionEnum.includes(formData.condition || "")) {
+    if (!PropertyConditionEnum.includes((formDataTyped.condition as string) || "")) {
       toast.error("Invalid property condition.");
       return;
     }
 
     // Validate required fields for backend
-    let propertyDetails: unknown = {};
+    let propertyDetailsData: unknown = {};
     const formDataObj = formData as unknown;
     if (
       hasPropertyDetails(formDataObj) &&
       typeof (formDataObj as { propertyDetails?: unknown }).propertyDetails === "object" &&
       (formDataObj as { propertyDetails?: unknown }).propertyDetails !== null
     ) {
-      propertyDetails = (formDataObj as { propertyDetails: unknown }).propertyDetails;
+      propertyDetailsData = (formDataObj as { propertyDetails: unknown }).propertyDetails;
     }
-    const description = (propertyDetails as Record<string, unknown>).description as string;
-    const coverPhoto = ((formData as Record<string, unknown>).media && typeof (formData as Record<string, unknown>).media === 'object')
-      ? ((formData as Record<string, unknown>).media as { coverPhoto?: File }).coverPhoto
-      : undefined;
-    const location = (formData as PropertyListingPayload | Partial<PropertyListingPayload>).location || {};
-    const street = (location as LocationPayload)?.street || (typeof formData === 'object' && formData && Object.prototype.hasOwnProperty.call(formData, 'streetAddress') ? (formData as { streetAddress?: string }).streetAddress : undefined);
-    const stateOrRegion = (location as LocationPayload)?.stateOrRegion || (typeof formData === 'object' && formData && Object.prototype.hasOwnProperty.call(formData, 'state') ? (formData as { state?: string }).state : undefined);
+    const description = (propertyDetailsData as Record<string, unknown>).description as string;
+    const coverPhoto = ((formDataTyped.media && typeof formDataTyped.media === 'object')
+      ? ((formDataTyped.media as { coverPhoto?: File }).coverPhoto)
+      : undefined);
+    const location = formDataTyped.location || {};
+    const street = (location as LocationPayload)?.street || (typeof formDataTyped === 'object' && formDataTyped && Object.prototype.hasOwnProperty.call(formDataTyped, 'streetAddress') ? (formDataTyped as { streetAddress?: string }).streetAddress : undefined);
+    const stateOrRegion = (location as LocationPayload)?.stateOrRegion || (typeof formDataTyped === 'object' && formDataTyped && Object.prototype.hasOwnProperty.call(formDataTyped, 'state') ? (formDataTyped as { state?: string }).state : undefined);
 
     if (!description || !description.trim()) {
       toast.error("Description is required.");
@@ -229,17 +249,67 @@ const SwapPropertyListings = () => {
       toast.error("State is required.");
       return;
     }
+    
+    // Validate contact info fields
+    if (!formDataTyped.firstName || !(formDataTyped.firstName as string).trim()) {
+      toast.error("First name is required.");
+      return;
+    }
+    if (!formDataTyped.lastName || !(formDataTyped.lastName as string).trim()) {
+      toast.error("Last name is required.");
+      return;
+    }
+    if (!formDataTyped.email || !(formDataTyped.email as string).trim()) {
+      toast.error("Email is required.");
+      return;
+    }
+    if (!formDataTyped.offerType || !(formDataTyped.offerType as string).trim()) {
+      toast.error("Type of offer is required.");
+      return;
+    }
 
     // Build FormData
     const form = new FormData();
 
-    // Contact Info (dot notation)
-    if (formData.firstName) form.append("contactInfo.firstName", formData.firstName);
-    if (formData.lastName) form.append("contactInfo.lastName", formData.lastName);
-    if (formData.email) form.append("contactInfo.email", formData.email);
-    if (formData.phoneNumber) form.append("contactInfo.phoneNumber", formData.phoneNumber);
-    if (formData.openForTour !== undefined) form.append("contactInfo.openForTour", String(formData.openForTour));
-    if (formData.typeOfOffer) form.append("contactInfo.typeOfOffer", formData.typeOfOffer);
+    // Contact Info - FIXED SPELLING: contactInfo with capital 'I'
+    if (formDataTyped.firstName) {
+      form.append("contactInfo.firstName", formDataTyped.firstName as string);
+    }
+    
+    if (formDataTyped.lastName) {
+      form.append("contactInfo.lastName", formDataTyped.lastName as string);
+    }
+    
+    if (formDataTyped.email) {
+      form.append("contactInfo.email", formDataTyped.email as string);
+    }
+    
+    if (formDataTyped.phoneNumber) {
+      form.append("contactInfo.phoneNumber", formDataTyped.phoneNumber as string);
+    }
+    
+    if (formDataTyped.openForTourSchedule !== undefined) {
+      form.append("contactInfo.openForTourSchedule", String(formDataTyped.openForTourSchedule));
+    }
+    
+    if (formDataTyped.offerType) {
+      // Map the offer type to the expected format - use the exact enum values
+      const offerType = (formDataTyped.offerType as string).toLowerCase();
+      form.append("contactInfo.typeOfOffer", offerType);
+    }
+    
+    // Add userRole if not present
+    form.append("userRole", "homeowner");
+    
+    // Note: The backend will automatically set the lister field from the authenticated user's token
+    
+    // Add basic info at root level
+    if (formDataTyped.category) form.append("category", formDataTyped.category as string);
+    if (formDataTyped.propertyType) form.append("propertyType", formDataTyped.propertyType as string);
+    if (formDataTyped.condition) form.append("condition", formDataTyped.condition as string);
+    if (propertyDetails && (propertyDetails as Record<string, unknown>).petPolicy) {
+      form.append("petPolicy", (propertyDetails as Record<string, unknown>).petPolicy as string);
+    }
 
     // Location (dot notation, only once per field)
     const locationFields: Array<[string, string]> = [
@@ -260,7 +330,7 @@ const SwapPropertyListings = () => {
       } else if (key === "stateOrRegion") {
         value = (location as LocationPayload)?.stateOrRegion || (typeof formData === 'object' && formData && Object.prototype.hasOwnProperty.call(formData, 'state') ? (formData as { state?: string }).state : undefined);
       } else {
-        value = (location as LocationPayload)?.[key as keyof LocationPayload] ?? (typeof formData === 'object' && formData && Object.prototype.hasOwnProperty.call(formData, key) ? (formData as Record<string, string>)[key] : undefined);
+        value = (location as LocationPayload)?.[key as keyof LocationPayload] ?? (typeof formData === 'object' && formData && Object.prototype.hasOwnProperty.call(formData, key) ? (formData as unknown as Record<string, string>)[key] : undefined);
       }
       if (value) form.append(formKey, value);
     });
@@ -276,9 +346,7 @@ const SwapPropertyListings = () => {
     // Cover photo (as file, not as media.coverPhoto)
     if (coverPhoto instanceof File && coverPhoto.type.startsWith("image/")) {
       form.append("coverPhoto", coverPhoto);
-      
     }
-    // console.log("coverPhoto", coverPhoto);
     
     // Do NOT append any media fields or objects
 
@@ -303,11 +371,11 @@ const SwapPropertyListings = () => {
 
     // All other fields (flat, not nested)
     const skip = new Set([
-      "firstName", "lastName", "email", "phoneNumber", "openForTour", "typeOfOffer",
+      "openForTour", "category", "propertyType", "condition", "firstName", "lastName", "email", "phoneNumber", "openForTourSchedule", "offerType",
       "location", "country", "city", "district", "zipCode", "streetAddress", "apartment", "state", "searchAddress",
       "media", "description", "propertyDetails"
     ]);
-    Object.entries(formData).forEach(([key, value]) => {
+    Object.entries(formDataTyped).forEach(([key, value]) => {
       if (skip.has(key)) return;
       if (value === undefined || value === null) return;
       if (typeof value === "object") return; // already handled nested
@@ -315,30 +383,30 @@ const SwapPropertyListings = () => {
     });
 
     // Ad Promotion (if present)
-    if (formData.adPromotion) {
-      if ((formData.adPromotion as Record<string, unknown>).selectedTier)
-        form.append("adPromotion.selectedTier", (formData.adPromotion as Record<string, unknown>).selectedTier as string);
-      if ((formData.adPromotion as Record<string, unknown>).selectedServices && Array.isArray((formData.adPromotion as Record<string, unknown>).selectedServices)) {
-        ((formData.adPromotion as Record<string, unknown>).selectedServices as string[]).forEach((service: string) => {
+    if (formDataTyped.adPromotion) {
+      if ((formDataTyped.adPromotion as Record<string, unknown>).selectedTier)
+        form.append("adPromotion.selectedTier", (formDataTyped.adPromotion as Record<string, unknown>).selectedTier as string);
+      if ((formDataTyped.adPromotion as Record<string, unknown>).selectedServices && Array.isArray((formDataTyped.adPromotion as Record<string, unknown>).selectedServices)) {
+        ((formDataTyped.adPromotion as Record<string, unknown>).selectedServices as string[]).forEach((service: string) => {
           form.append("adPromotion.selectedServices", service);
         });
       }
-      if ((formData.adPromotion as Record<string, unknown>).totalPrice !== undefined)
-        form.append("adPromotion.totalPrice", String((formData.adPromotion as Record<string, unknown>).totalPrice));
+      if ((formDataTyped.adPromotion as Record<string, unknown>).totalPrice !== undefined)
+        form.append("adPromotion.totalPrice", String((formDataTyped.adPromotion as Record<string, unknown>).totalPrice));
     }
 
-    // DEBUG: Log all FormData entries before submission
-    // for (let pair of form.entries()) {
-    //   console.log(pair[0] + ':', pair[1]);
-    // }
-    console.log(coverPhoto);
+    // Create a fresh FormData instance to ensure it's not corrupted
+    const finalFormData = new FormData();
+    for (const [key, value] of form.entries()) {
+      finalFormData.append(key, value);
+    }
     
 
-    mutate(form, {
+    mutate(finalFormData, {
       onSuccess: () => {
         toast.success("Property listing submitted successfully!");
         setTimeout(() => {
-          router.push("/listings");
+          router.push("/homeowner-profile");
         }, 1200);
       },
       onError: (error: unknown) => {
@@ -461,8 +529,8 @@ const SwapPropertyListings = () => {
           onNext={handleNext}
           onBack={handleBack}
           onSubmit={handleSubmit}
-          formData={formData as PropertyListingPayload}
-          setFormData={setFormData}
+          formData={formData as unknown as never}
+          setFormData={setFormData as unknown as never}
           currentStep={currentStep}
           totalSteps={steps.length}
         />

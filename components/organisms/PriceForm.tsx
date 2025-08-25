@@ -1,26 +1,25 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { PropertyListingPayload } from "@/types/propertyListing";
+import { PropertyListingFormState, Currency, OfferType } from "@/types/propertyListing";
 import { User, Building } from "lucide-react";
 
 interface PriceFormProps {
-  formData: PropertyListingPayload | Partial<PropertyListingPayload>;
-  setFormData: React.Dispatch<
-    React.SetStateAction<
-      PropertyListingPayload | Partial<PropertyListingPayload>
-    >
-  >;
+  formData: PropertyListingFormState;
+  setFormData: React.Dispatch<React.SetStateAction<PropertyListingFormState>>;
 }
 
 const PriceForm = ({ formData, setFormData }: PriceFormProps) => {
   const [selectedCategory, setSelectedCategory] = useState("Rent");
   const [localData, setLocalData] = useState({
     price: formData.price || "",
-    currency: formData.currency || "€",
+    currency: formData.currency || "EUR" as Currency,
     isNegotiated: formData.isNegotiated || false,
-    offerType: formData.offerType || "private",
-    rentType: (formData as { rentType?: string }).rentType || "Monthly",
+    offerType: formData.offerType || "private" as OfferType,
+    rentType: formData.rentType || "Monthly",
+    notForCreditSale: formData.notForCreditSale || false,
+    readyToCooperateWithAgents: formData.readyToCooperateWithAgents || false,
+    possibleExchange: formData.possibleExchange || false,
   });
 
   // Track category changes from PropertyTypeStep
@@ -47,7 +46,7 @@ const PriceForm = ({ formData, setFormData }: PriceFormProps) => {
     setLocalData((prev) => ({ ...prev, [name]: !prev[name] }));
   };
 
-  const handleOfferTypeChange = (type: "private" | "agent") => {
+  const handleOfferTypeChange = (type: OfferType) => {
     setLocalData((prev) => ({ ...prev, offerType: type }));
   };
 
@@ -56,7 +55,7 @@ const PriceForm = ({ formData, setFormData }: PriceFormProps) => {
   };
 
   return (
-    <div className="w-full space-y-8   min-h-screen">
+    <div className="w-full space-y-8">
       <h1 className="text-2xl font-semibold text-gray-900">Price</h1>
 
       {/* Price Input Section - Conditional Rendering */}
@@ -103,13 +102,13 @@ const PriceForm = ({ formData, setFormData }: PriceFormProps) => {
               <select
                 value={localData.currency}
                 onChange={(e) =>
-                  setLocalData((p) => ({ ...p, currency: e.target.value }))
+                  setLocalData((p) => ({ ...p, currency: e.target.value as Currency }))
                 }
                 className="w-20 px-2 py-2 border-r border-gray-300 rounded-l-md focus:outline-none appearance-none bg-white text-sm text-gray-700"
               >
-                <option value="€">EUR</option>
-                <option value="$">USD</option>
-                <option value="₦">NGN</option>
+                <option value="EUR">EUR</option>
+                <option value="USD">USD</option>
+                <option value="NGN">NGN</option>
               </select>
               <input
                 type="text"
@@ -140,14 +139,14 @@ const PriceForm = ({ formData, setFormData }: PriceFormProps) => {
               name="currency"
               value={localData.currency}
               onChange={(e) =>
-                setLocalData((p) => ({ ...p, currency: e.target.value }))
+                setLocalData((p) => ({ ...p, currency: e.target.value as Currency }))
               }
               className="rounded-md border border-gray-300 bg-white py-2 px-3 text-base text-gray-700 focus:border-gray-500 focus:ring-gray-500 outline-none"
               style={{ minWidth: 60 }}
             >
-              <option>€</option>
-              <option>$</option>
-              <option>₦</option>
+              <option value="EUR">EUR</option>
+              <option value="USD">USD</option>
+              <option value="NGN">NGN</option>
             </select>
             <input
               type="text"
@@ -210,6 +209,49 @@ const PriceForm = ({ formData, setFormData }: PriceFormProps) => {
             <Building className="w-4 h-4" />
             Real estate agent
           </button>
+        </div>
+      </div>
+
+      {/* Additional Options Section */}
+      <div className="space-y-3">
+        <div className="flex items-center">
+          <input
+            type="checkbox"
+            id="notForCreditSale"
+            name="notForCreditSale"
+            checked={localData.notForCreditSale}
+            onChange={() => handleToggleChange("notForCreditSale")}
+            className="w-4 h-4 text-orange-600 border-gray-300 rounded focus:ring-orange-500"
+          />
+          <label htmlFor="notForCreditSale" className="ml-2 text-sm text-gray-700">
+            Not available for sale on credit
+          </label>
+        </div>
+        <div className="flex items-center">
+          <input
+            type="checkbox"
+            id="readyToCooperateWithAgents"
+            name="readyToCooperateWithAgents"
+            checked={localData.readyToCooperateWithAgents}
+            onChange={() => handleToggleChange("readyToCooperateWithAgents")}
+            className="w-4 h-4 text-orange-600 border-gray-300 rounded focus:ring-orange-500"
+          />
+          <label htmlFor="readyToCooperateWithAgents" className="ml-2 text-sm text-gray-700">
+            Ready to cooperate with real estate agents
+          </label>
+        </div>
+        <div className="flex items-center">
+          <input
+            type="checkbox"
+            id="possibleExchange"
+            name="possibleExchange"
+            checked={localData.possibleExchange}
+            onChange={() => handleToggleChange("possibleExchange")}
+            className="w-4 h-4 text-orange-600 border-gray-300 rounded focus:ring-orange-500"
+          />
+          <label htmlFor="possibleExchange" className="ml-2 text-sm text-gray-700">
+            The possibility of exchange
+          </label>
         </div>
       </div>
     </div>

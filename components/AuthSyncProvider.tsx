@@ -10,7 +10,6 @@ const AuthSyncProvider: React.FC = () => {
   const { mutate: googleAuth } = useGoogleAuthMutation();
 
   useEffect(() => {
-    console.log('AuthSyncProvider useEffect:', { status, session, hasToken: TokenManager.hasToken() });
     if (
       status === 'authenticated' &&
       session?.user &&
@@ -27,9 +26,6 @@ const AuthSyncProvider: React.FC = () => {
           const token = response?.token;
           if (token) {
             TokenManager.setToken(token, 'token');
-            console.log('Token set in localStorage:', token);
-          } else {
-            console.error('No token found in backend response:', response);
           }
         },
         onError: (error: unknown) => {

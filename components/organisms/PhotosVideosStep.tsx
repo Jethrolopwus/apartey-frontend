@@ -4,17 +4,17 @@ import React from 'react';
 import { ChevronRight, ChevronLeft } from 'lucide-react';
 import { StepProps } from '@/types/generated';
 import PhotoVideoUploader from "@/components/organisms/PhotoVideoUploader";
-import { PropertyListingPayload } from '@/types/propertyListing';
+import { PropertyListingFormState } from '@/types/propertyListing';
 import toast from "react-hot-toast";
 
 interface PhotosVideosStepProps extends StepProps {
-  formData: PropertyListingPayload | Partial<PropertyListingPayload>;
-  setFormData: React.Dispatch<React.SetStateAction<PropertyListingPayload | Partial<PropertyListingPayload>>>;
+  formData: PropertyListingFormState;
+  setFormData: React.Dispatch<React.SetStateAction<PropertyListingFormState>>;
 }
 
 const PhotosVideosStep: React.FC<PhotosVideosStepProps> = ({ onNext, onBack, formData, setFormData }) => {
   // Check if a valid cover photo URL is present
-  const hasCoverPhoto = !!(formData?.media?.coverPhoto && formData.media.coverPhoto instanceof File);
+  const hasCoverPhoto = !!(formData?.coverPhoto && formData.coverPhoto instanceof File);
 
   const handleNextClick = () => {
     if (!hasCoverPhoto) {

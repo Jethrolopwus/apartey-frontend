@@ -6,7 +6,7 @@ import {
   ChevronLeft,
   ChevronDown,
 } from 'lucide-react';
-import { StepProps } from '@/types/generated';
+import { StepProps } from '@/types/propertyListing';
 
 const LocationStep: React.FC<StepProps> = ({ onNext, onBack, formData, setFormData }) => {
   const [searchAddress, setSearchAddress] = useState(formData.searchAddress || '31 Murtala Mohammed Way, FCT, Abuja');
@@ -25,12 +25,12 @@ const LocationStep: React.FC<StepProps> = ({ onNext, onBack, formData, setFormDa
         fullAddress: searchAddress,
         apartment,
         countryCode,
-        state,
-        streetAddress,
+        stateOrRegion: state,
+        street: streetAddress,
         country,
         city,
         district,
-        zipCode,
+        postalCode: zipCode,
       };
       setFormData({
         ...formData,
@@ -231,7 +231,7 @@ const LocationStep: React.FC<StepProps> = ({ onNext, onBack, formData, setFormDa
                 if (setFormData) {
                   const newCoordinates = {
                     ...formData.location?.coordinates,
-                    latitude: e.target.value
+                    latitude: parseFloat(e.target.value) || undefined
                   };
                   setFormData({
                     ...formData,
@@ -258,7 +258,7 @@ const LocationStep: React.FC<StepProps> = ({ onNext, onBack, formData, setFormDa
                 if (setFormData) {
                   const newCoordinates = {
                     ...formData.location?.coordinates,
-                    longitude: e.target.value
+                    longitude: parseFloat(e.target.value) || undefined
                   };
                   setFormData({
                     ...formData,

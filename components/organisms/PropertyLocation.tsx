@@ -5,17 +5,49 @@ import {
   ChevronLeft,
   ChevronDown
 } from 'lucide-react';
+import { StepProps } from '@/types/generated';
 
-type PropertyLocationProps = object;
-
-const LocationForm: React.FC<PropertyLocationProps> = () => {
-  const [searchAddress, setSearchAddress] = useState('31 Murtala Mohammed Way, FCT, Abuja');
-  const [country, setCountry] = useState('Nigeria');
-  const [city, setCity] = useState('Abuja');
-  const [district, setDistrict] = useState('Wuse');
-  const [zipCode, setZipCode] = useState('11237');
-  const [streetAddress, setStreetAddress] = useState('Kefur-Funtua Road');
-
+const LocationForm: React.FC<StepProps> = ({ onNext, onBack, formData, setFormData }) => {
+  const [searchAddress, setSearchAddress] = useState(formData.searchAddress || '');
+  const [country, setCountry] = useState(formData.country || '');
+  const [city, setCity] = useState(formData.city || '');
+  const [district, setDistrict] = useState(formData.district || '');
+  const [zipCode, setZipCode] = useState(formData.zipCode || '');
+  const [streetAddress, setStreetAddress] = useState(formData.streetAddress || '');
+  const [apartment, setApartment] = useState(formData.apartment || '');
+  const [countryCode, setCountryCode] = useState(formData.countryCode || '');
+    const [state, setState] = useState(formData.state || '');
+  
+  const handleNext = () => {
+    if (setFormData) {
+      const location = {
+        fullAddress: searchAddress,
+        apartment,
+        countryCode,
+        state,
+        streetAddress,
+        country,
+        city,
+        district,
+        zipCode,
+      };
+      setFormData({
+        ...formData,
+        searchAddress,
+        country,
+        city,
+        district,
+        zipCode,
+        streetAddress,
+        apartment,
+        countryCode,
+        state,
+        location,
+      });
+    }
+    onNext();
+  };
+  
   const sidebarItems = [
     { id: 'property-type', label: 'Property type', active: false, completed: true },
     { id: 'location', label: 'Location', active: true, completed: false },
@@ -162,6 +194,67 @@ const LocationForm: React.FC<PropertyLocationProps> = () => {
             />
           </div>
 
+          {/* Additional Location Fields */}
+          <div className="grid grid-cols-2 gap-4 mb-6">
+            {/* Apartment */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Apartment/Unit <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                value={apartment}
+                onChange={(e) => setApartment(e.target.value)}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 text-sm"
+                placeholder="e.g., Flat 2B, Apt 15"
+              />
+            </div>
+
+            {/* Country Code */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Country Code <span className="text-red-500">*</span>
+              </label>
+              <div className="relative">
+                <select
+                  value={countryCode}
+                  onChange={(e) => setCountryCode(e.target.value)}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 text-sm appearance-none bg-white"
+                >
+                  <option value="">Select country code</option>
+                  <option value="NG">NG - Nigeria</option>
+                  <option value="GH">GH - Ghana</option>
+                  <option value="KE">KE - Kenya</option>
+                  <option value="ET">ET - Estonia</option>
+                </select>
+                <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+              </div>
+            </div>
+          </div>
+
+          {/* State/Region */}
+          <div className="mb-6">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              State/Region <span className="text-red-500">*</span>
+            </label>
+            <div className="relative">
+              <select
+                value={state}
+                onChange={(e) => setState(e.target.value)}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 text-sm appearance-none bg-white"
+              >
+                <option value="">Select state/region</option>
+                <option value="Abuja FCT">Abuja FCT</option>
+                <option value="Lagos">Lagos</option>
+                <option value="Kano">Kano</option>
+                <option value="Tallinn">Tallinn</option>
+                <option value="Accra">Accra</option>
+                <option value="Nairobi">Nairobi</option>
+              </select>
+              <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+            </div>
+          </div>
+
           {/* Map Section */}
           <div className="mb-8">
             <h3 className="text-sm font-medium text-gray-700 mb-2">Display on the map</h3>
@@ -205,6 +298,7 @@ const LocationForm: React.FC<PropertyLocationProps> = () => {
           {/* Navigation Buttons */}
           <div className="flex justify-between">
             <button
+              onClick={onBack}
               className="flex items-center px-6 py-3 border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-colors"
             >
               <ChevronLeft className="w-4 h-4 mr-2" />
@@ -212,6 +306,7 @@ const LocationForm: React.FC<PropertyLocationProps> = () => {
             </button>
             
             <button
+              onClick={handleNext}
               className="flex items-center px-6 py-3 text-white rounded-lg font-medium transition-colors hover:opacity-90"
               style={{ backgroundColor: '#C85212' }}
             >

@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import { PlusCircle, X, Link2, PlayCircle } from "lucide-react";
 import Image from "next/image";
-import { PropertyListingPayload } from "@/types/propertyListing";
+import { PropertyListingFormState } from "@/types/propertyListing";
 
 interface UploadedFile {
   file: File;
@@ -12,12 +12,8 @@ interface UploadedFile {
 }
 
 interface PhotoVideoUploaderProps {
-  formData: PropertyListingPayload | Partial<PropertyListingPayload>;
-  setFormData: React.Dispatch<
-    React.SetStateAction<
-      PropertyListingPayload | Partial<PropertyListingPayload>
-    >
-  >;
+  formData: PropertyListingFormState;
+  setFormData: React.Dispatch<React.SetStateAction<PropertyListingFormState>>;
 }
 
 const PhotoVideoUploader: React.FC<PhotoVideoUploaderProps> = ({
@@ -40,12 +36,9 @@ const PhotoVideoUploader: React.FC<PhotoVideoUploaderProps> = ({
       setCoverPreview(URL.createObjectURL(file));
       setFormData((prev) => ({
         ...prev,
-        media: {
-          ...prev.media,
-          coverPhoto: file,
-          videoTourLink,
-          uploads: prev.media?.uploads || [],
-        },
+        coverPhoto: file,
+        videoTourLink,
+        uploads: prev.uploads || [],
       }));
     }
   };
@@ -62,12 +55,9 @@ const PhotoVideoUploader: React.FC<PhotoVideoUploaderProps> = ({
     setMediaUploads(allFiles);
     setFormData((prev) => ({
       ...prev,
-      media: {
-        ...prev.media,
-        uploads: allFiles.map((f) => f.file),
-        coverPhoto: coverPhoto || prev.media?.coverPhoto,
-        videoTourLink,
-      },
+      uploads: allFiles.map((f) => f.file),
+      coverPhoto: coverPhoto || prev.coverPhoto,
+      videoTourLink,
     }));
   };
 
@@ -85,12 +75,9 @@ const PhotoVideoUploader: React.FC<PhotoVideoUploaderProps> = ({
     setCoverPreview("");
     setFormData((prev) => ({
       ...prev,
-      media: {
-        ...prev.media,
-        coverPhoto: undefined,
-        uploads: prev.media?.uploads || [],
-        videoTourLink,
-      },
+      coverPhoto: undefined,
+      uploads: prev.uploads || [],
+      videoTourLink,
     }));
   };
 
@@ -102,12 +89,9 @@ const PhotoVideoUploader: React.FC<PhotoVideoUploaderProps> = ({
     setMediaUploads(updatedFiles);
     setFormData((prev) => ({
       ...prev,
-      media: {
-        ...prev.media,
-        uploads: updatedFiles.map((f) => f.file),
-        coverPhoto: coverPhoto || prev.media?.coverPhoto,
-        videoTourLink,
-      },
+      uploads: updatedFiles.map((f) => f.file),
+      coverPhoto: coverPhoto || prev.coverPhoto,
+      videoTourLink,
     }));
   };
 
@@ -121,23 +105,23 @@ const PhotoVideoUploader: React.FC<PhotoVideoUploaderProps> = ({
 
   // Initialize from formData
   useEffect(() => {
-    if (formData && formData.media) {
+    if (formData) {
       // Cover photo
-      if (formData.media.coverPhoto instanceof File) {
-        setCoverPhoto(formData.media.coverPhoto);
-        setCoverPreview(URL.createObjectURL(formData.media.coverPhoto));
-      } else if (typeof formData.media.coverPhoto === "string") {
-        setCoverPreview(formData.media.coverPhoto);
+      if (formData.coverPhoto instanceof File) {
+        setCoverPhoto(formData.coverPhoto);
+        setCoverPreview(URL.createObjectURL(formData.coverPhoto));
+      } else if (typeof formData.coverPhoto === "string") {
+        setCoverPreview(formData.coverPhoto);
       }
       // Media uploads
-      if (Array.isArray(formData.media.uploads)) {
-        const newFiles = formData.media.uploads;
+      if (Array.isArray(formData.uploads)) {
+        const newFiles = formData.uploads.filter((file): file is File => file instanceof File);
         const files = newFiles.map((file) => ({
           file,
           preview: URL.createObjectURL(file),
-          type: file.type.startsWith("image/") ? "image" : "video",
+          type: file.type.startsWith("image/") ? "image" as const : "video" as const,
         }));
-        setMediaUploads(files as UploadedFile[]);
+        setMediaUploads(files);
       }
     }
     // Clean up on unmount
@@ -145,7 +129,7 @@ const PhotoVideoUploader: React.FC<PhotoVideoUploaderProps> = ({
       mediaUploads.forEach((file) => URL.revokeObjectURL(file.preview));
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [formData?.media?.uploads, formData?.media?.coverPhoto]);
+  }, [formData?.uploads, formData?.coverPhoto]);
 
   return (
     <div className="w-full">

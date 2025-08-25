@@ -118,8 +118,8 @@ const PropertyDetailsForm = ({
       setFormData((prev) => ({
         ...(prev as object),
         listingDuration: {
-          startDate: listingStart.toISOString(),
-          endDate: listingEnd.toISOString(),
+          startDate: listingStart,
+          endDate: listingEnd,
         },
       }) as PropertyListingPayload | Partial<PropertyListingPayload>);
     }

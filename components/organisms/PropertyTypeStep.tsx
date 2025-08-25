@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import { Building2, Home, Building, Car, ChevronRight } from "lucide-react";
-import { StepProps } from "@/types/generated";
+import { StepProps, CategoryType, PropertyType, PropertyCondition, PetPolicy } from "@/types/propertyListing";
 
 const PropertyTypeStep: React.FC<StepProps> = ({
   onNext,
@@ -27,14 +27,14 @@ const PropertyTypeStep: React.FC<StepProps> = ({
     { id: "Renovated", label: "Renovated" },
   ];
 
-  const [category, setCategory] = useState(formData.category || "Rent");
-  const [propertyType, setPropertyType] = useState(
+  const [category, setCategory] = useState<CategoryType>(formData.category || "Rent");
+  const [propertyType, setPropertyType] = useState<PropertyType>(
     formData.propertyType || "Apartment"
   );
-  const [condition, setCondition] = useState<"Good Condition" | "New Building" | "Renovated">(
-    (formData.condition as "Good Condition" | "New Building" | "Renovated") || "Good Condition"
+  const [condition, setCondition] = useState<PropertyCondition>(
+    formData.condition || "Good Condition"
   );
-  const [petPolicy, setPetPolicy] = useState(
+  const [petPolicy, setPetPolicy] = useState<PetPolicy>(
     formData.petPolicy || "pet-friendly"
   );
 
@@ -66,7 +66,7 @@ const PropertyTypeStep: React.FC<StepProps> = ({
           {categories.map((cat) => (
             <button
               key={cat.id}
-              onClick={() => setCategory(cat.id)}
+              onClick={() => setCategory(cat.id as CategoryType)}
               className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
                 category === cat.id
                   ? "text-gray-900 shadow-sm"
@@ -97,7 +97,7 @@ const PropertyTypeStep: React.FC<StepProps> = ({
             return (
               <button
                 key={type.id}
-                onClick={() => setPropertyType(type.id)}
+                onClick={() => setPropertyType(type.id as PropertyType)}
                 className={`flex flex-col items-center justify-center p-4 border-2 rounded-lg transition-all ${
                   propertyType === type.id
                     ? "border-orange-500 bg-orange-50"

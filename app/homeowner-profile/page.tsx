@@ -1,11 +1,11 @@
-import AgentProfile from "@/components/organisms/AgentProfile";
+import HomeownerProfile from "@/components/organisms/HomeownerProfile";
 import RoleGuard from "@/components/molecules/RoleGuard";
 
-export default function Agent() {
+export default function HomeownerProfilePage() {
   return (
     <div className="min-h-screen">
       <RoleGuard>
-        <AgentProfile />
+        <HomeownerProfile />
       </RoleGuard>
     </div>
   );

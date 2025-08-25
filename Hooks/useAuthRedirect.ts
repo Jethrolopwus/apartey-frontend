@@ -51,7 +51,6 @@ export const useAuthRedirect = (
     const checkAuthStatus = () => {
       setIsLoading(true);
       const authStatus = checkAuthentication();
-      console.log("Authentication status changed:", authStatus);
       setIsAuthenticated(authStatus);
       setIsLoading(false);
     };
@@ -64,7 +63,6 @@ export const useAuthRedirect = (
           const parsedData = JSON.parse(storedData);
           setPendingReviewData(parsedData);
           setHasPendingData(true);
-          console.log("Found pending review data:", parsedData);
         } else {
           setPendingReviewData(null);
           setHasPendingData(false);
@@ -86,7 +84,6 @@ export const useAuthRedirect = (
           e.key || ""
         )
       ) {
-        console.log("Token storage changed, rechecking auth status");
         checkAuthStatus();
       }
       if (e.key === "pendingReviewData") {
@@ -107,9 +104,6 @@ export const useAuthRedirect = (
   const handleAuthRedirect = useCallback(
     (formData: PendingReviewData) => {
       try {
-        console.log("=== handleAuthRedirect called ===");
-        console.log("Form data to store:", formData);
-
         const structuredData = {
           stayDetails: formData.stayDetails || {},
           costDetails: formData.costDetails || {},
@@ -118,12 +112,6 @@ export const useAuthRedirect = (
           submitAnonymously: formData.submitAnonymously || false,
           location: formData.location || {},
         };
-
-        console.log("Structured data:", structuredData);
-        console.log(
-          "Current pathname:",
-          typeof window !== "undefined" ? window.location.pathname : "server"
-        );
 
         if (typeof window !== "undefined") {
           localStorage.setItem(
@@ -135,7 +123,6 @@ export const useAuthRedirect = (
         setPendingReviewData(structuredData);
         setHasPendingData(true);
 
-        console.log("Data stored in localStorage. Redirecting to signin...");
         router.push("/signin");
       } catch (error) {
         console.error("Error storing form data:", error);
@@ -148,12 +135,10 @@ export const useAuthRedirect = (
   const handlePostLoginRedirect = useCallback(() => {
     try {
       if (isRedirecting) {
-        console.log("Already redirecting, skipping...");
         return;
       }
 
       setIsRedirecting(true);
-      console.log("=== handlePostLoginRedirect called ===");
 
       let redirectPath: string | null = null;
       let authMode: string | null = null;
@@ -167,41 +152,21 @@ export const useAuthRedirect = (
         hasCompletedOnboarding = localStorage.getItem("hasCompletedOnboarding");
       }
 
-      console.log("=== AUTH REDIRECT DEBUG ===");
-      console.log("Stored redirectPath:", redirectPath);
-      console.log("authMode:", authMode);
-      console.log("hasPendingData state:", hasPendingData);
-      console.log(
-        "hasPendingReviewData from localStorage:",
-        hasPendingReviewData
-      );
-      console.log("hasCompletedOnboarding from localStorage:", hasCompletedOnboarding);
-      console.log("Onboarding Status from backend:", onboardingStatus);
-      console.log("isOnboardingLoading:", isOnboardingLoading);
-      console.log("=== END DEBUG ===");
+      // Debug information removed for production
 
       let finalRedirect;
 
       if (authMode === "signup") {
-        console.log("Redirecting to /onboarding for signup");
         finalRedirect = "/onboarding";
       } else if (hasPendingReviewData) {
         try {
           const pendingData = JSON.parse(hasPendingReviewData || "{}");
-          console.log("Parsed pending data:", pendingData);
           if (redirectPath && redirectPath.includes("/write-reviews/listed/")) {
             const pathParts = redirectPath.split("/");
             const propertyId = pathParts[pathParts.length - 1];
             finalRedirect = `/write-reviews/listed/${propertyId}`;
-            console.log(
-              "Found pending listed property review data, redirecting to:",
-              finalRedirect
-            );
           } else {
             finalRedirect = "/write-reviews/unlisted";
-            console.log(
-              "Found pending unlisted property review data, redirecting to write-reviews/unlisted"
-            );
           }
         } catch (error) {
           console.error("Error parsing pending review data:", error);
@@ -212,7 +177,6 @@ export const useAuthRedirect = (
         !["/signin", "/login", "/onboarding"].includes(redirectPath)
       ) {
         finalRedirect = redirectPath;
-        console.log("Using stored redirect path:", finalRedirect);
       } else {
         const role =
           typeof window !== "undefined"
@@ -220,67 +184,44 @@ export const useAuthRedirect = (
               onboardingStatus?.currentUserStatus?.role ||
               "renter"
             : onboardingStatus?.currentUserStatus?.role || "renter";
-        console.log("User role:", role);
         
         // Check if user has completed onboarding
         const hasCompletedOnboardingLocal = hasCompletedOnboarding === "true";
         const hasCompletedOnboardingBackend = onboardingStatus?.currentUserStatus?.isOnboarded === true;
         
-        console.log("Local onboarding status:", hasCompletedOnboardingLocal);
-        console.log("Backend onboarding status:", hasCompletedOnboardingBackend);
-        
         // For signin users (both traditional and Google OAuth), assume they have completed onboarding
         // since they already have an account
         if (authMode === "signin") {
-          console.log("User signed in, assuming onboarding is complete");
           // Redirect based on user role
           if (role === "homeowner") {
             finalRedirect = "/landlord";
-            console.log("Redirecting to /landlord for homeowner role");
           } else if (role === "agent") {
             finalRedirect = "/agent-profile";
-            console.log("Redirecting to /agent-profile for agent role");
           } else {
             finalRedirect = "/profile";
-            console.log("Redirecting to /profile for renter role");
           }
         } else if (!hasCompletedOnboardingLocal && !hasCompletedOnboardingBackend) {
-          console.log(
-            "Redirecting to /onboarding due to incomplete onboarding"
-          );
           finalRedirect = "/onboarding";
         } else {
           // Redirect based on user role
           if (role === "homeowner") {
             finalRedirect = "/landlord";
-            console.log("Redirecting to /landlord for homeowner role");
           } else if (role === "agent") {
             finalRedirect = "/agent-profile";
-            console.log("Redirecting to /agent-profile for agent role");
           } else {
             finalRedirect = "/profile";
-            console.log("Redirecting to /profile for renter role");
           }
         }
       }
-
-      console.log("Final redirect destination:", finalRedirect);
-      console.log(
-        "Current pathname:",
-        typeof window !== "undefined" ? window.location.pathname : "server"
-      );
 
       if (
         typeof window !== "undefined" &&
         window.location.pathname !== finalRedirect
       ) {
-        console.log("Redirecting to:", finalRedirect);
         // Add a small delay to ensure token is properly set
         setTimeout(() => {
           router.push(finalRedirect);
         }, 200);
-      } else {
-        console.log("Already on target page, no redirect needed");
       }
 
       if (typeof window !== "undefined") {
@@ -309,7 +250,6 @@ export const useAuthRedirect = (
       }
       setPendingReviewData(null);
       setHasPendingData(false);
-      console.log("Cleared pending review data");
     } catch (error) {
       console.error("Error clearing pending data:", error);
     }
@@ -322,10 +262,8 @@ export const useAuthRedirect = (
           console.warn("No submit review mutation provided");
           return;
         }
-        console.log("Submitting pending review:", data);
         await submitReviewMutation.mutateAsync(data);
         clearPendingData();
-        console.log("Review submitted successfully, redirecting to role-specific profile");
         
         // Redirect based on user role
         const userRole = localStorage.getItem("userRole");

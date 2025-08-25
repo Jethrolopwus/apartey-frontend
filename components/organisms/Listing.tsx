@@ -400,12 +400,12 @@ const Listings = () => {
                     No properties found in {country}.
                   </div>
                 )}
-                {data?.properties?.map((property: Property) => {
+                {data?.properties?.map((property: Property, index: number) => {
                   const { rating, reviewCount } = getPropertyRating(property);
                   const isLiked = likedProperties.has(property._id || "");
                   return (
                     <div
-                      key={property._id}
+                      key={`${property._id}-${index}`}
                       className="bg-white rounded-lg border border-gray-200 overflow-hidden hover:shadow-lg transition-shadow"
                     >
                       <div className="relative">

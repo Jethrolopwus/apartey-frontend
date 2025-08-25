@@ -46,6 +46,9 @@ const infrastructure = [
 ];
 
 const PropertyDetailsStep: React.FC<PropertyDetailsStepProps> = ({ onNext, onBack, formData, setFormData }) => {
+  // State to track if Listing Duration section should be shown
+  const [showListingDuration, setShowListingDuration] = useState(false);
+
   // Type-safe property existence check for propertyDetails
   function hasPropertyDetails(obj: unknown): obj is { propertyDetails: unknown } {
     return (
@@ -93,6 +96,15 @@ const PropertyDetailsStep: React.FC<PropertyDetailsStepProps> = ({ onNext, onBac
   useEffect(() => {
     updateFormData();
   }, [updateFormData]);
+
+  // Effect to check if category is "Swap" and show/hide Listing Duration section
+  useEffect(() => {
+    if ((formData.category as string) === "Swap") {
+      setShowListingDuration(true);
+    } else {
+      setShowListingDuration(false);
+    }
+  }, [formData.category]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -276,44 +288,46 @@ const PropertyDetailsStep: React.FC<PropertyDetailsStepProps> = ({ onNext, onBac
         </label>
       </div>
 
-      {/* Listing Duration Section */}
-      <div className="space-y-4">
-        <div className="flex items-start justify-between">
-          <div className="flex-1">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Listing Duration
-            </label>
-            <div className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-md bg-white text-gray-700">
-              <Calendar className="w-4 h-4" />
-              <span>{(localData as Record<string, unknown>).listingDuration as string}</span>
+      {/* Listing Duration Section - Only show for Swap category */}
+      {showListingDuration && (
+        <div className="space-y-4">
+          <div className="flex items-start justify-between">
+            <div className="flex-1">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Listing Duration
+              </label>
+              <div className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-md bg-white text-gray-700">
+                <Calendar className="w-4 h-4" />
+                <span>{(localData as Record<string, unknown>).listingDuration as string}</span>
+              </div>
             </div>
-          </div>
-          
-          <div className="flex-1 ml-8">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Quick Select
-            </label>
-            <div className="flex gap-2">
-              {["1 Month", "3 Months", "6 Months", "1 Year"].map((duration) => {
-                const isSelected = duration === "1 Month";
-                return (
-                  <button
-                    key={duration}
-                    onClick={() => handleQuickSelect(duration)}
-                    className={`px-4 py-2 border border-gray-200 rounded-md text-sm transition-all ${
-                      isSelected
-                        ? "bg-white text-gray-800"
-                        : "bg-gray-100 text-gray-500 hover:bg-gray-200"
-                    }`}
-                  >
-                    {duration}
-                  </button>
-                );
-              })}
+            
+            <div className="flex-1 ml-8">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Quick Select
+              </label>
+              <div className="flex gap-2">
+                {["1 Month", "3 Months", "6 Months", "1 Year"].map((duration) => {
+                  const isSelected = duration === "1 Month";
+                  return (
+                    <button
+                      key={duration}
+                      onClick={() => handleQuickSelect(duration)}
+                      className={`px-4 py-2 border border-gray-200 rounded-md text-sm transition-all ${
+                        isSelected
+                          ? "bg-white text-gray-800"
+                          : "bg-gray-100 text-gray-500 hover:bg-gray-200"
+                      }`}
+                    >
+                      {duration}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
           </div>
         </div>
-      </div>
+      )}
 
       {/* Room and Parking Spot Count Selectors */}
       <div className="space-y-6">

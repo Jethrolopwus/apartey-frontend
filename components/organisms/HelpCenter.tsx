@@ -8,7 +8,27 @@ import {
   MinusCircle,
 } from "lucide-react";
 
+// Extend Window interface for Tawk_API
+declare global {
+  interface Window {
+    Tawk_API?: {
+      maximize: () => void;
+      minimize: () => void;
+      toggle: () => void;
+      showWidget: () => void;
+      hideWidget: () => void;
+    };
+  }
+}
+
 export default function HelpCenter() {
+  // Function to open Tawk.to chat
+  const openTawkChat = () => {
+    if (typeof window !== 'undefined' && window.Tawk_API) {
+      window.Tawk_API.maximize();
+    }
+  };
+
   const faqs = [
     {
       question: "What is Apartey?",
@@ -88,7 +108,7 @@ export default function HelpCenter() {
         {/* Support Options */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
           {/* Live Chat */}
-          <div className="bg-white rounded-lg border border-gray-200 p-6 text-center">
+          <div className="bg-white cursor-pointer rounded-lg border border-gray-200 p-6 text-center">
             <div className="inline-flex items-center justify-center w-12 h-12 mb-4">
               <MessageCircle className="w-8 h-8 text-[#C85212]" />
             </div>
@@ -98,7 +118,10 @@ export default function HelpCenter() {
             <p className="text-sm text-gray-600 mb-4">
               Chat with our support team
             </p>
-            <button className="text-sm text-[#C85212] hover:text-[#A64310] font-medium transition-colors">
+            <button 
+              onClick={openTawkChat}
+              className="text-sm text-[#C85212] cursor-pointer hover:text-[#A64310] font-medium transition-colors"
+            >
               Start Chat
             </button>
           </div>

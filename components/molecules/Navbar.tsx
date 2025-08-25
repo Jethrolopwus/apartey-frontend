@@ -74,7 +74,6 @@ const Navbar: React.FC<NavbarProps> = () => {
 
   const handleLogoOrHomeClick = (e: React.MouseEvent) => {
     e.preventDefault();
-    console.log("Logo/Home clicked, authData:", authData);
     if (!authData) {
       router.push("/");
       return;
@@ -84,21 +83,17 @@ const Navbar: React.FC<NavbarProps> = () => {
       authData.role ||
       authData.currentUserRole?.role ||
       "renter";
-    console.log("User role:", userRole);
     let homepage = "/";
     if (userRole.toLowerCase() === "homeowner") homepage = "/landlord";
     else if (userRole.toLowerCase() === "agent") homepage = "/agent";
-    console.log("Routing to homepage:", homepage);
     router.push(homepage);
   };
 
   const handleUserIconClick = () => {
-    console.log("User icon clicked, authData:", authData);
     if (!authData) {
       router.push("/signin");
       return;
     }
-    console.log("Setting dropdown to true");
     setIsUserDropdownOpen(true);
   };
 

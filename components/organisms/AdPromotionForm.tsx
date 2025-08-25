@@ -6,14 +6,14 @@ import { PropertyListingPayload } from "@/types/propertyListing";
 
 const promotionTiers = [
   {
-    name: 'Free',
+    name: 'Basic',
     price: 0,
     icon: Zap,
     description: "Ideal if you're testing the waters and want to start with basic exposure.",
     features: ['7-Day Run for your ad active for one week', 'Keep your ad live and active for one week', 'Track views and basic engagement metrics']
   },
   {
-    name: 'Fast Sale',
+    name: 'Premium',
     price: 40000,
     icon: Rocket,
     description: 'Perfect for serious sellers who want more exposure and detailed insights.',
@@ -21,7 +21,7 @@ const promotionTiers = [
     recommended: true
   },
   {
-    name: 'Turbo Boost',
+    name: 'Professional',
     price: 120000,
     icon: TrendingUp,
     description: 'Best for ambitious sellers who want maximum exposure and advanced insights.',
@@ -40,10 +40,10 @@ type AdPromotionFormProps = {
 };
 
 const AdPromotionForm: React.FC<AdPromotionFormProps> = ({ setFormData }) => {
-  const [selectedTier, setSelectedTier] = useState('Fast Sale');
+  const [selectedTier, setSelectedTier] = useState<'Basic' | 'Premium' | 'Professional'>('Basic');
   const [selectedServices, setSelectedServices] = useState<string[]>(['10 lifts to the top of the list (daily, 7 days)']);
   
-  const handleSelectTier = (tierName: string) => {
+  const handleSelectTier = (tierName: 'Basic' | 'Premium' | 'Professional') => {
     setSelectedTier(tierName);
   };
   
@@ -83,14 +83,14 @@ const AdPromotionForm: React.FC<AdPromotionFormProps> = ({ setFormData }) => {
             {tier.recommended && <div className="absolute top-0 -mt-3 left-1/2 -translate-x-1/2 bg-orange-500 text-white text-xs font-semibold px-3 py-1 rounded-full">Recommended</div>}
             <div className="flex-grow">
                 <tier.icon className="w-6 h-6 md:w-8 md:h-8 text-orange-500 mb-3 md:mb-4" />
-                <h3 className="text-base md:text-lg font-semibold text-gray-900">{tier.name === 'Free' ? 'Easy Start' : tier.name}</h3>
-                {tier.name === 'Free' ? (
+                <h3 className="text-base md:text-lg font-semibold text-gray-900">{tier.name === 'Basic' ? 'Easy Start' : tier.name}</h3>
+                {tier.name === 'Basic' ? (
                   <p className="text-xl md:text-2xl font-bold text-gray-900 mt-2">Free <span className="text-xs md:text-sm font-medium text-gray-500">/Always</span></p>
                 ) : (
                   <p className="text-xl md:text-2xl font-bold text-gray-900 mt-2">NGN{tier.price.toLocaleString()}<span className="text-xs md:text-sm font-medium text-gray-500">/month</span></p>
                 )}
                 <p className="text-xs md:text-sm text-gray-600 mt-2 mb-3 md:mb-4">{tier.description}</p>
-                <button onClick={() => handleSelectTier(tier.name)} className={`w-full py-2 md:py-2.5 rounded-lg font-semibold text-xs md:text-sm transition-colors ${selectedTier === tier.name ? 'bg-orange-500 text-white' : 'bg-white border border-gray-300 text-gray-800 hover:bg-gray-50'}`}>{tier.name === 'Free' ? 'List Property for Free' : `Select ${tier.name}`}</button>
+                <button onClick={() => handleSelectTier(tier.name as 'Basic' | 'Premium' | 'Professional')} className={`w-full py-2 md:py-2.5 rounded-lg font-semibold text-xs md:text-sm transition-colors ${selectedTier === tier.name ? 'bg-orange-500 text-white' : 'bg-white border border-gray-300 text-gray-800 hover:bg-gray-50'}`}>{tier.name === 'Basic' ? 'List Property for Free' : `Select ${tier.name}`}</button>
                 <ul className="mt-4 md:mt-6 space-y-2 md:space-y-3 text-xs md:text-sm text-gray-600">
                     {tier.features.map(feature => <li key={feature} className="flex items-start"><Check size={14} className="text-green-500 mr-2 md:mr-3 mt-0.5 flex-shrink-0"/>{feature}</li>)}
                 </ul>

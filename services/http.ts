@@ -95,7 +95,7 @@ class BaseURL {
         endpoints.googleAuth,
         googleData
       );
-      console.log("Data", response.data);
+
       return response.data;
     } catch (error: any) {
       throw error;
@@ -249,7 +249,7 @@ class BaseURL {
         localStorage.getItem("token") ||
         localStorage.getItem("accessToken");
       if (!token) throw new Error("No authentication token found.");
-      console.log("Update Data", data);
+
       let payloadToSend: any = data;
       let headers: any = {
         Authorization: `Bearer ${token}`,
@@ -410,7 +410,6 @@ class BaseURL {
         localStorage.getItem("authToken") ||
         localStorage.getItem("token") ||
         localStorage.getItem("accessToken");
-      console.log("Tonek", token);
       if (!token) throw new Error("No authentication token found.");
       const response = await AxiosInstance.get(endpoints.getUsersActivities, {
         headers: {
@@ -433,7 +432,6 @@ class BaseURL {
         localStorage.getItem("authToken") ||
         localStorage.getItem("token") ||
         localStorage.getItem("accessToken");
-      console.log("Tonek", token);
       if (!token) throw new Error("No authentication token found.");
       const response = await AxiosInstance.get(endpoints.getUsersActivities, {
         headers: {
@@ -457,7 +455,6 @@ class BaseURL {
         localStorage.getItem("authToken") ||
         localStorage.getItem("token") ||
         localStorage.getItem("accessToken");
-      console.log("Tonek", token);
       if (!token) throw new Error("No authentication token found.");
       const response = await AxiosInstance.get(endpoints.getUsersRole, {
         headers: {
@@ -504,7 +501,6 @@ class BaseURL {
         localStorage.getItem("authToken") ||
         localStorage.getItem("token") ||
         localStorage.getItem("accessToken");
-      console.log("Token", token);
       if (!token) throw new Error("No authentication token found.");
       const response = await AxiosInstance.patch(
         endpoints.updateOnboardingStatus,
@@ -590,11 +586,6 @@ class BaseURL {
       if (!token) {
         throw new Error("No authentication token found. Please login again.");
       }
-      console.log("Creating listing with token:", token);
-      console.log("FormData contents:");
-      for (let [key, value] of data.entries()) {
-        console.log(`${key}:`, value);
-      }
       const response = await AxiosInstance.post(endpoints.createListing, data, {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -603,7 +594,6 @@ class BaseURL {
       });
       return response.data;
     } catch (error: any) {
-      console.error("Create listing error:", error);
       if (error.response?.status === 401) {
         TokenManager.clearAllTokens();
         window.location.href = "/signin";
@@ -629,7 +619,7 @@ class BaseURL {
         window.location.href = "/signin";
         throw new Error("No authentication token found. Please login again.");
       }
-      console.log(data);
+
       const response = await AxiosInstance.post(
         endpoints.writeUnlistedReview,
         data,
@@ -640,7 +630,7 @@ class BaseURL {
           },
         }
       );
-      console.log(response.data);
+
       return response.data;
     } catch (error: any) {
       if (error.response?.status === 401) {
@@ -693,12 +683,9 @@ class BaseURL {
       if (apartment) params.append("apartment", encodeURIComponent(apartment));
       if (searchQuery) params.append("q", encodeURIComponent(searchQuery));
       if (params.toString()) url += `?${params.toString()}`;
-      console.log("API Request URL:", url); // Debug
       const response = await AxiosInstance.get(url);
-      console.log("API Response:", response.data); // Debug
       return response.data;
     } catch (error: any) {
-      console.error("API Error:", error.response?.data || error.message); // Debug
       throw new Error(
         error.response?.data?.message || "Failed to fetch reviews"
       );
@@ -743,9 +730,7 @@ class BaseURL {
       if (params.toString()) {
         url += `?${params.toString()}`;
       }
-      console.log("[httpGetAllProperties] Requesting URL:", url);
       const response = await AxiosInstance.get(url);
-      console.log("[httpGetAllProperties] Response data:", response.data);
       return response.data;
     } catch (error: any) {
       throw new Error(
@@ -867,16 +852,9 @@ class BaseURL {
       if (params.toString()) {
         url += `?${params.toString()}`;
       }
-      console.log("[httpGetAllListings] Requesting URL:", url);
       const response = await AxiosInstance.get(url);
-      console.log("[httpGetAllListings] Response data:", response.data);
       return response.data;
     } catch (error: any) {
-      console.error("[httpGetAllListings] Error fetching listings:", {
-        message: error.message,
-        response: error.response?.data,
-        status: error.response?.status,
-      });
       throw new Error(
         error.response?.data?.message || "Get all listings failed"
       );
@@ -895,9 +873,11 @@ class BaseURL {
       if (params.toString()) {
         url += `?${params.toString()}`;
       }
+      
       const response = await AxiosInstance.get(url);
       return response.data;
     } catch (error: any) {
+      
       throw new Error(
         error.response?.data?.message || "Get all My listings failed"
       );

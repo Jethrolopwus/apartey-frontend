@@ -1,7 +1,9 @@
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import http from "@/services/http";
 
 export const useCreateListingsMutation = () => {
+  const queryClient = useQueryClient();
+  
   const { data, isPending, error, mutate } = useMutation<
     any,
     Error,
@@ -9,6 +11,10 @@ export const useCreateListingsMutation = () => {
   >({
     mutationFn: (formData: globalThis.FormData) =>
       http.httpCreateListings(formData),
+    onSuccess: () => {
+      // Invalidate and refetch listings queries
+      queryClient.invalidateQueries({ queryKey: ["Listings"] });
+    },
   });
 
   return {

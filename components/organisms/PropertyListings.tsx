@@ -12,8 +12,8 @@ import {
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useCreateListingsMutation } from "../../Hooks/use.createListings.mutation";
-import { PropertyListingPayload } from "../../types/propertyListing";
-import type { LocationPayload } from "../../types/generated";
+import { PropertyListingFormState } from "../../types/propertyListing";
+import { createFormDataPayload } from "../../utils/propertyListingTransformer";
 
 import PropertyTypeStep from "./PropertyTypeStep";
 import LocationStep from "./LocationStep";
@@ -24,21 +24,12 @@ import ContactInfoStep from "./ContactInfoStep";
 import AdPromotionStep from "./AdPromotionStep";
 import toast from "react-hot-toast";
 
-// Type-safe property existence check for propertyDetails
-function hasPropertyDetails(obj: unknown): obj is { propertyDetails: unknown } {
-  return (
-    typeof obj === 'object' &&
-    obj !== null &&
-    'propertyDetails' in obj
-  );
-}
+
 
 // Main Wizard Component
 const PropertyListings = () => {
   const [currentStep, setCurrentStep] = useState(0);
-  const [formData, setFormData] = useState<
-    PropertyListingPayload | Partial<PropertyListingPayload>
-  >({});
+  const [formData, setFormData] = useState<PropertyListingFormState>({});
   const router = useRouter();
   const { mutate } = useCreateListingsMutation();
 
@@ -95,304 +86,72 @@ const PropertyListings = () => {
   };
 
   const handleSubmit = async () => {
-    // Check user role and authentication
-    const token = localStorage.getItem("token") || localStorage.getItem("authToken") || localStorage.getItem("accessToken");
-    const userRole = localStorage.getItem("userRole");
-    
-    console.log("Submit - Token:", token ? "Present" : "Missing");
-    console.log("Submit - User Role:", userRole);
-    
-    if (!token) {
-      toast.error("Please sign in to create a listing");
-      return;
-    }
-    
-    if (userRole !== "homeowner" && userRole !== "agent") {
-      toast.error("Only homeowners and agents can create property listings");
-      return;
-    }
-    
-    // Updated enums to match backend expectations
-    const PropertyTypeEnum = [
-      "House",
-      "Apartment",
-      "Room",
-      "Commercial",
-      "Garage",
-    ];
-
-    const CategoriesEnum = ["Sale", "Rent", "Swap"];
-
-    // Backend: AmenitiesEnum
-    const AmenitiesEnum = [
-      "TV set",
-      "Washing machine",
-      "Kitchen",
-      "Air conditioning",
-      "Separate workplace",
-      "Refrigerator",
-      "Drying machine",
-      "Closet",
-      "Patio",
-      "Fireplace",
-      "Shower cabin",
-      "Whirlpool",
-      "Security cameras",
-      "Balcony",
-      "Bar",
-    ];
-
-    // Backend: InfrastructureEnum
-    const InfrastructureEnum = [
-      "Schools",
-      "Parking lot",
-      "Shop",
-      "Kindergarten",
-      "Sports center",
-      "Shopping center",
-      "Underground",
-      "Beauty salon",
-      "Bank",
-      "Cinema / theater",
-      "Restaurant / cafe",
-      "Park / green area",
-    ];
-
-    const   PropertyConditionEnum = [
-      "Good Condition",
-      "New Building",
-      "Renovated",
-    ];
-
-    // Backend: OfferTypeEnum
-    const ValidOfferTypes = [
-      "Private person",
-      " Real estate agent",
-    ];
-
-    // Validate enums
-    if (!PropertyTypeEnum.includes(formData.propertyType || "")) {
-      toast.error("Invalid property type.");
-      return;
-    }
-
-    if (!CategoriesEnum.includes(formData.category || "")) {
-      toast.error("Invalid category.");
-      return;
-    }
-
-    // Validate offer type
-    if (!ValidOfferTypes.includes(formData.typeOfOffer || "")) {
-      toast.error(
-        `Invalid offer type. Valid options are: Private person, Real estate agent`
-      );
-      return;
-    }
-
-    const invalidAmenities = (formData.amenities || []).filter(
-      (a: string) => !AmenitiesEnum.includes(a)
-    );
-    if (invalidAmenities.length > 0) {
-      toast.error(`Invalid amenities: ${invalidAmenities.join(", ")}`);
-      return;
-    }
-
-    const invalidInfrastructure = (formData.infrastructure || []).filter(
-      (i: string) => !InfrastructureEnum.includes(i)
-    );
-    if (invalidInfrastructure.length > 0) {
-      toast.error(
-        `Invalid infrastructure: ${invalidInfrastructure.join(", ")}`
-      );
-      return;
-    }
-
-    if (!PropertyConditionEnum.includes(formData.condition || "")) {
-      toast.error("Invalid property condition.");
-      return;
-    }
-
-    // Validate required fields for backend
-    let propertyDetails: unknown = {};
-    const formDataObj = formData as unknown;
-    if (
-      hasPropertyDetails(formDataObj) &&
-      typeof (formDataObj as { propertyDetails?: unknown }).propertyDetails === "object" &&
-      (formDataObj as { propertyDetails?: unknown }).propertyDetails !== null
-    ) {
-      propertyDetails = (formDataObj as { propertyDetails: unknown }).propertyDetails;
-    }
-    const description = (propertyDetails as Record<string, unknown>).description as string;
-    const coverPhoto = ((formData as Record<string, unknown>).media && typeof (formData as Record<string, unknown>).media === 'object')
-      ? ((formData as Record<string, unknown>).media as { coverPhoto?: File }).coverPhoto
-      : undefined;
-    const location = (formData as PropertyListingPayload | Partial<PropertyListingPayload>).location || {};
-    const street = (location as LocationPayload)?.street || (typeof formData === 'object' && formData && Object.prototype.hasOwnProperty.call(formData, 'streetAddress') ? (formData as { streetAddress?: string }).streetAddress : undefined);
-    const stateOrRegion = (location as LocationPayload)?.stateOrRegion || (typeof formData === 'object' && formData && Object.prototype.hasOwnProperty.call(formData, 'state') ? (formData as { state?: string }).state : undefined);
-
-    if (!description || !description.trim()) {
-      toast.error("Description is required.");
-      return;
-    }
-    if (!(coverPhoto instanceof File && coverPhoto.type.startsWith("image/"))) {
-      toast.error("Cover photo is required.");
-      return;
-    }
-    if (!street) {
-      toast.error("Street address is required.");
-      return;
-    }
-    if (!stateOrRegion) {
-      toast.error("State is required.");
-      return;
-    }
-
-    // Build FormData
-    const form = new FormData();
-    
-    // Add user role to the request
-    if (userRole) {
-      form.append("userRole", userRole);
-    }
-
-    // Contact Info (dot notation)
-    if (formData.firstName) form.append("contactInfo.firstName", formData.firstName);
-    if (formData.lastName) form.append("contactInfo.lastName", formData.lastName);
-    if (formData.email) form.append("contactInfo.email", formData.email);
-    if (formData.phoneNumber) form.append("contactInfo.phoneNumber", formData.phoneNumber);
-    if (formData.openForTour !== undefined) form.append("contactInfo.openForTour", String(formData.openForTour));
-    if (formData.typeOfOffer) form.append("contactInfo.typeOfOffer", formData.typeOfOffer);
-
-    // Location (dot notation, only once per field)
-    const locationFields: Array<[string, string]> = [
-      ["country", "location.country"],
-      ["countryCode", "location.countryCode"],
-      ["stateOrRegion", "location.stateOrRegion"],
-      ["district", "location.district"],
-      ["street", "location.street"],
-      ["streetNumber", "location.streetNumber"],
-      ["apartment", "location.apartment"],
-      ["postalCode", "location.postalCode"],
-      ["fullAddress", "location.fullAddress"],
-    ];
-    locationFields.forEach(([key, formKey]) => {
-      let value: string | undefined;
-      if (key === "street") {
-        value = (location as LocationPayload)?.street || (typeof formData === 'object' && formData && Object.prototype.hasOwnProperty.call(formData, 'streetAddress') ? (formData as { streetAddress?: string }).streetAddress : undefined);
-      } else if (key === "stateOrRegion") {
-        value = (location as LocationPayload)?.stateOrRegion || (typeof formData === 'object' && formData && Object.prototype.hasOwnProperty.call(formData, 'state') ? (formData as { state?: string }).state : undefined);
-      } else {
-        value = (location as LocationPayload)?.[key as keyof LocationPayload] ?? (typeof formData === 'object' && formData && Object.prototype.hasOwnProperty.call(formData, key) ? (formData as Record<string, string>)[key] : undefined);
-      }
-      if (value) form.append(formKey, value);
-    });
-    // Coordinates (optional)
-    const coordinates = (location as LocationPayload & { coordinates?: { latitude?: number; longitude?: number } }).coordinates;
-    if (coordinates) {
-      if (coordinates.latitude)
-        form.append("location.coordinates.latitude", String(coordinates.latitude));
-      if (coordinates.longitude)
-        form.append("location.coordinates.longitude", String(coordinates.longitude));
-    }
-
-    // Cover photo (as file, not as media.coverPhoto)
-    if (coverPhoto instanceof File && coverPhoto.type.startsWith("image/")) {
-      form.append("coverPhoto", coverPhoto);
+    try {
+      // Check user role and authentication
+      const token = localStorage.getItem("token") || localStorage.getItem("authToken") || localStorage.getItem("accessToken");
+      const userRole = localStorage.getItem("userRole");
       
-    }
-    // console.log("coverPhoto", coverPhoto);
-    
-    // Do NOT append any media fields or objects
-
-    // Property Details (dot notation)
-    if (propertyDetails) {
-      const propertyDetailsFields = [
-        "price", "currency", "negotiatedPrice", "totalFloors", "floor", "totalAreaSqM", "livingAreaSqM", "kitchenAreaSqM", "bedrooms", "bathrooms", "parkingSpots", "description", "condition", "petPolicy"
-      ];
-      propertyDetailsFields.forEach((key) => {
-        if ((propertyDetails as Record<string, unknown>)[key] !== undefined && (propertyDetails as Record<string, unknown>)[key] !== null) {
-          form.append(`propertyDetails.${key}`, String((propertyDetails as Record<string, unknown>)[key]));
-        }
-      });
-      // Array fields (amenities, infrastructure)
-      if (Array.isArray((propertyDetails as Record<string, unknown>).amenities)) {
-        ((propertyDetails as Record<string, unknown>).amenities as string[]).forEach((a: string) => form.append("propertyDetails.amenities", a));
+      if (!token) {
+        toast.error("Please sign in to create a listing");
+        return;
       }
-      if (Array.isArray((propertyDetails as Record<string, unknown>).infrastructure)) {
-        ((propertyDetails as Record<string, unknown>).infrastructure as string[]).forEach((i: string) => form.append("propertyDetails.infrastructure", i));
+      
+      if (userRole !== "homeowner" && userRole !== "agent") {
+        toast.error("Only homeowners and agents can create property listings");
+        return;
       }
-    }
 
-    // All other fields (flat, not nested)
-    const skip = new Set([
-      "firstName", "lastName", "email", "phoneNumber", "openForTour", "typeOfOffer",
-      "location", "country", "city", "district", "zipCode", "streetAddress", "apartment", "state", "searchAddress",
-      "media", "description", "propertyDetails"
-    ]);
-    Object.entries(formData).forEach(([key, value]) => {
-      if (skip.has(key)) return;
-      if (value === undefined || value === null) return;
-      if (typeof value === "object") return; // already handled nested
-      form.append(key, String(value));
-    });
+      // Create FormData payload using the new function
+      const form = createFormDataPayload(formData);
+      
+      // Add user role
+      form.append("userRole", userRole);
 
-    // Ad Promotion (if present)
-    if (formData.adPromotion) {
-      if ((formData.adPromotion as Record<string, unknown>).selectedTier)
-        form.append("adPromotion.selectedTier", (formData.adPromotion as Record<string, unknown>).selectedTier as string);
-      if ((formData.adPromotion as Record<string, unknown>).selectedServices && Array.isArray((formData.adPromotion as Record<string, unknown>).selectedServices)) {
-        ((formData.adPromotion as Record<string, unknown>).selectedServices as string[]).forEach((service: string) => {
-          form.append("adPromotion.selectedServices", service);
-        });
-      }
-      if ((formData.adPromotion as Record<string, unknown>).totalPrice !== undefined)
-        form.append("adPromotion.totalPrice", String((formData.adPromotion as Record<string, unknown>).totalPrice));
-    }
+      // Submit to API
+      mutate(form, {
+        onSuccess: () => {
+          toast.success("Property listing submitted successfully!");
+          setTimeout(() => {
+            router.push("/homeowner-profile");
+          }, 1200);
+        },
+        onError: (error: unknown) => {
+          let errorMessage: string | undefined = undefined;
+          if (typeof error === 'object' && error !== null && 'response' in error) {
+            const response = (error as { response?: { data?: { message?: string } } }).response;
+            errorMessage = response?.data?.message;
+          }
+          if (errorMessage && errorMessage.includes("Validation Error:")) {
+            const errors = errorMessage
+              .replace("Validation Error:", "")
+              .split(",")
+              .map((err: string) => err.trim())
+              .filter((err: string) => err.length > 0);
 
-    // DEBUG: Log all FormData entries before submission
-    // for (let pair of form.entries()) {
-    //   console.log(pair[0] + ':', pair[1]);
-    // }
-    console.log(coverPhoto);
-    
-
-    mutate(form, {
-      onSuccess: () => {
-        toast.success("Property listing submitted successfully!");
-        setTimeout(() => {
-          router.push("/listings");
-        }, 1200);
-      },
-      onError: (error: unknown) => {
-        let errorMessage: string | undefined = undefined;
-        if (typeof error === 'object' && error !== null && 'response' in error) {
-          const response = (error as { response?: { data?: { message?: string } } }).response;
-          errorMessage = response?.data?.message;
-        }
-        if (errorMessage && errorMessage.includes("Validation Error:")) {
-          const errors = errorMessage
-            .replace("Validation Error:", "")
-            .split(",")
-            .map((err: string) => err.trim())
-            .filter((err: string) => err.length > 0);
-
-          errors.forEach((err: string) => {
-            const formattedError = err
-              .replace(/"/g, "")
-              .replace(/\.$/, "")
-              .trim();
-            toast.error(formattedError, {
-              duration: 4000,
-              style: {
-                maxWidth: "500px",
-              },
+            errors.forEach((err: string) => {
+              const formattedError = err
+                .replace(/"/g, "")
+                .replace(/\.$/, "")
+                .trim();
+              toast.error(formattedError, {
+                duration: 4000,
+                style: {
+                  maxWidth: "500px",
+                },
+              });
             });
-          });
-        } else {
-          toast.error(errorMessage || "Failed to submit property listing");
-        }
-      },
-    });
+          } else {
+            toast.error(errorMessage || "Failed to submit property listing");
+          }
+        },
+      });
+    } catch (error) {
+      if (error instanceof Error) {
+        toast.error(error.message);
+      } else {
+        toast.error("An unexpected error occurred");
+      }
+    }
   };
 
   const CurrentStepComponent = steps[currentStep].component;
@@ -483,10 +242,10 @@ const PropertyListings = () => {
           onNext={handleNext}
           onBack={handleBack}
           onSubmit={handleSubmit}
-          formData={formData as PropertyListingPayload}
-          setFormData={setFormData}
-          currentStep={currentStep}
-          totalSteps={steps.length}
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          formData={formData as any}
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          setFormData={setFormData as any}
         />
       </div>
     </div>
