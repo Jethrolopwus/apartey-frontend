@@ -20,6 +20,7 @@
     "@tiptap/starter-kit": "^3.2.0",
     "axios": "^1.9.0",
     "clsx": "^2.1.1",
+    "countries-state-list": "^1.1.0",
     "dotenv": "^16.5.0",
     "input-otp": "^1.4.2",
     "lucide-react": "^0.511.0",

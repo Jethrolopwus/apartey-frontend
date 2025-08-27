@@ -1,53 +1,326 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { 
   ChevronRight,
   ChevronLeft,
-  ChevronDown,
 } from 'lucide-react';
 import { StepProps } from '@/types/propertyListing';
 
+// Estonian Address API Types
+interface Apartment {
+  adr_id: string;
+  kort_nr: string;
+}
+
+interface Building {
+  onkort: string;
+  appartments: Apartment[];
+  pikkaadress: string;
+}
+
+interface ApiResponse {
+  addresses: Building[];
+}
+
+interface Coordinates {
+  lat: number;
+  lng: number;
+}
+
+declare global {
+  interface Window {
+    google: unknown;
+  }
+}
+
 const LocationStep: React.FC<StepProps> = ({ onNext, onBack, formData, setFormData }) => {
-  const [searchAddress, setSearchAddress] = useState(formData.searchAddress || '31 Murtala Mohammed Way, FCT, Abuja');
-  const [country, setCountry] = useState(formData.country || 'Nigeria');
-  const [city, setCity] = useState(formData.city || 'Abuja');
-  const [district, setDistrict] = useState(formData.district || 'Wuse');
-  const [zipCode, setZipCode] = useState(formData.zipCode || '11237');
-  const [streetAddress, setStreetAddress] = useState(formData.streetAddress || 'Kefur-Funtua Road');
+  // Form state
+  const [searchAddress, setSearchAddress] = useState(formData.searchAddress || '');
+  const [country, setCountry] = useState(formData.country || '');
+  const [city, setCity] = useState(formData.city || '');
+  const [district, setDistrict] = useState(formData.district || '');
+  const [zipCode, setZipCode] = useState(formData.zipCode || '');
+  const [streetAddress, setStreetAddress] = useState(formData.streetAddress || '');
   const [apartment, setApartment] = useState(formData.apartment || '');
-  const [countryCode, setCountryCode] = useState(formData.countryCode || 'NG');
-  const [state, setState] = useState(formData.state || 'Abuja FCT');
-  
-  const handleNext = () => {
+  const [countryCode] = useState(formData.countryCode || 'NG');
+  const [state, setState] = useState(formData.state || '');
+  const [coordinates, setCoordinates] = useState<Coordinates | null>(
+    formData.location?.coordinates ? {
+      lat: formData.location.coordinates.latitude || 0,
+      lng: formData.location.coordinates.longitude || 0
+    } : null
+  );
+
+  // Google Maps and Address API state
+  const [selectedAddress, setSelectedAddress] = useState<string>("");
+  const [matchedAddresses, setMatchedAddresses] = useState<Building[]>([]);
+  const [apartments, setApartments] = useState<Apartment[]>([]);
+  const [loading, setLoading] = useState<boolean>(false);
+  const [manualApartment, setManualApartment] = useState(formData.apartment || "");
+
+  // Refs
+  const inputRef = useRef<HTMLInputElement>(null);
+  const autocompleteRef = useRef<google.maps.places.Autocomplete | null>(null);
+  const mapRef = useRef<HTMLDivElement>(null);
+  const mapInstanceRef = useRef<google.maps.Map | null>(null);
+  const markerRef = useRef<google.maps.Marker | null>(null);
+
+  // Memoize fetchApartments to stabilize its reference
+  const fetchApartments = useCallback(
+    async (address: string) => {
+      setLoading(true);
+      setApartments([]);
+      setMatchedAddresses([]);
+      setSelectedAddress(address);
+
+      try {
+        const encoded = encodeURIComponent(address);
+        const response = await fetch(
+          `https://inaadress.maaamet.ee/inaadress/gazetteer?address=${encoded}`,
+          {
+            headers: {
+              "Content-Type": "application/json",
+            },
+          }
+        );
+        const text = await response.text();
+        const jsonStr = text.replace(/^callback\(|\);$/g, "");
+        const data: ApiResponse = JSON.parse(jsonStr);
+
+        const buildings = data.addresses?.filter(
+          (b) => b.onkort === "1" && Array.isArray(b.appartments)
+        );
+
+        setMatchedAddresses(buildings);
+
+        if (buildings?.length > 0) {
+          setApartments(buildings[0].appartments);
+          setSelectedAddress(buildings[0].pikkaadress);
+        }
+      } catch (err) {
+        console.error("Failed to fetch apartments:", err);
+      } finally {
+        setLoading(false);
+      }
+    },
+    []
+  );
+
+  // Initialize Google Maps
+  useEffect(() => {
+    if (!window.google || !mapRef.current) return;
+
+    const googleObj = window.google as typeof google;
+    
+    // Initialize map
+    const map = new googleObj.maps.Map(mapRef.current, {
+      center: coordinates ? { lat: coordinates.lat, lng: coordinates.lng } : { lat: 9.0579, lng: 7.4951 }, // Default to Abuja
+      zoom: 15,
+      mapTypeControl: false,
+      streetViewControl: false,
+      fullscreenControl: false,
+      styles: [
+        {
+          featureType: "poi",
+          elementType: "labels",
+          stylers: [{ visibility: "off" }],
+        },
+      ],
+    });
+
+    mapInstanceRef.current = map;
+
+    // Add marker if coordinates exist
+    if (coordinates) {
+      const marker = new googleObj.maps.Marker({
+        position: { lat: coordinates.lat, lng: coordinates.lng },
+        map: map,
+        draggable: true,
+        title: "Property Location",
+      });
+
+      markerRef.current = marker;
+
+      // Handle marker drag
+      marker.addListener("dragend", () => {
+        const position = marker.getPosition();
+        if (position) {
+          const newCoordinates = {
+            lat: position.lat(),
+            lng: position.lng(),
+          };
+          setCoordinates(newCoordinates);
+        }
+      });
+    }
+
+    return () => {
+      if (markerRef.current) {
+        markerRef.current.setMap(null);
+      }
+    };
+  }, [coordinates]);
+
+  // Google Maps Autocomplete
+  useEffect(() => {
+    if (!window.google) return;
+    
+    const googleObj = window.google as typeof google;
+    if (inputRef.current && googleObj?.maps?.places?.Autocomplete) {
+      autocompleteRef.current = new googleObj.maps.places.Autocomplete(
+        inputRef.current,
+        {
+          types: ["address"],
+          componentRestrictions: { country: countryCode },
+        }
+      );
+
+      autocompleteRef.current.addListener("place_changed", async () => {
+        if (!autocompleteRef.current) return;
+        
+        const place = autocompleteRef.current.getPlace() as google.maps.places.PlaceResult;
+        const components = place.address_components || [];
+        
+        // Parse address components
+        const streetNumber = components.find((c) => c.types.includes("street_number"))?.long_name || "";
+        const streetName = components.find((c) => c.types.includes("route"))?.long_name || "";
+        const districtRaw = components.find((c) => c.types.includes("sublocality"))?.long_name || "";
+        const countryName = components.find((c) => c.types.includes("country"))?.long_name || "";
+        const stateRaw = components.find((c) => c.types.includes("administrative_area_level_1"))?.long_name || "";
+        const postal = components.find((c) => c.types.includes("postal_code"))?.long_name || "";
+        const cityName = components.find((c) => c.types.includes("locality"))?.long_name || "";
+        
+        const capitalize = (str: string) =>
+          str ? str.charAt(0).toUpperCase() + str.slice(1).toLowerCase() : "";
+        
+        const district = capitalize(districtRaw);
+        const state = capitalize(stateRaw);
+        
+        // Get coordinates
+        const newCoordinates: Coordinates | null = place.geometry?.location
+          ? {
+              lat: place.geometry.location.lat(),
+              lng: place.geometry.location.lng(),
+            }
+          : null;
+
+        // Update form state
+        setCoordinates(newCoordinates);
+        setCountry(countryName);
+        setState(state);
+        setDistrict(district);
+        setZipCode(postal);
+        setCity(cityName);
+        setStreetAddress(streetName);
+        setSearchAddress(`${streetName} ${streetNumber}`.trim());
+        setApartment("");
+        setManualApartment("");
+
+        // Update map
+        if (newCoordinates && mapInstanceRef.current) {
+          mapInstanceRef.current.setCenter({ lat: newCoordinates.lat, lng: newCoordinates.lng });
+          
+          if (markerRef.current) {
+            markerRef.current.setPosition({ lat: newCoordinates.lat, lng: newCoordinates.lng });
+          } else {
+            const googleObj = window.google as typeof google;
+            markerRef.current = new googleObj.maps.Marker({
+              position: { lat: newCoordinates.lat, lng: newCoordinates.lng },
+              map: mapInstanceRef.current,
+              draggable: true,
+              title: "Property Location",
+            });
+
+            markerRef.current.addListener("dragend", () => {
+              const position = markerRef.current?.getPosition();
+              if (position) {
+                const updatedCoordinates = {
+                  lat: position.lat(),
+                  lng: position.lng(),
+                };
+                setCoordinates(updatedCoordinates);
+              }
+            });
+          }
+        }
+
+        // Fetch apartments for Estonian addresses
+        if (countryCode.toLowerCase() === 'ee') {
+          await fetchApartments(`${streetName} ${streetNumber}`.trim());
+        }
+      });
+    }
+
+    return () => {
+      const googleObj = window.google as typeof google;
+      if (autocompleteRef.current && googleObj?.maps?.event?.clearInstanceListeners) {
+        googleObj.maps.event.clearInstanceListeners(autocompleteRef.current);
+      }
+    };
+  }, [countryCode, fetchApartments]);
+
+  // Handle manual search
+  const handleManualSearch = async (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key !== "Enter") return;
+    const value = (e.target as HTMLInputElement).value.trim();
+    if (!value) return;
+
+    const cleaned = value
+      .replace(/,\s*(Estonia|Eesti|Nigeria)\s*$/i, "")
+      .replace(/\d{5}/g, "")
+      .trim();
+
+    if (countryCode.toLowerCase() === 'ee') {
+      await fetchApartments(cleaned);
+    }
+  };
+
+  // Update form data when any field changes
+  useEffect(() => {
     if (setFormData) {
-      const location = {
-        fullAddress: searchAddress,
-        apartment,
+      const locationData = {
+        country,
         countryCode,
         stateOrRegion: state,
-        street: streetAddress,
-        country,
-        city,
         district,
+        street: streetAddress,
+        apartment: apartment || manualApartment,
         postalCode: zipCode,
+        fullAddress: searchAddress,
+        coordinates: coordinates ? {
+          latitude: coordinates.lat,
+          longitude: coordinates.lng
+        } : undefined,
+        displayOnMap: true
       };
-      setFormData({
-        ...formData,
+
+      setFormData(prev => ({
+        ...prev,
         searchAddress,
         country,
         city,
         district,
         zipCode,
         streetAddress,
-        apartment,
+        apartment: apartment || manualApartment,
         countryCode,
         state,
-        location,
-      });
+        location: locationData
+      }));
     }
+  }, [
+    searchAddress, country, city, district, zipCode, streetAddress, 
+    apartment, manualApartment, countryCode, state, coordinates, setFormData
+  ]);
+
+  const handleNext = () => {
     onNext();
   };
+
+  const addressIndicator = selectedAddress.split(",");
+  const arrLength = addressIndicator.length;
+  const mark = addressIndicator[arrLength - 1];
 
   return (
     <div className="max-w-2xl">
@@ -59,13 +332,87 @@ const LocationStep: React.FC<StepProps> = ({ onNext, onBack, formData, setFormDa
           Search address <span className="text-red-500">*</span>
         </label>
         <input
+          ref={inputRef}
           type="text"
           value={searchAddress}
           onChange={(e) => setSearchAddress(e.target.value)}
+          onKeyDown={handleManualSearch}
           className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 text-sm"
-          placeholder="Enter address"
+          placeholder="Enter address or search for location"
         />
+        <p className="text-xs text-gray-500 mt-1">Try searching: &quot;29 Ilesa-Ife Road, Ilesa, Osun&quot;</p>
       </div>
+
+      {/* Loading State */}
+      {loading && (
+        <p className="text-orange-600 text-sm mb-4">Fetching apartments...</p>
+      )}
+
+      {/* Multiple Addresses Dropdown */}
+      {!loading && matchedAddresses?.length > 1 && (
+        <div className="mb-6">
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Matched Addresses:
+          </label>
+          <select
+            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 text-sm appearance-none bg-white"
+            onChange={(e) => {
+              const index = parseInt(e.target.value);
+              setApartments(matchedAddresses[index].appartments);
+              setSelectedAddress(matchedAddresses[index].pikkaadress);
+            }}
+          >
+            {matchedAddresses.map((b, i) => (
+              <option key={i} value={i}>
+                {b.pikkaadress}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
+
+      {/* Apartment Selection */}
+      {!loading && apartments.length > 0 && (
+        <div className="mb-6">
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Select Apartment:
+          </label>
+          <select
+            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 text-sm appearance-none bg-white"
+            onChange={(e) => {
+              const selectedApt = apartments.find(
+                (apt) => apt.adr_id === e.target.value
+              );
+              setApartment(selectedApt?.kort_nr || "");
+            }}
+          >
+            {apartments.map((apt, idx) => (
+              <option key={idx} value={apt.adr_id}>
+                {mark}–{apt.kort_nr || `${idx + 1}`}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
+
+      {/* Manual Apartment Entry */}
+      {!loading && apartments.length === 0 && selectedAddress && (
+        <div className="mb-6">
+          <p className="text-gray-500 mb-2 text-sm">
+            No registered apartments found. You can manually enter the apartment number.
+          </p>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Apartment Number:
+          </label>
+          <input
+            type="text"
+            placeholder="e.g., Flat 2A, Room 3B, Left Wing"
+            value={manualApartment}
+            onChange={(e) => setManualApartment(e.target.value)}
+            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 text-sm"
+          />
+        </div>
+      )}
 
       {/* Location Details Grid */}
       <div className="grid grid-cols-2 gap-4 mb-6">
@@ -74,18 +421,13 @@ const LocationStep: React.FC<StepProps> = ({ onNext, onBack, formData, setFormDa
           <label className="block text-sm font-medium text-gray-700 mb-2">
             Country <span className="text-red-500">*</span>
           </label>
-          <div className="relative">
-            <select
-              value={country}
-              onChange={(e) => setCountry(e.target.value)}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 text-sm appearance-none bg-white"
-            >
-              <option value="Nigeria">Nigeria</option>
-              <option value="Ghana">Ghana</option>
-              <option value="Kenya">Kenya</option>
-            </select>
-            <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
-          </div>
+          <input
+            type="text"
+            value={country}
+            onChange={(e) => setCountry(e.target.value)}
+            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 text-sm"
+            placeholder="Enter country"
+          />
         </div>
 
         {/* City */}
@@ -93,18 +435,13 @@ const LocationStep: React.FC<StepProps> = ({ onNext, onBack, formData, setFormDa
           <label className="block text-sm font-medium text-gray-700 mb-2">
             City <span className="text-red-500">*</span>
           </label>
-          <div className="relative">
-            <select
-              value={city}
-              onChange={(e) => setCity(e.target.value)}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 text-sm appearance-none bg-white"
-            >
-              <option value="Abuja">Abuja</option>
-              <option value="Lagos">Lagos</option>
-              <option value="Kano">Kano</option>
-            </select>
-            <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
-          </div>
+          <input
+            type="text"
+            value={city}
+            onChange={(e) => setCity(e.target.value)}
+            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 text-sm"
+            placeholder="Enter city"
+          />
         </div>
 
         {/* District */}
@@ -112,24 +449,19 @@ const LocationStep: React.FC<StepProps> = ({ onNext, onBack, formData, setFormDa
           <label className="block text-sm font-medium text-gray-700 mb-2">
             District <span className="text-red-500">*</span>
           </label>
-          <div className="relative">
-            <select
-              value={district}
-              onChange={(e) => setDistrict(e.target.value)}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 text-sm appearance-none bg-white"
-            >
-              <option value="Wuse">Wuse</option>
-              <option value="Garki">Garki</option>
-              <option value="Maitama">Maitama</option>
-            </select>
-            <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
-          </div>
+          <input
+            type="text"
+            value={district}
+            onChange={(e) => setDistrict(e.target.value)}
+            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 text-sm"
+            placeholder="Enter district"
+          />
         </div>
 
         {/* Zip Code */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
-            Zip code <span className="text-red-500">*</span>
+            Postal code <span className="text-red-500">*</span>
           </label>
           <input
             type="text"
@@ -160,35 +492,21 @@ const LocationStep: React.FC<StepProps> = ({ onNext, onBack, formData, setFormDa
         {/* Apartment */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
-            Apartment/Unit <span className="text-red-500">*</span>
+            Apartment/Unit <span className="text-gray-500">(Optional)</span>
           </label>
           <input
             type="text"
-            value={apartment}
-            onChange={(e) => setApartment(e.target.value)}
+            value={apartment || manualApartment}
+            onChange={(e) => {
+              if (apartments.length > 0) {
+                setApartment(e.target.value);
+              } else {
+                setManualApartment(e.target.value);
+              }
+            }}
             className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 text-sm"
             placeholder="e.g., Flat 2B, Apt 15"
           />
-        </div>
-
-        {/* Country Code */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Country Code <span className="text-red-500">*</span>
-          </label>
-          <div className="relative">
-            <select
-              value={countryCode}
-              onChange={(e) => setCountryCode(e.target.value)}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 text-sm appearance-none bg-white"
-            >
-              <option value="NG">NG - Nigeria</option>
-              <option value="GH">GH - Ghana</option>
-              <option value="KE">KE - Kenya</option>
-              <option value="ET">ET - Estonia</option>
-            </select>
-            <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
-          </div>
         </div>
       </div>
 
@@ -197,123 +515,34 @@ const LocationStep: React.FC<StepProps> = ({ onNext, onBack, formData, setFormDa
         <label className="block text-sm font-medium text-gray-700 mb-2">
           State/Region <span className="text-red-500">*</span>
         </label>
-        <div className="relative">
-          <select
-            value={state}
-            onChange={(e) => setState(e.target.value)}
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 text-sm appearance-none bg-white"
-          >
-            <option value="Abuja FCT">Abuja FCT</option>
-            <option value="Lagos">Lagos</option>
-            <option value="Kano">Kano</option>
-            <option value="Tallinn">Tallinn</option>
-            <option value="Accra">Accra</option>
-            <option value="Nairobi">Nairobi</option>
-          </select>
-          <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
-        </div>
+        <input
+          type="text"
+          value={state}
+          onChange={(e) => setState(e.target.value)}
+          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 text-sm"
+          placeholder="Enter state or region"
+        />
       </div>
 
-      {/* Coordinates Section */}
-      <div className="mb-6">
-        <h3 className="text-sm font-medium text-gray-700 mb-2">Coordinates (Optional)</h3>
-        <p className="text-xs text-gray-500 mb-4">Enter precise coordinates for better map positioning</p>
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Latitude
-            </label>
-            <input
-              type="number"
-              step="any"
-              value={formData.location?.coordinates?.latitude || ''}
-              onChange={(e) => {
-                if (setFormData) {
-                  const newCoordinates = {
-                    ...formData.location?.coordinates,
-                    latitude: parseFloat(e.target.value) || undefined
-                  };
-                  setFormData({
-                    ...formData,
-                    location: {
-                      ...formData.location,
-                      coordinates: newCoordinates
-                    }
-                  });
-                }
-              }}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 text-sm"
-              placeholder="e.g., 9.0579"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Longitude
-            </label>
-            <input
-              type="number"
-              step="any"
-              value={formData.location?.coordinates?.longitude || ''}
-              onChange={(e) => {
-                if (setFormData) {
-                  const newCoordinates = {
-                    ...formData.location?.coordinates,
-                    longitude: parseFloat(e.target.value) || undefined
-                  };
-                  setFormData({
-                    ...formData,
-                    location: {
-                      ...formData.location,
-                      coordinates: newCoordinates
-                    }
-                  });
-                }
-              }}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 text-sm"
-              placeholder="e.g., 7.4951"
-            />
-          </div>
-        </div>
-      </div>
-
-      {/* Map Section */}
+      {/* Real Map Section */}
       <div className="mb-8">
         <h3 className="text-sm font-medium text-gray-700 mb-2">Display on the map</h3>
         <p className="text-xs text-gray-500 mb-4">You can change the position of the mark on the map</p>
         
-        {/* Map Container */}
-        <div className="w-full h-64 bg-gray-100 rounded-lg relative overflow-hidden border border-gray-200">
-          {/* Simulated Map */}
-          <div className="absolute inset-0 bg-gradient-to-br from-green-100 via-gray-100 to-blue-100">
-            {/* Map grid lines */}
-            <svg className="absolute inset-0 w-full h-full opacity-20">
-              <defs>
-                <pattern id="grid" width="20" height="20" patternUnits="userSpaceOnUse">
-                  <path d="M 20 0 L 0 0 0 20" fill="none" stroke="#d1d5db" strokeWidth="1"/>
-                </pattern>
-              </defs>
-              <rect width="100%" height="100%" fill="url(#grid)" />
-            </svg>
-            
-            {/* Simulated roads */}
-            <div className="absolute top-1/2 left-0 w-full h-1 bg-gray-300 transform -translate-y-1/2"></div>
-            <div className="absolute top-0 left-1/2 w-1 h-full bg-gray-300 transform -translate-x-1/2"></div>
-            <div className="absolute top-1/4 left-1/4 w-1/2 h-1 bg-gray-300 transform rotate-45"></div>
-            
-            {/* Location labels */}
-            <div className="absolute top-4 left-4 text-xs text-gray-600 font-medium">Garki</div>
-            <div className="absolute top-4 right-4 text-xs text-gray-600 font-medium">Maitama</div>
-            <div className="absolute bottom-4 left-4 text-xs text-gray-600 font-medium">Wuse</div>
-            <div className="absolute bottom-4 right-4 text-xs text-gray-600 font-medium">Central Area</div>
-            
-            {/* Location Pin */}
-            <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-full">
-              <div className="w-6 h-6 bg-orange-500 rounded-full border-2 border-white shadow-lg relative">
-                <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-3 border-r-3 border-t-3 border-l-transparent border-r-transparent border-t-orange-500"></div>
-              </div>
-            </div>
-          </div>
+        {/* Real Map Container */}
+        <div 
+          ref={mapRef}
+          className="w-full h-64 bg-gray-100 rounded-lg relative overflow-hidden border border-gray-200"
+        >
+          {/* Map will be rendered here by Google Maps */}
         </div>
+        
+        {/* Coordinates Display */}
+        {coordinates && (
+          <div className="mt-2 text-xs text-gray-500">
+            Coordinates: {coordinates.lat.toFixed(6)}, {coordinates.lng.toFixed(6)}
+          </div>
+        )}
       </div>
 
       {/* Navigation Buttons */}

@@ -14,6 +14,12 @@ interface BlogPost {
   publishedAt?: string;
 }
 
+// Helper function to strip HTML tags from text
+const stripHtmlTags = (html: string): string => {
+  if (typeof html !== 'string') return '';
+  return html.replace(/<[^>]*>/g, '');
+};
+
 export default function BlogComponent() {
   // Fetch blog posts from backend (limit 3)
   const { data, isLoading, error } = useGetAllBlogPostQuery({ limit: 3 });
@@ -46,21 +52,20 @@ export default function BlogComponent() {
             key={post._id}
             className="flex shadow-md rounded-md pb-4 gap-2 flex-col items-center"
           >
-            <div className="w-full rounded-t-lg overflow-hidden mb-4 aspect-auto">
+            <div className="w-full rounded-t-lg overflow-hidden mb-4">
               <Image
                 src={post.imageUrl || "/HouseRent.png"}
                 alt={post.title}
                 width={400}
                 height={250}
-                className="w-full h-full object-cover"
-                style={{ width: 'auto', height: 'auto' }}
+                className="w-full h-48 object-cover"
                 priority={false}
               />
             </div>
             <h3 className="text-lg font-medium text-gray-800 mb-2">
               {post.title}
             </h3>
-            <p className="text-sm text-gray-600">{post.excerpt}</p>
+            <p className="text-sm text-gray-600">{stripHtmlTags(post.excerpt)}</p>
           </div>
         ))}
       </div>

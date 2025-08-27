@@ -58,14 +58,13 @@ export default function CategoryComponent() {
             className="flex bg-white shadow-md rounded-md pb-4 gap-2 flex-col items-center cursor-pointer hover:shadow-lg transition-shadow duration-200 hover:scale-105 transform"
             onClick={() => handleCategoryClick(category.queryParams)}
           >
-            <div className="w-full rounded-t-lg overflow-hidden mb-3 aspect-auto">
+            <div className="w-full rounded-t-lg overflow-hidden mb-3">
               <Image
                 src={category.image}
                 alt={category.title}
-                width={120}
-                height={120}
-                className="w-full h-full object-cover"
-                style={{ width: 'auto', height: 'auto' }}
+                width={300}
+                height={200}
+                className="w-full h-48 object-cover"
                 priority={false}
               />
             </div>
