@@ -408,7 +408,7 @@ const Listings = () => {
                       key={`${property._id}-${index}`}
                       className="bg-white rounded-lg border border-gray-200 overflow-hidden hover:shadow-lg transition-shadow"
                     >
-                      <div className="relative">
+                      <div className="relative w-full h-48 overflow-hidden">
                         <Link
                           href={getPropertySlug(property)}
                           className="block group"
@@ -417,9 +417,8 @@ const Listings = () => {
                             src={getPropertyImage(property)}
                             alt={getPropertyTitle(property)}
                             width={600}
-                            height={192}
-                            className="w-full h-48 object-cover rounded-t-lg group-hover:brightness-90 transition"
-                            style={{ width: 'auto', height: 'auto' }}
+                            height={270}
+                            className="w-full h-full object-cover group-hover:brightness-90 transition-all duration-300"
                             priority={false}
                             onError={(e) => {
                               e.currentTarget.src = "/fallback-image.jpg";

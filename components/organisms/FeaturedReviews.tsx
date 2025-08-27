@@ -130,13 +130,13 @@ const FeaturedReviews = () => {
                     review?.linkedProperty.media?.coverPhoto &&
                     review.linkedProperty?.media?.coverPhoto.trim() !== ""
                       ? review.linkedProperty.media.coverPhoto
-                      : "/placeholder.png"
+                      : "/Reviews.png"
                   }
                   alt={
                     review?.linkedProperty.media?.coverPhoto &&
                     review.linkedProperty?.media?.coverPhoto.trim() !== ""
                       ? `Property image for ${review.location.streetAddress}`
-                      : "Placeholder property image"
+                      : "Reviews placeholder image"
                   }
                   width={400}
                   height={270}
@@ -145,15 +145,16 @@ const FeaturedReviews = () => {
                   priority={false}
                 />
               ) : (
-                <div className="w-full h-full bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center">
-                  <div className="text-center">
-                    <div className="w-16 h-16 mx-auto mb-2 bg-gray-300 rounded-full flex items-center justify-center">
-                      <span className="text-gray-500 text-2xl">🏠</span>
-                    </div>
-                    <span className="text-gray-500 text-sm">
-                      No Image Available
-                    </span>
-                  </div>
+                <div className="w-full h-full">
+                  <Image
+                    src="/Reviews.png"
+                    alt="Reviews placeholder image"
+                    width={400}
+                    height={270}
+                    className="object-cover w-full h-full"
+                    style={{ width: 'auto', height: 'auto' }}
+                    priority={false}
+                  />
                 </div>
               )}
 

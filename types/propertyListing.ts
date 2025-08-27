@@ -18,7 +18,7 @@ export type PetPolicy = typeof PetPolicyEnum[number];
 export const OfferTypeEnum = ['private', 'agent'] as const;
 export type OfferType = typeof OfferTypeEnum[number];
 
-export const PromotionTierEnum = ['Basic', 'Premium', 'Professional'] as const;
+export const PromotionTierEnum = ['Easy Start', 'Fast Sale', 'Turbo Boost'] as const;
 export type PromotionTier = typeof PromotionTierEnum[number];
 
 export const ListingStatusEnum = ['active', 'pending'] as const;
@@ -171,6 +171,9 @@ export interface ContactInfoData {
 
 export interface AdPromotionData {
   selectedTier?: PromotionTier;
+  selectedServices?: string[];
+  totalPrice?: number;
+  aparteyKeys?: number;
   promotionStartDate?: Date;
   promotionEndDate?: Date;
   certifiedByFinder?: boolean;
@@ -295,6 +298,9 @@ export interface ContactInfoStepData {
 // Step 7: Ad Promotion
 export interface AdPromotionStepData {
   selectedTier?: PromotionTier;
+  selectedServices?: string[];
+  totalPrice?: number;
+  aparteyKeys?: number;
   promotionStartDate?: Date;
   promotionEndDate?: Date;
   certifiedByFinder?: boolean;

@@ -12,8 +12,8 @@ export const useGetAllMyListingsQuery = (
   params?: useGetAllListingsQueryParams
 ) => {
   const { data, isLoading, error, refetch } = useQuery<PropertiesResponse>({
-    queryKey: ["Listings", params?.limit, params?.byId],
-    queryFn: () => http.httpGetAllListings(params?.limit, params?.byId),
+    queryKey: ["MyListings", params?.limit, params?.byId],
+    queryFn: () => http.httpGetAllMyListings(params?.limit, params?.byId),
     staleTime: 5 * 60 * 1000,
     retry: 2,
   });

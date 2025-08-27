@@ -8,8 +8,6 @@ import { useGetUserProfileQuery } from "@/Hooks/use-getuserProfile.query";
 import { useGetAllMyListingsQuery } from "@/Hooks/use-getAllMyListings.query";
 import Link from "next/link";
 
-const DEFAULT_PROFILE_IMAGE = "/Ellipse-1.png";
-const DEFAULT_COVER_IMAGE = "/cover-image.png";
 const DEFAULT_PROPERTY_IMAGE = "/Estate2.png";
 
 // Define proper TypeScript interfaces
@@ -28,7 +26,7 @@ interface Property {
   status: string;
   mark: string;
   isActive: boolean;
-  category?: string;
+  category: string;
 }
 
 interface Stat {
@@ -36,70 +34,19 @@ interface Stat {
   value: string;
 }
 
-interface PropertyLocation {
-  streetAddress?: string;
-  city?: string;
-  country?: string;
-  state?: string;
-  area?: string;
-  address?: string;
-  fullAddress?: string;
-  street?: string;
-  locality?: string;
-  region?: string;
-  postalCode?: string;
-}
-
-interface PropertyDetails {
-  rating?: number;
-  reviewCount?: number;
-  bedrooms?: number;
-  bathrooms?: number;
-  totalAreaSqM?: number;
-  oldPrice?: string;
-  price?: string | number;
-}
-
-interface PropertyMedia {
-  coverPhoto?: string;
-  images?: string[];
-  photos?: string[];
-}
-
-interface RawProperty {
-  _id: string;
-  id?: string;
-  media?: PropertyMedia;
-  location?: PropertyLocation;
-  propertyDetails?: PropertyDetails;
-  status?: string;
-  title?: string;
-  name?: string;
-  address?: string;
-  street?: string;
-  city?: string;
-  state?: string;
-  country?: string;
-  category?: string;
-  propertyType?: string;
-  createdAt?: string;
-  updatedAt?: string;
-}
-
 interface Homeowner {
   name: string;
   location: string;
-  description: string;
+  verified: boolean;
+  premium: boolean;
   profileImage: string;
   coverImage: string;
+  description: string;
   stats?: Stat[];
 }
 
 const HomeownerProfile: React.FC = () => {
   const router = useRouter();
-  
-  // User role is available but not currently used in this component
-  
   const {
     data: userData,
     isLoading: userLoading,
@@ -109,126 +56,87 @@ const HomeownerProfile: React.FC = () => {
     data: listingsData,
     isLoading: listingsLoading,
     error: listingsError,
-    refetch: refetchListings,
   } = useGetAllMyListingsQuery();
-
-  // Refetch listings when component mounts or when returning from property creation
-  React.useEffect(() => {
-    // Refetch listings when component mounts to ensure fresh data
-    refetchListings();
-    
-    // Also refetch when user returns to the page (e.g., after creating a property)
-    const handleFocus = () => {
-      refetchListings();
-    };
-    
-    window.addEventListener('focus', handleFocus);
-    
-    return () => {
-      window.removeEventListener('focus', handleFocus);
-    };
-  }, [refetchListings]);
 
   // Extract homeowner info from userData
   const homeowner: Homeowner = useMemo(() => {
     const currentUser = userData?.currentUser;
 
     return {
-      name: currentUser?.name || "Homeowner",
-      location: currentUser?.location || "Your Location",
+      name: currentUser?.name || "John Doe",
+      location: currentUser?.location || "Abuja, Nigeria",
+      verified: currentUser?.verified ?? true,
+      premium: currentUser?.premium ?? false,
+      profileImage: currentUser?.profileImage || "/Ellipse-1.png",
+      coverImage: currentUser?.coverImage || "/cover-image.png",
       description:
         currentUser?.description ||
-        "Welcome to your homeowner profile. Here you can manage your properties and view your listings.",
-      profileImage: currentUser?.profileImage || DEFAULT_PROFILE_IMAGE,
-      coverImage: currentUser?.coverImage || DEFAULT_COVER_IMAGE,
+        "Experienced homeowner with multiple properties across different locations. I focus on providing quality accommodation and maintaining excellent relationships with tenants.",
       stats: currentUser?.stats || [
-        { label: "Total Properties", value: "0" },
-        { label: "Active Listings", value: "0" },
-        { label: "Properties Rented", value: "0" },
-        { label: "Total Views", value: "0" },
+        { label: "Properties Owned", value: "5" },
+        { label: "Active Listings", value: "3" },
+        { label: "Tenant Rating", value: "4.8" },
+        { label: "Years Experience", value: "8" },
       ],
     };
   }, [userData]);
 
   // Map backend properties to UI format
   const properties: Property[] = useMemo(() => {
-    if (listingsData?.properties?.length) {
-      return listingsData.properties.map((property: RawProperty) => {
-        // Try multiple ways to get the title/address
-        const getTitle = (): string => {
-          if (property.title) return property.title;
-          if (property.name) return property.name;
-          if (property.location?.fullAddress)
-            return property.location.fullAddress;
-          if (property.location?.streetAddress)
-            return property.location.streetAddress;
-          if (property.location?.address) return property.location.address;
-          if (property.location?.street) return property.location.street;
-          if (property.address) return property.address;
+    return (listingsData?.properties || []).map((property: any) => { // eslint-disable-line @typescript-eslint/no-explicit-any
+      const getTitle = () => {
+        return property?.propertyDetails?.description || 
+               property?.location?.fullAddress || 
+               property?.location?.streetAddress || 
+               property?.location?.apartment || 
+               property?.propertyType || 
+               "Untitled Property";
+      };
 
-          if (property.location?.country) {
-            return `Property in ${property.location.country}`;
-          }
+      const getLocation = () => {
+        const location = property?.location;
+        if (!location) return "Location not specified";
+        
+        const parts = [
+          location.district,
+          location.city,
+          location.stateOrRegion,
+          location.country
+        ].filter(Boolean);
+        
+        return parts.length > 0 ? parts.join(", ") : "Location not specified";
+      };
 
-          return "Property Address Not Available";
-        };
+      const getPrice = () => {
+        const price = property?.propertyDetails?.price;
+        if (!price) return "Price on request";
+        
+        const currency = price.currency || "NGN";
+        const monthly = price.rent?.monthly || 0;
+        
+        return `${currency}${monthly.toLocaleString()}/month`;
+      };
 
-        // Try multiple ways to get the location
-        const getLocation = (): string => {
-          const parts: string[] = [];
+      const newPrice = getPrice();
 
-          if (property.location?.city) parts.push(property.location.city);
-          else if (property.city) parts.push(property.city);
-
-          if (property.location?.state) parts.push(property.location.state);
-          else if (property.state) parts.push(property.state);
-
-          if (property.location?.country) parts.push(property.location.country);
-          else if (property.country) parts.push(property.country);
-
-          if (parts.length === 0) {
-            if (property.location?.locality)
-              parts.push(property.location.locality);
-            if (property.location?.region) parts.push(property.location.region);
-            if (property.location?.area) parts.push(property.location.area);
-          }
-
-          if (parts.length === 0 && property.location?.country) {
-            parts.push(property.location.country);
-          }
-
-          return parts.length > 0 ? parts.join(", ") : "Location Not Available";
-        };
-
-        const mappedProperty: Property = {
-          id: property._id || property.id || `property-${Date.now()}`,
-          image:
-            property.media?.coverPhoto ||
-            property.media?.images?.[0] ||
-            property.media?.photos?.[0] ||
-            DEFAULT_PROPERTY_IMAGE,
-          title: getTitle(),
-          location: getLocation(),
-          rating: property.propertyDetails?.rating || 4.0,
-          reviewCount: property.propertyDetails?.reviewCount || 0,
-          beds: property.propertyDetails?.bedrooms || 0,
-          baths: property.propertyDetails?.bathrooms || 0,
-          size: property.propertyDetails?.totalAreaSqM || 0,
-          oldPrice: property.propertyDetails?.oldPrice || "NGN650,000/Year",
-          newPrice: property.propertyDetails?.price
-            ? `NGN${property.propertyDetails.price}/Year`
-            : "NGN450,000/Year",
-          status: property.status === "active" ? "Active" : "Inactive",
-          mark: property.status === "rented" ? "Rented" : "Available",
-          isActive: property.status === "active",
-          category: property.category || "Rent",
-        };
-
-        return mappedProperty;
-      });
-    }
-
-    return [];
+      return {
+        id: property._id || "",
+        image: property?.media?.coverPhoto || DEFAULT_PROPERTY_IMAGE,
+        title: getTitle(),
+        location: getLocation(),
+        rating: 4.0,
+        reviewCount: 0,
+        beds: property?.propertyDetails?.bedrooms || 0,
+        baths: property?.propertyDetails?.bathrooms || 0,
+        size: property?.propertyDetails?.totalAreaSqM || 0,
+        oldPrice: "NGN650,000/Year",
+        newPrice: newPrice,
+        status: property?.status === "active" ? "Active" : "Inactive",
+        mark: property?.status === "rented" ? "Rented" : "Available",
+        isActive: property?.status === "active",
+        category: property.category || "Rent",
+      };
+    });
   }, [listingsData]);
 
   const [propertyStates, setPropertyStates] = React.useState<
@@ -267,7 +175,7 @@ const HomeownerProfile: React.FC = () => {
       {/* Cover Image */}
       <div className="w-full h-[220px] md:h-[260px] relative">
         <Image
-          src={homeowner.coverImage || DEFAULT_COVER_IMAGE}
+          src={homeowner.coverImage || "/cover-image.png"}
           alt="cover"
           fill
           sizes="100vw"
@@ -282,7 +190,7 @@ const HomeownerProfile: React.FC = () => {
           {/* Profile Image */}
           <div className="relative w-32 h-32 border-4 border-white rounded-full overflow-hidden -mt-16 md:mt-0 shadow-md">
             <Image
-              src={homeowner.profileImage || DEFAULT_PROFILE_IMAGE}
+              src={homeowner.profileImage || "/Ellipse-1.png"}
               alt="profile"
               fill
               sizes="128px"
@@ -346,7 +254,7 @@ const HomeownerProfile: React.FC = () => {
             <Button
               variant="secondary"
               className="px-4 py-2 text-sm font-semibold"
-              onClick={() => refetchListings()}
+              onClick={() => {}}
               disabled={listingsLoading}
             >
               {listingsLoading ? "Refreshing..." : "Refresh"}

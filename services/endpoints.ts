@@ -38,7 +38,7 @@ export default Object.freeze({
   getRelatedReviews: (id: string) => `/reviews/${id}`,
   createListing: "/listings",
   getAllListings: "/listings",
-  getAllMyListings: "/listings/my-listings",
+  getAllMyListings: "/listings/user/my-listings",
   claimProperties: (id: string) => `/listings/claim/${id}`,
   getListingById: (id: string) => `/listings/${id}`,
   getPropertiesById: (id: string) => `/properties/${id}`,
