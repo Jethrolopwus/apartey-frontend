@@ -73,7 +73,7 @@ const SignInForm: React.FC<SignInFormProps> = ({
           authData.role ||
           authData.currentUserRole?.role ||
           "renter";
-        toast.success("You are already signed in!");
+        // toast.success("You are already signed in!");
         switch (userRole.toLowerCase()) {
           case "renter":
             router.push("/");

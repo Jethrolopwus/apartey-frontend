@@ -877,7 +877,6 @@ class BaseURL {
       const response = await AxiosInstance.get(url);
       return response.data;
     } catch (error: any) {
-      
       throw new Error(
         error.response?.data?.message || "Get all My listings failed"
       );

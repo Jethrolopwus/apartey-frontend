@@ -7,6 +7,7 @@ import { useUserRole } from "@/Hooks/useUserRole";
 import { useAuthRedirect } from "@/Hooks/useAuthRedirect";
 import { useAddRolesMutation } from "@/Hooks/use.addRoles.mutation";
 import { toast } from "react-hot-toast";
+import { TokenManager } from "@/utils/tokenManager";
 
 interface SwitchProfileModalProps {
   isOpen: boolean;
@@ -44,8 +45,6 @@ const SwitchProfileModal: React.FC<SwitchProfileModalProps> = ({
         userData?.currentUserRole?.role?.toLowerCase() ||
         role?.toLowerCase() ||
         localStorageRole;
-      
-
       
       if (
         userRole === "homeowner" ||
@@ -110,7 +109,7 @@ const SwitchProfileModal: React.FC<SwitchProfileModalProps> = ({
       description: "Manage your properties",
       icon: Building,
       route: "/landlord",
-      profileRoute: "/profile",
+      profileRoute: "/homeowner-profile",
       bgColor: "bg-blue-100",
       textColor: "text-blue-600",
       iconColor: "text-blue-500",
@@ -134,7 +133,6 @@ const SwitchProfileModal: React.FC<SwitchProfileModalProps> = ({
 
   const handleProfileSelect = async (profile: (typeof profiles)[0]) => {
     if (!isAuthenticated) {
-      console.log("User not authenticated, redirecting to /signin");
       handleAuthRedirect({
         stayDetails: {},
         costDetails: {},
@@ -155,9 +153,13 @@ const SwitchProfileModal: React.FC<SwitchProfileModalProps> = ({
         addRole(
           { role: profile.id },
           {
-            onSuccess: () => {
+            onSuccess: (response) => {
+              // Update local state immediately
               updateRole(profile.id);
               localStorage.setItem("userRole", profile.id);
+              
+              // Update current profile state immediately for UI
+              setCurrentProfile(profile.id);
               
               // Trigger storage event to notify other components
               window.dispatchEvent(new StorageEvent('storage', {
@@ -175,24 +177,33 @@ const SwitchProfileModal: React.FC<SwitchProfileModalProps> = ({
                 }
               }));
               
+              // Clear old tokens to force fresh authentication
+              TokenManager.clearAllTokens();
+              
+              // Store the new token if provided in response
+              if (response?.token) {
+                TokenManager.setToken(response.token);
+              }
+              
               const hasCompletedOnboarding = localStorage.getItem(
                 "hasCompletedOnboarding"
               );
+              
+              // Determine the correct route based on profile
+              let targetRoute = profile.route;
               if (hasCompletedOnboarding !== "true") {
                 localStorage.setItem("hasCompletedOnboarding", "true");
-                console.log(
-                  `First-time onboarding, redirecting to ${profile.profileRoute}`
-                );
-                router.push(profile.profileRoute);
-              } else {
-                console.log(
-                  `Switching to ${profile.title} profile, redirecting to ${profile.route} (homepage)`
-                );
-                router.push(profile.route);
+                targetRoute = profile.profileRoute;
               }
-              router.refresh();
+              
               toast.success(`Switched to ${profile.title} profile`);
               onClose();
+              
+              // Force immediate navigation using window.location
+              setTimeout(() => {
+                window.location.href = targetRoute;
+              }, 100);
+              
               resolve(null);
             },
             onError: (error: unknown) => {
@@ -209,21 +220,6 @@ const SwitchProfileModal: React.FC<SwitchProfileModalProps> = ({
       onClose();
     }
   };
-
-  // Force refresh current profile when modal opens
-  useEffect(() => {
-    if (isOpen) {
-      const localStorageRole = typeof window !== "undefined" 
-        ? localStorage.getItem("userRole")?.toLowerCase() 
-        : null;
-      
-
-      
-      if (localStorageRole === "homeowner" || localStorageRole === "agent" || localStorageRole === "renter") {
-        setCurrentProfile(localStorageRole as "renter" | "homeowner" | "agent");
-      }
-    }
-  }, [isOpen]);
 
   if (!isOpen) return null;
 
