@@ -124,39 +124,20 @@ const FeaturedReviews = () => {
             }}
           >
             <div className="relative w-full h-48 overflow-hidden">
-              {review.linkedProperty?.media?.coverPhoto ? (
-                <Image
-                  src={
-                    review?.linkedProperty.media?.coverPhoto &&
-                    review.linkedProperty?.media?.coverPhoto.trim() !== ""
-                      ? review.linkedProperty.media.coverPhoto
-                      : "/Reviews.png"
-                  }
-                  alt={
-                    review?.linkedProperty.media?.coverPhoto &&
-                    review.linkedProperty?.media?.coverPhoto.trim() !== ""
-                      ? `Property image for ${review.location.streetAddress}`
-                      : "Reviews placeholder image"
-                  }
-                  width={400}
-                  height={270}
-                  className="object-cover w-full h-full"
-                  style={{ width: 'auto', height: 'auto' }}
-                  priority={false}
-                />
-              ) : (
-                <div className="w-full h-full">
-                  <Image
-                    src="/Reviews.png"
-                    alt="Reviews placeholder image"
-                    width={400}
-                    height={270}
-                    className="object-cover w-full h-full"
-                    style={{ width: 'auto', height: 'auto' }}
-                    priority={false}
-                  />
-                </div>
-              )}
+              <Image
+                src={
+                  review.linkedProperty?.media?.coverPhoto && 
+                  typeof review.linkedProperty.media.coverPhoto === 'string' &&
+                  review.linkedProperty.media.coverPhoto.trim() !== ''
+                    ? review.linkedProperty.media.coverPhoto
+                    : "/Reviews.png"
+                }
+                alt={`Property at ${review.location?.streetAddress || 'Unknown location'}`}
+                width={400}
+                height={270}
+                className="object-cover w-full h-full"
+                priority={false}
+              />
 
               {/* Status and Verification Badges */}
               <div className="absolute top-3 left-3 right-3 flex justify-between">

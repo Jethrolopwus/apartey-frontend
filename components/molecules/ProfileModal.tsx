@@ -34,12 +34,19 @@ const SwitchProfileModal: React.FC<SwitchProfileModalProps> = ({
   // Determine current profile on client side
   useEffect(() => {
     const getCurrentProfile = (): "renter" | "homeowner" | "agent" => {
+      // Check localStorage first (most up-to-date)
+      const localStorageRole = typeof window !== "undefined" 
+        ? localStorage.getItem("userRole")?.toLowerCase() 
+        : null;
+      
+      // Then check userData and role state
       const userRole =
         userData?.currentUserRole?.role?.toLowerCase() ||
         role?.toLowerCase() ||
-        (typeof window !== "undefined"
-          ? localStorage.getItem("userRole")?.toLowerCase()
-          : null);
+        localStorageRole;
+      
+
+      
       if (
         userRole === "homeowner" ||
         userRole === "agent" ||
@@ -51,7 +58,7 @@ const SwitchProfileModal: React.FC<SwitchProfileModalProps> = ({
     };
 
     setCurrentProfile(getCurrentProfile());
-  }, [userData, role]);
+  }, [userData, role, isOpen]); // Add isOpen dependency to update when modal opens
 
   // Also listen for localStorage changes to update current profile
   useEffect(() => {
@@ -64,9 +71,22 @@ const SwitchProfileModal: React.FC<SwitchProfileModalProps> = ({
       }
     };
 
+    // Also handle custom storage events (for same-window updates)
+    const handleCustomStorageChange = (e: CustomEvent) => {
+      if (e.detail?.key === "userRole") {
+        const newRole = e.detail?.newValue?.toLowerCase();
+        if (newRole === "homeowner" || newRole === "agent" || newRole === "renter") {
+          setCurrentProfile(newRole as "renter" | "homeowner" | "agent");
+        }
+      }
+    };
+
     window.addEventListener("storage", handleStorageChange);
+    window.addEventListener("localStorageChange", handleCustomStorageChange as EventListener);
+    
     return () => {
       window.removeEventListener("storage", handleStorageChange);
+      window.removeEventListener("localStorageChange", handleCustomStorageChange as EventListener);
     };
   }, []);
 
@@ -146,6 +166,15 @@ const SwitchProfileModal: React.FC<SwitchProfileModalProps> = ({
                 oldValue: role || 'renter'
               }));
               
+              // Also trigger custom event for same-window updates
+              window.dispatchEvent(new CustomEvent('localStorageChange', {
+                detail: {
+                  key: 'userRole',
+                  newValue: profile.id,
+                  oldValue: role || 'renter'
+                }
+              }));
+              
               const hasCompletedOnboarding = localStorage.getItem(
                 "hasCompletedOnboarding"
               );
@@ -180,6 +209,21 @@ const SwitchProfileModal: React.FC<SwitchProfileModalProps> = ({
       onClose();
     }
   };
+
+  // Force refresh current profile when modal opens
+  useEffect(() => {
+    if (isOpen) {
+      const localStorageRole = typeof window !== "undefined" 
+        ? localStorage.getItem("userRole")?.toLowerCase() 
+        : null;
+      
+
+      
+      if (localStorageRole === "homeowner" || localStorageRole === "agent" || localStorageRole === "renter") {
+        setCurrentProfile(localStorageRole as "renter" | "homeowner" | "agent");
+      }
+    }
+  }, [isOpen]);
 
   if (!isOpen) return null;
 

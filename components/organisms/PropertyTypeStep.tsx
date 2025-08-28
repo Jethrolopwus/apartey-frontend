@@ -38,7 +38,53 @@ const PropertyTypeStep: React.FC<StepProps> = ({
     formData.petPolicy || "pet-friendly"
   );
 
+  // Validation state
+  const [errors, setErrors] = useState<{
+    category?: string;
+    propertyType?: string;
+    condition?: string;
+    petPolicy?: string;
+  }>({});
+
+  // Clear specific error when user makes a selection
+  const clearError = (field: string) => {
+    setErrors(prev => {
+      const newErrors = { ...prev };
+      delete newErrors[field as keyof typeof errors];
+      return newErrors;
+    });
+  };
+
+  // Validate all fields
+  const validateForm = () => {
+    const newErrors: typeof errors = {};
+
+    if (!category) {
+      newErrors.category = "Please select a category";
+    }
+
+    if (!propertyType) {
+      newErrors.propertyType = "Please select a property type";
+    }
+
+    if (!condition) {
+      newErrors.condition = "Please select the property condition";
+    }
+
+    if (!petPolicy) {
+      newErrors.petPolicy = "Please select a pet policy";
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
   const handleNext = () => {
+    // Validate form before proceeding
+    if (!validateForm()) {
+      return;
+    }
+
     if (setFormData) {
       setFormData({
         ...formData,
@@ -66,7 +112,10 @@ const PropertyTypeStep: React.FC<StepProps> = ({
           {categories.map((cat) => (
             <button
               key={cat.id}
-              onClick={() => setCategory(cat.id as CategoryType)}
+              onClick={() => {
+                setCategory(cat.id as CategoryType);
+                clearError('category');
+              }}
               className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
                 category === cat.id
                   ? "text-gray-900 shadow-sm"
@@ -84,6 +133,9 @@ const PropertyTypeStep: React.FC<StepProps> = ({
             </button>
           ))}
         </div>
+        {errors.category && (
+          <p className="mt-2 text-sm text-red-600">{errors.category}</p>
+        )}
       </div>
 
       {/* Property Type */}
@@ -97,7 +149,10 @@ const PropertyTypeStep: React.FC<StepProps> = ({
             return (
               <button
                 key={type.id}
-                onClick={() => setPropertyType(type.id as PropertyType)}
+                onClick={() => {
+                  setPropertyType(type.id as PropertyType);
+                  clearError('propertyType');
+                }}
                 className={`flex flex-col items-center justify-center p-4 border-2 rounded-lg transition-all ${
                   propertyType === type.id
                     ? "border-orange-500 bg-orange-50"
@@ -124,6 +179,9 @@ const PropertyTypeStep: React.FC<StepProps> = ({
             );
           })}
         </div>
+        {errors.propertyType && (
+          <p className="mt-2 text-sm text-red-600">{errors.propertyType}</p>
+        )}
       </div>
 
       {/* Condition */}
@@ -139,13 +197,19 @@ const PropertyTypeStep: React.FC<StepProps> = ({
                 name="condition"
                 value={cond.id}
                 checked={condition === cond.id}
-                onChange={() => setCondition(cond.id as "Good Condition" | "New Building" | "Renovated")}
+                onChange={() => {
+                  setCondition(cond.id as "Good Condition" | "New Building" | "Renovated");
+                  clearError('condition');
+                }}
                 className="w-4 h-4 text-orange-500 border-gray-300 focus:ring-orange-500"
               />
               <span className="ml-3 text-sm text-gray-700">{cond.label}</span>
             </label>
           ))}
         </div>
+        {errors.condition && (
+          <p className="mt-2 text-sm text-red-600">{errors.condition}</p>
+        )}
       </div>
 
       {/* Pet Policy */}
@@ -160,7 +224,10 @@ const PropertyTypeStep: React.FC<StepProps> = ({
               name="petPolicy"
               value="pet-friendly"
               checked={petPolicy === "pet-friendly"}
-              onChange={() => setPetPolicy("pet-friendly")}
+              onChange={() => {
+                setPetPolicy("pet-friendly");
+                clearError('petPolicy');
+              }}
               className="w-4 h-4 text-orange-500 border-gray-300 focus:ring-orange-500"
             />
             <span className="ml-3 text-sm text-gray-700">
@@ -173,15 +240,22 @@ const PropertyTypeStep: React.FC<StepProps> = ({
               name="petPolicy"
               value="no-pets"
               checked={petPolicy === "no-pets"}
-              onChange={() => setPetPolicy("no-pets")}
+              onChange={() => {
+                setPetPolicy("no-pets");
+                clearError('petPolicy');
+              }}
               className="w-4 h-4 text-orange-500 border-gray-300 focus:ring-orange-500"
             />
             <span className="ml-3 text-sm text-gray-700">No Pets Allowed</span>
           </label>
         </div>
+        {errors.petPolicy && (
+          <p className="mt-2 text-sm text-red-600">{errors.petPolicy}</p>
+        )}
       </div>
 
       {/* Next Button */}
+      <div className="border-t-2 border-[#C85212] mt-8 pt-8"></div>
       <div className="flex justify-end">
         <button
           onClick={handleNext}

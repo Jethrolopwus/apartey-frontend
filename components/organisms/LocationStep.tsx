@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { useForm } from 'react-hook-form';
 import { 
   ChevronRight,
   ChevronLeft,
@@ -28,6 +29,18 @@ interface Coordinates {
   lng: number;
 }
 
+// Form data interface
+interface LocationFormData {
+  searchAddress: string;
+  country: string;
+  city: string;
+  district: string;
+  zipCode: string;
+  streetAddress: string;
+  apartment: string;
+  state: string;
+}
+
 declare global {
   interface Window {
     google: unknown;
@@ -35,16 +48,30 @@ declare global {
 }
 
 const LocationStep: React.FC<StepProps> = ({ onNext, onBack, formData, setFormData }) => {
+  // React Hook Form setup
+  const {
+    register,
+    handleSubmit,
+    setValue,
+    formState: { errors },
+  } = useForm<LocationFormData>({
+    mode: 'onBlur',
+    defaultValues: {
+      searchAddress: formData.searchAddress || '',
+      country: formData.country || '',
+      city: formData.city || '',
+      district: formData.district || '',
+      zipCode: formData.zipCode || '',
+      streetAddress: formData.streetAddress || '',
+      apartment: formData.apartment || '',
+      state: formData.state || '',
+    }
+  });
+
+  // Watch form values for real-time updates (removed to prevent infinite loops)
+
   // Form state
-  const [searchAddress, setSearchAddress] = useState(formData.searchAddress || '');
-  const [country, setCountry] = useState(formData.country || '');
-  const [city, setCity] = useState(formData.city || '');
-  const [district, setDistrict] = useState(formData.district || '');
-  const [zipCode, setZipCode] = useState(formData.zipCode || '');
-  const [streetAddress, setStreetAddress] = useState(formData.streetAddress || '');
-  const [apartment, setApartment] = useState(formData.apartment || '');
   const [countryCode] = useState(formData.countryCode || 'NG');
-  const [state, setState] = useState(formData.state || '');
   const [coordinates, setCoordinates] = useState<Coordinates | null>(
     formData.location?.coordinates ? {
       lat: formData.location.coordinates.latitude || 0,
@@ -205,17 +232,19 @@ const LocationStep: React.FC<StepProps> = ({ onNext, onBack, formData, setFormDa
             }
           : null;
 
-        // Update form state
-        setCoordinates(newCoordinates);
-        setCountry(countryName);
-        setState(state);
-        setDistrict(district);
-        setZipCode(postal);
-        setCity(cityName);
-        setStreetAddress(streetName);
-        setSearchAddress(`${streetName} ${streetNumber}`.trim());
-        setApartment("");
+        // Update form state using react-hook-form
+        setValue('country', countryName);
+        setValue('state', state);
+        setValue('district', district);
+        setValue('zipCode', postal);
+        setValue('city', cityName);
+        setValue('streetAddress', streetName);
+        setValue('searchAddress', `${streetName} ${streetNumber}`.trim());
+        setValue('apartment', '');
         setManualApartment("");
+
+        // Update coordinates
+        setCoordinates(newCoordinates);
 
         // Update map
         if (newCoordinates && mapInstanceRef.current) {
@@ -258,7 +287,7 @@ const LocationStep: React.FC<StepProps> = ({ onNext, onBack, formData, setFormDa
         googleObj.maps.event.clearInstanceListeners(autocompleteRef.current);
       }
     };
-  }, [countryCode, fetchApartments]);
+  }, [countryCode, fetchApartments, setValue]);
 
   // Handle manual search
   const handleManualSearch = async (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -276,18 +305,21 @@ const LocationStep: React.FC<StepProps> = ({ onNext, onBack, formData, setFormDa
     }
   };
 
-  // Update form data when any field changes
-  useEffect(() => {
+  // Remove the automatic form data update to prevent infinite loops
+  // Form data will be updated only when the form is submitted
+
+  // Form submission handler
+  const onSubmit = (data: LocationFormData) => {
     if (setFormData) {
       const locationData = {
-        country,
+        country: data.country,
         countryCode,
-        stateOrRegion: state,
-        district,
-        street: streetAddress,
-        apartment: apartment || manualApartment,
-        postalCode: zipCode,
-        fullAddress: searchAddress,
+        stateOrRegion: data.state,
+        district: data.district,
+        street: data.streetAddress,
+        apartment: data.apartment || manualApartment,
+        postalCode: data.zipCode,
+        fullAddress: data.searchAddress,
         coordinates: coordinates ? {
           latitude: coordinates.lat,
           longitude: coordinates.lng
@@ -297,24 +329,18 @@ const LocationStep: React.FC<StepProps> = ({ onNext, onBack, formData, setFormDa
 
       setFormData(prev => ({
         ...prev,
-        searchAddress,
-        country,
-        city,
-        district,
-        zipCode,
-        streetAddress,
-        apartment: apartment || manualApartment,
+        searchAddress: data.searchAddress,
+        country: data.country,
+        city: data.city,
+        district: data.district,
+        zipCode: data.zipCode,
+        streetAddress: data.streetAddress,
+        apartment: data.apartment || manualApartment,
         countryCode,
-        state,
+        state: data.state,
         location: locationData
       }));
     }
-  }, [
-    searchAddress, country, city, district, zipCode, streetAddress, 
-    apartment, manualApartment, countryCode, state, coordinates, setFormData
-  ]);
-
-  const handleNext = () => {
     onNext();
   };
 
@@ -326,244 +352,280 @@ const LocationStep: React.FC<StepProps> = ({ onNext, onBack, formData, setFormDa
     <div className="max-w-2xl">
       <h1 className="text-2xl font-semibold text-gray-900 mb-8">Location</h1>
       
-      {/* Search Address */}
-      <div className="mb-6">
-        <label className="block text-sm font-medium text-gray-700 mb-2">
-          Search address <span className="text-red-500">*</span>
-        </label>
-        <input
-          ref={inputRef}
-          type="text"
-          value={searchAddress}
-          onChange={(e) => setSearchAddress(e.target.value)}
-          onKeyDown={handleManualSearch}
-          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 text-sm"
-          placeholder="Enter address or search for location"
-        />
-        <p className="text-xs text-gray-500 mt-1">Try searching: &quot;29 Ilesa-Ife Road, Ilesa, Osun&quot;</p>
-      </div>
-
-      {/* Loading State */}
-      {loading && (
-        <p className="text-orange-600 text-sm mb-4">Fetching apartments...</p>
-      )}
-
-      {/* Multiple Addresses Dropdown */}
-      {!loading && matchedAddresses?.length > 1 && (
-        <div className="mb-6">
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Matched Addresses:
-          </label>
-          <select
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 text-sm appearance-none bg-white"
-            onChange={(e) => {
-              const index = parseInt(e.target.value);
-              setApartments(matchedAddresses[index].appartments);
-              setSelectedAddress(matchedAddresses[index].pikkaadress);
-            }}
-          >
-            {matchedAddresses.map((b, i) => (
-              <option key={i} value={i}>
-                {b.pikkaadress}
-              </option>
-            ))}
-          </select>
-        </div>
-      )}
-
-      {/* Apartment Selection */}
-      {!loading && apartments.length > 0 && (
-        <div className="mb-6">
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Select Apartment:
-          </label>
-          <select
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 text-sm appearance-none bg-white"
-            onChange={(e) => {
-              const selectedApt = apartments.find(
-                (apt) => apt.adr_id === e.target.value
-              );
-              setApartment(selectedApt?.kort_nr || "");
-            }}
-          >
-            {apartments.map((apt, idx) => (
-              <option key={idx} value={apt.adr_id}>
-                {mark}–{apt.kort_nr || `${idx + 1}`}
-              </option>
-            ))}
-          </select>
-        </div>
-      )}
-
-      {/* Manual Apartment Entry */}
-      {!loading && apartments.length === 0 && selectedAddress && (
-        <div className="mb-6">
-          <p className="text-gray-500 mb-2 text-sm">
-            No registered apartments found. You can manually enter the apartment number.
-          </p>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Apartment Number:
-          </label>
-          <input
-            type="text"
-            placeholder="e.g., Flat 2A, Room 3B, Left Wing"
-            value={manualApartment}
-            onChange={(e) => setManualApartment(e.target.value)}
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 text-sm"
-          />
-        </div>
-      )}
-
-      {/* Location Details Grid */}
-      <div className="grid grid-cols-2 gap-4 mb-6">
-        {/* Country */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Country <span className="text-red-500">*</span>
-          </label>
-          <input
-            type="text"
-            value={country}
-            onChange={(e) => setCountry(e.target.value)}
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 text-sm"
-            placeholder="Enter country"
-          />
-        </div>
-
-        {/* City */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            City <span className="text-red-500">*</span>
-          </label>
-          <input
-            type="text"
-            value={city}
-            onChange={(e) => setCity(e.target.value)}
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 text-sm"
-            placeholder="Enter city"
-          />
-        </div>
-
-        {/* District */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            District <span className="text-red-500">*</span>
-          </label>
-          <input
-            type="text"
-            value={district}
-            onChange={(e) => setDistrict(e.target.value)}
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 text-sm"
-            placeholder="Enter district"
-          />
-        </div>
-
-        {/* Zip Code */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Postal code <span className="text-red-500">*</span>
-          </label>
-          <input
-            type="text"
-            value={zipCode}
-            onChange={(e) => setZipCode(e.target.value)}
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 text-sm"
-            placeholder="Enter zip code"
-          />
-        </div>
-      </div>
-
-      {/* Street Address */}
-      <div className="mb-6">
-        <label className="block text-sm font-medium text-gray-700 mb-2">
-          Street address <span className="text-red-500">*</span>
-        </label>
-        <input
-          type="text"
-          value={streetAddress}
-          onChange={(e) => setStreetAddress(e.target.value)}
-          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 text-sm"
-          placeholder="Enter street address"
-        />
-      </div>
-
-      {/* Additional Location Fields */}
-      <div className="grid grid-cols-2 gap-4 mb-6">
-        {/* Apartment */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Apartment/Unit <span className="text-gray-500">(Optional)</span>
-          </label>
-          <input
-            type="text"
-            value={apartment || manualApartment}
-            onChange={(e) => {
-              if (apartments.length > 0) {
-                setApartment(e.target.value);
-              } else {
-                setManualApartment(e.target.value);
-              }
-            }}
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 text-sm"
-            placeholder="e.g., Flat 2B, Apt 15"
-          />
-        </div>
-      </div>
-
-      {/* State/Region */}
-      <div className="mb-6">
-        <label className="block text-sm font-medium text-gray-700 mb-2">
-          State/Region <span className="text-red-500">*</span>
-        </label>
-        <input
-          type="text"
-          value={state}
-          onChange={(e) => setState(e.target.value)}
-          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 text-sm"
-          placeholder="Enter state or region"
-        />
-      </div>
-
-      {/* Real Map Section */}
-      <div className="mb-8">
-        <h3 className="text-sm font-medium text-gray-700 mb-2">Display on the map</h3>
-        <p className="text-xs text-gray-500 mb-4">You can change the position of the mark on the map</p>
+      <form onSubmit={handleSubmit(onSubmit)}> 
         
-        {/* Real Map Container */}
-        <div 
-          ref={mapRef}
-          className="w-full h-64 bg-gray-100 rounded-lg relative overflow-hidden border border-gray-200"
-        >
-          {/* Map will be rendered here by Google Maps */}
+        {/* Search Address */}
+        <div className="mb-6">
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Search address <span className="text-red-500">*</span>
+          </label>
+                      <input
+              {...register('searchAddress', { 
+                required: 'Please enter a search address'
+              })}
+            ref={(e) => {
+              register('searchAddress').ref(e);
+              inputRef.current = e;
+            }}
+            onKeyDown={handleManualSearch}
+            className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 text-sm ${
+              errors.searchAddress ? 'border-red-500' : 'border-gray-300'
+            }`}
+            placeholder="Enter address or search for location"
+          />
+          <p className="text-xs text-gray-500 mt-1">Try searching: &quot;29 Ilesa-Ife Road, Ilesa, Osun&quot;</p>
+          {errors.searchAddress && (
+            <p className="mt-2 text-sm text-red-600">{errors.searchAddress.message}</p>
+          )}
         </div>
-        
-        {/* Coordinates Display */}
-        {coordinates && (
-          <div className="mt-2 text-xs text-gray-500">
-            Coordinates: {coordinates.lat.toFixed(6)}, {coordinates.lng.toFixed(6)}
+
+        {/* Loading State */}
+        {loading && (
+          <p className="text-orange-600 text-sm mb-4">Fetching apartments...</p>
+        )}
+
+        {/* Multiple Addresses Dropdown */}
+        {!loading && matchedAddresses?.length > 1 && (
+          <div className="mb-6">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Matched Addresses:
+            </label>
+            <select
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 text-sm appearance-none bg-white"
+              onChange={(e) => {
+                const index = parseInt(e.target.value);
+                setApartments(matchedAddresses[index].appartments);
+                setSelectedAddress(matchedAddresses[index].pikkaadress);
+              }}
+            >
+              {matchedAddresses.map((b, i) => (
+                <option key={i} value={i}>
+                  {b.pikkaadress}
+                </option>
+              ))}
+            </select>
           </div>
         )}
-      </div>
 
-      {/* Navigation Buttons */}
-      <div className="flex justify-between">
-        <button
-          onClick={onBack}
-          className="flex items-center px-6 py-3 border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-colors"
-        >
-          <ChevronLeft className="w-4 h-4 mr-2" />
-          Back
-        </button>
-        
-        <button
-          onClick={handleNext}
-          className="flex items-center px-6 py-3 text-white rounded-lg font-medium transition-colors hover:opacity-90"
-          style={{ backgroundColor: '#C85212' }}
-        >
-          Next
-          <ChevronRight className="w-4 h-4 ml-2" />
-        </button>
-      </div>
+        {/* Apartment Selection */}
+        {!loading && apartments.length > 0 && (
+          <div className="mb-6">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Select Apartment:
+            </label>
+            <select
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 text-sm appearance-none bg-white"
+              onChange={(e) => {
+                const selectedApt = apartments.find(
+                  (apt) => apt.adr_id === e.target.value
+                );
+                setValue('apartment', selectedApt?.kort_nr || "");
+              }}
+            >
+              {apartments.map((apt, idx) => (
+                <option key={idx} value={apt.adr_id}>
+                  {mark}–{apt.kort_nr || `${idx + 1}`}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
+
+        {/* Manual Apartment Entry */}
+        {!loading && apartments.length === 0 && selectedAddress && (
+          <div className="mb-6">
+            <p className="text-gray-500 mb-2 text-sm">
+              No registered apartments found. You can manually enter the apartment number.
+            </p>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Apartment Number:
+            </label>
+            <input
+              type="text"
+              placeholder="e.g., Flat 2A, Room 3B, Left Wing"
+              value={manualApartment}
+              onChange={(e) => setManualApartment(e.target.value)}
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 text-sm"
+            />
+          </div>
+        )}
+
+        {/* Location Details Grid */}
+        <div className="grid grid-cols-2 gap-4 mb-6">
+          {/* Country */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Country <span className="text-red-500">*</span>
+            </label>
+            <input
+              {...register('country', { 
+                required: 'Please enter a country'
+              })}
+              className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 text-sm ${
+                errors.country ? 'border-red-500' : 'border-gray-300'
+              }`}
+              placeholder="Enter country"
+            />
+            {errors.country && (
+              <p className="mt-2 text-sm text-red-600">{errors.country.message}</p>
+            )}
+          </div>
+
+          {/* City */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              City <span className="text-red-500">*</span>
+            </label>
+            <input
+              {...register('city', { 
+                required: 'Please enter a city'
+              })}
+              className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 text-sm ${
+                errors.city ? 'border-red-500' : 'border-gray-300'
+              }`}
+              placeholder="Enter city"
+            />
+            {errors.city && (
+              <p className="mt-2 text-sm text-red-600">{errors.city.message}</p>
+            )}
+          </div>
+
+          {/* District */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              District <span className="text-red-500">*</span>
+            </label>
+            <input
+              {...register('district', { 
+                required: 'Please enter a district'
+              })}
+              className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 text-sm ${
+                errors.district ? 'border-red-500' : 'border-gray-300'
+              }`}
+              placeholder="Enter district"
+            />
+            {errors.district && (
+              <p className="mt-2 text-sm text-red-600">{errors.district.message}</p>
+            )}
+          </div>
+
+          {/* Zip Code */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Postal code <span className="text-red-500">*</span>
+            </label>
+            <input
+              {...register('zipCode', { 
+                required: 'Please enter a postal code'
+              })}
+              className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 text-sm ${
+                errors.zipCode ? 'border-red-500' : 'border-gray-300'
+              }`}
+              placeholder="Enter zip code"
+            />
+            {errors.zipCode && (
+              <p className="mt-2 text-sm text-red-600">{errors.zipCode.message}</p>
+            )}
+          </div>
+        </div>
+
+        {/* Street Address */}
+        <div className="mb-6">
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Street address <span className="text-red-500">*</span>
+          </label>
+          <input
+                          {...register('streetAddress', { 
+                required: 'Please enter a street address'
+              })}
+            className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 text-sm ${
+              errors.streetAddress ? 'border-red-500' : 'border-gray-300'
+            }`}
+            placeholder="Enter street address"
+          />
+          {errors.streetAddress && (
+            <p className="mt-2 text-sm text-red-600">{errors.streetAddress.message}</p>
+          )}
+        </div>
+
+        {/* Additional Location Fields */}
+        <div className="grid grid-cols-2 gap-4 mb-6">
+          {/* Apartment */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Apartment/Unit <span className="text-gray-500">(Optional)</span>
+            </label>
+            <input
+              {...register('apartment')}
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 text-sm"
+              placeholder="e.g., Flat 2B, Apt 15"
+            />
+          </div>
+        </div>
+
+        {/* State/Region */}
+        <div className="mb-6">
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            State/Region <span className="text-red-500">*</span>
+          </label>
+          <input
+                          {...register('state', { 
+                required: 'Please enter a state/region'
+              })}
+            className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 text-sm ${
+              errors.state ? 'border-red-500' : 'border-gray-300'
+            }`}
+            placeholder="Enter state or region"
+          />
+          {errors.state && (
+            <p className="mt-2 text-sm text-red-600">{errors.state.message}</p>
+          )}
+        </div>
+
+        {/* Real Map Section */}
+        <div className="mb-8">
+          <h3 className="text-sm font-medium text-gray-700 mb-2">Display on the map</h3>
+          <p className="text-xs text-gray-500 mb-4">You can change the position of the mark on the map</p>
+          
+          {/* Real Map Container */}
+          <div 
+            ref={mapRef}
+            className="w-full h-64 bg-gray-100 rounded-lg relative overflow-hidden border border-gray-200"
+          >
+            {/* Map will be rendered here by Google Maps */}
+          </div>
+          
+          {/* Coordinates Display */}
+          {coordinates && (
+            <div className="mt-2 text-xs text-gray-500">
+              Coordinates: {coordinates.lat.toFixed(6)}, {coordinates.lng.toFixed(6)}
+            </div>
+          )}
+        </div>
+
+        {/* Navigation Buttons */}
+        <div className="border-t-2 border-[#C85212] mt-8 pt-8"></div>
+        <div className="flex justify-between">
+          <button
+            type="button"
+            onClick={onBack}
+            className="flex items-center px-6 py-3 border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-colors"
+          >
+            <ChevronLeft className="w-4 h-4 mr-2" />
+            Back
+          </button>
+          
+          <button
+            type="submit"
+            className="flex items-center px-6 py-3 text-white rounded-lg font-medium transition-colors hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
+            style={{ backgroundColor: '#C85212' }}
+            disabled={Object.keys(errors).length > 0}
+          >
+            Next
+            <ChevronRight className="w-4 h-4 ml-2" />
+          </button>
+        </div>
+      </form>
     </div>
   );
 };

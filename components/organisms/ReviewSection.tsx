@@ -283,6 +283,18 @@ const ReviewsSection: React.FC<ReviewsSectionProps> = ({
     );
   }
 
+  // Debug logging for reviews data
+  console.log('Reviews data:', reviews);
+  if (reviews.length > 0) {
+    console.log('First review image data:', {
+      reviewId: reviews[0]._id,
+      linkedProperty: reviews[0].linkedProperty,
+      media: reviews[0].linkedProperty?.media,
+      coverPhoto: reviews[0].linkedProperty?.media?.coverPhoto,
+      coverPhotoType: typeof reviews[0].linkedProperty?.media?.coverPhoto
+    });
+  }
+
   return (
     <section
       className="w-full max-w-7xl mx-auto px-4 py-8"
@@ -335,17 +347,21 @@ const ReviewsSection: React.FC<ReviewsSectionProps> = ({
                     }
                   }}
                 >
-                  <div className="w-[180px] h-[120px] flex-shrink-0 rounded-md overflow-hidden relative">
-                    <Image
-                      src={
-                        review.linkedProperty?.media?.coverPhoto ||
-                        "/placeholder-property.jpg"
-                      }
-                      alt={`Property at ${review.location.streetAddress}`}
-                      width={180}
-                      height={120}
-                      className="object-cover w-full h-full"
-                    />
+                                    <div className="w-[180px] h-[120px] flex-shrink-0 rounded-md overflow-hidden relative">
+
+                                          <Image
+                        src={
+                          review.linkedProperty?.media?.coverPhoto && 
+                          typeof review.linkedProperty.media.coverPhoto === 'string' &&
+                          review.linkedProperty.media.coverPhoto.trim() !== ''
+                            ? review.linkedProperty.media.coverPhoto
+                            : "/Reviews.png"
+                        }
+                        alt={`Property at ${review.location?.streetAddress || 'Unknown location'}`}
+                        width={180}
+                        height={120}
+                        className="object-cover w-full h-full"
+                      />
                     {review.isLinkedToDatabaseProperty && (
                       <span className="absolute top-2 right-2 bg-teal-600 text-white text-xs font-semibold px-2 py-1 rounded-full">
                         Verified
@@ -373,7 +389,7 @@ const ReviewsSection: React.FC<ReviewsSectionProps> = ({
                     </p>
                   </div>
                 </article>
-              ))
+                              ))
             ) : (
               <p className="text-gray-500">No reviews found.</p>
             )}

@@ -20,7 +20,7 @@ const AdPromotionStep: React.FC<AdPromotionStepProps> = ({ onBack, onSubmit, for
   return (
     <div className="max-w-4xl w-full">
       <AdPromotionForm setFormData={setFormData} onSubmit={onSubmit} />
-      <div className="flex justify-between items-center mt-8 pt-6 border-t border-gray-200">
+      <div className="flex justify-between items-center mt-8 pt-6 border-t-2 border-[#C85212]">
          <button onClick={onBack} className="flex items-center px-6 py-3 border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-colors">
           <ChevronLeft className="w-4 h-4 mr-2" />Back
         </button>

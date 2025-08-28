@@ -10,7 +10,7 @@ const PriceStep: React.FC<StepProps> = ({ onNext, onBack, formData, setFormData 
     <PriceForm formData={formData} setFormData={setFormData} />
     
     {/* Navigation Buttons */}
-    <div className="flex justify-between pt-8 border-t border-gray-200">
+    <div className="flex justify-between pt-8 border-t-2  border-[#C85212]">
       <button 
         onClick={onBack} 
         className="flex items-center px-6 py-3 border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-colors"

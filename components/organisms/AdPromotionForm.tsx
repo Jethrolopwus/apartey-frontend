@@ -14,8 +14,8 @@ const getCurrencyAndPrices = (countryCode: string) => {
         currencyCode: 'NGN',
         prices: {
           easyStart: 0,
-          fastSale: 24000,
-          turboBoost: 64000,
+          fastSale: 40000,
+          turboBoost: 120000,
           otherServices: 20000
         }
       };
@@ -177,7 +177,7 @@ const AdPromotionForm: React.FC<AdPromotionFormProps> = ({ setFormData }) => {
       <h1 className="text-2xl md:text-3xl font-semibold text-gray-900 mb-2">Effective promotion of your ad</h1>
       <p className="text-sm md:text-base text-gray-600 mb-8 md:mb-10">We have created a special offer for your business to make promotion on Finder convenient and effective.</p>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8 max-w-7xl mx-auto min-w-0 ">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8 max-w-7xl mx-auto min-w-0">
         {promotionTiers.map((tier) => {
           const tierPrice = getTierPrice(tier.name, prices);
           const isSelected = selectedTier === tier.name;
@@ -200,7 +200,6 @@ const AdPromotionForm: React.FC<AdPromotionFormProps> = ({ setFormData }) => {
                         <p className="text-2xl md:text-3xl font-bold text-gray-900">
                           {currency}{tierPrice.toLocaleString()} <span className="text-sm md:text-base font-medium text-gray-500">/ month</span>
                         </p>
-                        <p className="text-sm text-[#C85212] font-medium">(–20%)</p>
                       </div>
                     )}
                     <p className="text-sm md:text-base text-gray-600 mt-2 mb-4">{tier.description}</p>
@@ -263,59 +262,18 @@ const AdPromotionForm: React.FC<AdPromotionFormProps> = ({ setFormData }) => {
             ))}
           </div>
 
-          {/* Enhanced Apartey Keys Section */}
+          {/* Apartey Keys Section */}
           <div className="mt-6 p-4 bg-white border border-gray-200 rounded-lg">
-            <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center justify-between">
               <span className="font-medium text-gray-800">Use Apartey keys</span>
-              <span className="text-sm text-gray-500">
-                Cost: 100 Keys (≈ {currency}500)
-              </span>
-            </div>
-            
-            <div className="flex items-center gap-4">
-              <div className="flex items-center">
-                <input
-                  type="number"
-                  value={aparteyKeys}
-                  onChange={(e) => setAparteyKeys(parseInt(e.target.value) || 0)}
-                  className="w-20 h-10 px-3 text-center border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                  min="0"
-                  step="100"
-                />
-                <span className="ml-2 text-sm text-gray-600">keys</span>
-              </div>
-              
-              <div className="text-sm text-gray-600">
-                ≈ {currency}{keysDiscount.toFixed(2)} discount
-              </div>
-            </div>
-            
-            {/* Quick selection buttons */}
-            <div className="flex gap-2 mt-3">
-              <button 
-                onClick={() => setAparteyKeys(100)}
-                className="px-3 py-1 text-xs bg-gray-100 text-gray-700 rounded hover:bg-gray-200 transition-colors"
-              >
-                100 keys
-              </button>
-              <button 
-                onClick={() => setAparteyKeys(500)}
-                className="px-3 py-1 text-xs bg-gray-100 text-gray-700 rounded hover:bg-gray-200 transition-colors"
-              >
-                500 keys
-              </button>
-              <button 
-                onClick={() => setAparteyKeys(1000)}
-                className="px-3 py-1 text-xs bg-gray-100 text-gray-700 rounded hover:bg-gray-200 transition-colors"
-              >
-                1000 keys
-              </button>
-              <button 
-                onClick={() => setAparteyKeys(0)}
-                className="px-3 py-1 text-xs bg-red-50 text-red-600 rounded hover:bg-red-100 transition-colors"
-              >
-                Clear
-              </button>
+              <input
+                type="number"
+                value={aparteyKeys}
+                onChange={(e) => setAparteyKeys(parseInt(e.target.value) || 0)}
+                className="w-20 h-10 px-3 text-center border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                min="0"
+                step="100"
+              />
             </div>
           </div>
         </>
@@ -323,42 +281,9 @@ const AdPromotionForm: React.FC<AdPromotionFormProps> = ({ setFormData }) => {
 
       {/* Total Section - Show only for paid services */}
       {showOtherServices && (
-        <div className="mt-8 pt-6 border-t border-gray-200">
-          <div className="bg-white rounded-lg border border-gray-200 p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Order Summary</h3>
-            
-            <div className="space-y-3 mb-4">
-              <div className="flex justify-between items-center">
-                <span className="text-gray-600">Selected Tier:</span>
-                <span className="font-medium text-gray-900">{selectedTier}</span>
-              </div>
-              
-              <div className="flex justify-between items-center">
-                <span className="text-gray-600">Tier Price:</span>
-                <span className="font-medium text-gray-900">{currency}{tierPrice.toLocaleString()}</span>
-              </div>
-              
-              {selectedServices.length > 0 && (
-                <div className="flex justify-between items-center">
-                  <span className="text-gray-600">Additional Services:</span>
-                  <span className="font-medium text-gray-900">{currency}{totalServicesPrice.toLocaleString()}</span>
-                </div>
-              )}
-              
-              {aparteyKeys > 0 && (
-                <div className="flex justify-between items-center">
-                  <span className="text-gray-600">Apartey Keys Discount:</span>
-                  <span className="font-medium text-green-600">-{currency}{keysDiscount.toFixed(2)}</span>
-                </div>
-              )}
-            </div>
-            
-            <div className="border-t border-gray-200 pt-4">
-              <div className="flex justify-between items-center">
-                <span className="text-lg font-semibold text-gray-900">Total:</span>
-                <span className="text-xl font-bold text-[#C85212]">{currency}{totalPrice.toLocaleString()}</span>
-              </div>
-            </div>
+        <div className="mt-8">
+          <div className="flex justify-between items-center">
+            <span className="text-lg font-semibold text-gray-900">Total: {currency}{totalPrice.toLocaleString()}</span>
           </div>
         </div>
       )}
