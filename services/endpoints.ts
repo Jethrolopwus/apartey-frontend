@@ -80,4 +80,6 @@ export default Object.freeze({
   updateAdminBlogPost: (id: string) => `/admin/blog/${id}`,
   deleteAdminBlogPost: (id: string) => `/admin/blog/${id}`,
 
+  // == PAYMENT ENDPOINTS===//
+  adsPayment: (id: string) => `/payment/create-checkout-session/${id}`,
 });

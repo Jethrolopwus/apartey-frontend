@@ -393,6 +393,19 @@ export interface PropertyListingResponse {
   error?: string;
 }
 
+export interface PropertyCreationResponse {
+  message: string;
+  property: {
+    id: string;
+    lister: string;
+    propertyType: string;
+    location: LocationData;
+    price: PriceData;
+    status: string;
+    createdAt: string;
+  };
+}
+
 // ===== VALIDATION TYPES =====
 
 export interface ValidationError {

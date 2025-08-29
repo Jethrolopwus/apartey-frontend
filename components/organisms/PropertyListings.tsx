@@ -12,7 +12,7 @@ import {
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useCreateListingsMutation } from "../../Hooks/use.createListings.mutation";
-import { PropertyListingFormState } from "../../types/propertyListing";
+import { PropertyListingFormState, PropertyCreationResponse } from "../../types/propertyListing";
 import { createFormDataPayload } from "../../utils/propertyListingTransformer";
 
 import PropertyTypeStep from "./PropertyTypeStep";
@@ -109,11 +109,25 @@ const PropertyListings = () => {
 
       // Submit to API
       mutate(form, {
-        onSuccess: () => {
+        onSuccess: (response: PropertyCreationResponse) => {
           toast.success("Property listing submitted successfully!");
-          setTimeout(() => {
-            router.push("/homeowner-profile");
-          }, 1200);
+          
+          // Extract property ID from response
+          const propertyId = response?.property?.id;
+          
+          if (propertyId) {
+            // Build checkout URL with payment parameters
+            const checkoutUrl = `/check-out/${propertyId}?tier=FastSale&addOns=liftsToTop,certifiedByApartey&aparteyKeys=100&currency=ngn`;
+            
+            setTimeout(() => {
+              router.push(checkoutUrl);
+            }, 1200);
+          } else {
+            // Fallback to profile if no property ID
+            setTimeout(() => {
+              router.push("/homeowner-profile");
+            }, 1200);
+          }
         },
         onError: (error: unknown) => {
           let errorMessage: string | undefined = undefined;

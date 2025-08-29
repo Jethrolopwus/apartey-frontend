@@ -28,6 +28,7 @@ import {
   AdminPostsResponse,
   CreateAdminPostData,
 } from "@/types/admin";
+import { CreateAdsPaymentRequest, PaymentIntentResponse } from "@/types/payment";
 import {
   AdminPropertiesResponse,
   AdminProperty,
@@ -1331,6 +1332,17 @@ class BaseURL {
       await AxiosInstance.delete(endpoints.deleteAdminBlogPost(id));
     } catch (error: any) {
       throw new Error(error.response?.data?.message || "Delete Admin Post failed");
+    }
+  };
+  // === ADMIN PAYMENT ==== //
+  httpCreateAdsPayment = async (data: CreateAdsPaymentRequest): Promise<PaymentIntentResponse> => {
+    try {
+      const response = await AxiosInstance.post(endpoints.adsPayment(data.id), data.paymentData);
+      return response.data;
+    } catch (error: any) {
+      console.error("Payment intent creation error:", error);
+      console.error("Error response:", error.response?.data);
+      throw new Error(error.response?.data?.message || "Create Ads Payment failed");
     }
   };
 }
