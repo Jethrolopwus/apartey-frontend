@@ -28,6 +28,9 @@ interface Stat {
 
 const AgentProfile: React.FC = () => {
   const router = useRouter();
+  const [currentPage, setCurrentPage] = React.useState(1);
+  const itemsPerPage = 6; // Show 6 properties per page (2 rows of 3)
+
   const {
     data: userData,
     isLoading: userLoading,
@@ -37,7 +40,10 @@ const AgentProfile: React.FC = () => {
     data: listingsData,
     isLoading: listingsLoading,
     error: listingsError,
-  } = useGetAllMyListingsQuery();
+  } = useGetAllMyListingsQuery({
+    limit: itemsPerPage,
+    page: currentPage,
+  });
 
   // Extract agent info from userData with better fallback handling
   const agent: Agent = useMemo(() => {
@@ -143,6 +149,20 @@ const AgentProfile: React.FC = () => {
     );
   };
 
+  // Removed unused handlePageChange function
+
+  const handlePreviousPage = () => {
+    if (currentPage > 1) {
+      setCurrentPage(currentPage - 1);
+    }
+  };
+
+  const handleNextPage = () => {
+    if (listingsData && currentPage < listingsData.pages) {
+      setCurrentPage(currentPage + 1);
+    }
+  };
+
   if (userLoading || listingsLoading) {
     return <div className="p-8 text-center">Loading...</div>;
   }
@@ -205,13 +225,22 @@ const AgentProfile: React.FC = () => {
                 <span className="text-2xl font-bold text-gray-900">
                   {agent.name}
                 </span>
-                <Button
-                  variant="secondary"
-                  className="px-6 py-2 text-sm font-semibold ml-4"
-                  onClick={() => router.push("/edit-profile")}
-                >
-                  Edit profile
-                </Button>
+                <div className="flex items-center space-x-2">
+                  {/* Rewards */}
+                  <div className="flex items-center rounded-full bg-orange-100 px-3 py-1">
+                    <span className="mr-1 text-orange-600">🏆</span>
+                    <span className="text-sm font-medium text-orange-600">
+                      {userData?.currentUser?.rewards || 0}
+                    </span>
+                  </div>
+                  <Button
+                    variant="secondary"
+                    className="px-6 py-2 text-sm font-semibold ml-4"
+                    onClick={() => router.push("/edit-profile")}
+                  >
+                    Edit profile
+                  </Button>
+                </div>
               </div>
             </div>
 
@@ -415,6 +444,42 @@ const AgentProfile: React.FC = () => {
             );
           })}
         </div>
+
+        {/* Pagination */}
+        {listingsData && (
+          <div className="flex items-center justify-between mt-8 px-4">
+            <div className="text-sm text-gray-700">
+              Showing page {listingsData.page} of {listingsData.pages} 
+              ({listingsData.total} total properties)
+            </div>
+            {listingsData.pages > 1 && (
+              <div className="flex items-center space-x-2">
+                <button
+                  onClick={handlePreviousPage}
+                  disabled={currentPage <= 1}
+                  className={`px-3 py-2 text-sm font-medium rounded-md border ${
+                    currentPage > 1
+                      ? "text-gray-700 bg-white border-gray-300 hover:bg-gray-50"
+                      : "text-gray-400 bg-gray-100 border-gray-200 cursor-not-allowed"
+                  }`}
+                >
+                  Previous
+                </button>
+                <button
+                  onClick={handleNextPage}
+                  disabled={currentPage >= listingsData.pages}
+                  className={`px-3 py-2 text-sm font-medium rounded-md border ${
+                    currentPage < listingsData.pages
+                      ? "text-gray-700 bg-white border-gray-300 hover:bg-gray-50"
+                      : "text-gray-400 bg-gray-100 border-gray-200 cursor-not-allowed"
+                  }`}
+                >
+                  Next
+                </button>
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );

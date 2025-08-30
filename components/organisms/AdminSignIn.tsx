@@ -119,20 +119,32 @@ const AdminSignIn: React.FC = () => {
     if (error) {
       console.error("Admin sign in error:", error);
       let errorMessage = "Failed to sign in. Please try again.";
-      if (error instanceof Error) {
-        errorMessage = error.message;
-      } else if (error && typeof error === "object" && "response" in error) {
+      
+      if (error && typeof error === "object" && "response" in error) {
         const apiError = error as {
           response?: { status?: number; data?: { message?: string } };
         };
-        if (apiError.response?.status === 401) {
+        
+        const status = apiError.response?.status;
+        if (status === 401) {
           errorMessage = "Invalid email or password";
-        } else if (apiError.response?.status === 404) {
+        } else if (status === 403) {
+          errorMessage = "Access denied. You don't have admin privileges.";
+        } else if (status === 404) {
           errorMessage = "Admin account not found";
+        } else if (status === 400) {
+          errorMessage = "Invalid credentials. Please check your email and password.";
+        } else if (status && status >= 500) {
+          errorMessage = "Server error. Please try again later.";
         } else if (apiError.response?.data?.message) {
-          errorMessage = apiError.response.data.message;
+          // For any other specific backend messages, provide a generic user-friendly message
+          errorMessage = "Unable to sign in. Please verify your credentials and try again.";
         }
+      } else if (error instanceof Error) {
+        // For generic errors, provide a user-friendly message
+        errorMessage = "Sign in failed. Please check your connection and try again.";
       }
+      
       toast.error(errorMessage);
     }
   }, [error]);

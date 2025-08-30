@@ -1,21 +1,12 @@
 "use client";
 import http from "@/services/http";
 import { useQuery } from "@tanstack/react-query";
-import { PropertiesResponse, Article } from "@/types/generated";
+import { BlogResponse, BlogSearchParams } from "@/types/blog";
 
-export interface useGetAllBlogPostQueryParams {
-  limit?: number;
-  byId?: number;
-}
-
-export interface BlogPostResponse {
-  data: Article[];
-}
-
-export const useGetAllBlogPostQuery = (params?: useGetAllBlogPostQueryParams) => {
-  const { data, isLoading, error, refetch } = useQuery<BlogPostResponse>({
-    queryKey: ["Blogs", params?.limit, params?.byId],
-    queryFn: () => http.httpGetAllBlogPost(params?.limit, params?.byId),
+export const useGetAllBlogPostQuery = (params?: BlogSearchParams) => {
+  const { data, isLoading, error, refetch } = useQuery<BlogResponse>({
+    queryKey: ["Blogs", params?.search, params?.limit, params?.page, params?.category],
+    queryFn: () => http.httpGetAllBlogPost(params),
     staleTime: 5 * 60 * 1000, 
     retry: 2,
   });

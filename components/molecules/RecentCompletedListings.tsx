@@ -1,6 +1,7 @@
 "use client";
 import React from "react";
 import { Key, Euro, Handshake } from "lucide-react";
+import { RecentCompleted } from "@/types/admin";
 
 interface CompletedListing {
   id: string;
@@ -12,62 +13,122 @@ interface CompletedListing {
   icon: "key" | "euro" | "handshake";
 }
 
-const mockData: CompletedListing[] = [
-  {
-    id: "1",
-    propertyName: "Modern 3BR Apartment in Lagos",
-    owner: "John D.",
-    completedDate: "2025-01-28",
-    price: "€185,000",
-    status: "Sold",
-    icon: "key"
-  },
-  {
-    id: "2",
-    propertyName: "2BR Condo in Abuja",
-    owner: "Sarah M.",
-    completedDate: "2025-01-27",
-    price: "€1500/month",
-    status: "Rented",
-    icon: "euro"
-  },
-  {
-    id: "3",
-    propertyName: "Modern 3BR Apartment in Lagos",
-    owner: "John D.",
-    completedDate: "2025-01-28",
-    price: "€185,000",
-    status: "Sold",
-    icon: "key"
-  },
-  {
-    id: "4",
-    propertyName: "Studio in Accra",
-    owner: "Mika J.",
-    completedDate: "2025-01-27",
-    price: "Property swapped",
-    status: "Swapped",
-    icon: "handshake"
-  },
-  {
-    id: "5",
-    propertyName: "2BR Condo in Abuja",
-    owner: "Sarah M.",
-    completedDate: "2025-01-27",
-    price: "€1500/month",
-    status: "Rented",
-    icon: "euro"
-  },
-  {
-    id: "6",
-    propertyName: "Studio in Accra",
-    owner: "Mika J.",
-    completedDate: "2025-01-27",
-    price: "Property swapped",
-    status: "Swapped",
-    icon: "handshake"
-  }
-];
+interface RecentCompletedListingsProps {
+  recentCompleted?: RecentCompleted[];
+}
+
+const RecentCompletedListings: React.FC<RecentCompletedListingsProps> = ({ 
+  recentCompleted = [] 
+}) => {
+  // Transform API data to component format
+  const transformData = (apiData: RecentCompleted[]): CompletedListing[] => {
+    return apiData.map((item) => {
+      const getStatus = (category: string): "Sold" | "Rented" | "Swapped" => {
+        switch (category.toLowerCase()) {
+          case "sale":
+            return "Sold";
+          case "rent":
+            return "Rented";
+          case "swap":
+            return "Swapped";
+          default:
+            return "Sold";
+        }
+      };
+
+      const getIcon = (category: string): "key" | "euro" | "handshake" => {
+        switch (category.toLowerCase()) {
+          case "sale":
+            return "key";
+          case "rent":
+            return "euro";
+          case "swap":
+            return "handshake";
+          default:
+            return "key";
+        }
+      };
+
+      const getPrice = (item: RecentCompleted): string => {
+        if (item.category.toLowerCase() === "swap") {
+          return "Property swapped";
+        }
+        const currency = item.propertyDetails?.currency || "USD";
+        const price = item.propertyDetails?.price || 0;
+        return `${currency}${price.toLocaleString()}`;
+      };
+
+      return {
+        id: item._id,
+        propertyName: `${item.propertyType} in ${item.location?.country || "Unknown"}`,
+        owner: item.lister?.firstName || "Unknown",
+        completedDate: new Date(item.updatedAt).toLocaleDateString(),
+        price: getPrice(item),
+        status: getStatus(item.category),
+        icon: getIcon(item.category)
+      };
+    });
+  };
+
+  // Use real data if available, otherwise use mock data
+  const data = recentCompleted.length > 0 
+    ? transformData(recentCompleted)
+    : [
+        {
+          id: "1",
+          propertyName: "Modern 3BR Apartment in Lagos",
+          owner: "John D.",
+          completedDate: "2025-01-28",
+          price: "€185,000",
+          status: "Sold" as const,
+          icon: "key" as const
+        },
+        {
+          id: "2",
+          propertyName: "2BR Condo in Abuja",
+          owner: "Sarah M.",
+          completedDate: "2025-01-27",
+          price: "€1500/month",
+          status: "Rented" as const,
+          icon: "euro" as const
+        },
+        {
+          id: "3",
+          propertyName: "Modern 3BR Apartment in Lagos",
+          owner: "John D.",
+          completedDate: "2025-01-28",
+          price: "€185,000",
+          status: "Sold" as const,
+          icon: "key" as const
+        },
+        {
+          id: "4",
+          propertyName: "Studio in Accra",
+          owner: "Mika J.",
+          completedDate: "2025-01-27",
+          price: "Property swapped",
+          status: "Swapped" as const,
+          icon: "handshake" as const
+        },
+        {
+          id: "5",
+          propertyName: "2BR Condo in Abuja",
+          owner: "Sarah M.",
+          completedDate: "2025-01-27",
+          price: "€1500/month",
+          status: "Rented" as const,
+          icon: "euro" as const
+        },
+        {
+          id: "6",
+          propertyName: "Studio in Accra",
+          owner: "Mika J.",
+          completedDate: "2025-01-27",
+          price: "Property swapped",
+          status: "Swapped" as const,
+          icon: "handshake" as const
+        }
+      ];
 
 const getStatusColor = (status: string) => {
   switch (status) {
@@ -95,7 +156,6 @@ const getIcon = (iconType: string) => {
   }
 };
 
-const RecentCompletedListings: React.FC = () => {
   return (
     <div className="bg-white rounded-xl p-4 md:p-6 shadow-sm border border-gray-100">
       <div className="mb-4 md:mb-6">
@@ -108,7 +168,7 @@ const RecentCompletedListings: React.FC = () => {
       </div>
 
       <div className="space-y-3 md:space-y-4">
-        {mockData.map((listing) => (
+        {data.map((listing) => (
           <div
             key={listing.id}
             className="flex items-center justify-between p-3 md:p-4 bg-gray-50 rounded-lg border border-gray-100"

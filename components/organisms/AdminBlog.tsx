@@ -9,7 +9,54 @@ import { AdminPost } from "@/types/admin";
 import EditBlogPostModal from "@/app/admin/components/EditBlogPostModal";
 import DeleteBlogPostModal from "@/app/admin/components/DeleteBlogPostModal";
 
+// Custom Image component with error handling for admin blog
+const SafeImage: React.FC<{
+  src: string;
+  alt: string;
+  fallbackSrc?: string;
+  className?: string;
+  width?: number;
+  height?: number;
+}> = ({ src, alt, fallbackSrc = "/cover-image.png", className, width, height }) => {
+  const [imgSrc, setImgSrc] = useState(src);
+  const [hasError, setHasError] = useState(false);
+
+  const handleError = () => {
+    if (!hasError && imgSrc !== fallbackSrc) {
+      setImgSrc(fallbackSrc);
+      setHasError(true);
+    }
+  };
+
+  // If no image URL is provided, show a placeholder
+  if (!src || src.trim() === "") {
+    return (
+      <div className={`${className} bg-gray-100 flex items-center justify-center border border-gray-200`}>
+        <div className="text-center text-gray-400">
+          <div className="text-2xl mb-1">📝</div>
+          <div className="text-xs">No Image</div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <Image
+      src={imgSrc}
+      alt={alt}
+      width={width}
+      height={height}
+      className={className}
+      onError={handleError}
+      unoptimized={imgSrc.startsWith('http')} // Don't optimize external images
+    />
+  );
+};
+
 const statusColors: Record<string, string> = {
+  published: "bg-green-100 text-green-700",
+  draft: "bg-yellow-100 text-yellow-700",
+  archived: "bg-gray-100 text-gray-700",
   Published: "bg-green-100 text-green-700",
   Draft: "bg-yellow-100 text-yellow-700",
   Archived: "bg-gray-100 text-gray-700",
@@ -19,7 +66,7 @@ export default function AdminBlog() {
   const router = useRouter();
   const [searchTerm, setSearchTerm] = useState("");
   const [sortBy, setSortBy] = useState("newest");
-  const [selectedStatus, setSelectedStatus] = useState<string>("all");
+  const [selectedStatus] = useState<string>("all");
   const [currentPage, setCurrentPage] = useState(1);
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [selectedPostId, setSelectedPostId] = useState<string>("");
@@ -54,21 +101,21 @@ export default function AdminBlog() {
   });
   
   const handleDelete = (post: AdminPost) => {
-    setSelectedPostForDelete({ id: post.id, title: post.title });
+    setSelectedPostForDelete({ id: post._id, title: post.title });
     setDeleteModalOpen(true);
   };
 
   const handleArchive = (post: AdminPost) => {
     // TODO: Implement archive functionality
-    console.log("Archive post:", post.id);
+    console.log("Archive post:", post._id);
   };
 
   const handleView = (post: AdminPost) => {
-    router.push(`/admin/blog/${post.id}`);
+    router.push(`/admin/blog/${post._id}`);
   };
 
   const handleEdit = (post: AdminPost) => {
-    setSelectedPostId(post.id);
+    setSelectedPostId(post._id);
     setEditModalOpen(true);
   };
 
@@ -88,9 +135,7 @@ export default function AdminBlog() {
     setSortBy(e.target.value);
   };
 
-  const handleStatusChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    setSelectedStatus(e.target.value);
-  };
+  // Removed unused handleStatusChange function
 
   if (isLoading) {
     return (
@@ -148,16 +193,7 @@ export default function AdminBlog() {
             <option value="most-viewed">Most Viewed</option>
           </select>
           
-          <select 
-            value={selectedStatus}
-            onChange={handleStatusChange}
-            className="border border-gray-200 rounded-lg px-3 py-2 bg-white text-gray-700 text-sm focus:outline-none"
-          >
-            <option value="all">All Status</option>
-            <option value="Published">Published</option>
-            <option value="Draft">Draft</option>
-            <option value="Archived">Archived</option>
-          </select>
+          
           
           <button 
             onClick={handleNewPost}
@@ -184,12 +220,13 @@ export default function AdminBlog() {
         ) : (
           posts.map((post) => (
             <div
-              key={post.id}
+              key={post._id}
               className="bg-white rounded-2xl shadow p-6 flex gap-6 items-start"
             >
-              <Image
-                src={post.image || "/HouseRent.png"}
+              <SafeImage
+                src={post.imageUrl || ""}
                 alt={post.title}
+                fallbackSrc="/cover-image.png"
                 width={100}
                 height={100}
                 className="w-32 h-32 object-cover rounded-xl border border-gray-100"
@@ -205,23 +242,23 @@ export default function AdminBlog() {
                       statusColors[post.status]
                     }`}
                   >
-                    {post.status}
+                    {post.status.charAt(0).toUpperCase() + post.status.slice(1)}
                   </span>
                 </div>
                 
-                <div className="text-sm text-gray-500 mb-2">{post.subtitle}</div>
+                <div className="text-sm text-gray-500 mb-2">{post.excerpt}</div>
                 
                 <div className="flex items-center gap-4 text-xs text-gray-400 mb-2">
                   <span className="flex items-center gap-1">
                     <span className="font-semibold text-[#2D3A4A]">
-                      {post.author}
+                      {post.author.firstName}
                     </span>
                   </span>
-                  <span>{new Date(post.date).toLocaleDateString()}</span>
+                  <span>{new Date(post.createdAt).toLocaleDateString()}</span>
                   <span>{post.category}</span>
                   <span>👁 {post.views}</span>
-                  <span>💬 {post.comments}</span>
-                  <span>❤️ {post.likes}</span>
+                  <span>💬 0</span>
+                  <span>❤️ {post.likes.length}</span>
                 </div>
                 
                 <div className="flex flex-wrap gap-2 mb-2">
@@ -236,7 +273,7 @@ export default function AdminBlog() {
                 </div>
                 
                 <div className="text-xs text-gray-400 mb-2">
-                  Published on {new Date(post.published).toLocaleDateString()}
+                  Published on {new Date(post.publishedAt).toLocaleDateString()}
                 </div>
                 
                 <div className="flex gap-2 mt-2">

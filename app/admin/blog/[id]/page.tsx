@@ -1,9 +1,53 @@
 "use client";
-import React from 'react';
+import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { X, Eye, Heart, MessageCircle, Calendar, User, Tag } from 'lucide-react';
 import { useGetAdminBlogPostByIdQuery } from '@/Hooks/use-getAdminAllBlogPostById.query';
 import Image from 'next/image';
+
+// Custom Image component with error handling for blog detail
+const SafeImage: React.FC<{
+  src: string;
+  alt: string;
+  fallbackSrc?: string;
+  className?: string;
+  width?: number;
+  height?: number;
+}> = ({ src, alt, fallbackSrc = "/cover-image.png", className, width, height }) => {
+  const [imgSrc, setImgSrc] = useState(src);
+  const [hasError, setHasError] = useState(false);
+
+  const handleError = () => {
+    if (!hasError && imgSrc !== fallbackSrc) {
+      setImgSrc(fallbackSrc);
+      setHasError(true);
+    }
+  };
+
+  // If no image URL is provided, show a placeholder
+  if (!src || src.trim() === "") {
+    return (
+      <div className={`${className} bg-gray-100 flex items-center justify-center border border-gray-200`}>
+        <div className="text-center text-gray-400">
+          <div className="text-2xl mb-1">📝</div>
+          <div className="text-xs">No Image</div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <Image
+      src={imgSrc}
+      alt={alt}
+      width={width}
+      height={height}
+      className={className}
+      onError={handleError}
+      unoptimized={imgSrc.startsWith('http')} // Don't optimize external images
+    />
+  );
+};
 
 export default function BlogPostDetail({ params }: { params: Promise<{ id: string }> }) {
   const router = useRouter();
@@ -52,9 +96,9 @@ export default function BlogPostDetail({ params }: { params: Promise<{ id: strin
   }
 
   const statusColors: Record<string, string> = {
-    Published: "bg-green-100 text-green-700",
-    Draft: "bg-yellow-100 text-yellow-700",
-    Archived: "bg-gray-100 text-gray-700",
+    published: "bg-green-100 text-green-700",
+    draft: "bg-yellow-100 text-yellow-700",
+    archived: "bg-gray-100 text-gray-700",
   };
 
   return (
@@ -95,9 +139,10 @@ export default function BlogPostDetail({ params }: { params: Promise<{ id: strin
                   Featured Image
                 </label>
                 <div className="relative">
-                  <Image
-                    src={post.image || "/HouseRent.png"}
+                  <SafeImage
+                    src={post.imageUrl || ""}
                     alt={post.title}
+                    fallbackSrc="/cover-image.png"
                     width={400}
                     height={300}
                     className="w-full h-64 object-cover rounded-lg border border-gray-200"
@@ -111,19 +156,18 @@ export default function BlogPostDetail({ params }: { params: Promise<{ id: strin
                   Content
                 </label>
                 <div className="bg-gray-50 p-4 rounded-lg border border-gray-200 prose prose-sm max-w-none">
-                  <div 
-                    className="text-gray-700"
-                    dangerouslySetInnerHTML={{ __html: post.content }}
-                  />
+                  <div className="text-gray-700">
+                    {post.excerpt}
+                  </div>
                 </div>
               </div>
 
-              {/* Subtitle */}
+              {/* Excerpt */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Subtitle
+                  Excerpt
                 </label>
-                <p className="text-gray-600">{post.subtitle}</p>
+                <p className="text-gray-600">{post.excerpt}</p>
               </div>
             </div>
 
@@ -136,7 +180,7 @@ export default function BlogPostDetail({ params }: { params: Promise<{ id: strin
                 </label>
                 <div className="flex items-center gap-2">
                   <User className="w-4 h-4 text-gray-400" />
-                  <span className="text-gray-600">{post.author}</span>
+                  <span className="text-gray-600">{post.author.firstName}</span>
                 </div>
               </div>
 
@@ -169,7 +213,7 @@ export default function BlogPostDetail({ params }: { params: Promise<{ id: strin
                 <div className="flex items-center gap-2">
                   <Calendar className="w-4 h-4 text-gray-400" />
                   <span className="text-gray-600">
-                    {new Date(post.published).toLocaleDateString()}
+                    {new Date(post.publishedAt).toLocaleDateString()}
                   </span>
                 </div>
               </div>
@@ -186,11 +230,11 @@ export default function BlogPostDetail({ params }: { params: Promise<{ id: strin
                   </div>
                   <div className="flex items-center gap-2">
                     <MessageCircle className="w-4 h-4 text-gray-400" />
-                    <span className="text-gray-600">{post.comments} comments</span>
+                    <span className="text-gray-600">0 comments</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <Heart className="w-4 h-4 text-gray-400" />
-                    <span className="text-gray-600">{post.likes} likes</span>
+                    <span className="text-gray-600">{post.likes.length} likes</span>
                   </div>
                 </div>
               </div>
@@ -218,7 +262,7 @@ export default function BlogPostDetail({ params }: { params: Promise<{ id: strin
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Post ID
                 </label>
-                <span className="text-gray-500 text-sm font-mono">{post.id}</span>
+                <span className="text-gray-500 text-sm font-mono">{post._id}</span>
               </div>
             </div>
           </div>

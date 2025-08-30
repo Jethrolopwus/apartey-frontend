@@ -15,40 +15,9 @@ import {
   Area,
 } from "recharts";
 import { TrendingUp, TrendingDown, Info } from "lucide-react";
+import { useGetInsightStatsQuery } from "@/Hooks/use-getInsightStats.query";
 
-// Sample data matching the Figma design
-const monthlyTrendsData = [
-  { month: "Jan", rent: 650, sale: 450, swap: 150 },
-  { month: "Feb", rent: 750, sale: 500, swap: 200 },
-  { month: "Mar", rent: 850, sale: 550, swap: 250 },
-  { month: "Apr", rent: 950, sale: 600, swap: 300 },
-  { month: "May", rent: 1050, sale: 650, swap: 350 },
-  { month: "Jun", rent: 1200, sale: 600, swap: 350 },
-];
-
-const propertyDistributionByCountry = [
-  { country: "Nigeria", properties: 4500 },
-  { country: "Ghana", properties: 2850 },
-  { country: "Kenya", properties: 2250 },
-  { country: "South Africa", properties: 1850 },
-  { country: "Uganda", properties: 1450 },
-  { country: "Others", properties: 1250 },
-];
-
-const propertyTypeDistribution = [
-  { name: "For Rent", value: 57, color: "#82C9A9" },
-  { name: "For Sale", value: 36, color: "#D96B3F" },
-  { name: "For Swap", value: 8, color: "#FDD835" },
-];
-
-const countryPerformanceData = [
-  { country: "Nigeria", properties: 4521, percentage: 32, color: "#8B5CF6" },
-  { country: "Estonia", properties: 2834, percentage: 20, color: "#10B981" },
-  { country: "Kenya", properties: 2267, percentage: 16, color: "#F59E0B" },
-  { country: "South Africa", properties: 1890, percentage: 13, color: "#EF4444" },
-  { country: "Uganda", properties: 1456, percentage: 10, color: "#3B82F6" },
-  { country: "Others", properties: 1234, percentage: 9, color: "#EC4899" },
-];
+// Sample data matching the Figma design - REMOVED (using real API data)
 
 interface MetricCardProps {
   title: string;
@@ -114,6 +83,63 @@ const SuccessfulDealCard: React.FC<SuccessfulDealCardProps> = ({
 );
 
 const Insights: React.FC = () => {
+  const { data: insightData, isLoading, error } = useGetInsightStatsQuery();
+
+  // Transform API data for charts
+  const transformedMonthlyTrendsData = React.useMemo(() => {
+    if (!insightData?.monthlyTrends?.All) return [];
+    
+    return insightData.monthlyTrends.All.map((item) => ({
+      month: item.month,
+      rent: insightData.monthlyTrends.Rent.find(r => r.month === item.month)?.count || 0,
+      sale: insightData.monthlyTrends.Sale.find(s => s.month === item.month)?.count || 0,
+      swap: insightData.monthlyTrends.Swap.find(s => s.month === item.month)?.count || 0,
+    }));
+  }, [insightData]);
+
+  const transformedPropertyTypeDistribution = React.useMemo(() => {
+    if (!insightData?.typeDistribution) return [];
+    
+    return insightData.typeDistribution.map((item) => ({
+      name: `For ${item.type}`,
+      value: parseFloat(item.percentage.replace('%', '')),
+      color: item.type === 'Rent' ? '#82C9A9' : item.type === 'Sale' ? '#D96B3F' : '#FDD835',
+    }));
+  }, [insightData]);
+
+  const transformedCountryPerformanceData = React.useMemo(() => {
+    if (!insightData?.countryPerformance) return [];
+    
+    return insightData.countryPerformance.map((item, index) => ({
+      country: item.country,
+      properties: item.count,
+      percentage: parseFloat(item.percentage.replace('%', '')),
+      color: ['#8B5CF6', '#10B981', '#F59E0B', '#EF4444', '#3B82F6', '#EC4899'][index % 6],
+    }));
+  }, [insightData]);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 p-6 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading insights...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-50 p-6 flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-red-600 mb-4">Error loading insights data</p>
+          <p className="text-gray-600">Please try again later</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gray-50 p-6">
       <div className="max-w-7xl mx-auto">
@@ -131,29 +157,25 @@ const Insights: React.FC = () => {
         {/* Key Metrics - Top Row */}
         <div className="mb-8">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <MetricCard
-              title="Total Swap Properties"
-              value="1,247"
-              change="+12%"
-              isPositive={true}
-            />
-            <MetricCard
-              title="Total Rent Properties"
-              value="8,934"
-              change="+8%"
-              isPositive={true}
-            />
-            <MetricCard
-              title="Total Sale Properties (NGN)"
-              value="5,621"
-              change="+15%"
-              isPositive={true}
-            />
+            {insightData?.statsByCategory?.map((stat) => (
+              <MetricCard
+                key={stat.category}
+                title={`Total ${stat.category} Properties`}
+                value={stat.total.toLocaleString()}
+                change={typeof stat.changeFromLastMonth === 'number' 
+                  ? `${stat.changeFromLastMonth > 0 ? '+' : ''}${stat.changeFromLastMonth}%`
+                  : stat.changeFromLastMonth === 'N/A' 
+                    ? 'No change data'
+                    : stat.changeFromLastMonth
+                }
+                isPositive={typeof stat.changeFromLastMonth === 'number' ? stat.changeFromLastMonth >= 0 : false}
+              />
+            ))}
             <MetricCard
               title="Total Reviews"
-              value="12,456"
-              change="+23%"
-              isPositive={true}
+              value={insightData?.totalReviews?.count?.toLocaleString() || "0"}
+              change={`${(insightData?.totalReviews?.changeFromLastMonth || 0) > 0 ? '+' : ''}${insightData?.totalReviews?.changeFromLastMonth || 0}%`}
+              isPositive={(insightData?.totalReviews?.changeFromLastMonth || 0) >= 0}
             />
           </div>
         </div>
@@ -161,21 +183,14 @@ const Insights: React.FC = () => {
         {/* Successful Deals Section */}
         <div className="mb-8">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <SuccessfulDealCard
-              title="Successful Swaps"
-              value="892"
-              progress={75}
-            />
-            <SuccessfulDealCard
-              title="Successful Rents"
-              value="7,234"
-              progress={85}
-            />
-            <SuccessfulDealCard
-              title="Successful Sales"
-              value="4,156"
-              progress={70}
-            />
+            {insightData?.statsByCategory?.map((stat) => (
+              <SuccessfulDealCard
+                key={stat.category}
+                title={`Successful ${stat.category}s`}
+                value={stat.successful.toLocaleString()}
+                progress={stat.successRate}
+              />
+            ))}
           </div>
         </div>
 
@@ -197,7 +212,7 @@ const Insights: React.FC = () => {
               </p>
               <div className="h-80">
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={propertyDistributionByCountry}>
+                  <BarChart data={transformedCountryPerformanceData}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
                     <XAxis 
                       dataKey="country" 
@@ -235,7 +250,7 @@ const Insights: React.FC = () => {
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
                     <Pie
-                      data={propertyTypeDistribution}
+                      data={transformedPropertyTypeDistribution}
                       cx="50%"
                       cy="50%"
                       innerRadius={60}
@@ -243,7 +258,7 @@ const Insights: React.FC = () => {
                       paddingAngle={2}
                       dataKey="value"
                     >
-                      {propertyTypeDistribution.map((entry, index) => (
+                      {transformedPropertyTypeDistribution.map((entry, index) => (
                         <Cell key={`cell-${index}`} fill={entry.color} />
                       ))}
                     </Pie>
@@ -252,29 +267,23 @@ const Insights: React.FC = () => {
                 
                 {/* Custom labels positioned around the pie chart */}
                 <div className="absolute inset-0 pointer-events-none">
-                  {/* For Rent - Bottom Left */}
-                  <div className="absolute bottom-8 left-8">
-                    <div className="flex items-center">
-                      <div className="w-3 h-3 rounded-full mr-2" style={{ backgroundColor: "#82C9A9" }}></div>
-                      <span className="text-sm font-medium text-gray-700">For Rent 57%</span>
-                    </div>
-                  </div>
-                  
-                  {/* For Sale - Top Right */}
-                  <div className="absolute top-8 right-8">
-                    <div className="flex items-center">
-                      <div className="w-3 h-3 rounded-full mr-2" style={{ backgroundColor: "#D96B3F" }}></div>
-                      <span className="text-sm font-medium text-gray-700">For Sale 36%</span>
-                    </div>
-                  </div>
-                  
-                  {/* For Swap - Bottom Right */}
-                  <div className="absolute bottom-8 right-8">
-                    <div className="flex items-center">
-                      <div className="w-3 h-3 rounded-full mr-2" style={{ backgroundColor: "#FDD835" }}></div>
-                      <span className="text-sm font-medium text-gray-700">For Swap 8%</span>
-                    </div>
-                  </div>
+                  {transformedPropertyTypeDistribution.map((item, index) => {
+                    const positions = [
+                      { top: 'bottom-8', left: 'left-8' }, // For Rent - Bottom Left
+                      { top: 'top-8', left: 'right-8' },   // For Sale - Top Right
+                      { top: 'bottom-8', left: 'right-8' }, // For Swap - Bottom Right
+                    ];
+                    const position = positions[index] || positions[0];
+                    
+                    return (
+                      <div key={item.name} className={`absolute ${position.top} ${position.left}`}>
+                        <div className="flex items-center">
+                          <div className="w-3 h-3 rounded-full mr-2" style={{ backgroundColor: item.color }}></div>
+                          <span className="text-sm font-medium text-gray-700">{item.name} {item.value}%</span>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             </div>
@@ -314,7 +323,7 @@ const Insights: React.FC = () => {
             
             <div className="h-80">
               <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={monthlyTrendsData}>
+                <AreaChart data={transformedMonthlyTrendsData}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
                   <XAxis 
                     dataKey="month" 
@@ -367,7 +376,7 @@ const Insights: React.FC = () => {
               Detailed breakdown of property performance by country
             </h3>
             <div className="space-y-4">
-              {countryPerformanceData.map((item, index) => (
+              {transformedCountryPerformanceData.map((item, index) => (
                 <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                   <div className="flex items-center">
                     <div 

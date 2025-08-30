@@ -6,14 +6,15 @@ import { PropertiesResponse } from "@/types/generated";
 export interface useGetAllListingsQueryParams {
   limit?: number;
   byId?: number;
+  page?: number;
 }
 
 export const useGetAllMyListingsQuery = (
   params?: useGetAllListingsQueryParams
 ) => {
   const { data, isLoading, error, refetch } = useQuery<PropertiesResponse>({
-    queryKey: ["MyListings", params?.limit, params?.byId],
-    queryFn: () => http.httpGetAllMyListings(params?.limit, params?.byId),
+    queryKey: ["MyListings", params?.limit, params?.byId, params?.page],
+    queryFn: () => http.httpGetAllMyListings(params?.limit, params?.byId, params?.page),
     staleTime: 5 * 60 * 1000,
     retry: 2,
   });

@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import BlogDetails from "@/components/organisms/BlogDetails";
 
 export default async function BlogPage({
@@ -9,7 +10,9 @@ export default async function BlogPage({
 
   return (
     <div className="min-h-screen">
-      <BlogDetails id={id} />
+      <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Loading blog...</div>}>
+        <BlogDetails id={id} />
+      </Suspense>
     </div>
   );
 }

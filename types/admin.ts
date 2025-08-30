@@ -1,9 +1,42 @@
+export interface DailyRevenue {
+  day: string;
+  revenue: number;
+}
+
+export interface GrowthData {
+  value: number;
+  isIncrease: boolean;
+}
+
+export interface SwapSaleData {
+  count: number;
+  change: GrowthData;
+}
+
+export interface CompletedData {
+  total: number;
+  rents: number;
+  sales: number;
+  swaps: number;
+}
+
+export interface GrowthStats {
+  totalUsers: GrowthData;
+  newUsers: GrowthData;
+  totalProperties: GrowthData;
+  activeListings: GrowthData;
+  swaps: SwapSaleData;
+  sales: SwapSaleData;
+}
+
 export interface AdminStats {
   totalUsers: number;
   newUsersThisMonth: number;
   totalProperties: number;
   activeListings: number;
-  totalRevenue: number;
+  dailyRevenue: DailyRevenue[];
+  growth: GrowthStats;
+  completed: CompletedData;
 }
 
 export interface UserDistribution {
@@ -26,11 +59,106 @@ export interface MonthlyUserTrend {
   count: number;
 }
 
+export interface UserDistributionByMonth {
+  month: string;
+  homeowner: number;
+  renter: number;
+}
+
+export interface CompletionDistribution {
+  type: string;
+  count: number;
+}
+
+export interface RecentCompleted {
+  _id: string;
+  lister: {
+    _id: string;
+    firstName: string;
+    email: string;
+  };
+  category: string;
+  propertyType: string;
+  condition: string;
+  petPolicy: string;
+  location: {
+    coordinates: {
+      latitude: number;
+      longitude: number;
+    };
+    displayOnMap: boolean;
+    country: string;
+    stateOrRegion: string;
+    district: string;
+    postalCode: string;
+    street: string;
+    countryCode: string;
+    apartment: string;
+    fullAddress: string;
+  };
+  media: {
+    coverPhoto: string;
+    uploads: Array<{
+      url: string;
+      type: string;
+      _id: string;
+    }>;
+  };
+  propertyDetails: {
+    currency: string;
+    negotiatedPrice: boolean;
+    amenities: string[];
+    infrastructure: string[];
+    price: number;
+    totalFloors: number;
+    floor: number;
+    totalAreaSqM: number;
+    livingAreaSqM: number;
+    kitchenAreaSqM: number;
+    bedrooms: number;
+    bathrooms: number;
+    parkingSpots: number;
+    description: string;
+  };
+  listingDuration: {
+    startDate: string;
+    quickSelect: string;
+    endDate: string;
+  };
+  contactInfo: {
+    openForTourSchedule: boolean;
+    typeOfOffer: string;
+    firstName: string;
+    lastName: string;
+    email: string;
+    phoneNumber: string;
+  };
+  adPromotion: {
+    certifiedByFinder: boolean;
+    liftsToTopCount: number;
+    detailedAnalytics: boolean;
+    selectedTier: string;
+  };
+  isAvailable: boolean;
+  views: number;
+  status: string;
+  createdAt: string;
+  updatedAt: string;
+  deactivationMeta?: {
+    reason: string;
+    customNote: string | null;
+    date: string;
+  };
+}
+
 export interface AdminTrends {
   userDistribution: UserDistribution[];
+  userDistributionByMonth: UserDistributionByMonth[];
   propertyTypes: PropertyType[];
   countrySales: CountrySale[];
   monthlyUserTrend: MonthlyUserTrend[];
+  completionDistribution: CompletionDistribution[];
+  recentCompleted: RecentCompleted[];
 }
 
 export interface AdminOverviewResponse {
@@ -288,23 +416,29 @@ export interface AdminProfileUpdateResponse {
 
 // ==== ADMIN BLOG POST INTERFACES ====
 
+export interface AdminPostAuthor {
+  _id: string;
+  firstName: string;
+  email: string;
+}
+
 export interface AdminPost {
-  id: string;
+  _id: string;
   title: string;
-  subtitle: string;
-  content: string;
-  author: string;
-  date: string;
+  slug: string;
+  excerpt: string;
   category: string;
+  imageUrl: string;
+  publishedAt: string;
   views: number;
-  comments: number;
-  likes: number;
+  likes: string[];
   tags: string[];
-  status: "Published" | "Draft" | "Archived";
-  published: string;
-  image: string;
+  status: "published" | "draft" | "archived";
+  archived: boolean;
+  author: AdminPostAuthor;
   createdAt: string;
   updatedAt: string;
+  __v: number;
 }
 
 export interface AdminPostsResponse {

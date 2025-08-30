@@ -47,6 +47,9 @@ interface Homeowner {
 
 const HomeownerProfile: React.FC = () => {
   const router = useRouter();
+  const [currentPage, setCurrentPage] = React.useState(1);
+  const itemsPerPage = 6; // Show 6 properties per page (2 rows of 3)
+
   const {
     data: userData,
     isLoading: userLoading,
@@ -57,7 +60,20 @@ const HomeownerProfile: React.FC = () => {
     isLoading: listingsLoading,
     error: listingsError,
     refetch: refetchListings,
-  } = useGetAllMyListingsQuery();
+  } = useGetAllMyListingsQuery({
+    limit: itemsPerPage,
+    page: currentPage,
+  });
+
+  // Debug: Log the listings data to see what we're getting
+  React.useEffect(() => {
+    if (listingsData) {
+      console.log("Listings Data:", listingsData);
+      console.log("Total Pages:", listingsData.pages);
+      console.log("Current Page:", listingsData.page);
+      console.log("Total Properties:", listingsData.total);
+    }
+  }, [listingsData]);
 
   // Extract homeowner info from userData
   const homeowner: Homeowner = useMemo(() => {
@@ -157,6 +173,20 @@ const HomeownerProfile: React.FC = () => {
     );
   };
 
+  // Removed unused handlePageChange function
+
+  const handlePreviousPage = () => {
+    if (currentPage > 1) {
+      setCurrentPage(currentPage - 1);
+    }
+  };
+
+  const handleNextPage = () => {
+    if (listingsData && currentPage < listingsData.pages) {
+      setCurrentPage(currentPage + 1);
+    }
+  };
+
   if (userLoading || listingsLoading) {
     return <div className="p-8 text-center">Loading...</div>;
   }
@@ -222,13 +252,22 @@ const HomeownerProfile: React.FC = () => {
                 <span className="text-2xl font-bold text-gray-900">
                   {homeowner.name}
                 </span>
-                <Button
-                  variant="secondary"
-                  className="px-6 py-2 text-sm font-semibold ml-4"
-                  onClick={() => router.push("/edit-profile")}
-                >
-                  Edit profile
-                </Button>
+                <div className="flex items-center space-x-2">
+                  {/* Rewards */}
+                  <div className="flex items-center rounded-full bg-orange-100 px-3 py-1">
+                    <span className="mr-1 text-orange-600">🏆</span>
+                    <span className="text-sm font-medium text-orange-600">
+                      {userData?.currentUser?.rewards || 0}
+                    </span>
+                  </div>
+                  <Button
+                    variant="secondary"
+                    className="px-6 py-2 text-sm font-semibold ml-4"
+                    onClick={() => router.push("/edit-profile")}
+                  >
+                    Edit profile
+                  </Button>
+                </div>
               </div>
             </div>
 
@@ -450,6 +489,42 @@ const HomeownerProfile: React.FC = () => {
                 Add Your First Property
               </Button>
             </Link>
+          </div>
+        )}
+
+        {/* Pagination */}
+        {listingsData && (
+          <div className="flex items-center justify-between mt-8 px-4">
+            <div className="text-sm text-gray-700">
+              Showing page {listingsData.page} of {listingsData.pages} 
+              ({listingsData.total} total properties)
+            </div>
+            {listingsData.pages > 1 && (
+              <div className="flex items-center space-x-2">
+                <button
+                  onClick={handlePreviousPage}
+                  disabled={currentPage <= 1}
+                  className={`px-3 py-2 text-sm font-medium rounded-md border ${
+                    currentPage > 1
+                      ? "text-gray-700 bg-white border-gray-300 hover:bg-gray-50"
+                      : "text-gray-400 bg-gray-100 border-gray-200 cursor-not-allowed"
+                  }`}
+                >
+                  Previous
+                </button>
+                <button
+                  onClick={handleNextPage}
+                  disabled={currentPage >= listingsData.pages}
+                  className={`px-3 py-2 text-sm font-medium rounded-md border ${
+                    currentPage < listingsData.pages
+                      ? "text-gray-700 bg-white border-gray-300 hover:bg-gray-50"
+                      : "text-gray-400 bg-gray-100 border-gray-200 cursor-not-allowed"
+                  }`}
+                >
+                  Next
+                </button>
+              </div>
+            )}
           </div>
         )}
       </div>

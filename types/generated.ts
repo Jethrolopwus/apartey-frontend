@@ -159,12 +159,12 @@ export interface Property {
 export interface PropertiesResponse {
   message: string;
   properties: Property[];
-  currentPage: number;
-  totalPages: number;
-  totalProperties: number;
-  limit: number;
-  hasNextPage: boolean;
-  hasPreviousPage: boolean;
+  page: number;
+  pages: number;
+  total: number;
+  limit?: number;
+  hasNextPage?: boolean;
+  hasPreviousPage?: boolean;
 }
 
 export interface Listing {

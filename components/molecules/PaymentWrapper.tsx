@@ -66,6 +66,7 @@ const PaymentWrapper = ({
     };
 
     createPaymentIntent();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [listingId]); // Only depend on listingId to prevent infinite loops
 
   if (isLoading || !clientSecret) {

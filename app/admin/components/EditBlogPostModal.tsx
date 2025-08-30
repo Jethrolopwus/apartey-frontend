@@ -50,12 +50,12 @@ export default function EditBlogPostModal({ postId, isOpen, onClose }: EditBlogP
       setFormData({
         id: postId,
         title: post.title,
-        content: post.content,
+        content: post.excerpt, // Use excerpt as content since there's no content field
         category: post.category as "Renting" | "Selling" | "Buying" | "Investment" | "Maintenance" | "Tips" | "News",
         tags: post.tags,
-        status: post.status === "Published" ? "published" : "draft"
+        status: post.status === "archived" ? "draft" : post.status
       });
-      setImageUrl(post.image || "");
+      setImageUrl(post.imageUrl || "");
     }
   }, [post, postId]);
 
@@ -120,7 +120,7 @@ export default function EditBlogPostModal({ postId, isOpen, onClose }: EditBlogP
       return;
     }
 
-    if (!selectedFile && !imageUrl.trim() && !post?.image) {
+    if (!selectedFile && !imageUrl.trim() && !post?.imageUrl) {
       toast.error("Please upload an image or enter an image URL");
       return;
     }
@@ -272,15 +272,19 @@ export default function EditBlogPostModal({ postId, isOpen, onClose }: EditBlogP
                 Featured Image
               </label>
               
-              {previewUrl || post?.image ? (
+              {previewUrl || post?.imageUrl ? (
                 <div className="space-y-4">
                   <div className="relative">
                     <Image
-                      src={previewUrl || post?.image || "/HouseRent.png"}
+                      src={previewUrl || post?.imageUrl || "/cover-image.png"}
                       alt="Preview"
                       width={400}
                       height={300}
                       className="w-full h-48 object-cover rounded-lg border border-gray-200"
+                      onError={(e) => {
+                        const target = e.target as HTMLImageElement;
+                        target.src = "/cover-image.png";
+                      }}
                     />
                     <button
                       type="button"

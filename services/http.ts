@@ -35,6 +35,8 @@ import {
   AdminUser,
   AdminUsersResponse,
 } from "@/types/admin";
+import { InsightStatsResponse } from "@/types/insight";
+import { BlogResponse, BlogSearchParams } from "@/types/blog";
 
 const AxiosInstance = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_URL,
@@ -861,7 +863,7 @@ class BaseURL {
       );
     }
   };
-  httpGetAllMyListings = async (limit?: number, byId?: number) => {
+  httpGetAllMyListings = async (limit?: number, byId?: number, page?: number) => {
     try {
       let url = endpoints.getAllMyListings;
       const params = new URLSearchParams();
@@ -870,6 +872,9 @@ class BaseURL {
       }
       if (limit) {
         params.append("limit", limit.toString());
+      }
+      if (page) {
+        params.append("page", page.toString());
       }
       if (params.toString()) {
         url += `?${params.toString()}`;
@@ -883,24 +888,33 @@ class BaseURL {
       );
     }
   };
-  httpGetAllBlogPost = async (limit?: number, byId?: number) => {
+  httpGetAllBlogPost = async (params?: BlogSearchParams) => {
     try {
       let url = endpoints.getAllBlogPost;
-      const params = new URLSearchParams();
-      if (byId) {
-        params.append("byId", byId.toString());
+      const queryParams = new URLSearchParams();
+      
+      if (params?.search) {
+        queryParams.append("query", params.search);
       }
-      if (limit) {
-        params.append("limit", limit.toString());
+      if (params?.limit) {
+        queryParams.append("limit", params.limit.toString());
       }
-      if (params.toString()) {
-        url += `?${params.toString()}`;
+      if (params?.page) {
+        queryParams.append("page", params.page.toString());
       }
+      if (params?.category) {
+        queryParams.append("category", params.category);
+      }
+      
+      if (queryParams.toString()) {
+        url += `?${queryParams.toString()}`;
+      }
+      
       const response = await AxiosInstance.get(url);
       return response.data;
     } catch (error: any) {
       throw new Error(
-        error.response?.data?.message || "Get all listings failed"
+        error.response?.data?.message || "Get all blog posts failed"
       );
     }
   };
@@ -1334,6 +1348,17 @@ class BaseURL {
       throw new Error(error.response?.data?.message || "Delete Admin Post failed");
     }
   };
+
+  // === INSIGHT STATS ==== //
+  httpGetInsightStats = async (): Promise<InsightStatsResponse> => {
+    try {
+      const response = await AxiosInstance.get(endpoints.getInsightStats);
+      return response.data;
+    } catch (error: any) {
+      throw new Error(error.response?.data?.message || "Get insight stats failed");
+    }
+  };
+
   // === ADMIN PAYMENT ==== //
   httpCreateAdsPayment = async (data: CreateAdsPaymentRequest): Promise<PaymentIntentResponse> => {
     try {

@@ -1,30 +1,146 @@
 "use client";
-import React from "react";
-import { Search, ArrowRight } from "lucide-react";
+import React, { useState, useEffect } from "react";
+import { Search, ArrowLeft, ArrowRight as ArrowRightIcon } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useGetAllBlogPostQuery } from "@/Hooks/use-getAllBlogPost.query";
 import { useGetAllBlogPostByIdQuery } from "@/Hooks/use-getAllBlogPostById.query";
+import { BlogPost } from "@/types/blog";
 
 interface BlogDetailsProps {
   id?: string;
 }
 
-interface BlogPost {
+// Interface for single blog post (different from list response)
+interface SingleBlogPost {
   _id: string;
   title: string;
-  content: string;
-  imageUrl: string;
-  publishedAt?: string;
-  category?: string;
+  content?: string;
   excerpt?: string;
-  author?: { name: string; avatar: string };
+  category?: string;
+  image?: string;
+  imageUrl?: string;
+  publishedAt?: string;
+  author?: {
+    name: string;
+    avatar: string;
+  };
 }
 
+// Custom Image component with error handling
+const SafeImage: React.FC<{
+  src: string;
+  alt: string;
+  fallbackSrc?: string;
+  className?: string;
+  fill?: boolean;
+  priority?: boolean;
+  width?: number;
+  height?: number;
+}> = ({ src, alt, fallbackSrc = "/HouseRent.png", className, fill, priority, width, height }) => {
+  const [imgSrc, setImgSrc] = useState(src);
+  const [hasError, setHasError] = useState(false);
+
+  const handleError = () => {
+    if (!hasError && imgSrc !== fallbackSrc) {
+      setImgSrc(fallbackSrc);
+      setHasError(true);
+    }
+  };
+
+  return (
+    <Image
+      src={imgSrc}
+      alt={alt}
+      fill={fill}
+      width={width}
+      height={height}
+      priority={priority}
+      className={className}
+      onError={handleError}
+      unoptimized={imgSrc.startsWith('http')} // Don't optimize external images
+    />
+  );
+};
+
 const BlogDetails: React.FC<BlogDetailsProps> = ({ id }) => {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  
+  // Search and pagination state
+  const [searchQuery, setSearchQuery] = useState(searchParams.get('query') || '');
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState(searchParams.get('query') || '');
+  const [isDebouncing, setIsDebouncing] = useState(false);
+  const [currentPage, setCurrentPage] = useState(parseInt(searchParams.get('page') || '1'));
+  const [postsPerPage, setPostsPerPage] = useState(parseInt(searchParams.get('limit') || '3'));
+
   // Always call hooks unconditionally
   const singlePostQuery = useGetAllBlogPostByIdQuery(id || "");
-  const allPostsQuery = useGetAllBlogPostQuery();
+  const allPostsQuery = useGetAllBlogPostQuery({
+    search: debouncedSearchQuery || undefined,
+    limit: postsPerPage,
+    page: currentPage,
+  });
+
+  // Search and pagination handlers
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    const params = new URLSearchParams();
+    if (searchQuery) params.set('query', searchQuery);
+    if (currentPage > 1) params.set('page', currentPage.toString());
+    if (postsPerPage !== 3) params.set('limit', postsPerPage.toString());
+    
+    const queryString = params.toString();
+    router.push(`/blog${queryString ? `?${queryString}` : ''}`);
+  };
+
+  const handlePageChange = (newPage: number) => {
+    setCurrentPage(newPage);
+    const params = new URLSearchParams();
+    if (searchQuery) params.set('query', searchQuery);
+    params.set('page', newPage.toString());
+    if (postsPerPage !== 3) params.set('limit', postsPerPage.toString());
+    
+    const queryString = params.toString();
+    router.push(`/blog?${queryString}`);
+  };
+
+  const handleSearchInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchQuery(e.target.value);
+  };
+
+  // Debounce search query to prevent excessive API calls
+  useEffect(() => {
+    if (searchQuery !== debouncedSearchQuery) {
+      setIsDebouncing(true);
+    }
+    
+    const timer = setTimeout(() => {
+      setDebouncedSearchQuery(searchQuery);
+      setIsDebouncing(false);
+    }, 500); // 500ms delay
+
+    return () => clearTimeout(timer);
+  }, [searchQuery, debouncedSearchQuery]);
+
+  // Helper function to strip HTML tags
+  const stripHtmlTags = (html: string): string => {
+    if (!html) return '';
+    return html.replace(/<[^>]*>/g, '');
+  };
+
+  // Update URL when search params change
+  useEffect(() => {
+    const query = searchParams.get('query') || '';
+    const page = parseInt(searchParams.get('page') || '1');
+    const limit = parseInt(searchParams.get('limit') || '3');
+    
+    setSearchQuery(query);
+    setDebouncedSearchQuery(query);
+    setCurrentPage(page);
+    setPostsPerPage(limit);
+  }, [searchParams]);
 
   // Render single post view if id is provided
   if (id) {
@@ -45,7 +161,7 @@ const BlogDetails: React.FC<BlogDetailsProps> = ({ id }) => {
       );
     }
 
-    const post = (data as BlogPost) || ({} as BlogPost);
+    const post = (data as SingleBlogPost) || ({} as SingleBlogPost);
     const authorName = post?.author?.name || "Apartey Team";
     const authorAvatar = post?.author?.avatar || "/aparteyLogo.png";
     const publishedAt = post.publishedAt || new Date().toISOString();
@@ -56,7 +172,7 @@ const BlogDetails: React.FC<BlogDetailsProps> = ({ id }) => {
     });
     const readTime = "8";
     const category = post.category || "General";
-    const imageUrl = post.imageUrl || "/HouseRent.png";
+    const imageUrl = post.image || post.imageUrl || "/HouseRent.png";
     const content = post.content || "";
 
     return (
@@ -72,9 +188,10 @@ const BlogDetails: React.FC<BlogDetailsProps> = ({ id }) => {
           </div>
           <article className="bg-white rounded-xl shadow-sm overflow-hidden">
             <div className="relative w-full h-64 md:h-96">
-              <Image
+              <SafeImage
                 src={imageUrl}
                 alt={post.title}
+                fallbackSrc="/cover-image.png"
                 fill
                 className="object-cover w-full h-full rounded-b-none rounded-t-xl"
                 priority={false}
@@ -89,9 +206,10 @@ const BlogDetails: React.FC<BlogDetailsProps> = ({ id }) => {
               </h1>
               <div className="flex items-center gap-4 text-gray-500 text-sm mb-6 flex-wrap">
                 <div className="flex items-center gap-2">
-                  <Image
+                  <SafeImage
                     src={authorAvatar}
                     alt={authorName}
+                    fallbackSrc="/aparteyLogo.png"
                     width={24}
                     height={24}
                     className="w-6 h-6 rounded-full object-cover"
@@ -131,7 +249,8 @@ const BlogDetails: React.FC<BlogDetailsProps> = ({ id }) => {
     );
   }
 
-  const posts = (data as unknown as { posts?: BlogPost[] })?.posts || [];
+  const posts = data?.posts || [];
+  const pagination = data?.pagination;
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -146,19 +265,29 @@ const BlogDetails: React.FC<BlogDetailsProps> = ({ id }) => {
               Nigeria
             </p>
           </div>
-          <div className="max-w-md mx-auto relative">
+          <form onSubmit={handleSearch} className="max-w-md mx-auto relative">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
               <input
                 type="text"
                 placeholder="Search Articles..."
+                value={searchQuery}
+                onChange={handleSearchInputChange}
                 className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
               />
-              <button className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-orange-500 text-white px-4 py-1.5 rounded-md text-sm font-medium hover:bg-orange-600 transition-colors">
-                Search
+              <button 
+                type="submit"
+                disabled={isLoading || isDebouncing}
+                className={`absolute right-2 top-1/2 transform -translate-y-1/2 px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                  isLoading || isDebouncing
+                    ? 'bg-gray-400 text-white cursor-not-allowed' 
+                    : 'bg-orange-500 text-white hover:bg-orange-600'
+                }`}
+              >
+                {isLoading ? 'Searching...' : isDebouncing ? 'Typing...' : 'Search'}
               </button>
             </div>
-          </div>
+          </form>
         </div>
       </header>
 
@@ -166,13 +295,33 @@ const BlogDetails: React.FC<BlogDetailsProps> = ({ id }) => {
         <section>
           <div className="flex items-center justify-between mb-8">
             <h2 className="text-2xl md:text-3xl font-bold text-gray-900">
-              All Articles
+              {searchQuery ? `Search Results for "${searchQuery}"` : "All Articles"}
             </h2>
-            <button className="flex items-center text-gray-600 hover:text-gray-900 transition-colors group">
-              <span className="text-sm md:text-base mr-2">See all</span>
-              <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-            </button>
+            {pagination && (
+              <div className="text-sm text-gray-600">
+                Showing {((pagination.currentPage - 1) * pagination.postsPerPage) + 1} - {Math.min(pagination.currentPage * pagination.postsPerPage, pagination.totalPosts)} of {pagination.totalPosts} articles
+              </div>
+            )}
           </div>
+
+          {posts.length === 0 && !isLoading && (
+            <div className="text-center py-12">
+              <p className="text-gray-500 text-lg mb-4">
+                {searchQuery ? `No articles found for "${searchQuery}"` : "No articles available"}
+              </p>
+              {searchQuery && (
+                <button
+                  onClick={() => {
+                    setSearchQuery('');
+                    router.push('/blog');
+                  }}
+                  className="text-orange-600 hover:text-orange-700 font-medium"
+                >
+                  Clear search and show all articles
+                </button>
+              )}
+            </div>
+          )}
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
             {posts.map((post: BlogPost) => (
@@ -184,9 +333,10 @@ const BlogDetails: React.FC<BlogDetailsProps> = ({ id }) => {
               >
                 <a className="bg-white rounded-xl shadow-sm overflow-hidden hover:shadow-md transition-shadow cursor-pointer group block">
                   <div className="relative h-48 md:h-56">
-                    <Image
+                    <SafeImage
                       src={post.imageUrl || "/HouseRent.png"}
                       alt={post.title}
+                      fallbackSrc="/cover-image.png"
                       fill
                       className="object-cover group-hover:scale-105 transition-transform duration-300"
                     />
@@ -199,13 +349,48 @@ const BlogDetails: React.FC<BlogDetailsProps> = ({ id }) => {
                       {post.title}
                     </h3>
                     <p className="text-gray-600 text-sm mb-4 line-clamp-2">
-                      {post.excerpt}
+                      {stripHtmlTags(post.excerpt)}
                     </p>
                   </div>
                 </a>
               </Link>
             ))}
           </div>
+
+          {/* Pagination Controls */}
+          {pagination && pagination.totalPages > 1 && (
+            <div className="flex items-center justify-between mt-12">
+              <div className="text-sm text-gray-700">
+                Page {pagination.currentPage} of {pagination.totalPages}
+              </div>
+              <div className="flex items-center space-x-2">
+                <button
+                  onClick={() => handlePageChange(pagination.currentPage - 1)}
+                  disabled={!pagination.hasPreviousPage}
+                  className={`px-4 py-2 text-sm font-medium rounded-md border ${
+                    pagination.hasPreviousPage
+                      ? "text-gray-700 bg-white border-gray-300 hover:bg-gray-50"
+                      : "text-gray-400 bg-gray-100 border-gray-200 cursor-not-allowed"
+                  }`}
+                >
+                  <ArrowLeft className="w-4 h-4 mr-1 inline" />
+                  Previous
+                </button>
+                <button
+                  onClick={() => handlePageChange(pagination.currentPage + 1)}
+                  disabled={!pagination.hasNextPage}
+                  className={`px-4 py-2 text-sm font-medium rounded-md border ${
+                    pagination.hasNextPage
+                      ? "text-gray-700 bg-white border-gray-300 hover:bg-gray-50"
+                      : "text-gray-400 bg-gray-100 border-gray-200 cursor-not-allowed"
+                  }`}
+                >
+                  Next
+                  <ArrowRightIcon className="w-4 h-4 ml-1 inline" />
+                </button>
+              </div>
+            </div>
+          )}
         </section>
       </main>
     </div>

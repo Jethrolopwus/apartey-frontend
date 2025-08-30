@@ -1,12 +1,29 @@
 "use client";
 import React from "react";
+import { CompletionDistribution as CompletionDistributionType } from "@/types/admin";
 
-const CompletionDistribution: React.FC = () => {
-  const data = [
-    { label: "Rents", value: 891, color: "#10B981" },
-    { label: "Sales", value: 722, color: "#3B82F6" },
-    { label: "Swaps", value: 234, color: "#F59E0B" }
-  ];
+interface CompletionDistributionProps {
+  completionDistribution?: CompletionDistributionType[];
+}
+
+const CompletionDistribution: React.FC<CompletionDistributionProps> = ({ 
+  completionDistribution = [] 
+}) => {
+  // Use real data if available, otherwise fallback to default data
+  const data = completionDistribution.length > 0 
+    ? completionDistribution.map((item, index) => {
+        const colors = ["#10B981", "#3B82F6", "#F59E0B"];
+        return {
+          label: item.type,
+          value: item.count,
+          color: colors[index % colors.length]
+        };
+      })
+    : [
+        { label: "Rents", value: 0, color: "#10B981" },
+        { label: "Sales", value: 0, color: "#3B82F6" },
+        { label: "Swaps", value: 0, color: "#F59E0B" }
+      ];
 
   const total = data.reduce((sum, item) => sum + item.value, 0);
 
