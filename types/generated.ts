@@ -104,6 +104,7 @@ export interface PropertyMedia {
 }
 
 export interface PropertyDetails {
+  period: any;
   negotiatedPrice: boolean;
   currency?: string;
   amenities: string[];

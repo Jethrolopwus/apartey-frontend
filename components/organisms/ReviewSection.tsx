@@ -283,17 +283,7 @@ const ReviewsSection: React.FC<ReviewsSectionProps> = ({
     );
   }
 
-  // Debug logging for reviews data
-  console.log('Reviews data:', reviews);
-  if (reviews.length > 0) {
-    console.log('First review image data:', {
-      reviewId: reviews[0]._id,
-      linkedProperty: reviews[0].linkedProperty,
-      media: reviews[0].linkedProperty?.media,
-      coverPhoto: reviews[0].linkedProperty?.media?.coverPhoto,
-      coverPhotoType: typeof reviews[0].linkedProperty?.media?.coverPhoto
-    });
-  }
+
 
   return (
     <section

@@ -1,7 +1,8 @@
+
 "use client";
 import React from "react";
 import { useParams } from "next/navigation";
-import { Star, Share2, Flag, Home, Bookmark, MapPin, Bed, Bath } from "lucide-react";
+import { Star, Share2, Flag, Home, Bookmark, MapPin, Bed, Bath, Heart } from "lucide-react";
 import Image from "next/image";
 import type { Property } from "@/types/generated";
 import { useGetListingsByIdQuery } from "@/Hooks/use-getAllListingsById.query";
@@ -48,17 +49,22 @@ const PropertyDetails = () => {
     );
   };
 
-
-
   const getPropertyImage = () => {
     return property.media?.coverPhoto || "/Estate2.png";
   };
 
-
-
   const getFullAddress = () => {
     const { streetAddress, city, country } = property.location || {};
     return [streetAddress, city, country].filter(Boolean).join(", ");
+  };
+
+  const getPropertyPrice = () => {
+    if (!property.propertyDetails?.price) return "Price on request";
+    const currency = property.propertyDetails.currency || "€";
+    const period = property.propertyDetails.period
+      ? `/${property.propertyDetails.period}`
+      : "";
+    return `${currency}${property.propertyDetails.price}${period}`;
   };
 
   const handleWriteReview = () => {
@@ -68,30 +74,39 @@ const PropertyDetails = () => {
     );
   };
 
-
-
   return (
-    <div className="max-w-7xl mx-auto bg-white p-6 md:p-10 rounded-lg shadow-xs mb-12">
-      {/* Full Address and Action Buttons at the Top */}
-      <div className="mb-8 flex justify-between items-start">
-        <h1 className="text-2xl font-bold text-gray-900 mb-2">
-          {getFullAddress()}
-        </h1>
-        <div className="flex gap-2">
-          <button className="bg-white p-2 rounded-full hover:bg-gray-100 border">
-            <Share2 className="w-5 h-5 text-gray-600" />
+    <div className="max-w-7xl mx-auto bg-white p-6 md:p-10 rounded-lg shadow-lg mb-12">
+      {/* Full Address, Price, and Action Buttons at the Top */}
+      <div className="mb-8 flex flex-col md:flex-row md:justify-between md:items-start gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">
+            {getFullAddress()}
+          </h1>
+          <div className="text-lg font-semibold text-[#C85212] mb-2">
+            {getPropertyPrice()}
+          </div>
+        </div>
+        <div className="flex gap-4">
+          <button className="bg-white p-2 rounded-full hover:bg-gray-100 border flex items-center gap-2">
+            <Heart className="w-5 h-5 text-gray-600" />
+            <span className="text-sm text-gray-600">Save</span>
           </button>
-          <button className="bg-white p-2 rounded-full hover:bg-gray-100 border">
+          <button className="bg-white p-2 rounded-full hover:bg-gray-100 border flex items-center gap-2">
+            <Share2 className="w-5 h-5 text-gray-600" />
+            <span className="text-sm text-gray-600">Share</span>
+          </button>
+          <button className="bg-white p-2 rounded-full hover:bg-gray-100 border flex items-center gap-2">
             <Flag className="w-5 h-5 text-gray-600" />
+            <span className="text-sm text-gray-600">Report</span>
           </button>
           <button className="bg-[#C85212] text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-[#A64310]">
-            Swap
+            Request Swap
           </button>
         </div>
       </div>
 
       {/* Main Image and Thumbnails */}
-      <div className="mb-8">
+      <div className="mb-8 flex gap-8 ">
         <div className="mb-4">
           <Image
             src={getPropertyImage()}
@@ -101,106 +116,89 @@ const PropertyDetails = () => {
             className="w-full h-80 object-cover rounded-lg"
           />
         </div>
-        <div className="flex gap-2">
-          <Image
-            src="/Estate2.png"
-            alt="Interior 1"
-            width={200}
-            height={120}
-            className="w-20 h-16 object-cover rounded-lg"
-          />
-          <Image
-            src="/Estate2.png"
-            alt="Interior 2"
-            width={200}
-            height={120}
-            className="w-20 h-16 object-cover rounded-lg"
-          />
-          <Image
-            src="/Estate2.png"
-            alt="Interior 3"
-            width={200}
-            height={120}
-            className="w-20 h-16 object-cover rounded-lg"
-          />
-        </div>
-      </div>
+        <div className="">
+          <div className="flex gap-8  ">
+            <Image
+              src="/Estate2.png"
+              alt="Interior 1"
+              width={200}
+              height={120}
+              className="w-52 h-40 object-cover rounded-lg"
+            />
+            <Image
+              src="/Estate2.png"
+              alt="Interior 2"
+              width={200}
+              height={120}
+              className="w-52 h-40 object-cover rounded-lg"
+            />
+            <Image
+              src="/Estate2.png"
+              alt="Interior 3"
+              width={200}
+              height={120}
+              className="w-52 h-40 object-cover rounded-lg"
+            />
 
-      {/* Main Content Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Left Column - Description & Amenities */}
-        <div className="lg:col-span-2">
-          {/* Property Description */}
+          </div>
           <div className="mb-8">
             <h2 className="text-xl font-semibold text-gray-900 mb-4">Property Description</h2>
             <p className="text-gray-700 leading-relaxed">
-              {property.propertyDetails?.description || 
-                "This beautiful property offers 1440 sqft of living space with 3 bedrooms and 2 bathrooms. Features include a fully equipped kitchen, private balcony, swimming pool, and solar roof panels. Located near the golf club for easy access to recreational activities."}
+              {property.propertyDetails?.description ||
+                "Situated within 14 km of Magic Land Abuja and 21 km of IBB Golf Club, Phoenix Luxury Apartments features rooms with air conditioning and free WiFi throughout the property. This recently renovated property offers a fully equipped kitchen with oven and a flat-screen TV, ironing facilities, desk and a seating area. Featuring a patio, the homestead is a unit that comes with a bed linen and towels."}
             </p>
           </div>
+        </div>
 
-          {/* Building Amenities */}
+
+      </div>
+
+  
+
+<div className="max-w-7xl mx-auto px-4 py-8">
+      <div className="flex flex-col lg:flex-row gap-8">
+        {/* Left Section */}
+        <div className="flex-1">
+          {/* Map */}
+          <div className="bg-gray-200 rounded-lg overflow-hidden mb-8">
+            <Image
+              src="/Map.png"
+              alt="Map"
+              width={800}
+              height={400}
+              className="w-full h-[300px] object-cover"
+            />
+          </div>
+
+          {/* Amenities */}
           <div className="mb-8">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">Building Amenities</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <h3 className="font-medium text-gray-800 mb-2">Community Rooms</h3>
-                <ul className="space-y-1 text-sm text-gray-600">
-                  <li>• Clubhouse</li>
-                  <li>• Business Center</li>
-                  <li>• Conference Room</li>
-                  <li>• Fitness Center</li>
-                  <li>• Library</li>
-                </ul>
-              </div>
-              <div>
-                <h3 className="font-medium text-gray-800 mb-2">Outdoor</h3>
-                <ul className="space-y-1 text-sm text-gray-600">
-                  <li>• Shared laundry</li>
-                  <li>• Swimming Pool</li>
-                  <li>• Grand View</li>
-                </ul>
-              </div>
-              <div>
-                <h3 className="font-medium text-gray-800 mb-2">Security</h3>
-                <ul className="space-y-1 text-sm text-gray-600">
-                  <li>• Gated Entry</li>
-                  <li>• Night Patrol</li>
-                </ul>
-              </div>
-              <div>
-                <h3 className="font-medium text-gray-800 mb-2">Services & More</h3>
-                <ul className="space-y-1 text-sm text-gray-600">
-                  <li>• On-Site Management</li>
-                  <li>• Professional Cleaning</li>
-                  <li>• Pet Friendly</li>
-                  <li>• Parking</li>
-                  <li>• Recycling</li>
-                  <li>• Smart Home Tech</li>
-                  <li>• Walk-in Closets</li>
-                </ul>
-              </div>
+            <h2 className="text-xl font-semibold mb-4">Amenities</h2>
+            <ul className="grid grid-cols-2 gap-3 text-gray-700">
+              {["Swimming Pool", "Gym", "Parking", "Security", "Play Area", "Club House"].map(
+                (amenity, index) => (
+                  <li key={index} className="flex items-center gap-2">
+                    ✅ {amenity}
+                  </li>
+                )
+              )}
+            </ul>
+          </div>
+
+          {/* Local Insights */}
+          <div>
+            <h2 className="text-xl font-semibold mb-4">Local Insights</h2>
+            <div className="space-y-2 text-gray-700">
+              <p>✅ Great neighborhood for families</p>
+              <p>✅ Close to public transport</p>
+              <p>✅ Plenty of parks and green areas</p>
             </div>
           </div>
+        </div>
 
-          {/* Interactive Icons */}
-          <div className="flex gap-4 mb-8">
-            <button className="flex items-center gap-2 text-gray-600 hover:text-gray-800">
-              <Bookmark className="w-5 h-5" />
-              <span className="text-sm">Save</span>
-            </button>
-            <button className="flex items-center gap-2 text-gray-600 hover:text-gray-800">
-              <Share2 className="w-5 h-5" />
-              <span className="text-sm">Share</span>
-            </button>
-            <button className="flex items-center gap-2 text-gray-600 hover:text-gray-800">
-              <Flag className="w-5 h-5" />
-              <span className="text-sm">Report</span>
-            </button>
-          </div>
-
+        {/* Right Section (Agent Info + Reviews) */}
+        <div className="flex flex-col gap-6 lg:w-1/2">
           {/* Agent Information */}
-          <div className="bg-gray-50 rounded-lg p-6 mb-8">
+          <div className="bg-gray-50 rounded-lg p-6">
             <h2 className="text-xl font-semibold text-gray-900 mb-4">Agent Information</h2>
             <div className="flex items-center gap-4">
               <Image
@@ -218,13 +216,11 @@ const PropertyDetails = () => {
                     {[...Array(5)].map((_, i) => (
                       <Star
                         key={i}
-                        className={`w-4 h-4 ${
-                          i < 4 ? "text-yellow-400 fill-current" : "text-gray-300"
-                        }`}
+                        className={`w-4 h-4 ${i < 4 ? "text-yellow-400 fill-current" : "text-gray-300"}`}
                       />
                     ))}
                   </div>
-                  <span className="text-sm text-gray-600">4.5 (4 reviews)</span>
+                  <span className="text-sm text-gray-600">4.5 (120 reviews)</span>
                 </div>
               </div>
               <div className="flex flex-col gap-2">
@@ -235,43 +231,33 @@ const PropertyDetails = () => {
                   onClick={handleWriteReview}
                   className="bg-[#C85212] text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-[#A64310]"
                 >
-                  Write an Agent
+                  Write a review
                 </button>
               </div>
             </div>
           </div>
 
           {/* Reviews Section */}
-          <div className="mb-8">
+          <div className="bg-gray-50 rounded-lg p-6">
             <h2 className="text-xl font-semibold text-gray-900 mb-4">Reviews</h2>
             <div className="space-y-4">
               {[
                 {
-                  name: "Alex Thompson",
-                  date: "2 days ago",
+                  name: "Emily Chen",
+                  date: "June 12, 2025",
                   rating: 5,
-                  review: "Great place, very clean and the host was super helpful. Would definitely recommend!"
-                },
-                {
-                  name: "Jennifer Smith",
-                  date: "1 week ago",
-                  rating: 5,
-                  review: "Perfect location and amenities. Responsive host. I hope to stay again soon!"
-                },
-                {
-                  name: "Emily Clark",
-                  date: "2 weeks ago",
-                  rating: 5,
-                  review: "Excellent property with all the amenities we needed. Highly recommended!"
+                  review:
+                    "Review of 450 Elm St, San Francisco, CA 94102 - Charming home with a vintage touch, featuring spacious rooms and a lovely garden. The proximity to local cafes was a bonus.",
                 },
                 {
                   name: "Michael Smith",
-                  date: "3 weeks ago",
+                  date: "July 19, 2025",
                   rating: 5,
-                  review: "Beautiful property in a great location. The host was very accommodating."
-                }
+                  review:
+                    "Review of 102 Maple Ave, Austin, TX 73301 - Contemporary loft with an open concept layout. It was perfect for entertaining, and the rooftop access was a highlight.",
+                },
               ].map((review, index) => (
-                <div key={index} className="bg-gray-50 rounded-lg p-4 border">
+                <div key={index} className="bg-white rounded-lg p-4 border">
                   <div className="flex items-start gap-4">
                     <Image
                       src={index % 2 === 0 ? "/Ellipse-2.png" : "/Ellipse-1.png"}
@@ -303,50 +289,8 @@ const PropertyDetails = () => {
             </div>
           </div>
         </div>
-
-        {/* Right Column - Map and Property Insights */}
-        <div className="space-y-6">
-          {/* Map */}
-          <div>
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Location</h2>
-            <div className="relative">
-              <Image
-                src="/Map.png"
-                alt="Map"
-                width={400}
-                height={300}
-                className="w-full h-64 object-cover rounded-lg border"
-              />
-              <div className="absolute top-2 right-2 bg-white p-2 rounded-lg shadow-sm">
-                <MapPin className="w-5 h-5 text-red-500" />
-              </div>
-            </div>
-          </div>
-
-          {/* Property Insights */}
-          <div className="bg-blue-50 rounded-lg p-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Property Insights</h2>
-            <div className="space-y-4">
-              <div>
-                <h3 className="font-medium text-gray-800 mb-2">Market Value Analysis</h3>
-                <p className="text-sm text-gray-600">This property is in the second 25% below market average for its area.</p>
-              </div>
-              <div>
-                <h3 className="font-medium text-gray-800 mb-2">Investment Potential</h3>
-                <p className="text-sm text-gray-600">Projected rental income exceeds local averages by 15%.</p>
-              </div>
-              <div>
-                <h3 className="font-medium text-gray-800 mb-2">Location Advantages</h3>
-                <p className="text-sm text-gray-600">Proximity to public transport and major amenities (markets, schools).</p>
-              </div>
-              <div>
-                <h3 className="font-medium text-gray-800 mb-2">Property Condition</h3>
-                <p className="text-sm text-gray-600">Recent renovations have improved overall property value and appeal.</p>
-              </div>
-            </div>
-          </div>
-        </div>
       </div>
+    </div>
 
       {/* Related Homes */}
       <div className="mt-12">
@@ -361,39 +305,39 @@ const PropertyDetails = () => {
             {
               title: "No 1. kumuye strt...",
               location: "Okene, Kogi",
-              price: "$2,000,000",
+              price: "NGN450,000/year",
               rating: 4.5,
               reviews: 8,
               beds: 4,
               baths: 4,
               sqft: 4000,
-              id: "NGA450,000/year",
+              id: "NGN450,000/year",
               image: "/Estate2.png",
               tag: "New"
             },
             {
               title: "No 2. luxury stylish home",
               location: "Okene, Kogi",
-              price: "$1,800,000",
+              price: "NGN380,000/year",
               rating: 4.2,
               reviews: 12,
               beds: 3,
               baths: 3,
               sqft: 3500,
-              id: "NGA380,000/year",
+              id: "NGN380,000/year",
               image: "/Estate2.png",
               tag: "Rent"
             },
             {
               title: "No 3. modern apartment",
               location: "Okene, Kogi",
-              price: "$2,200,000",
+              price: "NGN520,000/year",
               rating: 4.7,
               reviews: 15,
               beds: 5,
               baths: 4,
               sqft: 4500,
-              id: "NGA520,000/year",
+              id: "NGN520,000/year",
               image: "/Estate2.png",
               tag: null
             }
@@ -451,3 +395,7 @@ const PropertyDetails = () => {
 };
 
 export default PropertyDetails;
+
+
+
+

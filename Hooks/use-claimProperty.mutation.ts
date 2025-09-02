@@ -5,10 +5,10 @@ export const useClaimPropertyMutation = () => {
   const { data, isPending, error, mutate } = useMutation<
     any,
     Error,
-    globalThis.FormData
+    { formData: globalThis.FormData; propertyId: string }
   >({
-    mutationFn: (formData: globalThis.FormData) =>
-      http.httpClaimProperty("id", formData),
+    mutationFn: ({ formData, propertyId }) =>
+      http.httpClaimProperty(propertyId, formData),
   });
 
   return {

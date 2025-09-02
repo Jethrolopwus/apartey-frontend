@@ -42,6 +42,7 @@ export default Object.freeze({
   getAllMyListings: "/listings/user/my-listings",
   getInsightStats: "/stats/insight",
   claimProperties: (id: string) => `/listings/claim/${id}`,
+  getClaimStatus: (id: string) => `/listings/claim/${id}`,
   getListingById: (id: string) => `/listings/${id}`,
   getPropertiesById: (id: string) => `/properties/${id}`,
 

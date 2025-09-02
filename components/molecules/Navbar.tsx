@@ -22,7 +22,6 @@ const Navbar: React.FC<NavbarProps> = () => {
     useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
-  // Use auth status for authentication and role
   const { data: authData } = useAuthStatusQuery();
   const { data: userProfileData } = useGetUserProfileQuery();
   const [selectedRole, setSelectedRole] = useState<string | undefined>();
@@ -301,12 +300,14 @@ const Navbar: React.FC<NavbarProps> = () => {
               <div className="flex items-center space-x-2">
                 <Link
                   href="/contact"
-                  className="flex-1 text-center text-white bg-orange-200 px-4 py-2 rounded-lg font-medium"
+                  className="text-black bg-[#FFF4F0] hover:bg-[#FFE8E0] flex justify-center items-center gap-2 rounded-lg font-medium text-md transition-colors"
                   onClick={() => setIsMobileMenuOpen(false)}
                 >
-                  Contact us
+                  <span className="px-2">Contact us</span>
+                  <div className="w-8 h-8 rounded-r-lg bg-[#C85212] flex items-center justify-center">
+                    <Phone className="w-5 h-4 text-white" />
+                  </div>
                 </Link>
-                <Phone className="w-10 h-9 rounded-md bg-[#C85212] text-white" />
               </div>
             </div>
           </div>
