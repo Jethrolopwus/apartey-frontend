@@ -3,14 +3,67 @@ import React, { useMemo } from "react";
 import Image from "next/image";
 import Button from "@/components/atoms/Buttons/ActionButton";
 import { useRouter } from "next/navigation";
-import { Star, Bed, Bath, Ruler } from "lucide-react";
+import { Star, Bed, Bath, Ruler, KeyRound } from "lucide-react";
 import { useGetUserProfileQuery } from "@/Hooks/use-getuserProfile.query";
 import { useGetAllMyListingsQuery } from "@/Hooks/use-getAllMyListings.query";
+import { useGetClaimStatusByIdQuery } from "@/Hooks/use-getClaimStatusById.query";
 import Link from "next/link";
+import { toast } from "react-hot-toast";
 
 const DEFAULT_PROPERTY_IMAGE = "/Estate2.png";
 
-// Define proper TypeScript interfaces
+// Claim Property Button Component
+const ClaimPropertyButton: React.FC<{ propertyId: string; onClaim: (id: string) => void }> = ({ propertyId, onClaim }) => {
+  const { data: claimStatusData, isLoading: claimStatusLoading } = useGetClaimStatusByIdQuery(propertyId);
+  
+
+  
+  if (claimStatusLoading) {
+    return (
+      <button 
+        disabled
+        className="w-full px-4 py-2 text-sm font-semibold bg-gray-200 text-gray-500 rounded cursor-not-allowed"
+      >
+        Loading...
+      </button>
+    );
+  }
+
+  const claimStatus = claimStatusData?.status;
+  
+  if (claimStatus === "pending") {
+    return (
+      <button 
+        disabled
+        className="w-full px-4 py-2 text-sm font-semibold bg-gray-300 text-gray-600 rounded cursor-not-allowed"
+      >
+        Claim Pending - Waiting for Approval
+      </button>
+    );
+  }
+  
+  if (claimStatus === "approved") {
+    return (
+      <button 
+        disabled
+        className="w-full px-4 py-2 text-sm font-semibold bg-gray-300 text-gray-600 rounded cursor-not-allowed"
+      >
+        Property Claimed
+      </button>
+    );
+  }
+  
+  // No claim or other status - show active claim button
+  return (
+    <button
+      onClick={() => onClaim(propertyId)}
+      className="w-full px-4 py-2 text-sm font-semibold bg-[#C85212] hover:bg-orange-700 text-white rounded transition-colors"
+    >
+      Claim Property
+    </button>
+  );
+};
+
 interface Property {
   id: string;
   image: string;
@@ -48,13 +101,15 @@ interface Homeowner {
 const HomeownerProfile: React.FC = () => {
   const router = useRouter();
   const [currentPage, setCurrentPage] = React.useState(1);
-  const itemsPerPage = 6; // Show 6 properties per page (2 rows of 3)
+  const itemsPerPage = 6; // Limit of 6 as per design
+  const totalPages = 10; // Fixed total pages as per design 
 
   const {
     data: userData,
     isLoading: userLoading,
     error: userError,
   } = useGetUserProfileQuery();
+
   const {
     data: listingsData,
     isLoading: listingsLoading,
@@ -65,20 +120,12 @@ const HomeownerProfile: React.FC = () => {
     page: currentPage,
   });
 
-  // Debug: Log the listings data to see what we're getting
-  React.useEffect(() => {
-    if (listingsData) {
-      console.log("Listings Data:", listingsData);
-      console.log("Total Pages:", listingsData.pages);
-      console.log("Current Page:", listingsData.page);
-      console.log("Total Properties:", listingsData.total);
-    }
-  }, [listingsData]);
+ 
 
-  // Extract homeowner info from userData
+
+ 
   const homeowner: Homeowner = useMemo(() => {
     const currentUser = userData?.currentUser;
-
     return {
       name: currentUser?.name || "John Doe",
       location: currentUser?.location || "Abuja, Nigeria",
@@ -98,7 +145,7 @@ const HomeownerProfile: React.FC = () => {
     };
   }, [userData]);
 
-  // Map backend properties to UI format
+ 
   const properties: Property[] = useMemo(() => {
     return (listingsData?.properties || []).map((property: any) => { // eslint-disable-line @typescript-eslint/no-explicit-any
       const getTitle = () => {
@@ -160,7 +207,7 @@ const HomeownerProfile: React.FC = () => {
     { id: string; isRented: boolean }[]
   >([]);
 
-  // Initialize property states when properties change
+  //
   React.useEffect(() => {
     setPropertyStates(
       properties.map((p) => ({ id: p.id, isRented: p.isActive }))
@@ -173,7 +220,35 @@ const HomeownerProfile: React.FC = () => {
     );
   };
 
-  // Removed unused handlePageChange function
+  // Handle claim property button click with status check
+  const handleClaimProperty = async (propertyId: string) => {
+    try {
+      // Check claim status first
+      const response = await fetch(`/api/listings/claim/${propertyId}`);
+      if (response.ok) {
+        const data = await response.json();
+        
+        if (data.status === "pending") {
+          toast.error("This property claim is already pending approval");
+          return;
+        } else if (data.status === "approved") {
+          toast.error("This property has already been claimed and approved");
+          return;
+        } else {
+          // No claim or status is not pending/approved, allow navigation
+          router.push(`/claim-property/${propertyId}`);
+        }
+      } else {
+        // If endpoint doesn't exist or fails, allow navigation (fallback)
+        router.push(`/claim-property/${propertyId}`);
+      }
+    } catch (error) {
+      console.error("Error checking claim status:", error);
+      // If there's an error, allow navigation (fallback)
+      router.push(`/claim-property/${propertyId}`);
+    }
+  };
+
 
   const handlePreviousPage = () => {
     if (currentPage > 1) {
@@ -182,7 +257,7 @@ const HomeownerProfile: React.FC = () => {
   };
 
   const handleNextPage = () => {
-    if (listingsData && currentPage < listingsData.pages) {
+    if (currentPage < totalPages) {
       setCurrentPage(currentPage + 1);
     }
   };
@@ -213,7 +288,7 @@ const HomeownerProfile: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-[#F5F5F5] flex flex-col pb-6 items-center w-full">
-      {/* Cover Image */}
+    
       <div className="w-full h-[220px] md:h-[260px] relative">
         <Image
           src={homeowner.coverImage || "/cover-image.png"}
@@ -225,10 +300,10 @@ const HomeownerProfile: React.FC = () => {
         />
       </div>
 
-      {/* Profile Card */}
+  
       <div className="w-full max-w-4xl relative -mt-20 z-10">
         <div className="bg-white rounded-2xl shadow-lg px-6 py-6 flex flex-col md:flex-row items-center md:items-start gap-6">
-          {/* Profile Image */}
+        
           <div className="relative w-32 h-32 border-4 border-white rounded-full overflow-hidden -mt-16 md:mt-0 shadow-md">
             <Image
               src={homeowner.profileImage || "/Ellipse-1.png"}
@@ -240,12 +315,11 @@ const HomeownerProfile: React.FC = () => {
             />
           </div>
 
-          {/* Info */}
           <div className="flex-1 flex flex-col gap-2 md:gap-3 w-full">
             <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-4 w-full justify-between">
               <div className="flex items-center gap-2">
                 <span className="bg-[#E6F7EC] text-[#1BA97B] text-xs font-semibold px-2 py-1 rounded">
-                  Homeowner
+                  Verified ✓
                 </span>
               </div>
               <div className="flex items-center w-full justify-between gap-2">
@@ -253,13 +327,6 @@ const HomeownerProfile: React.FC = () => {
                   {homeowner.name}
                 </span>
                 <div className="flex items-center space-x-2">
-                  {/* Rewards */}
-                  <div className="flex items-center rounded-full bg-orange-100 px-3 py-1">
-                    <span className="mr-1 text-orange-600">🏆</span>
-                    <span className="text-sm font-medium text-orange-600">
-                      {userData?.currentUser?.rewards || 0}
-                    </span>
-                  </div>
                   <Button
                     variant="secondary"
                     className="px-6 py-2 text-sm font-semibold ml-4"
@@ -270,49 +337,53 @@ const HomeownerProfile: React.FC = () => {
                 </div>
               </div>
             </div>
-
             <div className="flex flex-wrap items-center gap-2 text-gray-500 text-sm">
               <span>{homeowner.location}</span>
-            </div>
-
-            <p className="text-gray-700 text-sm mt-2 max-w-2xl">
-              {homeowner.description}
-            </p>
-
-            <div className="flex flex-wrap gap-8 mt-4">
-              {(homeowner.stats || []).map((stat, idx: number) => (
-                <div
-                  key={idx}
-                  className="flex flex-col items-center min-w-[90px]"
-                >
-                  <span className="text-lg font-bold text-gray-900">
-                    {stat.value}
-                  </span>
-                  <span className="text-xs text-gray-500">{stat.label}</span>
+              <span>📍 Imperial Property Agency</span>
+                <div className="mt-4 flex items-center space-x-2 sm:mt-0">
+                  <div className="flex items-center">
+                    <KeyRound className="mr-1 h-5 w-5 text-[#C85212]" />
+                    <span className="text-sm font-medium text-gray-900">
+                      {userData?.currentUser?.rewards || 0}APK
+                    </span>
+                  </div>
                 </div>
-              ))}
+            </div>
+            <p className="text-gray-700 text-sm mt-2 max-w-2xl">
+              Extensive experience in rentals and a vast database means I can quickly find the options that are right for you. Looking for a seamless and exciting rental experience? Contact me today - I promise it won&apos;t be boring! Your perfect home is just a call away.
+            </p>
+            <div className="flex flex-wrap gap-8 mt-4">
+              <div className="flex flex-col items-center min-w-[90px]">
+                <span className="text-lg font-bold text-gray-900">0 years</span>
+                <span className="text-xs text-gray-500">Works with Apartey</span>
+              </div>
+              <div className="flex flex-col items-center min-w-[90px]">
+                <span className="text-lg font-bold text-gray-900">26</span>
+                <span className="text-xs text-gray-500">Properties published</span>
+              </div>
+              <div className="flex flex-col items-center min-w-[90px]">
+                <span className="text-lg font-bold text-gray-900">12</span>
+                <span className="text-xs text-gray-500">Properties sold</span>
+              </div>
+              <div className="flex flex-col items-center min-w-[90px]">
+                <span className="text-lg font-bold text-gray-900">⭐ 4.9</span>
+                <span className="text-xs text-gray-500">Apartey overall rating</span>
+              </div>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Properties Section */}
+   
       <div className="w-full max-w-5xl mt-12 px-4">
         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-xl font-bold text-gray-900">My Properties</h2>
+          <h2 className="text-xl font-bold text-gray-900">Properties</h2>
           <div className="flex items-center gap-3">
-            <Button
-              variant="secondary"
-              className="px-4 py-2 text-sm font-semibold"
-              onClick={() => {}}
-              disabled={listingsLoading}
-            >
-              {listingsLoading ? "Refreshing..." : "Refresh"}
-            </Button>
+          
             <Link href="/property-listings" className="inline-block">
               <Button
                 variant="primary"
-                className="px-6 py-2 text-sm font-semibold"
+                className="px-6 py-2 text-sm font-semibold bg-[#C85212] hover:bg-orange-700"
               >
                 + Add property
               </Button>
@@ -322,11 +393,11 @@ const HomeownerProfile: React.FC = () => {
 
         {/* Tabs */}
         <div className="flex gap-4 mb-6">
-          <button className="px-4 py-2 rounded-full text-sm font-medium bg-teal-50 text-teal-700 border border-teal-600">
-            All Properties ({properties.length})
+          <button className="px-4 py-2 rounded-full text-sm font-medium bg-gray-100 text-[#111827] border border-[#111827]">
+            For rent (8)
           </button>
           <button className="px-4 py-2 rounded-full text-sm font-medium bg-gray-100 text-gray-700 border border-gray-200">
-            Active ({properties.filter(p => p.isActive).length})
+            For sale (13)
           </button>
         </div>
 
@@ -335,7 +406,6 @@ const HomeownerProfile: React.FC = () => {
           {properties.map((property, index) => {
             const state = propertyStates.find((p) => p.id === property.id);
             const isRented = state ? state.isRented : property.isActive;
-
             return (
               <div
                 key={`${property.id}-${index}`}
@@ -350,15 +420,10 @@ const HomeownerProfile: React.FC = () => {
                     className="object-cover w-full h-full"
                     priority={index === 0}
                   />
-                  <span
-                    className={`absolute top-3 left-3 ${
-                      isRented ? "bg-teal-600" : "bg-gray-400"
-                    } text-white text-xs font-semibold px-3 py-1 rounded-full shadow`}
-                  >
-                    {property.category || "Rent"}
+                  <span className="absolute top-3 left-3 bg-teal-600 text-white text-xs font-semibold px-3 py-1 rounded-full shadow">
+                    Rent
                   </span>
                 </div>
-
                 <div className="p-4 flex-1 flex flex-col justify-between">
                   <div>
                     <h3
@@ -372,7 +437,6 @@ const HomeownerProfile: React.FC = () => {
                         {property.location}
                       </p>
                     </div>
-
                     <div className="flex items-center gap-2 text-sm text-gray-600 mb-1">
                       <div className="flex gap-0.5 text-yellow-500">
                         {[...Array(5)].map((_, i) => (
@@ -392,7 +456,6 @@ const HomeownerProfile: React.FC = () => {
                         reviews)
                       </span>
                     </div>
-
                     <div className="flex items-center text-gray-700 text-xs gap-4 mb-1">
                       <span
                         className="flex items-center gap-1"
@@ -413,7 +476,6 @@ const HomeownerProfile: React.FC = () => {
                         <Ruler size={14} /> {property.size}m²
                       </span>
                     </div>
-
                     <div className="flex items-center gap-2 text-xs text-gray-500">
                       <span className="line-through">{property.oldPrice}</span>
                       <span className="text-gray-800 font-semibold">
@@ -421,26 +483,20 @@ const HomeownerProfile: React.FC = () => {
                       </span>
                     </div>
                   </div>
-
-                  {/* Claim Property Button */}
                   <div className="mt-4">
                     <hr className="mb-3 border-gray-200" />
-                    <div className="mt-2 mb-4">
-                      <Button
-                        variant="primary"
-                        className="w-full px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-200 rounded"
-                        onClick={() =>
-                          router.push(
-                            `/claim-property?propertyId=${property.id}`
-                          )
-                        }
-                      >
-                        Claim Property
-                      </Button>
+                    
+                    <div className="mb-4">
+                      <ClaimPropertyButton 
+                        propertyId={property.id}
+                        onClaim={handleClaimProperty}
+                      />
                     </div>
 
+                    
+
                     <div className="flex items-center justify-between">
-                      {/* Toggle */}
+  
                       <div className="flex items-center gap-2">
                         <button
                           onClick={() => handleToggle(property.id)}
@@ -458,8 +514,7 @@ const HomeownerProfile: React.FC = () => {
                           Mark as Rented
                         </span>
                       </div>
-
-                      {/* Status */}
+                     
                       <span
                         className={`px-3 py-1 rounded-full text-xs font-semibold ${
                           isRented
@@ -477,7 +532,7 @@ const HomeownerProfile: React.FC = () => {
           })}
         </div>
 
-        {/* Empty State */}
+      
         {properties.length === 0 && (
           <div className="text-center py-12">
             <div className="text-gray-500 mb-4">
@@ -485,51 +540,84 @@ const HomeownerProfile: React.FC = () => {
               <p className="text-sm">Start by adding your first property listing</p>
             </div>
             <Link href="/property-listings">
-              <Button variant="primary" className="px-6 py-2">
+              <Button variant="primary" className="px-6 py-2 bg-orange-600 hover:bg-orange-700">
                 Add Your First Property
               </Button>
             </Link>
           </div>
         )}
 
+      
         {/* Pagination */}
-        {listingsData && (
-          <div className="flex items-center justify-between mt-8 px-4">
-            <div className="text-sm text-gray-700">
-              Showing page {listingsData.page} of {listingsData.pages} 
-              ({listingsData.total} total properties)
+        <div className="flex items-center justify-center mt-8">
+          <div className="flex items-center space-x-2">
+            {/* Previous Button */}
+            <button
+              onClick={handlePreviousPage}
+              disabled={currentPage <= 1}
+              className={`flex items-center px-3 py-2 text-sm font-medium rounded-md border transition-colors ${
+                currentPage > 1
+                  ? "text-gray-700 bg-white border-gray-300 hover:bg-gray-50"
+                  : "text-gray-400 bg-gray-100 border-gray-200 cursor-not-allowed"
+              }`}
+            >
+              <span>←</span>
+              <span className="ml-1">Previous</span>
+            </button>
+            
+            {/* Page Numbers */}
+            <div className="flex items-center space-x-1">
+              {[1, 2, 3].map((page) => (
+                <button
+                  key={page}
+                  onClick={() => setCurrentPage(page)}
+                  className={`px-3 py-2 text-sm font-medium rounded-md border transition-colors ${
+                    currentPage === page
+                      ? "bg-purple-100 text-purple-700 border-purple-300"
+                      : "text-gray-700 bg-white border-gray-300 hover:bg-gray-50"
+                  }`}
+                >
+                  {page}
+                </button>
+              ))}
+              
+              {/* Ellipsis */}
+              <span className="px-2 text-gray-500">...</span>
+              
+              {/* Last few pages */}
+              {[8, 9, 10].map((page) => (
+                <button
+                  key={page}
+                  onClick={() => setCurrentPage(page)}
+                  className={`px-3 py-2 text-sm font-medium rounded-md border transition-colors ${
+                    currentPage === page
+                      ? "bg-purple-100 text-purple-700 border-purple-300"
+                      : "text-gray-700 bg-white border-gray-300 hover:bg-gray-50"
+                  }`}
+                >
+                  {page}
+                </button>
+              ))}
             </div>
-            {listingsData.pages > 1 && (
-              <div className="flex items-center space-x-2">
-                <button
-                  onClick={handlePreviousPage}
-                  disabled={currentPage <= 1}
-                  className={`px-3 py-2 text-sm font-medium rounded-md border ${
-                    currentPage > 1
-                      ? "text-gray-700 bg-white border-gray-300 hover:bg-gray-50"
-                      : "text-gray-400 bg-gray-100 border-gray-200 cursor-not-allowed"
-                  }`}
-                >
-                  Previous
-                </button>
-                <button
-                  onClick={handleNextPage}
-                  disabled={currentPage >= listingsData.pages}
-                  className={`px-3 py-2 text-sm font-medium rounded-md border ${
-                    currentPage < listingsData.pages
-                      ? "text-gray-700 bg-white border-gray-300 hover:bg-gray-50"
-                      : "text-gray-400 bg-gray-100 border-gray-200 cursor-not-allowed"
-                  }`}
-                >
-                  Next
-                </button>
-              </div>
-            )}
+            
+            {/* Next Button */}
+            <button
+              onClick={handleNextPage}
+              disabled={currentPage >= totalPages}
+              className={`flex items-center px-3 py-2 text-sm font-medium rounded-md border transition-colors ${
+                currentPage < totalPages
+                  ? "text-gray-700 bg-white border-gray-300 hover:bg-gray-50"
+                  : "text-gray-400 bg-gray-100 border-gray-200 cursor-not-allowed"
+              }`}
+            >
+              <span className="mr-1">Next</span>
+              <span>→</span>
+            </button>
           </div>
-        )}
+        </div>
       </div>
     </div>
   );
 };
 
-export default HomeownerProfile; 
+export default HomeownerProfile;

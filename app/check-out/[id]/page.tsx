@@ -13,8 +13,7 @@ const CheckOutPage = () => {
   const addOns = searchParams.get("addOns")?.split(",") || ["liftsToTop", "certifiedByApartey"];
   const aparteyKeys = parseInt(searchParams.get("aparteyKeys") || "0");
   const currency = searchParams.get("currency") || "ngn";
-
-  // Fetch property details using the ID
+  
   const { data: property, isLoading, error } = useGetPropertyByIdQuery(listingId);
 
   if (!listingId) {
@@ -89,7 +88,10 @@ const CheckOutPage = () => {
                     {property.status}
                   </span>
                 </p>
-                <p><span className="font-medium">Currency:</span> {property.price?.currency}</p>
+                <p><span className="font-medium">Selected Currency:</span> 
+                  <span className="font-semibold text-[#C85212]">{currency.toUpperCase()}</span>
+                </p>
+                <p><span className="font-medium">Property Currency:</span> {property.price?.currency}</p>
                 {property.price?.salePrice && (
                   <p><span className="font-medium">Sale Price:</span> {property.price.salePrice.toLocaleString()} {property.price.currency}</p>
                 )}
@@ -108,7 +110,7 @@ const CheckOutPage = () => {
           </div>
         </div>
         
-        {/* Payment Summary Section */}
+    
         <PaymentSummary
           selectedTier={selectedTier}
           addOns={addOns}
@@ -116,7 +118,7 @@ const CheckOutPage = () => {
           currency={currency}
         />
         
-        {/* Payment Section */}
+   
         <div className="bg-white rounded-lg shadow-lg p-8">
           <h2 className="text-xl font-semibold text-gray-900 mb-6">
             Payment Information

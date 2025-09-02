@@ -583,6 +583,16 @@ class BaseURL {
       throw error;
     }
   };
+  httpGetClaimStatus = async (id: string) => {
+    try {
+      const response = await AxiosInstance.get(endpoints.getClaimStatus(id));
+      return response.data;
+    } catch (error: any) {
+      throw error;
+    }
+    };
+  
+
   httpCreateListings = async (data: globalThis.FormData) => {
     try {
       const token = TokenManager.getToken();

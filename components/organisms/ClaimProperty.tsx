@@ -4,28 +4,21 @@ import ClaimPropertyDetailsForm from "@/components/molecules/ClaimPropertyDetail
 import ClaimPropertyVerificationForm from "../molecules/ClaimPropertyVerificationForm";
 import ClaimPropertyConfirmForm from "../molecules/ClaimPropertyConfirmForm";
 import { useGetUserProfileQuery } from "@/Hooks/use-getuserProfile.query";
-import { useGetAllMyListingsQuery } from "@/Hooks/use-getAllMyListings.query";
-import { useMutation } from "@tanstack/react-query";
-import http from "@/services/http";
-import { useSearchParams } from "next/navigation";
+import { useGetListingsByIdQuery } from "@/Hooks/use-getAllListingsById.query";
+import { useClaimPropertyMutation } from "@/Hooks/use-claimProperty.mutation";
+import { useParams, useRouter } from "next/navigation";
+import { toast } from "react-hot-toast";
 
-interface Property {
-  id: string;
-  location?: {
-    streetAddress?: string;
-    city?: string;
-    country?: string;
-  };
-  propertyType?: string;
-}
 
-interface ListingsData {
-  properties: Property[];
-}
+
+
 
 interface User {
+  _id?: string;
   email?: string;
   name?: string;
+  firstName?: string;
+  lastName?: string;
   phone?: string;
 }
 
@@ -34,14 +27,13 @@ interface UserData {
 }
 
 const ClaimProperty = () => {
-  const searchParams = useSearchParams();
-  const propertyId = searchParams.get("propertyId");
+  const params = useParams();
+  const router = useRouter();
+  const propertyId = params.id as string;
 
-  // Fetch user profile and listings
+  // Fetch user profile and property details
   const { data: userData } = useGetUserProfileQuery() as { data?: UserData };
-  const { data: listingsData } = useGetAllMyListingsQuery() as {
-    data?: ListingsData;
-  };
+  const { data: propertyData, isLoading: propertyLoading, error: propertyError } = useGetListingsByIdQuery(propertyId);
 
   // Form states
   const [form, setForm] = useState({
@@ -61,63 +53,53 @@ const ClaimProperty = () => {
 
   // Prepopulate form with property details
   useEffect(() => {
-    if (propertyId && listingsData?.properties) {
-      const property = listingsData.properties.find(
-        (p: Property) => p.id === propertyId
-      );
-      if (property) {
-        setForm({
-          streetAddress: property.location?.streetAddress || "",
-          district: property.location?.city || "",
-          state: property.location?.country || "",
-          postalCode: "",
-          propertyType: property?.propertyType || "Residential",
-        });
-      }
+    if (propertyData?.property) {
+      const property = propertyData.property;
+      setForm({
+        streetAddress: property.location?.streetAddress || property.location?.fullAddress || "",
+        district: property.location?.district || "",
+        state: property.location?.stateOrRegion || "",
+        postalCode: property.location?.zipCode || property.location?.postalCode || "",
+        propertyType: property.propertyType || "Residential",
+      });
     }
-  }, [propertyId, listingsData]);
+  }, [propertyData]);
 
   // Prepopulate verification form with user data
   useEffect(() => {
     if (userData?.currentUser) {
       const user = userData.currentUser;
-      setVerificationForm((prev) => ({
-        ...prev,
-        email: user.email || "",
-        fullName: user.name || "",
-        phone: user.phone || "",
-      }));
+      
+      const fullName = `${user.firstName || ""} ${user.lastName || ""}`.trim();
+      
+      setVerificationForm((prev) => {
+        const newForm = {
+          ...prev,
+          email: user.email || "",
+          fullName: fullName || "",
+          phone: user.phone || "",
+        };
+        return newForm;
+      });
     }
   }, [userData]);
 
-  // Mutation for claim property
-  type ClaimPropertyPayload = {
-    fullName: string;
-    phoneNunber: string;
-    country: string;
-    stateOrRegion: string;
-    district: string;
-    postalCode: string;
-    street: string;
-    additionalInfo: string;
-    email: string;
-  };
-
+  // Claim property mutation hook
   const {
     mutate: claimProperty,
     error: claimError,
     data: claimData,
-    isPending: claimLoading,
-  } = useMutation<unknown, Error, ClaimPropertyPayload>({
-    mutationFn: (payload: ClaimPropertyPayload) => {
-      if (!propertyId) throw new Error("No propertyId provided in URL");
-      return http.httpClaimProperty(propertyId, payload);
-    },
-  });
+    isLoading: claimLoading,
+  } = useClaimPropertyMutation();
 
   // Step state
   const [step, setStep] = useState(1);
   const [submitting, setSubmitting] = useState(false);
+  
+  // Update submitting state based on claim loading
+  useEffect(() => {
+    setSubmitting(claimLoading);
+  }, [claimLoading]);
 
   // Handlers for step 1
   const handleChange = (
@@ -167,25 +149,45 @@ const ClaimProperty = () => {
     setStep(2);
   };
   const handleSubmitClaim = async () => {
+    // Validate required fields
+    if (!verificationForm.fullName || !verificationForm.email || !verificationForm.phone) {
+      toast.error("Please fill in all required fields before submitting.");
+      return;
+    }
+
+    if (!form.streetAddress || !form.district || !form.state || !form.postalCode || !form.propertyType) {
+      toast.error("Please ensure all property details are complete before submitting.");
+      return;
+    }
+
     setSubmitting(true);
-    const payload: ClaimPropertyPayload = {
-      fullName: verificationForm.fullName,
-      phoneNunber: verificationForm.phone,
-      country: form.state, // Assuming state maps to country for simplicity
-      stateOrRegion: form.state,
-      district: form.district,
-      postalCode: form.postalCode,
-      street: form.streetAddress,
-      additionalInfo: verificationForm.additionalDetails,
-      email: verificationForm.email,
-    };
-    claimProperty(payload, {
+    
+    // Create FormData for the claim property request
+    const formData = new FormData();
+    formData.append("fullName", verificationForm.fullName);
+    formData.append("phoneNumber", verificationForm.phone);
+    formData.append("country", form.state);
+    formData.append("stateOrRegion", form.state);
+    formData.append("district", form.district);
+    formData.append("postalCode", form.postalCode);
+    formData.append("street", form.streetAddress);
+    formData.append("additionalInfo", verificationForm.additionalDetails);
+    formData.append("email", verificationForm.email);
+    formData.append("propertyId", propertyId);
+    
+    claimProperty({ formData, propertyId }, {
       onSuccess: () => {
         setSubmitting(false);
-        alert("Claim submitted!");
+        toast.success("Property claim submitted successfully! Your claim is under review.");
+        // Optionally redirect after successful submission
+        setTimeout(() => {
+          router.push("/homeowner-profile");
+        }, 2000);
       },
-      onError: () => {
+      onError: (error) => {
         setSubmitting(false);
+        toast.error(error?.message || "Failed to submit property claim. Please try again.");
+        console.error("Claim submission failed:", error);
       },
     });
   };
@@ -215,7 +217,53 @@ const ClaimProperty = () => {
   if (!propertyId) {
     return (
       <div className="p-8 text-center text-red-600">
-        No propertyId provided in the URL. Please select a property to claim.
+        No property ID provided in the URL. Please select a property to claim.
+      </div>
+    );
+  }
+
+  if (propertyLoading) {
+    return (
+      <div className="p-8 text-center">
+        <div className="text-gray-500 mb-4">Loading property details...</div>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#C85212] mx-auto"></div>
+      </div>
+    );
+  }
+
+  if (propertyError) {
+    return (
+      <div className="p-8 text-center text-red-600">
+        Error loading property details: {propertyError.message}
+      </div>
+    );
+  }
+
+  if (!propertyData?.property) {
+    return (
+      <div className="p-8 text-center text-red-600">
+        Property not found. Please check the property ID and try again.
+      </div>
+    );
+  }
+
+  // Check if the current user owns this property
+  const currentUserId = userData?.currentUser?._id;
+  const propertyOwnerId = propertyData.property.owner?._id || propertyData.property.userId;
+  
+  if (currentUserId && propertyOwnerId && currentUserId !== propertyOwnerId) {
+    return (
+      <div className="p-8 text-center text-red-600">
+        <div className="text-xl font-semibold mb-4">Access Denied</div>
+        <div className="text-gray-600 mb-4">
+          You can only claim properties that you own. This property belongs to another user.
+        </div>
+        <button
+          onClick={() => window.history.back()}
+          className="px-6 py-2 bg-[#C85212] text-white rounded-lg hover:bg-[#A64310] transition-colors"
+        >
+          Go Back
+        </button>
       </div>
     );
   }
@@ -226,14 +274,58 @@ const ClaimProperty = () => {
         Claim Your Property
       </h1>
       <p className="text-gray-500 mb-8">Claim your home</p>
+      
+      {/* Property Summary */}
+      <div className="w-full max-w-2xl mb-8 p-6 bg-gray-50 rounded-lg border border-gray-200">
+        <h2 className="text-lg font-semibold text-gray-800 mb-3">Property Details</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+          <div>
+            <span className="font-medium text-gray-600">Address:</span>
+            <div className="text-gray-800 mt-1">
+              {propertyData.property.location?.streetAddress || propertyData.property.location?.fullAddress || "Address not specified"}
+            </div>
+          </div>
+          <div>
+            <span className="font-medium text-gray-600">Location:</span>
+            <div className="text-gray-800 mt-1">
+              {propertyData.property.location?.district && propertyData.property.location?.stateOrRegion 
+                ? `${propertyData.property.location.district}, ${propertyData.property.location.stateOrRegion}`
+                : "Location not specified"
+              }
+            </div>
+          </div>
+          <div>
+            <span className="font-medium text-gray-600">Property Type:</span>
+            <div className="text-gray-800 mt-1">
+              {propertyData.property.propertyType || "Not specified"}
+            </div>
+          </div>
+          <div>
+            <span className="font-medium text-gray-600">Property ID:</span>
+            <div className="text-gray-800 mt-1 font-mono text-xs">
+              {propertyData.property._id}
+            </div>
+          </div>
+        </div>
+      </div>
       {claimLoading && (
         <div className="text-orange-600 mb-4">Submitting claim...</div>
       )}
       {claimError && (
-        <div className="text-red-600 mb-4">Error: {claimError.message}</div>
+        <div className="text-red-600 mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+          <div className="font-semibold text-red-800">Claim Submission Failed</div>
+          <div className="text-red-700 text-sm mt-1">
+            {claimError.message || "An error occurred while submitting your claim. Please try again."}
+          </div>
+        </div>
       )}
-      {claimData !== undefined && (
-        <div className="text-green-600 mb-4">Claim submitted successfully!</div>
+      {claimData && (
+        <div className="text-green-600 mb-4 p-4 bg-green-50 border border-green-200 rounded-lg">
+          <div className="font-semibold text-green-800">Claim Submitted Successfully!</div>
+          <div className="text-green-700 text-sm mt-1">
+            Your property claim has been submitted and is under review. You will be notified once the verification is complete.
+          </div>
+        </div>
       )}
       {/* Stepper */}
       <div className="flex items-center justify-center w-full max-w-xl mb-8">

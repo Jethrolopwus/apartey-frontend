@@ -23,7 +23,7 @@ const PaymentWrapper = ({
   const isCreatingRef = useRef(false);
   const createAdsPaymentMutation = useCreateAdsPaymentMutation();
 
-  // Memoize the options to prevent unnecessary re-renders
+ 
   const options = useMemo(() => ({
     clientSecret,
     appearance: {
@@ -67,7 +67,7 @@ const PaymentWrapper = ({
 
     createPaymentIntent();
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [listingId]); // Only depend on listingId to prevent infinite loops
+  }, [listingId]); 
 
   if (isLoading || !clientSecret) {
     return (

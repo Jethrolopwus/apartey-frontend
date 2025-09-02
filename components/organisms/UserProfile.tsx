@@ -2,7 +2,7 @@
 import React from "react";
 import { useGetUserProfileQuery } from "@/Hooks/use-getuserProfile.query";
 import { useGetProfileCompletionQuery } from "@/Hooks/use-getProfileCompletionStat.query";
-import { Mail, MapPin, Edit3 } from "lucide-react";
+import { Mail, MapPin, Edit3,  KeyRound  } from "lucide-react";
 import ProfileCompletionCard from "@/components/molecules/ProfileCompletionCard";
 import { useRouter } from "next/navigation";
 import { useAuthToken } from "@/Hooks/useAuthToken";
@@ -119,10 +119,10 @@ const ProfilePage = () => {
 
                 {/* Rewards */}
                 <div className="mt-4 flex items-center space-x-2 sm:mt-0">
-                  <div className="flex items-center rounded-full bg-orange-100 px-3 py-1">
-                    <span className="mr-1 text-orange-600">🏆</span>
-                    <span className="text-sm font-medium text-orange-600">
-                      {user?.rewards || 0}
+                  <div className="flex items-center">
+                    <KeyRound className="mr-1 h-5 w-5 text-orange-600" />
+                    <span className="text-sm font-medium text-gray-900">
+                      {user?.rewards || 0}APK
                     </span>
                   </div>
                 </div>
@@ -137,7 +137,7 @@ const ProfilePage = () => {
               {/* Edit Profile Button */}
               <button
                 onClick={handleEditProfile}
-                className="inline-flex items-center  rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                className="inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
               >
                 <Edit3 className="mr-2 h-4 w-4" />
                 Edit profile

@@ -30,7 +30,7 @@ const CheckOutPage = () => {
           
           <Link
             href="/"
-            className="w-full bg-black text-white py-3 px-4 rounded-lg font-medium transition-colors duration-200 hover:bg-gray-800 inline-block"
+            className="w-full bg-[#C85212] text-white py-3 px-4 rounded-lg font-medium transition-colors duration-200 hover:bg-orange-700 inline-block"
           >
             Return to Home
           </Link>

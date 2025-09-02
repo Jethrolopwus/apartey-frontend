@@ -7,6 +7,7 @@ export interface useGetAllListingsQueryParams {
   limit?: number;
   byId?: number;
   category?: PropertyCategory;
+  page?: number;
   country?: string;
   propertyType?: string;
   petPolicy?: string;

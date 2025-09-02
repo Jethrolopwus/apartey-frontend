@@ -100,7 +100,9 @@ const ClaimPropertyDetailsForm: React.FC<ClaimPropertyDetailsFormProps> = ({
           <option value="">Select type</option>
           <option value="Apartment">Apartment</option>
           <option value="House">House</option>
-          <option value="Condo">Condo</option>
+          <option value="Condo">Commercial</option>
+          <option value="Condo">Room</option>
+          <option value="Condo">Garage</option>
           {/* Add more types as needed */}
         </select>
       </div>

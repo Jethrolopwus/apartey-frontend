@@ -1,5 +1,5 @@
-"use client";
 
+"use client";
 import {
   PaymentElement,
   useStripe,
@@ -7,10 +7,12 @@ import {
 } from "@stripe/react-stripe-js";
 import { useState } from "react";
 import { toast } from "react-hot-toast";
+import { useRouter } from "next/navigation";
 
 const PaymentStep = () => {
   const stripe = useStripe();
   const elements = useElements();
+  const router = useRouter();
   const [isPaying, setIsPaying] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -39,8 +41,12 @@ const PaymentStep = () => {
         setIsPaying(false);
       } else if (result.paymentIntent?.status === "succeeded") {
         toast.success("Payment successful!");
-        // You can add additional logic here like redirecting to success page
-        // or calling your backend to update the payment status
+        
+      
+        setTimeout(() => {
+          router.push("/homeowner-profile");
+        }, 3000); 
+        
         setIsPaying(false);
       }
     } catch (error) {
@@ -69,7 +75,7 @@ const PaymentStep = () => {
       <button
         onClick={handlePayment}
         disabled={!stripe || isPaying}
-        className="w-full bg-black text-white py-3 px-4 rounded-lg font-medium transition-colors duration-200 hover:bg-gray-800 disabled:bg-gray-400 disabled:cursor-not-allowed"
+        className="w-full bg-[#C85212] text-white py-3 px-4 rounded-lg font-medium transition-colors duration-200 hover:bg-orange-600 disabled:bg-gray-400 disabled:cursor-not-allowed"
       >
         {isPaying ? (
           <div className="flex items-center justify-center">
@@ -90,4 +96,4 @@ const PaymentStep = () => {
   );
 };
 
-export default PaymentStep; 
+export default PaymentStep;
