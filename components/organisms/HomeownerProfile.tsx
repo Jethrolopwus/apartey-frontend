@@ -350,7 +350,7 @@ const HomeownerProfile: React.FC = () => {
                 </div>
             </div>
             <p className="text-gray-700 text-sm mt-2 max-w-2xl">
-              Extensive experience in rentals and a vast database means I can quickly find the options that are right for you. Looking for a seamless and exciting rental experience? Contact me today - I promise it won't be boring! Your perfect home is just a call away.
+              Extensive experience in rentals and a vast database means I can quickly find the options that are right for you. Looking for a seamless and exciting rental experience? Contact me today - I promise it won&apos;t be boring! Your perfect home is just a call away.
             </p>
             <div className="flex flex-wrap gap-8 mt-4">
               <div className="flex flex-col items-center min-w-[90px]">

@@ -2,7 +2,7 @@
 "use client";
 import React from "react";
 import { useParams } from "next/navigation";
-import { Star, Share2, Flag, Home, Bookmark, MapPin, Bed, Bath, Heart } from "lucide-react";
+import { Star, Share2, Flag, Home, Bookmark, Bed, Bath, Heart } from "lucide-react";
 import Image from "next/image";
 import type { Property } from "@/types/generated";
 import { useGetListingsByIdQuery } from "@/Hooks/use-getAllListingsById.query";

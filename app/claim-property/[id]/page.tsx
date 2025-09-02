@@ -2,13 +2,9 @@
 import React, { Suspense } from "react";
 import ClaimProperty from "@/components/organisms/ClaimProperty";
 
-interface PageProps {
-  params: {
-    id: string;
-  };
-}
 
-export default function ClaimPropertyDetailPage({ params }: PageProps) {
+
+export default function ClaimPropertyDetailPage() {
   return (
     <Suspense fallback={<div>Loading property details...</div>}>
       <div className="min-h-screen">

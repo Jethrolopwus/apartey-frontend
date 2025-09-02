@@ -9,22 +9,7 @@ import { useClaimPropertyMutation } from "@/Hooks/use-claimProperty.mutation";
 import { useParams, useRouter } from "next/navigation";
 import { toast } from "react-hot-toast";
 
-interface Property {
-  _id: string;
-  location?: {
-    streetAddress?: string;
-    fullAddress?: string;
-    district?: string;
-    stateOrRegion?: string;
-    zipCode?: string;
-    postalCode?: string;
-  };
-  propertyType?: string;
-  owner?: {
-    _id: string;
-  };
-  userId?: string;
-}
+
 
 
 
@@ -191,7 +176,7 @@ const ClaimProperty = () => {
     formData.append("propertyId", propertyId);
     
     claimProperty({ formData, propertyId }, {
-      onSuccess: (response) => {
+      onSuccess: () => {
         setSubmitting(false);
         toast.success("Property claim submitted successfully! Your claim is under review.");
         // Optionally redirect after successful submission

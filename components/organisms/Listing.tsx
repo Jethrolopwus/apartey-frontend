@@ -98,7 +98,7 @@ const Listings = () => {
     });
 
     toggleLike(propertyId, {
-      onSuccess: (response: any) => {
+      onSuccess: (response: { data?: { isLiked?: boolean }; message?: string }) => {
         const isLiked = response.data?.isLiked ?? likedProperties.has(propertyId);
         
         setLikedProperties((prev) => {
@@ -112,7 +112,7 @@ const Listings = () => {
         });
         toast.success(response?.message || `Property ${isLiked ? "liked" : "unliked"} successfully!`);
       },
-      onError: (error: any) => {
+      onError: (error: { message?: string }) => {
         // Revert the optimistic update
         setLikedProperties((prev) => {
           const newSet = new Set(prev);
@@ -137,13 +137,7 @@ const Listings = () => {
     return [city, stateOrRegion, country].filter(Boolean).join(", ");
   };
 
-  const getPropertyPrice = (property: Property) => {
-    return property.propertyDetails?.price
-      ? `${property.propertyDetails.currency || "$"}${property.propertyDetails.price}/${
-          category === "Rent" ? "month" : category === "Swap" ? "swap" : "total"
-        }`
-      : "Price on request";
-  };
+
 
   const getPropertyImage = (property: Property) => {
     return property.media?.coverPhoto || "/fallback-image.jpg";
