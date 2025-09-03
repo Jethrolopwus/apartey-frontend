@@ -444,7 +444,9 @@ const Listings = () => {
                     <option>All Types</option>
                     <option>Apartment</option>
                     <option>House</option>
-                    <option>Condo</option>
+                    <option>Commercial</option>
+                    <option>Room</option>
+                    <option>Garage</option>
                   </select>
                 </div>
 
@@ -460,8 +462,8 @@ const Listings = () => {
                     style={{ background: "linear-gradient(to right, #C85212 0%, #C85212 50%, #e5e7eb 50%, #e5e7eb 100%)" }}
                   />
                   <div className="flex justify-between text-sm text-gray-500 mt-1">
-                    <span>$0</span>
-                    <span>$1000+</span>
+                    <span>€0</span>
+                    <span>€1000+</span>
                   </div>
                 </div>
 
@@ -508,8 +510,7 @@ const Listings = () => {
                     List your Home
                   </button>
                 </Link>
-              )}
-              
+              )}      
               {/* Show loading state while fetching user role */}
               {isUserRoleLoading && (
                 <div className="text-gray-500 text-sm">Loading user permissions...</div>

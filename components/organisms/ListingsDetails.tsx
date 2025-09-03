@@ -7,6 +7,7 @@ import Image from "next/image";
 import type { Property } from "@/types/generated";
 import { useGetListingsByIdQuery } from "@/Hooks/use-getAllListingsById.query";
 import { useRouter } from "next/navigation";
+import ContactOwnerModal from "@/components/molecules/ContactOwnerModal";
 
 interface GetPropertyResponse {
   message: string;
@@ -17,6 +18,10 @@ const PropertyDetails = () => {
   const params = useParams();
   const id = params.id as string;
   const router = useRouter();
+
+  // All hooks must be called before any conditional returns
+  const [contactModalOpen, setContactModalOpen] = React.useState(false);
+  const [contactProperty, setContactProperty] = React.useState<string>("");
 
   const { data, isLoading, error } = useGetListingsByIdQuery(id) as {
     data: GetPropertyResponse | undefined;
@@ -74,6 +79,23 @@ const PropertyDetails = () => {
     );
   };
 
+  const handleOpenContactModal = () => {
+    setContactProperty(getPropertyTitle());
+    setContactModalOpen(true);
+  };
+
+  const handleCloseContactModal = () => {
+    setContactModalOpen(false);
+    setContactProperty("");
+  };
+
+  const handleSendMessage = (data: { name: string; email: string; message: string; propertyName?: string }) => {
+    console.log("Sending message:", data);
+    // Here you can implement the actual message sending logic
+    // For now, just close the modal
+    handleCloseContactModal();
+  };
+
   return (
     <div className="max-w-7xl mx-auto bg-white p-6 md:p-10 rounded-lg shadow-lg mb-12">
       {/* Full Address, Price, and Action Buttons at the Top */}
@@ -99,7 +121,10 @@ const PropertyDetails = () => {
             <Flag className="w-5 h-5 text-gray-600" />
             <span className="text-sm text-gray-600">Report</span>
           </button>
-          <button className="bg-[#C85212] text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-[#A64310]">
+          <button 
+            onClick={handleOpenContactModal}
+            className="bg-[#C85212] text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-[#A64310]"
+          >
             Request Swap
           </button>
         </div>
@@ -231,7 +256,7 @@ const PropertyDetails = () => {
                   onClick={handleWriteReview}
                   className="bg-[#C85212] text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-[#A64310]"
                 >
-                  Write a review
+                  Leave a review
                 </button>
               </div>
             </div>
@@ -390,6 +415,14 @@ const PropertyDetails = () => {
           ))}
         </div>
       </div>
+
+      {/* Contact Owner Modal */}
+      <ContactOwnerModal
+        open={contactModalOpen}
+        onClose={handleCloseContactModal}
+        propertyName={contactProperty}
+        onSend={handleSendMessage}
+      />
     </div>
   );
 };

@@ -34,6 +34,15 @@ interface ReviewLocation {
   country?: string;
 }
 
+// Helper to get reviewer initial
+const getReviewerInitial = (review: { submitAnonymously?: boolean; reviewer?: { firstName?: string } }) => {
+  if (review.submitAnonymously) return "A";
+  if (review.reviewer?.firstName) {
+    return review.reviewer.firstName.charAt(0).toUpperCase();
+  }
+  return "R";
+};
+
 export default function ReviewDetails({ id }: Props) {
   const { data, isLoading, error } = useGetReviewByIdQuery(id);
   const review = data?.review;
@@ -96,7 +105,7 @@ export default function ReviewDetails({ id }: Props) {
       <div className="max-w-6xl mx-auto p-4">
         <div className="flex items-center justify-center min-h-[400px]">
           <div className="flex flex-col items-center gap-4">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-teal-600"></div>
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#C85212]"></div>
             <p className="text-lg text-gray-600">Loading review details...</p>
           </div>
         </div>
@@ -123,10 +132,12 @@ export default function ReviewDetails({ id }: Props) {
     );
   }
 
-  const formatCurrency = (amount: number) => {
+  const formatCurrency = (amount: number, countryCode?: string) => {
+    // Default to EUR for Estonia, USD for others
+    const currency = countryCode === "EE" ? "EUR" : "USD";
     return new Intl.NumberFormat("en-US", {
       style: "currency",
-      currency: "USD",
+      currency: currency,
       minimumFractionDigits: 0,
     }).format(amount);
   };
@@ -134,7 +145,7 @@ export default function ReviewDetails({ id }: Props) {
   const getAccessibilityColor = (level: string) => {
     switch (level?.toLowerCase()) {
       case "very close":
-        return "bg-green-100 text-green-800";
+        return "bg-[#C85212]/10 text-[#C85212]";
       case "close":
         return "bg-blue-100 text-blue-800";
       case "moderate":
@@ -180,7 +191,7 @@ export default function ReviewDetails({ id }: Props) {
       <div className="flex-1">
         <Link
           href="/reviewsPage"
-          className="text-teal-600 flex items-center gap-2 mb-6 text-sm font-medium hover:underline transition-colors"
+          className="text-[#C85212] flex items-center gap-2 mb-6 text-sm font-medium hover:underline transition-colors"
         >
           <ArrowLeft size={16} /> Back to Reviews
         </Link>
@@ -188,22 +199,22 @@ export default function ReviewDetails({ id }: Props) {
         {/* Property Image */}
         <div className="relative mb-6">
           <Image
-            src={review?.property?.media?.coverPhoto || "/Apartment1.png"}
+            src={review?.linkedProperty?.media?.coverPhoto || "/Apartment1.png"}
             alt="Review Property"
             width={800}
             height={400}
             className="rounded-lg w-full object-cover"
             priority={false}
           />
-          {review?.property && (
-            <span className="absolute top-4 right-4 bg-teal-600 text-white text-xs font-semibold px-3 py-1 rounded-full">
+          {review?.linkedProperty && (
+            <span className="absolute top-4 right-4 bg-[#C85212] text-white text-xs font-semibold px-3 py-1 rounded-full">
               Verified Property
             </span>
           )}
           {/* Like and Flag Buttons */}
           <div className="absolute bottom-4 right-4 flex gap-2 z-10">
             <button
-              className={`bg-white border border-gray-200 rounded-full p-2 shadow hover:bg-teal-50 transition-colors flex items-center justify-center ${
+              className={`bg-white border border-gray-200 rounded-full p-2 shadow hover:bg-[#C85212]/10 transition-colors flex items-center justify-center ${
                 isLiking ? "opacity-50 cursor-not-allowed" : ""
               }`}
               aria-label="Like"
@@ -246,12 +257,40 @@ export default function ReviewDetails({ id }: Props) {
           <h1 className="text-gray-800 font-medium text-lg">
             {getDisplayAddress(review.location)}
           </h1>
-          <h3 className="font-medium text-gray-800 text-base line-clamp-2">
-            {review.location.streetAddress}
-            {review.location.apartmentUnitNumber &&
-              `, ${review.location.apartmentUnitNumber}`}
-            {review.location.city}
-          </h3>
+          
+          {/* Property Details */}
+          {review.linkedProperty && (
+            <div className="bg-gray-50 p-4 rounded-lg mb-4">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                {review.linkedProperty.bedrooms && (
+                  <div className="text-center">
+                    <div className="text-sm text-gray-600">Bedrooms</div>
+                    <div className="font-semibold text-[#C85212]">{review.linkedProperty.bedrooms}</div>
+                  </div>
+                )}
+                {review.linkedProperty.bathrooms && (
+                  <div className="text-center">
+                    <div className="text-sm text-gray-600">Bathrooms</div>
+                    <div className="font-semibold text-[#C85212]">{review.linkedProperty.bathrooms}</div>
+                  </div>
+                )}
+                {review.linkedProperty.propertyType && (
+                  <div className="text-center">
+                    <div className="text-sm text-gray-600">Type</div>
+                    <div className="font-semibold text-[#C85212]">{review.linkedProperty.propertyType}</div>
+                  </div>
+                )}
+                {review.linkedProperty.price && (
+                  <div className="text-center">
+                    <div className="text-sm text-gray-600">Price</div>
+                    <div className="font-semibold text-[#C85212]">
+                      {formatCurrency(review.linkedProperty.price, review.location.countryCode)}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
 
           <div className="flex items-center gap-2">
             <div className="flex gap-0.5">
@@ -260,7 +299,7 @@ export default function ReviewDetails({ id }: Props) {
                   key={i}
                   size={14}
                   className={
-                    i < Math.floor(review.overallRating)
+                    i < Math.floor(review.overallRating || 0)
                       ? "fill-yellow-400 text-yellow-400"
                       : "text-gray-300"
                   }
@@ -268,10 +307,7 @@ export default function ReviewDetails({ id }: Props) {
               ))}
             </div>
             <span className="text-sm font-medium text-gray-700">
-              {review.overallRating.toFixed(1)}
-            </span>
-            <span className="text-xs text-gray-500">
-              ({review.overallRating.toFixed(0)} reviews)
+              {(review.overallRating || 0).toFixed(1)}
             </span>
           </div>
 
@@ -289,26 +325,32 @@ export default function ReviewDetails({ id }: Props) {
               <span className="font-medium">Experience:</span>
               <span>{review.overallExperience}/5</span>
             </div>
+            {review.costOfRepairsCoverage && (
+              <div className="flex items-center gap-1">
+                <span className="font-medium">Repairs:</span>
+                <span className="text-[#C85212]">{review.costOfRepairsCoverage}</span>
+              </div>
+            )}
           </div>
 
           {/* Footer */}
           <div className="flex items-center justify-between pt-2">
             <div className="flex items-center gap-2">
-              <div className="w-7 h-7 rounded-full bg-gradient-to-br from-teal-400 to-teal-600 flex items-center justify-center">
+              <div className="w-7 h-7 rounded-full bg-[#C85212] flex items-center justify-center">
                 <span className="text-white text-xs font-semibold">
-                  {review.submitAnonymously ? "A" : "R"}
+                  {getReviewerInitial(review)}
                 </span>
               </div>
               <span className="text-sm font-medium text-gray-800">
                 <p className="font-semibold text-gray-900">
                   {review?.submitAnonymously
                     ? "Anonymous Reviewer"
-                    : review?.reviewer?.firstName || ""}
+                    : review?.reviewer?.firstName || "Reviewer"}
                 </p>
               </span>
             </div>
             <span className="text-xs text-gray-400">
-              {new Date(review.createdAt).toLocaleDateString("en-US", {
+              {new Date(review.createdAt || Date.now()).toLocaleDateString("en-US", {
                 month: "short",
                 day: "numeric",
                 year: "numeric",
@@ -321,7 +363,7 @@ export default function ReviewDetails({ id }: Props) {
         {review?.stayDetails && (
           <div className="bg-white rounded-lg border border-gray-200 p-6 mb-6">
             <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
-              <Home size={20} className="text-teal-600" />
+              <Home size={20} className="text-[#C85212]" />
               Stay Details
             </h3>
             <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
@@ -356,7 +398,7 @@ export default function ReviewDetails({ id }: Props) {
                 <span
                   className={`px-2 py-1 rounded-full text-xs font-medium ${
                     review?.stayDetails?.furnished
-                      ? "bg-green-100 text-green-800"
+                      ? "bg-[#C85212]/10 text-[#C85212]"
                       : "bg-gray-100 text-gray-800"
                   }`}
                 >
@@ -437,7 +479,7 @@ export default function ReviewDetails({ id }: Props) {
         {review?.costDetails && (
           <div className="bg-white rounded-lg border border-gray-200 p-6 mb-6">
             <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
-              <DollarSign size={20} className="text-teal-600" />
+              <DollarSign size={20} className="text-[#C85212]" />
               Cost Details
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -461,7 +503,7 @@ export default function ReviewDetails({ id }: Props) {
                     className={`px-2 py-1 rounded-full text-xs font-medium ${
                       review?.costDetails?.securityDepositRequired
                         ? "bg-orange-100 text-orange-800"
-                        : "bg-green-100 text-green-800"
+                        : "bg-[#C85212]/10 text-[#C85212]"
                     }`}
                   >
                     {review?.costDetails?.securityDepositRequired
@@ -478,7 +520,7 @@ export default function ReviewDetails({ id }: Props) {
                     className={`px-2 py-1 rounded-full text-xs font-medium ${
                       review?.costDetails?.agentBrokerFeeRequired
                         ? "bg-orange-100 text-orange-800"
-                        : "bg-green-100 text-green-800"
+                        : "bg-[#C85212]/10 text-[#C85212]"
                     }`}
                   >
                     {review?.costDetails?.agentBrokerFeeRequired
@@ -542,7 +584,7 @@ export default function ReviewDetails({ id }: Props) {
         {review?.accessibility && (
           <div className="bg-white rounded-lg border border-gray-200 p-6 mb-6">
             <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
-              <MapPin size={20} className="text-teal-600" />
+              <MapPin size={20} className="text-[#C85212]" />
               Accessibility & Location
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -596,7 +638,7 @@ export default function ReviewDetails({ id }: Props) {
             Rating Breakdown
           </h3>
           <div className="space-y-4">
-            {review?.ratingsAndReviews?.valueForMoney && (
+            {review?.valueForMoney && (
               <div className="flex items-center justify-between">
                 <span className="text-gray-600">Value for Money</span>
                 <div className="flex items-center gap-2">
@@ -606,7 +648,7 @@ export default function ReviewDetails({ id }: Props) {
                         key={i}
                         size={16}
                         className={
-                          i < review.ratingsAndReviews.valueForMoney
+                          i < review.valueForMoney
                             ? "fill-yellow-400 text-yellow-400"
                             : "text-gray-300"
                         }
@@ -614,13 +656,13 @@ export default function ReviewDetails({ id }: Props) {
                     ))}
                   </div>
                   <span className="font-medium">
-                    {review.ratingsAndReviews.valueForMoney}/5
+                    {review.valueForMoney}/5
                   </span>
                 </div>
               </div>
             )}
 
-            {review?.ratingsAndReviews?.overallExperience && (
+            {review?.overallExperience && (
               <div className="flex items-center justify-between">
                 <span className="text-gray-600">Overall Experience</span>
                 <div className="flex items-center gap-2">
@@ -630,7 +672,7 @@ export default function ReviewDetails({ id }: Props) {
                         key={i}
                         size={16}
                         className={
-                          i < review.ratingsAndReviews.overallExperience
+                          i < review.overallExperience
                             ? "fill-yellow-400 text-yellow-400"
                             : "text-gray-300"
                         }
@@ -638,17 +680,17 @@ export default function ReviewDetails({ id }: Props) {
                     ))}
                   </div>
                   <span className="font-medium">
-                    {review.ratingsAndReviews.overallExperience}/5
+                    {review.overallExperience}/5
                   </span>
                 </div>
               </div>
             )}
 
-            {review?.ratingsAndReviews?.costOfRepairsCoverage && (
+            {review?.costOfRepairsCoverage && (
               <div className="flex items-center justify-between pt-2 border-t border-gray-100">
                 <span className="text-gray-600">Repairs Coverage</span>
-                <span className="font-medium text-teal-600">
-                  {review.ratingsAndReviews.costOfRepairsCoverage}
+                <span className="font-medium text-[#C85212]">
+                  {review.costOfRepairsCoverage}
                 </span>
               </div>
             )}
@@ -666,7 +708,7 @@ export default function ReviewDetails({ id }: Props) {
 
           {review?.pros && review.pros.length > 0 && (
             <div className="mb-4">
-              <h4 className="font-semibold text-green-700 mb-2">✓ Pros</h4>
+              <h4 className="font-semibold text-[#C85212] mb-2">✓ Pros</h4>
               <ul className="list-disc list-inside text-sm text-gray-700 pl-4 space-y-1">
                 {review.pros.map((item: string, index: number) => (
                   <li key={index}>{item}</li>
@@ -697,7 +739,7 @@ export default function ReviewDetails({ id }: Props) {
               {review.amenities.map((item: string) => (
                 <span
                   key={item}
-                  className="text-sm bg-teal-50 border border-teal-200 px-3 py-2 rounded-lg text-teal-700"
+                  className="text-sm bg-[#C85212]/10 border border-[#C85212]/20 px-3 py-2 rounded-lg text-[#C85212]"
                 >
                   {item}
                 </span>
@@ -720,11 +762,9 @@ export default function ReviewDetails({ id }: Props) {
         {/* Reviewer Info */}
         <div className="bg-white border border-gray-200 rounded-lg p-6 mb-6">
           <div className="flex items-center gap-3 mb-4">
-            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-teal-400 to-teal-600 flex items-center justify-center">
+            <div className="w-12 h-12 rounded-full bg-[#C85212] flex items-center justify-center">
               <span className="text-white font-semibold">
-                {review?.submitAnonymously
-                  ? "A"
-                  : review?.reviewer?.email?.[0]?.toUpperCase() || "R"}
+                {getReviewerInitial(review)}
               </span>
             </div>
             <div>
@@ -761,7 +801,7 @@ export default function ReviewDetails({ id }: Props) {
               className={`font-medium ${
                 review?.status === "pending"
                   ? "text-yellow-600"
-                  : "text-green-600"
+                  : "text-[#C85212]"
               }`}
             >
               {review?.status || "Unknown"}
@@ -858,7 +898,7 @@ export default function ReviewDetails({ id }: Props) {
             </div>
           )}
           <ListingsButtons className="w-full mt-4  flex justify-center items-center text-sm">
-            <Link href={`/write-reviews/listed/${review?.property?._id}`}>
+            <Link href="/write-reviews/listed">
               Leave a Review
             </Link>
           </ListingsButtons>

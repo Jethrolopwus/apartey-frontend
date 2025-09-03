@@ -322,7 +322,7 @@ const ReviewsSection: React.FC<ReviewsSectionProps> = ({
               reviews.map((review) => (
                 <article
                   key={review._id}
-                  className="flex gap-4 group cursor-pointer hover:bg-gray-50 p-2 rounded-lg transition-colors"
+                  className="flex gap-2 md:gap-4 group cursor-pointer hover:bg-gray-50 p-2 rounded-lg transition-colors"
                   onClick={() => router.push(`/reviewsPage/${review._id}`)}
                   tabIndex={0}
                   role="button"
@@ -337,7 +337,7 @@ const ReviewsSection: React.FC<ReviewsSectionProps> = ({
                     }
                   }}
                 >
-                                    <div className="w-[180px] h-[120px] flex-shrink-0 rounded-md overflow-hidden relative">
+                                    <div className="w-[120px] h-[80px] md:w-[180px] md:h-[120px] flex-shrink-0 rounded-md overflow-hidden relative">
 
                                           <Image
                         src={
@@ -359,7 +359,7 @@ const ReviewsSection: React.FC<ReviewsSectionProps> = ({
                     )}
                   </div>
                   <div className="flex flex-col">
-                    <h1 className="text-gray-800 font-medium text-lg">
+                    <h1 className="text-gray-800 font-medium text-sm md:text-base lg:text-lg line-clamp-2">
                       {getDisplayAddress(
                         review.location as typeof review.location & {
                           fullAddress?: string;
@@ -388,9 +388,7 @@ const ReviewsSection: React.FC<ReviewsSectionProps> = ({
         <div className="lg:w-1/2 relative">
           {!isLoading && reviews.length > 0 && (
             <div className="absolute top-4 left-4 z-10 bg-white bg-opacity-90 rounded-md px-3 py-2 shadow-md">
-              <p className="text-sm text-gray-700">
-                {reviews.length} review{reviews.length !== 1 ? "s" : ""} found
-              </p>
+  
             </div>
           )}
           <div

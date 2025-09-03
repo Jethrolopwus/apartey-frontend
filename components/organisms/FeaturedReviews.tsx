@@ -13,12 +13,21 @@ const getDisplayAddress = (loc: Review["location"]) => {
   if (loc?.fullAddress && loc.fullAddress.trim() !== "") return loc.fullAddress;
   const parts = [
     loc?.streetAddress || "",
-    loc?.apartmentUnitNumber || "",
+    loc?.apartmentUnitNumber || loc?.apartment || "",
     loc?.district || "",
     loc?.city || "",
     loc?.country || "",
   ].filter(Boolean);
   return parts.length > 0 ? parts.join(", ") : "No Address";
+};
+
+// Helper to get reviewer initial
+const getReviewerInitial = (review: Review) => {
+  if (review.submitAnonymously) return "A";
+  if (review.reviewer?.firstName) {
+    return review.reviewer.firstName.charAt(0).toUpperCase();
+  }
+  return "R";
 };
 
 const FeaturedReviews = () => {
@@ -36,7 +45,7 @@ const FeaturedReviews = () => {
       <section className="max-w-7xl mx-auto px-4 py-10">
         <div className="flex items-center justify-center min-h-[300px]">
           <div className="flex flex-col items-center gap-4">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-teal-600"></div>
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#C85212]"></div>
             <p className="text-lg text-gray-600">Loading reviews...</p>
           </div>
         </div>
@@ -57,7 +66,7 @@ const FeaturedReviews = () => {
           </div>
           <button
             onClick={() => refetch()}
-            className="px-6 py-3 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition-colors focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2"
+            className="px-6 py-3 bg-[#C85212] text-white rounded-lg hover:bg-[#C85212]/90 transition-colors focus:outline-none focus:ring-2 focus:ring-[#C85212] focus:ring-offset-2"
           >
             Try Again
           </button>
@@ -98,7 +107,7 @@ const FeaturedReviews = () => {
           </h2>
         </div>
         <Link href="/reviewsPage">
-          <button className="flex items-center text-gray-600 hover:text-gray-900 transition-colors group">
+          <button className="flex items-center text-gray-600 hover:text-[#C85212] transition-colors group">
             <span className="text-sm md:text-base mr-2">See all</span>
             <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
           </button>
@@ -110,7 +119,8 @@ const FeaturedReviews = () => {
         {featuredReviews.map((review: Review) => (
           <article
             key={review._id}
-            className="bg-white rounded-xl shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden border border-gray-100 group cursor-pointer"
+            className="bg-white rounded-xl shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden border border-gray-100 group cursor-pointer flex flex-col"
+            style={{ minHeight: "370px", boxSizing: "border-box" }}
             onClick={() => router.push(`/reviewsPage/${review._id}`)}
             tabIndex={0}
             role="button"
@@ -124,115 +134,140 @@ const FeaturedReviews = () => {
             }}
           >
             <div className="relative w-full h-48 overflow-hidden">
-              <Image
-                src={
-                  review.linkedProperty?.media?.coverPhoto && 
-                  typeof review.linkedProperty.media.coverPhoto === 'string' &&
-                  review.linkedProperty.media.coverPhoto.trim() !== ''
-                    ? review.linkedProperty.media.coverPhoto
-                    : "/Reviews.png"
-                }
-                alt={`Property at ${review.location?.streetAddress || 'Unknown location'}`}
-                width={400}
-                height={270}
-                className="object-cover w-full h-full"
-                priority={false}
-              />
+              {review.linkedProperty?.media?.coverPhoto ? (
+                <Image
+                  src={
+                    review?.linkedProperty.media?.coverPhoto &&
+                    review.linkedProperty?.media?.coverPhoto.trim() !== ""
+                      ? review.linkedProperty.media.coverPhoto
+                      : "/Reviews.png"
+                  }
+                  alt={
+                    review?.linkedProperty.media?.coverPhoto &&
+                    review.linkedProperty.media?.coverPhoto.trim() !== ""
+                      ? `Property image for ${getDisplayAddress(review.location)}`
+                      : "Reviews placeholder image"
+                  }
+                  width={400}
+                  height={270}
+                  className="object-cover w-full h-full"
+                  style={{ width: 'auto', height: 'auto' }}
+                  priority={false}
+                />
+              ) : (
+                <div className="w-full h-full">
+                  <Image
+                    src="/Reviews.png"
+                    alt="Reviews placeholder image"
+                    width={400}
+                    height={270}
+                    className="object-cover w-full h-full"
+                    style={{ width: 'auto', height: 'auto' }}
+                    priority={false}
+                  />
+                </div>
+              )}
 
               {/* Status and Verification Badges */}
               <div className="absolute top-3 left-3 right-3 flex justify-between">
                 {review.isLinkedToDatabaseProperty && (
-                  <span className="bg-teal-600/90 backdrop-blur-sm text-white text-xs font-semibold px-3 py-1 rounded-full">
+                  <span className="bg-[#C85212]/90 backdrop-blur-sm text-white text-xs font-semibold px-3 py-1 rounded-full">
                     Verified
                   </span>
+                )}
+                {review.linkedProperty && (
+                  <div className="flex items-center gap-2">
+                    <span className="bg-blue-600/90 backdrop-blur-sm text-white text-xs font-semibold px-2 py-1 rounded-full">
+                      {review.linkedProperty.bedrooms}BR
+                    </span>
+                    <span className="bg-blue-600/90 backdrop-blur-sm text-white text-xs font-semibold px-2 py-1 rounded-full">
+                      {review.linkedProperty.bathrooms}BA
+                    </span>
+                  </div>
                 )}
               </div>
             </div>
 
-            <div className="p-4 space-y-3">
-              <h1 className="text-gray-800 font-medium text-lg">
-                {getDisplayAddress(review.location)}
-              </h1>
-              <h3 className="font-medium text-gray-800 text-base line-clamp-2">
-                {review.location.streetAddress}
-                {review.location.apartmentUnitNumber &&
-                  `, ${review.location.apartmentUnitNumber}`}
-                {review.location.city}
-              </h3>
-
-              <div className="flex items-center gap-2">
-                <div className="flex gap-0.5">
-                  {[...Array(5)].map((_, i) => (
-                    <Star
-                      key={i}
-                      size={14}
-                      className={
-                        i < Math.floor(review.overallRating || 0)
-                          ? "fill-yellow-400 text-yellow-400"
-                          : "text-gray-300"
-                      }
-                    />
-                  ))}
+            <div className="p-4 space-y-3 flex-1 flex flex-col justify-between">
+              <div>
+                <h3 className="font-medium text-gray-800 text-base line-clamp-2 mb-1">
+                  {getDisplayAddress(review.location)}
+                </h3>
+                {review.linkedProperty?.price && (
+                  <p className="text-sm text-[#C85212] font-semibold mb-2">
+                    ₦{(review.linkedProperty.price / 1000000).toFixed(1)}M
+                  </p>
+                )}
+                <div className="flex items-center gap-2 mb-1">
+                  <div className="flex gap-0.5">
+                    {[...Array(5)].map((_, i) => (
+                      <Star
+                        key={i}
+                        size={14}
+                        className={
+                          i < Math.floor(review.overallRating || 0)
+                            ? "fill-yellow-400 text-yellow-400"
+                            : i === Math.floor(review.overallRating || 0) && (review.overallRating || 0) % 1 >= 0.5
+                            ? "fill-yellow-400 text-yellow-400 opacity-50"
+                            : "text-gray-300"
+                        }
+                      />
+                    ))}
+                  </div>
+                  <span className="text-sm font-medium text-gray-700">
+                    {(review.overallRating || 0).toFixed(1)}
+                  </span>
                 </div>
-                <span className="text-sm font-medium text-gray-700">
-                  {review.overallRating || 0}
-                </span>
+                <p className="text-gray-600 text-sm line-clamp-3 leading-relaxed mb-2">
+                  {review.detailedReview || "No review text provided."}
+                </p>
               </div>
 
-              <p className="text-gray-600 text-sm line-clamp-3 leading-relaxed">
-                {review.detailedReview}
-              </p>
-
               {/* Rating Details */}
-              <div className="flex items-center justify-between text-xs text-gray-500 pt-2 border-t border-gray-100">
+              <div className="flex items-center justify-between text-xs text-gray-500 pt-2 border-t border-gray-100 mb-2">
                 <div className="flex items-center gap-1">
                   <span className="font-medium">Value:</span>
-                  <span>{review.valueForMoney}/5</span>
+                  <span>{review.valueForMoney || "N/A"}/5</span>
                 </div>
                 <div className="flex items-center gap-1">
                   <span className="font-medium">Experience:</span>
-                  <span>{review.overallExperience}/5</span>
+                  <span>{review.overallExperience || "N/A"}/5</span>
                 </div>
               </div>
 
               {/* Footer */}
               <div className="flex items-center justify-between pt-2">
                 <div className="flex items-center gap-2">
-                  <div className="w-7 h-7 rounded-full bg-gradient-to-br from-teal-400 to-teal-600 flex items-center justify-center">
+                  <div className="w-7 h-7 rounded-full bg-[#C85212] flex items-center justify-center">
                     <span className="text-white text-xs font-semibold">
-                      {review.submitAnonymously ? "A" : "R"}
+                      {getReviewerInitial(review)}
                     </span>
                   </div>
                   <span className="text-sm font-medium text-gray-800">
                     <p className="font-semibold text-gray-900">
                       {review?.submitAnonymously
                         ? "Anonymous Reviewer"
-                        : review?.reviewer?.firstName || ""}
+                        : review?.reviewer?.firstName || "Reviewer"}
                     </p>
                   </span>
                 </div>
                 <span className="text-xs text-gray-400">
-                  {new Date(review.createdAt || "").toLocaleDateString("en-US", {
-                    month: "short",
-                    day: "numeric",
-                    year: "numeric",
-                  })}
+                  {review.createdAt
+                    ? new Date(review.createdAt).toLocaleDateString(
+                        "en-US",
+                        {
+                          month: "short",
+                          day: "numeric",
+                          year: "numeric",
+                        }
+                      )
+                    : "Recently"}
                 </span>
               </div>
             </div>
           </article>
         ))}
       </div>
-
-      {/* Pagination info */}
-      {data?.totalPages && data.totalPages > 1 && (
-        <div className="text-center mt-4">
-          <p className="text-sm text-gray-600">
-            Showing {featuredReviews.length} of{" "}
-            {data?.totalReviews ?? reviews.length} reviews
-          </p>
-        </div>
-      )}
     </section>
   );
 };
