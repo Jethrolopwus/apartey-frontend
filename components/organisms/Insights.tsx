@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import {
   XAxis,
   YAxis,
@@ -85,17 +85,30 @@ const SuccessfulDealCard: React.FC<SuccessfulDealCardProps> = ({
 const Insights: React.FC = () => {
   const { data: insightData, isLoading, error } = useGetInsightStatsQuery();
 
+  // State for monthly trends filter
+  const [selectedTrendFilter, setSelectedTrendFilter] = useState<'All' | 'Rent' | 'Sale' | 'Swap'>('All');
+
   // Transform API data for charts
   const transformedMonthlyTrendsData = React.useMemo(() => {
     if (!insightData?.monthlyTrends?.All) return [];
     
-    return insightData.monthlyTrends.All.map((item) => ({
-      month: item.month,
-      rent: insightData.monthlyTrends.Rent.find(r => r.month === item.month)?.count || 0,
-      sale: insightData.monthlyTrends.Sale.find(s => s.month === item.month)?.count || 0,
-      swap: insightData.monthlyTrends.Swap.find(s => s.month === item.month)?.count || 0,
-    }));
-  }, [insightData]);
+    // Filter data based on selected trend filter
+    if (selectedTrendFilter === 'All') {
+      return insightData.monthlyTrends.All.map((item) => ({
+        month: item.month,
+        rent: insightData.monthlyTrends.Rent.find(r => r.month === item.month)?.count || 0,
+        sale: insightData.monthlyTrends.Sale.find(s => s.month === item.month)?.count || 0,
+        swap: insightData.monthlyTrends.Swap.find(s => s.month === item.month)?.count || 0,
+      }));
+    } else {
+      // Show only selected property type data
+      const selectedData = insightData.monthlyTrends[selectedTrendFilter] || [];
+      return selectedData.map((item) => ({
+        month: item.month,
+        [selectedTrendFilter.toLowerCase()]: item.count,
+      }));
+    }
+  }, [insightData, selectedTrendFilter]);
 
   const transformedPropertyTypeDistribution = React.useMemo(() => {
     if (!insightData?.typeDistribution) return [];
@@ -305,21 +318,41 @@ const Insights: React.FC = () => {
               Property listing trends over the past 6 months
             </p>
             
-            {/* Filter Tabs */}
-            <div className="flex space-x-1 mb-6 bg-gray-100 p-1 rounded-lg">
-              <button className="px-4 py-2 text-sm font-medium text-gray-900 bg-white rounded-md shadow-sm">
-                All Types
-              </button>
-              <button className="px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-900">
-                Rent
-              </button>
-              <button className="px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-900">
-                Sale
-              </button>
-              <button className="px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-900">
-                Swap
-              </button>
-            </div>
+                          {/* Filter Tabs */}
+              <div className="flex space-x-1 mb-6 bg-gray-100 p-1 rounded-lg">
+                <button 
+                  className={`px-4 py-2 text-sm font-medium ${
+                    selectedTrendFilter === 'All' ? 'text-gray-900 bg-white rounded-md shadow-sm' : 'text-gray-600 hover:text-gray-900'
+                  }`}
+                  onClick={() => setSelectedTrendFilter('All')}
+                >
+                  All Types
+                </button>
+                <button 
+                  className={`px-4 py-2 text-sm font-medium ${
+                    selectedTrendFilter === 'Rent' ? 'text-gray-900 bg-white rounded-md shadow-sm' : 'text-gray-600 hover:text-gray-900'
+                  }`}
+                  onClick={() => setSelectedTrendFilter('Rent')}
+                >
+                  Rent
+                </button>
+                <button 
+                  className={`px-4 py-2 text-sm font-medium ${
+                    selectedTrendFilter === 'Sale' ? 'text-gray-900 bg-white rounded-md shadow-sm' : 'text-gray-600 hover:text-gray-900'
+                  }`}
+                  onClick={() => setSelectedTrendFilter('Sale')}
+                >
+                  Sale
+                </button>
+                <button 
+                  className={`px-4 py-2 text-sm font-medium ${
+                    selectedTrendFilter === 'Swap' ? 'text-gray-900 bg-white rounded-md shadow-sm' : 'text-gray-600 hover:text-gray-900'
+                  }`}
+                  onClick={() => setSelectedTrendFilter('Swap')}
+                >
+                  Swap
+                </button>
+              </div>
             
             <div className="h-80">
               <ResponsiveContainer width="100%" height="100%">
@@ -339,30 +372,45 @@ const Insights: React.FC = () => {
                     tick={{ fill: '#6B7280' }}
                     tickFormatter={(value) => value.toLocaleString()}
                   />
-                  <Area
-                    type="monotone"
-                    dataKey="rent"
-                    stackId="1"
-                    stroke="#10B981"
-                    fill="#10B981"
-                    fillOpacity={0.8}
-                  />
-                  <Area
-                    type="monotone"
-                    dataKey="sale"
-                    stackId="1"
-                    stroke="#F59E0B"
-                    fill="#F59E0B"
-                    fillOpacity={0.8}
-                  />
-                  <Area
-                    type="monotone"
-                    dataKey="swap"
-                    stackId="1"
-                    stroke="#FCD34D"
-                    fill="#FCD34D"
-                    fillOpacity={0.8}
-                  />
+                  {/* The selectedTrendFilter state is not defined in this component.
+                      Assuming it will be managed by a parent component or context.
+                      For now, it will render all types by default. */}
+                  {selectedTrendFilter === 'All' ? (
+                    <>
+                      <Area
+                        type="monotone"
+                        dataKey="rent"
+                        stackId="1"
+                        stroke="#10B981"
+                        fill="#10B981"
+                        fillOpacity={0.8}
+                      />
+                      <Area
+                        type="monotone"
+                        dataKey="sale"
+                        stackId="1"
+                        stroke="#F59E0B"
+                        fill="#F59E0B"
+                        fillOpacity={0.8}
+                      />
+                      <Area
+                        type="monotone"
+                        dataKey="swap"
+                        stackId="1"
+                        stroke="#FCD34D"
+                        fill="#FCD34D"
+                        fillOpacity={0.8}
+                      />
+                    </>
+                  ) : (
+                    <Area
+                      type="monotone"
+                      dataKey={selectedTrendFilter.toLowerCase()}
+                      stroke="#C85212"
+                      fill="#C85212"
+                      fillOpacity={0.8}
+                    />
+                  )}
                 </AreaChart>
               </ResponsiveContainer>
             </div>

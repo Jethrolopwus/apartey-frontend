@@ -13,8 +13,19 @@ export interface Review {
   updatedAt?: string;
   location: ReviewLocation;
   linkedProperty?: {
+    _id?: string;
+    propertyType?: string;
+    location?: ReviewLocation;
+    price?: number;
+    bedrooms?: number;
+    bathrooms?: number;
     media?: {
       coverPhoto?: string;
+      uploads?: Array<{
+        url: string;
+        type: string;
+        _id: string;
+      }>;
     };
   } | null;
   isLinkedToDatabaseProperty?: boolean;
@@ -23,6 +34,7 @@ export interface Review {
   valueForMoney?: number;
   overallExperience?: number;
   detailedReview?: string;
+  costOfRepairsCoverage?: string;
 }
 
 export interface Reviewer {
@@ -46,7 +58,7 @@ export interface AllReviewsProps {
   gridCols?: string;
 }
 export interface ReviewLocation {
-  [x: string]: string | undefined;
+  [x: string]: string | number | boolean | undefined | { latitude: number; longitude: number };
   fullAddress?: string;
   streetAddress?: string;
   apartmentUnitNumber?: string;
@@ -57,6 +69,13 @@ export interface ReviewLocation {
   street?: string;
   postalCode?: string;
   countryCode?: string;
+  coordinates?: {
+    latitude: number;
+    longitude: number;
+  };
+  displayOnMap?: boolean;
+  streetNumber?: string;
+  apartment?: string;
 }
 export interface UseGetAllReviewsQueryParams {
   limit?: number;
@@ -670,3 +689,90 @@ export interface userLocationData {
 }
 
 export type PropertyCategory = "Swap" | "Rent" | "Buy";
+
+export interface FavoriteItem {
+  _id: string;
+  location: {
+    coordinates: {
+      latitude: number;
+      longitude: number;
+    };
+    displayOnMap: boolean;
+    country: string;
+    stateOrRegion: string;
+    district: string;
+    postalCode: string;
+    street: string;
+    countryCode: string;
+    apartment: string;
+    fullAddress: string;
+  };
+  media: {
+    coverPhoto: string;
+    uploads: Array<{
+      url: string;
+      type: string;
+      _id: string;
+    }>;
+  };
+  propertyDetails: {
+    price: number;
+    notForCreditSale: boolean;
+    readyToCooperateWithAgents: boolean;
+    possibleExchange: boolean;
+    currency: string;
+    negotiatedPrice: boolean;
+    amenities: string[];
+    infrastructure: string[];
+    totalFloors: number;
+    floor: number;
+    totalAreaSqM: number;
+    livingAreaSqM: number;
+    kitchenAreaSqM: number;
+    bedrooms: number;
+    bathrooms: number;
+    parkingSpots: number;
+    description: string;
+  };
+  listingDuration: {
+    startDate: string;
+    quickSelect: string;
+    endDate: string;
+  };
+  contactInfo: {
+    openForTourSchedule: boolean;
+    typeOfOffer: string;
+    firstName: string;
+    lastName: string;
+    email: string;
+    phoneNumber: string;
+  };
+  adPromotion: {
+    certifiedByFinder: boolean;
+    liftsToTopCount: number;
+    detailedAnalytics: boolean;
+    selectedTier: string;
+  };
+  deactivationMeta: {
+    location: string | null;
+    reason: string;
+    customNote: string | null;
+    date: string;
+  };
+  lister: string;
+  category: "Swap" | "Rent" | "Sale";
+  propertyType: string;
+  condition: string;
+  petPolicy: string;
+  isAvailable: boolean;
+  views: number;
+  status: string;
+  createdAt: string;
+  updatedAt: string;
+  __v: number;
+}
+
+export interface FavoritesResponse {
+  favorites: FavoriteItem[];
+  message: string;
+}

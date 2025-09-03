@@ -1,6 +1,6 @@
 "use client";
 import React, { useState, useEffect } from "react";
-import { Search, ArrowLeft, ArrowRight as ArrowRightIcon } from "lucide-react";
+import { Search } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -359,36 +359,50 @@ const BlogDetails: React.FC<BlogDetailsProps> = ({ id }) => {
 
           {/* Pagination Controls */}
           {pagination && pagination.totalPages > 1 && (
-            <div className="flex items-center justify-between mt-12">
-              <div className="text-sm text-gray-700">
-                Page {pagination.currentPage} of {pagination.totalPages}
-              </div>
-              <div className="flex items-center space-x-2">
+            <div className="flex items-center justify-center mt-12 gap-2">
+              <button
+                onClick={() => handlePageChange(pagination.currentPage - 1)}
+                disabled={!pagination.hasPreviousPage}
+                className="px-4 py-2 text-sm text-gray-500 hover:text-[#C85212] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                ← Previous
+              </button>
+              
+              {/* Page Numbers 1-10 */}
+              {[...Array(Math.min(pagination.totalPages, 10))].map((_, i) => (
                 <button
-                  onClick={() => handlePageChange(pagination.currentPage - 1)}
-                  disabled={!pagination.hasPreviousPage}
-                  className={`px-4 py-2 text-sm font-medium rounded-md border ${
-                    pagination.hasPreviousPage
-                      ? "text-gray-700 bg-white border-gray-300 hover:bg-gray-50"
-                      : "text-gray-400 bg-gray-100 border-gray-200 cursor-not-allowed"
+                  key={i}
+                  className={`w-8 h-8 text-sm rounded transition-colors ${
+                    i + 1 === pagination.currentPage
+                      ? "bg-[#C85212] text-white"
+                      : "text-gray-600 hover:bg-gray-100"
                   }`}
+                  onClick={() => handlePageChange(i + 1)}
                 >
-                  <ArrowLeft className="w-4 h-4 mr-1 inline" />
-                  Previous
+                  {i + 1}
                 </button>
-                <button
-                  onClick={() => handlePageChange(pagination.currentPage + 1)}
-                  disabled={!pagination.hasNextPage}
-                  className={`px-4 py-2 text-sm font-medium rounded-md border ${
-                    pagination.hasNextPage
-                      ? "text-gray-700 bg-white border-gray-300 hover:bg-gray-50"
-                      : "text-gray-400 bg-gray-100 border-gray-200 cursor-not-allowed"
-                  }`}
-                >
-                  Next
-                  <ArrowRightIcon className="w-4 h-4 ml-1 inline" />
-                </button>
-              </div>
+              ))}
+              
+              {/* Ellipsis and Last Page if more than 10 pages */}
+              {pagination.totalPages > 10 && (
+                <>
+                  <span className="px-2 text-gray-400">...</span>
+                  <button
+                    className="px-2 py-1 text-sm text-gray-600 hover:bg-gray-100 rounded transition-colors"
+                    onClick={() => handlePageChange(pagination.totalPages)}
+                  >
+                    {pagination.totalPages}
+                  </button>
+                </>
+              )}
+              
+              <button
+                onClick={() => handlePageChange(pagination.currentPage + 1)}
+                disabled={!pagination.hasNextPage}
+                className="px-4 py-2 text-sm text-gray-500 hover:text-[#C85212] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Next →
+              </button>
             </div>
           )}
         </section>

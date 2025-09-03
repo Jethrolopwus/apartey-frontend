@@ -185,8 +185,10 @@ const WriteListedPropertyReviews: React.FC<WriteListedPropertyReviewsProps> = ({
   // Pre-fill address fields when property data is fetched or when prefilled address is provided
   useEffect(() => {
     if (propertyData && !isPropertyLoading && !propertyError) {
+      // Pre-fill all available property data across different form steps
       dispatch(
         setMultipleFields({
+          // Step 1: Property Details
           country: propertyData.location?.country || "",
           countryCode: propertyData.location?.countryCode || "NG",
           stateOrRegion: propertyData.location?.stateOrRegion || "",
@@ -195,13 +197,53 @@ const WriteListedPropertyReviews: React.FC<WriteListedPropertyReviewsProps> = ({
           district: propertyData.location?.district || "",
           postalCode: propertyData.location?.postalCode || "",
           streetAddress: propertyData.location?.streetAddress || "",
+          fullAddress: propertyData.location?.fullAddress || "",
+          
+          // Step 1: Stay Details (pre-filled from property data)
+          numberOfRooms: propertyData.propertyDetails?.bedrooms || 1,
+          numberOfOccupants: propertyData.propertyDetails?.bedrooms || 1, // Default to same as rooms
+          
+          // Step 2: Cost Details (pre-filled where available)
+          rentType: propertyData.propertyDetails?.period || "monthly",
+          rent: {
+            amount: propertyData.propertyDetails?.price || 0,
+            currency: propertyData.propertyDetails?.currency || "NGN"
+          },
+          
+          // Step 2: Amenities (pre-filled where available)
+          furnished: propertyData.propertyDetails?.furnished || false,
+          
+          // Step 2: Accessibility (can be filled by user)
+          nearestGroceryStore: "",
+          nearestPark: "",
+          nearestRestaurant: "",
+          
+          // Step 3: Ratings (to be filled by user)
+          valueForMoney: 0,
+          overallExperience: 0,
+          detailedReview: "",
+          costOfRepairs: "",
+          
+          // Other fields
+          moveOutDate: "",
+          appliances: [],
+          buildingFacilities: [],
+          landlordLanguages: [],
+          securityDepositRequired: false,
+          agentFeeRequired: false,
+          fixedUtilityCost: false,
+          centralHeating: false,
+          julyUtilities: { amount: 0, currency: "NGN" },
+          januaryUtilities: { amount: 0, currency: "NGN" },
+          isAnonymous: false,
+          agreeToTerms: false,
         })
       );
     } else if (prefilledAddress) {
       // Parse the prefilled address and set it in the form
-      const addressParts = prefilledAddress.split(', ');
-      const streetAddress = addressParts[0] || "";
-      const country = addressParts[2] || "";
+              const addressParts = prefilledAddress.split(', ');
+        const streetAddress = addressParts[0] || "";
+        const country = addressParts[2] || "";
       
       dispatch(
         setMultipleFields({
@@ -214,6 +256,33 @@ const WriteListedPropertyReviews: React.FC<WriteListedPropertyReviewsProps> = ({
           postalCode: "",
           streetAddress: streetAddress,
           fullAddress: prefilledAddress,
+
+          
+          // Default values for other fields
+          numberOfRooms: 1,
+          numberOfOccupants: 1,
+          rentType: "monthly",
+          rent: { amount: 0, currency: "NGN" },
+          furnished: false,
+          moveOutDate: "",
+          appliances: [],
+          buildingFacilities: [],
+          landlordLanguages: [],
+          securityDepositRequired: false,
+          agentFeeRequired: false,
+          fixedUtilityCost: false,
+          centralHeating: false,
+          julyUtilities: { amount: 0, currency: "NGN" },
+          januaryUtilities: { amount: 0, currency: "NGN" },
+          nearestGroceryStore: "",
+          nearestPark: "",
+          nearestRestaurant: "",
+          valueForMoney: 0,
+          overallExperience: 0,
+          detailedReview: "",
+          costOfRepairs: "",
+          isAnonymous: false,
+          agreeToTerms: false,
         })
       );
     }
@@ -265,15 +334,15 @@ const WriteListedPropertyReviews: React.FC<WriteListedPropertyReviewsProps> = ({
 
   const getCurrentStepMessage = () => {
     if (currentStep === 1)
-      return "Let's start your property review journey! The address details are pre-filled.";
+      return "Property details are pre-filled! Review and update as needed.";
     if (currentStep === 2 && currentSubStep === 1)
-      return "You're doing great! Now let's dive into your experience.";
+      return "Cost details are pre-filled from property data. Update with your experience.";
     if (currentStep === 2 && currentSubStep === 2)
-      return "Tell us about the property's amenities and location";
+      return "Tell us about the property's amenities and location accessibility";
     if (currentStep === 2 && currentSubStep === 3)
       return "Rate your experience with this property";
     if (currentStep === 3)
-      return "Almost there! Just a few more details and you're done";
+      return "Almost there! Review your information and submit.";
     return "";
   };
 
@@ -536,8 +605,14 @@ const WriteListedPropertyReviews: React.FC<WriteListedPropertyReviewsProps> = ({
               </div>
 
               <div className="space-y-6">
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+                  <p className="text-blue-700 text-sm flex items-center">
+                    <span className="mr-2">ℹ</span>
+                    Property address details are pre-filled from the listing. You can review and edit if needed.
+                  </p>
+                </div>
                 <AddressForm
-                  readOnly={true}
+                  readOnly={false}
                   prefilledData={propertyData?.location || (prefilledAddress ? {
                     streetAddress: prefilledAddress,
                     street: prefilledAddress.split(', ')[0] || "",
@@ -546,7 +621,6 @@ const WriteListedPropertyReviews: React.FC<WriteListedPropertyReviewsProps> = ({
                     apartment: "",
                     district: "",
                     postalCode: "",
-                    city: prefilledAddress.split(', ')[1] || "",
                   } : undefined)}
                 />
                 <div className="space-y-4">

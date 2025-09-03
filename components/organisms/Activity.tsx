@@ -4,23 +4,32 @@ import { Eye, FileText } from "lucide-react";
 import { useGetUserActivitiesQuery } from "@/Hooks/use-getUsersActivities.query";
 import { toast } from "react-hot-toast";
 
-// Define the Activity type based on observed properties
-interface Activity {
-  _id?: string;
-  type?: string;
-  property?: {
-    title?: string;
-    fullAddress?: string;
-    location?: string;
-    price?: number;
+
+interface PropertyPrice {
+  rent?: {
+    monthly?: number;
+    yearly?: number;
   };
-  read?: boolean;
-  timeViewed?: string;
-  timeAgo?: string;
-  title?: string;
-  description?: string;
-  createdAt?: string;
-  // Add any other fields as needed
+  swap?: Record<string, unknown>;
+  currency?: string;
+}
+
+interface Property {
+  _id: string;
+  title: string;
+  price?: number | PropertyPrice;
+  location: string;
+  fullAddress: string;
+}
+
+interface Activity {
+  _id: string;
+  type: string;
+  read: boolean;
+  timestamp: string;
+  timeViewed: string;
+  timeAgo: string;
+  property: Property;
 }
 
 export default function Activities() {
@@ -31,6 +40,27 @@ export default function Activities() {
       toast.success(data.message);
     }
   }, [data]);
+
+  // Helper function to format price display
+  const formatPrice = (price: number | PropertyPrice | undefined): string => {
+    if (!price) return "";
+    
+    if (typeof price === 'number') {
+      return `₦${price.toLocaleString()}`;
+    }
+    
+    if (price.rent?.monthly) {
+      const currency = price.currency || "NGN";
+      return `${currency}${price.rent.monthly.toLocaleString()}`;
+    }
+    
+    if (price.rent?.yearly) {
+      const currency = price.currency || "NGN";
+      return `${currency}${price.rent.yearly.toLocaleString()}`;
+    }
+    
+    return "";
+  };
 
   return (
     <div className="bg-gray-100 min-h-screen p-8">
@@ -61,14 +91,12 @@ export default function Activities() {
           {/* Activities List */}
           {data && data.activities && data.activities.length > 0 ? (
             <div>
-              {data.activities.map((activity: unknown, idx: number) => {
-                if (typeof activity !== 'object' || activity === null) return null;
-                const act = activity as Activity;
-                if (act.type === "viewed_property" && act.property) {
+              {data.activities.map((activity: Activity, idx: number) => {
+                if (activity.type === "viewed_property" && activity.property) {
                   return (
                     <div
-                      key={act._id || idx}
-                      className={`rounded-lg p-4 mb-8 ${!act.read ? "bg-orange-100 border-l-4 border-orange-400" : "bg-orange-50"}`}
+                      key={activity._id || idx}
+                      className={`rounded-lg p-4 mb-8 ${!activity.read ? "bg-orange-100 border-l-4 border-orange-400" : "bg-orange-50"}`}
                     >
                       <div className="flex items-start space-x-3">
                         <div className="flex-shrink-0 mt-1">
@@ -79,29 +107,29 @@ export default function Activities() {
                             <div>
                               <h3 className="text-sm font-medium text-gray-900 mb-1">
                                 Viewed Property
-                                {!act.read && (
+                                {!activity.read && (
                                   <span className="ml-2 inline-block px-2 py-0.5 text-xs bg-orange-500 text-white rounded-full align-middle">Unread</span>
                                 )}
                               </h3>
                               <p className="text-sm text-gray-800 font-semibold">
-                                {act.property.title}
+                                {activity.property.title}
                               </p>
                               <p className="text-sm text-gray-600">
-                                {act.property.fullAddress}
+                                {activity.property.fullAddress}
                               </p>
                               <p className="text-sm text-gray-600">
-                                {act.property.location}
+                                {activity.property.location}
                               </p>
                               <p className="text-sm text-gray-600">
-                                {act.property.price ? `₦${act.property.price.toLocaleString()}` : ""}
+                                {formatPrice(activity.property.price)}
                               </p>
                             </div>
                             <div className="text-right min-w-fit ml-4">
                               <span className="block text-xs text-gray-500">
-                                {act.timeViewed ? act.timeViewed : ""}
+                                {activity.timeViewed ? activity.timeViewed : ""}
                               </span>
                               <span className="block text-xs text-gray-500">
-                                {act.timeAgo ? act.timeAgo : ""}
+                                {activity.timeAgo ? activity.timeAgo : ""}
                               </span>
                             </div>
                           </div>
@@ -110,9 +138,9 @@ export default function Activities() {
                     </div>
                   );
                 }
-                // Fallback for other activity types
+                // Fallback for other activity types (like listed_property)
                 return (
-                  <div key={act._id || idx} className="bg-orange-50 rounded-lg p-4 mb-8">
+                  <div key={activity._id || idx} className="bg-orange-50 rounded-lg p-4 mb-8">
                     <div className="flex items-start space-x-3">
                       <div className="flex-shrink-0 mt-1">
                         <Eye className="w-5 h-5 text-gray-600" />
@@ -121,14 +149,23 @@ export default function Activities() {
                         <div className="flex justify-between items-start">
                           <div>
                             <h3 className="text-sm font-medium text-gray-900 mb-1">
-                              {act.title || "Activity"}
+                              {activity.type === "listed_property" ? "Listed Property" : "Activity"}
                             </h3>
                             <p className="text-sm text-gray-600">
-                              {act.description || "No description"}
+                              {activity.property.title}
+                            </p>
+                            <p className="text-sm text-gray-600">
+                              {activity.property.fullAddress}
+                            </p>
+                            <p className="text-sm text-gray-600">
+                              {activity.property.location}
+                            </p>
+                            <p className="text-sm text-gray-600">
+                              {formatPrice(activity.property.price)}
                             </p>
                           </div>
                           <span className="text-xs text-gray-500 whitespace-nowrap ml-4">
-                            {act.timeAgo || (act.createdAt ? new Date(act.createdAt).toLocaleString() : "")}
+                            {activity.timeAgo || (activity.timestamp ? new Date(activity.timestamp).toLocaleString() : "")}
                           </span>
                         </div>
                       </div>

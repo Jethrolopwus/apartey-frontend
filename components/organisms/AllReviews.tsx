@@ -40,6 +40,15 @@ const getDisplayAddress = (loc: ReviewLocation) => {
   return parts.length > 0 ? parts.join(", ") : "No Address";
 };
 
+// Helper to get reviewer initial
+const getReviewerInitial = (review: Review) => {
+  if (review.submitAnonymously) return "A";
+  if (review.reviewer?.firstName) {
+    return review.reviewer.firstName.charAt(0).toUpperCase();
+  }
+  return "R";
+};
+
 const AllReviews: React.FC<AllReviewsProps> = ({
   className = "",
   showHeader = true,
@@ -66,7 +75,7 @@ const AllReviews: React.FC<AllReviewsProps> = ({
   const { data, isLoading, error, refetch } = useGetAllReviewsQuery({
     sortBy: "createdAt",
     sortOrder: "desc",
-    limit: maxItems || 10,
+    limit: maxItems || 6, // Changed to 6 as requested
     countryCode: selectedCountryCode,
     page: Number(searchParams.get("page")) || 1,
     searchQuery: searchQuery || undefined,
@@ -145,7 +154,7 @@ const AllReviews: React.FC<AllReviewsProps> = ({
     if (searchQuery) {
       params.set("q", encodeURIComponent(searchQuery));
     }
-    params.delete("page"); // Reset to page 1
+    params.delete("page"); 
     const url = `/reviewsPage?${params.toString()}`;
     console.log("Navigating to:", url);
     router.push(url, { scroll: false });
@@ -300,6 +309,10 @@ const AllReviews: React.FC<AllReviewsProps> = ({
     ? filteredReviews.slice(0, maxItems)
     : filteredReviews;
 
+  
+  const totalPages = 10;
+  const currentPage = Number(searchParams.get("page")) || 1;
+
   return (
     <div className={`bg-gray-50 ${className}`}>
       <div className="max-w-7xl mx-auto px-4 py-8">
@@ -417,8 +430,8 @@ const AllReviews: React.FC<AllReviewsProps> = ({
                       }
                       alt={
                         review?.linkedProperty.media?.coverPhoto &&
-                        review.linkedProperty?.media?.coverPhoto.trim() !== ""
-                          ? `Property image for ${review.location.streetAddress}`
+                        review.linkedProperty.media?.coverPhoto.trim() !== ""
+                          ? `Property image for ${getDisplayAddress(review.location)}`
                           : "Reviews placeholder image"
                       }
                       width={400}
@@ -446,6 +459,16 @@ const AllReviews: React.FC<AllReviewsProps> = ({
                         Verified
                       </span>
                     )}
+                    {review.linkedProperty && (
+                      <div className="flex items-center gap-2">
+                        <span className="bg-blue-600/90 backdrop-blur-sm text-white text-xs font-semibold px-2 py-1 rounded-full">
+                          {review.linkedProperty.bedrooms}BR
+                        </span>
+                        <span className="bg-blue-600/90 backdrop-blur-sm text-white text-xs font-semibold px-2 py-1 rounded-full">
+                          {review.linkedProperty.bathrooms}BA
+                        </span>
+                      </div>
+                    )}
                   </div>
                 </div>
                 <div className="p-4 space-y-3 flex-1 flex flex-col justify-between">
@@ -453,6 +476,11 @@ const AllReviews: React.FC<AllReviewsProps> = ({
                     <h3 className="font-medium text-gray-800 text-base line-clamp-2 mb-1">
                       {getDisplayAddress(review.location)}
                     </h3>
+                    {review.linkedProperty?.price && (
+                      <p className="text-sm text-teal-600 font-semibold mb-2">
+                        ₦{(review.linkedProperty.price / 1000000).toFixed(1)}M
+                      </p>
+                    )}
                     <div className="flex items-center gap-2 mb-1">
                       <div className="flex gap-0.5">
                         {renderStars(review.overallRating)}
@@ -477,9 +505,9 @@ const AllReviews: React.FC<AllReviewsProps> = ({
                   </div>
                   <div className="flex items-center justify-between pt-2">
                     <div className="flex items-center gap-2">
-                      <div className="w-7 h-7 rounded-full bg-gradient-to-br from-teal-400 to-teal-600 flex items-center justify-center">
+                      <div className="w-7 h-7 rounded-full bg-[#C85212] flex items-center justify-center">
                         <span className="text-white text-xs font-semibold">
-                          {review.submitAnonymously ? "A" : "R"}
+                          {getReviewerInitial(review)}
                         </span>
                       </div>
                       <span className="text-sm font-medium text-gray-800">
@@ -508,11 +536,11 @@ const AllReviews: React.FC<AllReviewsProps> = ({
             ))}
           </div>
         )}
-        {showHeader && data?.totalPages && data.totalPages > 1 && (
+        {showHeader && totalPages > 1 && (
           <div className="flex items-center justify-center mt-12 gap-2">
             <button
               className="px-4 py-2 text-sm text-gray-500 hover:text-teal-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              disabled={!data.hasPreviousPage}
+              disabled={currentPage === 1}
               onClick={() => {
                 const params = new URLSearchParams();
                 params.set("countryCode", selectedCountryCode || "NG");
@@ -522,20 +550,20 @@ const AllReviews: React.FC<AllReviewsProps> = ({
                 if (searchQuery) {
                   params.set("q", encodeURIComponent(searchQuery));
                 }
-                params.set("page", (data.currentPage - 1).toString());
-                const url = `/reviews?${params.toString()}`;
+                params.set("page", (currentPage - 1).toString());
+                const url = `/reviewsPage?${params.toString()}`;
                 console.log("Navigating to:", url);
                 router.push(url);
               }}
             >
               ← Previous
             </button>
-            {[...Array(Math.min(data.totalPages, 10))].map((_, i) => (
+            {[...Array(Math.min(totalPages, 10))].map((_, i) => (
               <button
                 key={i}
                 className={`w-8 h-8 text-sm rounded transition-colors ${
-                  i + 1 === (data.currentPage || 1)
-                    ? "bg-teal-600 text-white"
+                  i + 1 === currentPage
+                    ? "bg-[#C85212] text-white"
                     : "text-gray-600 hover:bg-gray-100"
                 }`}
                 onClick={() => {
@@ -548,7 +576,7 @@ const AllReviews: React.FC<AllReviewsProps> = ({
                     params.set("q", encodeURIComponent(searchQuery));
                   }
                   params.set("page", (i + 1).toString());
-                  const url = `/reviews?${params.toString()}`;
+                  const url = `/reviewsPage?${params.toString()}`;
                   console.log("Navigating to:", url);
                   router.push(url);
                 }}
@@ -556,7 +584,7 @@ const AllReviews: React.FC<AllReviewsProps> = ({
                 {i + 1}
               </button>
             ))}
-            {data.totalPages > 10 && (
+            {totalPages > 10 && (
               <>
                 <span className="px-2 text-gray-400">...</span>
                 <button
@@ -570,19 +598,19 @@ const AllReviews: React.FC<AllReviewsProps> = ({
                     if (searchQuery) {
                       params.set("q", encodeURIComponent(searchQuery));
                     }
-                    params.set("page", data.totalPages.toString());
-                    const url = `/reviews?${params.toString()}`;
+                    params.set("page", totalPages.toString());
+                    const url = `/reviewsPage?${params.toString()}`;
                     console.log("Navigating to:", url);
                     router.push(url);
                   }}
                 >
-                  {data.totalPages}
+                  {totalPages}
                 </button>
               </>
             )}
             <button
-              className="px-4 py-2 text-sm text-gray-500 hover:text-teal-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              disabled={!data.hasNextPage}
+              className="px-4 py-2 text-sm text-gray-500 hover:text-[#C85212] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              disabled={currentPage === totalPages}
               onClick={() => {
                 const params = new URLSearchParams();
                 params.set("countryCode", selectedCountryCode || "NG");
@@ -592,8 +620,8 @@ const AllReviews: React.FC<AllReviewsProps> = ({
                 if (searchQuery) {
                   params.set("q", encodeURIComponent(searchQuery));
                 }
-                params.set("page", (data.currentPage + 1).toString());
-                const url = `/reviews?${params.toString()}`;
+                params.set("page", (currentPage + 1).toString());
+                const url = `/reviewsPage?${params.toString()}`;
                 console.log("Navigating to:", url);
                 router.push(url);
               }}

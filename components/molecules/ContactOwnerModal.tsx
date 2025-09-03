@@ -57,7 +57,7 @@ const ContactOwnerModal: React.FC<ContactOwnerModalProps> = ({ open, onClose, pr
           value={message}
           onChange={e => setMessage(e.target.value)}
         />
-        <div className="flex justify-end gap-2 mt-2">
+        <div className="flex justify-between gap-2 mt-2">
           <button
             className="px-4 py-2 text-gray-600 bg-gray-100 rounded-md hover:bg-gray-200 text-sm"
             onClick={onClose}

@@ -113,10 +113,10 @@ const UserDropdownMenu: React.FC<UserDropdownMenuProps> = ({
       icon: Heart,
       route:
         role?.toLowerCase() === "homeowner"
-          ? "/landlord/favorites"
+          ? "/landlord/profile-favorite"
           : role?.toLowerCase() === "agent"
-          ? "/agent/favorites"
-          : "/renter-profile/favorites",
+          ? "/agent/profile-favorite"
+          : "/profile-favorite",
       hasNotification: true,
       notificationCount: favoriteCount,
     },

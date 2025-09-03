@@ -6,6 +6,7 @@ import { useGetUserFavoriteQuery } from "@/Hooks/use-getUsersFavorites.query";
 import { useUpdatePropertyToggleLikeMutation } from "@/Hooks/use.propertyLikeToggle.mutation";
 import { toast } from "react-hot-toast";
 import Image from "next/image";
+import type { FavoriteItem } from "@/types/generated";
 
 interface PropertyCardProps {
   id: string;
@@ -19,6 +20,7 @@ interface PropertyCardProps {
   priceOriginal: string;
   priceDiscounted: string;
   image: string;
+  category: string;
   isFavorited?: boolean;
   onToggleFavorite?: (id: string) => void;
 }
@@ -26,27 +28,6 @@ interface PropertyCardProps {
 interface FavoritesPageProps {
   properties?: PropertyCardProps[];
   onViewAll?: () => void;
-}
-
-interface FavoriteItem {
-  _id: string;
-  propertyDetails?: {
-    description?: string;
-    bedrooms?: number;
-    bathrooms?: number;
-    totalAreaSqM?: number;
-    price?: number;
-  };
-  location?: {
-    street?: string;
-    district?: string;
-    fullAddress?: string;
-    stateOrRegion?: string;
-    country?: string;
-  };
-  media?: {
-    coverPhoto?: string;
-  };
 }
 
 const PropertyCard: React.FC<PropertyCardProps> = ({
@@ -61,9 +42,24 @@ const PropertyCard: React.FC<PropertyCardProps> = ({
   priceOriginal,
   priceDiscounted,
   image,
+  category,
   isFavorited = true,
   onToggleFavorite,
 }) => {
+  // Get category color and text
+  const getCategoryStyle = (cat: string) => {
+    switch (cat) {
+      case "Rent":
+        return "bg-blue-100 text-blue-800";
+      case "Sale":
+        return "bg-green-100 text-green-800";
+      case "Swap":
+        return "bg-purple-100 text-purple-800";
+      default:
+        return "bg-gray-100 text-gray-800";
+    }
+  };
+
   return (
     <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
       {/* Property Image */}
@@ -76,10 +72,10 @@ const PropertyCard: React.FC<PropertyCardProps> = ({
           className="w-full h-48 object-cover"
           priority={false}
         />
-        {/* Rent Badge */}
+        {/* Category Badge */}
         <div className="absolute top-3 left-3">
-          <span className="bg-white px-2 py-1 rounded text-sm font-medium text-gray-700">
-            Rent
+          <span className={`px-2 py-1 rounded text-sm font-medium ${getCategoryStyle(category)}`}>
+            {category}
           </span>
         </div>
         {/* Heart Icon */}
@@ -171,29 +167,26 @@ const FavoritesPage: React.FC<FavoritesPageProps> = ({ onViewAll }) => {
   const { toggleLike } = useUpdatePropertyToggleLikeMutation();
   const { refetch } = useGetUserFavoriteQuery();
 
+  // Helper function to format price with currency
+  const formatPrice = (price: number, currency: string): string => {
+    if (!price) return "Price not specified";
+    return `${currency} ${price.toLocaleString()}`;
+  };
+
   // Map API data to PropertyCardProps
   const apiProperties = (data?.favorites || []).map((item: FavoriteItem) => ({
     id: item._id,
-    title:
-      item.propertyDetails?.description ||
-      `${item.location?.street || ""}, ${item.location?.district || ""}`,
-    location:
-      item.location?.fullAddress ||
-      `${item.location?.district || ""}, ${
-        item.location?.stateOrRegion || ""
-      }, ${item.location?.country || ""}`,
-    rating: 0,
-    reviewCount: 0,
+    title: item.propertyDetails?.description || "Property",
+    location: item.location?.fullAddress || `${item.location?.district || ""}, ${item.location?.stateOrRegion || ""}, ${item.location?.country || ""}`,
+    rating: 4.5, // Default rating since not in API
+    reviewCount: 15, // Default review count since not in API
     bedrooms: item.propertyDetails?.bedrooms || 0,
     bathrooms: item.propertyDetails?.bathrooms || 0,
     area: item.propertyDetails?.totalAreaSqM || 0,
-    priceOriginal: item.propertyDetails?.price
-      ? `₦${item.propertyDetails.price.toLocaleString()}`
-      : "",
-    priceDiscounted: item.propertyDetails?.price
-      ? `₦${item.propertyDetails.price.toLocaleString()}`
-      : "",
+    priceOriginal: formatPrice(item.propertyDetails?.price || 0, item.propertyDetails?.currency || "USD"),
+    priceDiscounted: formatPrice(item.propertyDetails?.price || 0, item.propertyDetails?.currency || "USD"),
     image: item.media?.coverPhoto || "/Estate2.png",
+    category: item.category || "Rent",
     isFavorited: true,
   }));
 
