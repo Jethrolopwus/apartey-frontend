@@ -310,8 +310,23 @@ const AllReviews: React.FC<AllReviewsProps> = ({
     : filteredReviews;
 
   
-  const totalPages = 10;
+  // Get pagination data from API response
+  // For AllReviews, we need to calculate totalPages based on totalReviews and limit
+  const totalReviews = data?.totalReviews || 0;
+  const limit = maxItems || 6;
+  const totalPages = Math.ceil(totalReviews / limit) || 1;
   const currentPage = Number(searchParams.get("page")) || 1;
+  
+  // Debug logging
+  console.log("AllReviews Pagination Debug:", {
+    totalReviews,
+    limit,
+    calculatedTotalPages: totalPages,
+    currentPage,
+    apiTotalPages: data?.totalPages,
+    hasNextPage: data?.hasNextPage,
+    hasPreviousPage: data?.hasPreviousPage
+  });
 
   return (
     <div className={`bg-gray-50 ${className}`}>
@@ -536,10 +551,10 @@ const AllReviews: React.FC<AllReviewsProps> = ({
             ))}
           </div>
         )}
-        {showHeader && totalPages > 1 && (
+        {showHeader && (
           <div className="flex items-center justify-center mt-12 gap-2">
             <button
-              className="px-4 py-2 text-sm text-gray-500 hover:text-teal-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-4 py-2 text-sm text-gray-500 hover:text-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               disabled={currentPage === 1}
               onClick={() => {
                 const params = new URLSearchParams();
@@ -558,13 +573,40 @@ const AllReviews: React.FC<AllReviewsProps> = ({
             >
               ← Previous
             </button>
-            {[...Array(Math.min(totalPages, 10))].map((_, i) => (
+            
+            {/* Always show Page 1 */}
+            <button
+              className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                currentPage === 1 
+                  ? "bg-[#C85212] text-white border border-[#C85212]" 
+                  : "text-gray-600 hover:text-gray-800 hover:bg-gray-50"
+              }`}
+              onClick={() => {
+                const params = new URLSearchParams();
+                params.set("countryCode", selectedCountryCode || "NG");
+                if (apartment !== "all") {
+                  params.set("apartment", encodeURIComponent(apartment));
+                }
+                if (searchQuery) {
+                  params.set("q", encodeURIComponent(searchQuery));
+                }
+                params.set("page", "1");
+                const url = `/reviewsPage?${params.toString()}`;
+                console.log("Navigating to:", url);
+                router.push(url);
+              }}
+            >
+              1
+            </button>
+            
+            {/* Show additional pages when there are multiple pages OR when hasNextPage is true */}
+            {(totalPages > 1 || data?.hasNextPage) && Array.from({ length: Math.max(totalPages - 1, 1) }, (_, i) => i + 2).map((number) => (
               <button
-                key={i}
-                className={`w-8 h-8 text-sm rounded transition-colors ${
-                  i + 1 === currentPage
-                    ? "bg-[#C85212] text-white"
-                    : "text-gray-600 hover:bg-gray-100"
+                key={number}
+                className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                  currentPage === number 
+                    ? "bg-[#C85212] text-white border border-[#C85212]" 
+                    : "text-gray-600 hover:text-gray-800 hover:bg-gray-50"
                 }`}
                 onClick={() => {
                   const params = new URLSearchParams();
@@ -575,42 +617,19 @@ const AllReviews: React.FC<AllReviewsProps> = ({
                   if (searchQuery) {
                     params.set("q", encodeURIComponent(searchQuery));
                   }
-                  params.set("page", (i + 1).toString());
+                  params.set("page", number.toString());
                   const url = `/reviewsPage?${params.toString()}`;
                   console.log("Navigating to:", url);
                   router.push(url);
                 }}
               >
-                {i + 1}
+                {number}
               </button>
             ))}
-            {totalPages > 10 && (
-              <>
-                <span className="px-2 text-gray-400">...</span>
-                <button
-                  className="px-2 py-1 text-sm text-gray-600 hover:bg-gray-100 rounded transition-colors"
-                  onClick={() => {
-                    const params = new URLSearchParams();
-                    params.set("countryCode", selectedCountryCode || "NG");
-                    if (apartment !== "all") {
-                      params.set("apartment", encodeURIComponent(apartment));
-                    }
-                    if (searchQuery) {
-                      params.set("q", encodeURIComponent(searchQuery));
-                    }
-                    params.set("page", totalPages.toString());
-                    const url = `/reviewsPage?${params.toString()}`;
-                    console.log("Navigating to:", url);
-                    router.push(url);
-                  }}
-                >
-                  {totalPages}
-                </button>
-              </>
-            )}
+            
             <button
-              className="px-4 py-2 text-sm text-gray-500 hover:text-[#C85212] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              disabled={currentPage === totalPages}
+              className="px-4 py-2 text-sm text-gray-500 hover:text-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              disabled={data?.hasNextPage === false || (totalPages <= 1 && !data?.hasNextPage)}
               onClick={() => {
                 const params = new URLSearchParams();
                 params.set("countryCode", selectedCountryCode || "NG");

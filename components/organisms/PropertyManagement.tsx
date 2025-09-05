@@ -72,7 +72,6 @@ export default function AdminPropertiesPage() {
 
   const properties = data?.properties || [];
   const totalPages = data?.totalPages || 1;
-  const currentPageFromApi = data?.currentPage || 1;
 
   const handlePageChange = (page: number) => {
     if (page >= 1 && page <= totalPages) {
@@ -397,19 +396,44 @@ export default function AdminPropertiesPage() {
               <button
                 onClick={() => handlePageChange(currentPage - 1)}
                 disabled={currentPage === 1}
-                className="px-3 md:px-4 py-2 bg-gray-200 text-gray-700 rounded disabled:opacity-50 text-sm md:text-base"
+                className="px-4 py-2 text-sm text-gray-500 hover:text-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Previous
+                ← Previous
               </button>
-              <span className="text-sm md:text-base">
-                Page {currentPageFromApi} of {totalPages}
-              </span>
+              
+              {/* Always show Page 1 */}
+              <button
+                onClick={() => handlePageChange(1)}
+                className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                  currentPage === 1 
+                    ? "bg-[#C85212] text-white border border-[#C85212]" 
+                    : "text-gray-600 hover:text-gray-800 hover:bg-gray-50"
+                }`}
+              >
+                1
+              </button>
+              
+              {/* Show additional pages only when there are multiple pages */}
+              {totalPages > 1 && Array.from({ length: totalPages - 1 }, (_, i) => i + 2).map((number) => (
+                <button
+                  key={number}
+                  onClick={() => handlePageChange(number)}
+                  className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                    currentPage === number 
+                      ? "bg-[#C85212] text-white border border-[#C85212]" 
+                      : "text-gray-600 hover:text-gray-800 hover:bg-gray-50"
+                  }`}
+                >
+                  {number}
+                </button>
+              ))}
+              
               <button
                 onClick={() => handlePageChange(currentPage + 1)}
-                disabled={currentPage === totalPages}
-                className="px-3 md:px-4 py-2 bg-gray-200 text-gray-700 rounded disabled:opacity-50 text-sm md:text-base"
+                disabled={totalPages <= 1 || currentPage === totalPages}
+                className="px-4 py-2 text-sm text-gray-500 hover:text-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Next
+                Next →
               </button>
             </div>
           </>

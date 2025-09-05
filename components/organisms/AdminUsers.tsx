@@ -301,19 +301,44 @@ export default function AdminUsers() {
               <button
                 onClick={() => setPage(page - 1)}
                 disabled={page === 1}
-                className="px-3 md:px-4 py-2 bg-gray-200 text-gray-700 rounded disabled:opacity-50 text-sm md:text-base"
+                className="px-4 py-2 text-sm text-gray-500 hover:text-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Previous
+                ← Previous
               </button>
-              <span className="text-sm md:text-base">
-                Page {page} of {totalPages}
-              </span>
+              
+              {/* Always show Page 1 */}
+              <button
+                onClick={() => setPage(1)}
+                className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                  page === 1 
+                    ? "bg-[#C85212] text-white border border-[#C85212]" 
+                    : "text-gray-600 hover:text-gray-800 hover:bg-gray-50"
+                }`}
+              >
+                1
+              </button>
+              
+              {/* Show additional pages only when there are multiple pages */}
+              {totalPages > 1 && Array.from({ length: totalPages - 1 }, (_, i) => i + 2).map((number) => (
+                <button
+                  key={number}
+                  onClick={() => setPage(number)}
+                  className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                    page === number 
+                      ? "bg-[#C85212] text-white border border-[#C85212]" 
+                      : "text-gray-600 hover:text-gray-800 hover:bg-gray-50"
+                  }`}
+                >
+                  {number}
+                </button>
+              ))}
+              
               <button
                 onClick={() => setPage(page + 1)}
-                disabled={page === totalPages}
-                className="px-3 md:px-4 py-2 bg-gray-200 text-gray-700 rounded disabled:opacity-50 text-sm md:text-base"
+                disabled={totalPages <= 1 || page === totalPages}
+                className="px-4 py-2 text-sm text-gray-500 hover:text-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Next
+                Next →
               </button>
             </div>
           </>

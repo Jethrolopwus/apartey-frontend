@@ -66,8 +66,9 @@ const UserDropdownMenu: React.FC<UserDropdownMenuProps> = ({
 
   const getProfileRoute = () => {
     switch (role?.toLowerCase()) {
-      case "homeowner":
       case "renter":
+        return "/profile";
+      case "homeowner":
         return "/homeowner-profile";
       case "agent":
         return "/agent-profile";

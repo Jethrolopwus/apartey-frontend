@@ -358,48 +358,47 @@ const BlogDetails: React.FC<BlogDetailsProps> = ({ id }) => {
           </div>
 
           {/* Pagination Controls */}
-          {pagination && pagination.totalPages > 1 && (
+          {pagination && (
             <div className="flex items-center justify-center mt-12 gap-2">
               <button
                 onClick={() => handlePageChange(pagination.currentPage - 1)}
                 disabled={!pagination.hasPreviousPage}
-                className="px-4 py-2 text-sm text-gray-500 hover:text-[#C85212] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-4 py-2 text-sm text-gray-500 hover:text-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 ← Previous
               </button>
               
-              {/* Page Numbers 1-10 */}
-              {[...Array(Math.min(pagination.totalPages, 10))].map((_, i) => (
+              {/* Always show Page 1 */}
+              <button
+                onClick={() => handlePageChange(1)}
+                className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                  pagination.currentPage === 1 
+                    ? "bg-[#C85212] text-white border border-[#C85212]" 
+                    : "text-gray-600 hover:text-gray-800 hover:bg-gray-50"
+                }`}
+              >
+                1
+              </button>
+              
+              {/* Show additional pages only when there are multiple pages */}
+              {pagination.totalPages > 1 && Array.from({ length: pagination.totalPages - 1 }, (_, i) => i + 2).map((number) => (
                 <button
-                  key={i}
-                  className={`w-8 h-8 text-sm rounded transition-colors ${
-                    i + 1 === pagination.currentPage
-                      ? "bg-[#C85212] text-white"
-                      : "text-gray-600 hover:bg-gray-100"
+                  key={number}
+                  onClick={() => handlePageChange(number)}
+                  className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                    pagination.currentPage === number 
+                      ? "bg-[#C85212] text-white border border-[#C85212]" 
+                      : "text-gray-600 hover:text-gray-800 hover:bg-gray-50"
                   }`}
-                  onClick={() => handlePageChange(i + 1)}
                 >
-                  {i + 1}
+                  {number}
                 </button>
               ))}
               
-              {/* Ellipsis and Last Page if more than 10 pages */}
-              {pagination.totalPages > 10 && (
-                <>
-                  <span className="px-2 text-gray-400">...</span>
-                  <button
-                    className="px-2 py-1 text-sm text-gray-600 hover:bg-gray-100 rounded transition-colors"
-                    onClick={() => handlePageChange(pagination.totalPages)}
-                  >
-                    {pagination.totalPages}
-                  </button>
-                </>
-              )}
-              
               <button
                 onClick={() => handlePageChange(pagination.currentPage + 1)}
-                disabled={!pagination.hasNextPage}
-                className="px-4 py-2 text-sm text-gray-500 hover:text-[#C85212] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                disabled={pagination.totalPages <= 1 || !pagination.hasNextPage}
+                className="px-4 py-2 text-sm text-gray-500 hover:text-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Next →
               </button>
