@@ -9,6 +9,7 @@ import { useGetAllMyListingsQuery } from "@/Hooks/use-getAllMyListings.query";
 import { useGetClaimStatusByIdQuery } from "@/Hooks/use-getClaimStatusById.query";
 import Link from "next/link";
 import { toast } from "react-hot-toast";
+import PropertyStatusModal, { PropertyStatusData } from "@/components/molecules/PropertyStatusModal";
 
 const DEFAULT_PROPERTY_IMAGE = "/Estate2.png";
 
@@ -101,8 +102,7 @@ interface Homeowner {
 const HomeownerProfile: React.FC = () => {
   const router = useRouter();
   const [currentPage, setCurrentPage] = React.useState(1);
-  const itemsPerPage = 6; // Limit of 6 as per design
-  const totalPages = 10; // Fixed total pages as per design 
+  const itemsPerPage = 6; // Limit of 6 as per design 
 
   const {
     data: userData,
@@ -197,7 +197,7 @@ const HomeownerProfile: React.FC = () => {
         newPrice: newPrice,
         status: property?.status === "active" ? "Active" : "Inactive",
         mark: property?.status === "rented" ? "Rented" : "Available",
-        isActive: property?.status === "active",
+        isActive: true, // Properties are active by default
         category: property.category || "Rent",
       };
     });
@@ -207,17 +207,66 @@ const HomeownerProfile: React.FC = () => {
     { id: string; isRented: boolean }[]
   >([]);
 
+  // Property status modal state
+  const [propertyStatusModalOpen, setPropertyStatusModalOpen] = React.useState(false);
+  const [selectedProperty, setSelectedProperty] = React.useState<Property | null>(null);
+
   //
   React.useEffect(() => {
     setPropertyStates(
-      properties.map((p) => ({ id: p.id, isRented: p.isActive }))
+      properties.map((p) => ({ id: p.id, isRented: true })) // All properties start as active
     );
   }, [properties]);
 
   const handleToggle = (id: string): void => {
+    const property = properties.find(p => p.id === id);
+    if (!property) return;
+
+    const currentState = propertyStates.find(p => p.id === id);
+    const isCurrentlyActive = currentState ? currentState.isRented : property.isActive;
+    
+    // If property is currently active, show modal to confirm deactivation
+    if (isCurrentlyActive) {
+      console.log("Opening modal for property:", property.title);
+      setSelectedProperty(property);
+      setPropertyStatusModalOpen(true);
+    } else {
+      // If property is inactive, directly activate it
+      setPropertyStates((prev) =>
+        prev.map((p) => (p.id === id ? { ...p, isRented: true } : p))
+      );
+      toast.success("Property marked as active!");
+    }
+  };
+
+  // Property status modal handlers
+  const handlePropertyStatusConfirm = (data: PropertyStatusData) => {
+    if (!selectedProperty) return;
+
+    // Update property status to inactive
     setPropertyStates((prev) =>
-      prev.map((p) => (p.id === id ? { ...p, isRented: !p.isRented } : p))
+      prev.map((p) => (p.id === selectedProperty.id ? { ...p, isRented: false } : p))
     );
+
+    // Here you would typically make an API call to update the property status
+    // For now, we'll just show a success message
+    toast.success("Property marked as inactive!");
+    
+    // Log the transaction data for analytics (you can send this to your backend)
+    console.log("Property status change:", {
+      propertyId: selectedProperty.id,
+      propertyTitle: selectedProperty.title,
+      category: selectedProperty.category,
+      transactionData: data
+    });
+
+    setPropertyStatusModalOpen(false);
+    setSelectedProperty(null);
+  };
+
+  const handlePropertyStatusModalClose = () => {
+    setPropertyStatusModalOpen(false);
+    setSelectedProperty(null);
   };
 
   // Handle claim property button click with status check
@@ -257,6 +306,7 @@ const HomeownerProfile: React.FC = () => {
   };
 
   const handleNextPage = () => {
+    const totalPages = listingsData?.pages || 1;
     if (currentPage < totalPages) {
       setCurrentPage(currentPage + 1);
     }
@@ -405,7 +455,7 @@ const HomeownerProfile: React.FC = () => {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {properties.map((property, index) => {
             const state = propertyStates.find((p) => p.id === property.id);
-            const isRented = state ? state.isRented : property.isActive;
+            const isRented = state ? state.isRented : true; // Default to active (true)
             return (
               <div
                 key={`${property.id}-${index}`}
@@ -548,74 +598,67 @@ const HomeownerProfile: React.FC = () => {
         )}
 
       
-        {/* Pagination */}
-        <div className="flex items-center justify-center mt-8">
-          <div className="flex items-center space-x-2">
-            {/* Previous Button */}
-            <button
-              onClick={handlePreviousPage}
-              disabled={currentPage <= 1}
-              className={`flex items-center px-3 py-2 text-sm font-medium rounded-md border transition-colors ${
-                currentPage > 1
-                  ? "text-gray-700 bg-white border-gray-300 hover:bg-gray-50"
-                  : "text-gray-400 bg-gray-100 border-gray-200 cursor-not-allowed"
-              }`}
-            >
-              <span>←</span>
-              <span className="ml-1">Previous</span>
-            </button>
-            
-            {/* Page Numbers */}
-            <div className="flex items-center space-x-1">
-              {[1, 2, 3].map((page) => (
-                <button
-                  key={page}
-                  onClick={() => setCurrentPage(page)}
-                  className={`px-3 py-2 text-sm font-medium rounded-md border transition-colors ${
-                    currentPage === page
-                      ? "bg-purple-100 text-purple-700 border-purple-300"
-                      : "text-gray-700 bg-white border-gray-300 hover:bg-gray-50"
-                  }`}
-                >
-                  {page}
-                </button>
-              ))}
+        {/* Pagination - Only show if there are multiple pages */}
+        {listingsData?.pages && listingsData.pages > 1 && (
+          <div className="flex items-center justify-center mt-8">
+            <div className="flex items-center space-x-2">
+              {/* Previous Button */}
+              <button
+                onClick={handlePreviousPage}
+                disabled={currentPage <= 1}
+                className={`flex items-center px-3 py-2 text-sm font-medium rounded-md border transition-colors ${
+                  currentPage > 1
+                    ? "text-gray-700 bg-white border-gray-300 hover:bg-gray-50"
+                    : "text-gray-400 bg-gray-100 border-gray-200 cursor-not-allowed"
+                }`}
+              >
+                <span>←</span>
+                <span className="ml-1">Previous</span>
+              </button>
               
-              {/* Ellipsis */}
-              <span className="px-2 text-gray-500">...</span>
+              {/* Page Numbers */}
+              <div className="flex items-center space-x-1">
+                {Array.from({ length: listingsData.pages }, (_, i) => i + 1).map((page) => (
+                  <button
+                    key={page}
+                    onClick={() => setCurrentPage(page)}
+                    className={`px-3 py-2 text-sm font-medium rounded-md border transition-colors ${
+                      currentPage === page
+                        ? "bg-[#C85212] text-white border-[#C85212]"
+                        : "text-gray-700 bg-white border-gray-300 hover:bg-gray-50"
+                    }`}
+                  >
+                    {page}
+                  </button>
+                ))}
+              </div>
               
-              {/* Last few pages */}
-              {[8, 9, 10].map((page) => (
-                <button
-                  key={page}
-                  onClick={() => setCurrentPage(page)}
-                  className={`px-3 py-2 text-sm font-medium rounded-md border transition-colors ${
-                    currentPage === page
-                      ? "bg-purple-100 text-purple-700 border-purple-300"
-                      : "text-gray-700 bg-white border-gray-300 hover:bg-gray-50"
-                  }`}
-                >
-                  {page}
-                </button>
-              ))}
+              {/* Next Button */}
+              <button
+                onClick={handleNextPage}
+                disabled={currentPage >= listingsData.pages}
+                className={`flex items-center px-3 py-2 text-sm font-medium rounded-md border transition-colors ${
+                  currentPage < listingsData.pages
+                    ? "text-gray-700 bg-white border-gray-300 hover:bg-gray-50"
+                    : "text-gray-400 bg-gray-100 border-gray-200 cursor-not-allowed"
+                }`}
+              >
+                <span className="mr-1">Next</span>
+                <span>→</span>
+              </button>
             </div>
-            
-            {/* Next Button */}
-            <button
-              onClick={handleNextPage}
-              disabled={currentPage >= totalPages}
-              className={`flex items-center px-3 py-2 text-sm font-medium rounded-md border transition-colors ${
-                currentPage < totalPages
-                  ? "text-gray-700 bg-white border-gray-300 hover:bg-gray-50"
-                  : "text-gray-400 bg-gray-100 border-gray-200 cursor-not-allowed"
-              }`}
-            >
-              <span className="mr-1">Next</span>
-              <span>→</span>
-            </button>
           </div>
-        </div>
+        )}
       </div>
+
+      {/* Property Status Modal */}
+      <PropertyStatusModal
+        isOpen={propertyStatusModalOpen}
+        onClose={handlePropertyStatusModalClose}
+        onConfirm={handlePropertyStatusConfirm}
+        propertyTitle={selectedProperty?.title || "Property"}
+        category={selectedProperty?.category as "Rent" | "Swap" | "Buy" || "Rent"}
+      />
     </div>
   );
 };

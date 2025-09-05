@@ -20,7 +20,6 @@ const Listings = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [priceRange, setPriceRange] = useState(500000);
   const limit = 6;
-  const totalPages = 10;
 
   const categoryParam = searchParams.get("category");
   const countryParam = searchParams.get("country");
@@ -201,10 +200,28 @@ const Listings = () => {
   };
 
   const renderPagination = () => {
-    const pageNumbers = [];
-    for (let i = 1; i <= totalPages; i++) {
-      pageNumbers.push(i);
-    }
+    // Debug: Log the pagination data
+    console.log("Pagination data:", {
+      pages: data?.pages,
+      currentPage: data?.page,
+      total: data?.total,
+      hasNextPage: data?.hasNextPage,
+      hasPreviousPage: data?.hasPreviousPage,
+      propertiesCount: data?.properties?.length
+    });
+
+    // Always show pagination, but with different logic:
+    // - Show Page 1 by default
+    // - Show Page 2+ only when there are more properties than the limit
+    const totalPages = data?.pages || 1;
+    const hasMultiplePages = totalPages > 1;
+    
+    console.log("Pagination logic:", {
+      totalPages,
+      hasMultiplePages,
+      currentPage,
+      limit
+    });
 
     return (
       <div className="flex justify-center items-center space-x-3 mt-14 lg:mt-32">
@@ -217,31 +234,26 @@ const Listings = () => {
           Previous
         </button>
         
-        {pageNumbers.slice(0, 3).map((number) => (
+        {/* Always show Page 1, show additional pages only when there are multiple pages */}
+        <button
+          onClick={() => handlePageChange(1)}
+          className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+            currentPage === 1 
+              ? "bg-[#C85212] text-white border border-[#C85212]" 
+              : "text-gray-600 hover:text-gray-800 hover:bg-gray-50"
+          }`}
+        >
+          1
+        </button>
+        
+        {/* Show additional pages only when there are multiple pages */}
+        {hasMultiplePages && Array.from({ length: totalPages - 1 }, (_, i) => i + 2).map((number) => (
           <button
             key={number}
             onClick={() => handlePageChange(number)}
             className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
               currentPage === number 
-                ? "bg-purple-100 text-purple-700 border border-purple-200" 
-                : "text-gray-600 hover:text-gray-800 hover:bg-gray-50"
-            }`}
-          >
-            {number}
-          </button>
-        ))}
-        
-        {totalPages > 3 && (
-          <span className="px-3 py-2 text-gray-400">...</span>
-        )}
-        
-        {pageNumbers.slice(-2).map((number) => (
-          <button
-            key={number}
-            onClick={() => handlePageChange(number)}
-            className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-              currentPage === number 
-                ? "bg-purple-100 text-purple-700 border border-purple-200" 
+                ? "bg-[#C85212] text-white border border-[#C85212]" 
                 : "text-gray-600 hover:text-gray-800 hover:bg-gray-50"
             }`}
           >
@@ -251,7 +263,7 @@ const Listings = () => {
         
         <button
           onClick={() => handlePageChange(currentPage + 1)}
-          disabled={currentPage === totalPages}
+          disabled={!hasMultiplePages || currentPage === totalPages}
           className="flex items-center gap-2 px-4 py-2 text-gray-600 hover:text-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         >
           Next

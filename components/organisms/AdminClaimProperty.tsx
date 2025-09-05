@@ -185,33 +185,46 @@ export default function AdminClaimProperty() {
         {/* Pagination */}
         <div className="flex items-center justify-between mt-6">
           <button
-            className="text-gray-400 px-3 py-1 rounded hover:bg-gray-100 disabled:opacity-50"
+            className="px-4 py-2 text-sm text-gray-500 hover:text-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             onClick={() => setPage(page - 1)}
             disabled={page === 1}
           >
-            &lt; Previous
+            ← Previous
           </button>
-          <div className="flex gap-1">
-            {Array.from({ length: totalPages }, (_, i) => (
-              <button
-                key={i}
-                className={`px-3 py-1 rounded ${
-                  page === i + 1
-                    ? "bg-[#2D3A4A] text-white"
-                    : "text-gray-700 hover:bg-gray-100"
-                }`}
-                onClick={() => setPage(i + 1)}
-              >
-                {i + 1}
-              </button>
-            ))}
-          </div>
+          
+          {/* Always show Page 1 */}
           <button
-            className="text-gray-400 px-3 py-1 rounded hover:bg-gray-100 disabled:opacity-50"
-            onClick={() => setPage(page + 1)}
-            disabled={page === totalPages}
+            onClick={() => setPage(1)}
+            className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+              page === 1 
+                ? "bg-[#C85212] text-white border border-[#C85212]" 
+                : "text-gray-600 hover:text-gray-800 hover:bg-gray-50"
+            }`}
           >
-            Next &gt;
+            1
+          </button>
+          
+          {/* Show additional pages only when there are multiple pages */}
+          {totalPages > 1 && Array.from({ length: totalPages - 1 }, (_, i) => i + 2).map((number) => (
+            <button
+              key={number}
+              onClick={() => setPage(number)}
+              className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                page === number 
+                  ? "bg-[#C85212] text-white border border-[#C85212]" 
+                  : "text-gray-600 hover:text-gray-800 hover:bg-gray-50"
+              }`}
+            >
+              {number}
+            </button>
+          ))}
+          
+          <button
+            className="px-4 py-2 text-sm text-gray-500 hover:text-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            onClick={() => setPage(page + 1)}
+            disabled={totalPages <= 1 || page === totalPages}
+          >
+            Next →
           </button>
         </div>
       </>

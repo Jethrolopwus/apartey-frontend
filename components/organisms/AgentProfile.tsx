@@ -465,32 +465,50 @@ const AgentProfile: React.FC = () => {
               Showing page {listingsData.page} of {listingsData.pages} 
               ({listingsData.total} total properties)
             </div>
-            {listingsData.pages > 1 && (
-              <div className="flex items-center space-x-2">
+            <div className="flex items-center space-x-2">
+              <button
+                onClick={handlePreviousPage}
+                disabled={currentPage <= 1}
+                className="px-4 py-2 text-sm text-gray-500 hover:text-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                ← Previous
+              </button>
+              
+              {/* Always show Page 1 */}
+              <button
+                onClick={() => setCurrentPage(1)}
+                className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                  currentPage === 1 
+                    ? "bg-[#C85212] text-white border border-[#C85212]" 
+                    : "text-gray-600 hover:text-gray-800 hover:bg-gray-50"
+                }`}
+              >
+                1
+              </button>
+              
+              {/* Show additional pages only when there are multiple pages */}
+              {listingsData.pages > 1 && Array.from({ length: listingsData.pages - 1 }, (_, i) => i + 2).map((number) => (
                 <button
-                  onClick={handlePreviousPage}
-                  disabled={currentPage <= 1}
-                  className={`px-3 py-2 text-sm font-medium rounded-md border ${
-                    currentPage > 1
-                      ? "text-gray-700 bg-white border-gray-300 hover:bg-gray-50"
-                      : "text-gray-400 bg-gray-100 border-gray-200 cursor-not-allowed"
+                  key={number}
+                  onClick={() => setCurrentPage(number)}
+                  className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                    currentPage === number 
+                      ? "bg-[#C85212] text-white border border-[#C85212]" 
+                      : "text-gray-600 hover:text-gray-800 hover:bg-gray-50"
                   }`}
                 >
-                  Previous
+                  {number}
                 </button>
-                <button
-                  onClick={handleNextPage}
-                  disabled={currentPage >= listingsData.pages}
-                  className={`px-3 py-2 text-sm font-medium rounded-md border ${
-                    currentPage < listingsData.pages
-                      ? "text-gray-700 bg-white border-gray-300 hover:bg-gray-50"
-                      : "text-gray-400 bg-gray-100 border-gray-200 cursor-not-allowed"
-                  }`}
-                >
-                  Next
-                </button>
-              </div>
-            )}
+              ))}
+              
+              <button
+                onClick={handleNextPage}
+                disabled={listingsData.pages <= 1 || currentPage >= listingsData.pages}
+                className="px-4 py-2 text-sm text-gray-500 hover:text-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Next →
+              </button>
+            </div>
           </div>
         )}
       </div>
