@@ -26,15 +26,23 @@
 
 import { useQuery } from "@tanstack/react-query";
 import http from "@/services/http";
-import { AdminReviewsResponse, GetAllUserQueryParams } from "@/types/admin";
+import { AdminReviewsResponse } from "@/types/admin";
 
+type GetAllUserQueryParams = {
+  search: string | undefined;
+  sortBy: string;
+  limit: number;
+  page:number
+};
 export const useGetAllAdminReviewsQuery = (params?: GetAllUserQueryParams) => {
   const query = useQuery<AdminReviewsResponse>({
     queryKey: ["Reviews", params],
     queryFn: async () => {
       const res = await http.httpGetAdminAllReviews(
         params?.search,
-        params?.sort
+        params?.sortBy,
+        params?.page,
+        params?.limit
       );
       if (!res || !res.reviews) {
         throw new Error("Failed to fetch reviews");

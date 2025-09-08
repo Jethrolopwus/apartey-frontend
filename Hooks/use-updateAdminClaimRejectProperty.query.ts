@@ -2,7 +2,7 @@
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import http from "@/services/http";
-import { AdminClaimedProperty, AdminProperty } from "@/types/admin";
+import { AdminClaimedProperty } from "@/types/admin";
 import toast from "react-hot-toast";
 
 export interface UseClaimPropertyQueryParams {
@@ -16,16 +16,16 @@ export const useUpdateAdminClaimRejectPropertyById = () => {
   return useMutation<
     AdminClaimedProperty,
     Error,
-    { id: string; data: Partial<AdminClaimedProperty> }
+    { claimId: string; propertyId: string; data: { reason: string } }
   >({
-    mutationFn: ({ id, data }) =>
-      http.httpUpdateAdminRejectClaimedProperty(id, data),
+    mutationFn: ({ claimId, propertyId, data }) =>
+      http.httpUpdateAdminRejectClaimedProperty(claimId, propertyId, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["AdminProperties"] });
       toast.success("Property updated successfully");
     },
     onError: (error) => {
-      toast.error("Error updating property:" + error.message);
+      toast.error("Error updating property: " + error.message);
     },
   });
 };

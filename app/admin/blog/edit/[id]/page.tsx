@@ -1,11 +1,22 @@
 "use client";
-import React, { useState, useRef } from 'react';
-import { useRouter } from 'next/navigation';
-import Image from 'next/image';
-import { Upload, X } from 'lucide-react';
-import { useCreateAdminBlogPostMutation } from '@/Hooks/use-createAdminBlogPost.mutation';
-import { CreateAdminPostData } from '@/types/admin';
-import RichTextEditor from '@/components/molecules/RichTextEditor';
+
+import Back from "@/components/atoms/Buttons/Back";
+import { useGetAdminBlogPostByIdQuery } from "@/Hooks/use-getAdminAllBlogPostById.query";
+import { CreateAdminPostData } from "@/types/admin";
+import Image from "next/image";
+import { useRouter } from "next/navigation";
+import React, { useEffect, useRef, useState } from "react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import RichTextEditor from "@/components/molecules/RichTextEditor";
+import { ImageIcon, Upload, X } from "lucide-react";
+import toast from "react-hot-toast";
+import { useUpdateAdminBlogPostMutation } from "@/Hooks/use-updateAdminBlogPost.mutation";
 
 const categories = [
   "Renting",
@@ -14,38 +25,68 @@ const categories = [
   "Investment",
   "Maintenance",
   "Tips",
-  "News"
+  "News",
 ];
 
-export default function CreateBlogPost() {
+export default function EditBlogPost({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
   const router = useRouter();
+  const { id } = React.use(params);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [imageUrl, setImageUrl] = useState<string>("");
-  
-  const { mutate: createPost, isLoading, error } = useCreateAdminBlogPostMutation();
+
+  const { data: post } = useGetAdminBlogPostByIdQuery(id);
+
+
+
+  const { mutate: updatePost, isLoading , error} =
+    useUpdateAdminBlogPostMutation();
 
   const [formData, setFormData] = useState<CreateAdminPostData>({
     title: "",
     content: "",
     category: "Renting",
-    tags: [],
-    status: "draft"
+    tags: "",
+    status: "draft",
   });
 
-  const handleInputChange = (field: keyof CreateAdminPostData, value: string | string[]) => {
-    setFormData(prev => ({
+  useEffect(() => {
+    if (post) {
+      setFormData({
+        title: post.title || "",
+        content: post.content || "",
+        category: post.category || "Renting",
+        tags: post.tags?.join(", ") || "",
+        status: post.status?.toLowerCase() as "draft" | "published",
+      });
+
+      // Set existing image URL
+      if (post.imageUrl) {
+        setPreviewUrl(post.imageUrl);
+        setImageUrl(post.imageUrl)
+      }
+    }
+  }, [post]);
+  const handleInputChange = (
+    field: keyof CreateAdminPostData,
+    value: string | string[]
+  ) => {
+    setFormData((prev) => ({
       ...prev,
-      [field]: value
+      [field]: value,
     }));
   };
 
   const handleTagsChange = (value: string) => {
-    const tags = value.split(',').map(tag => tag.trim()).filter(tag => tag.length > 0);
-    setFormData(prev => ({
+    const tags = value;
+    setFormData((prev) => ({
       ...prev,
-      tags
+      tags,
     }));
   };
 
@@ -59,14 +100,14 @@ export default function CreateBlogPost() {
       }
 
       // Validate file type
-      if (!file.type.startsWith('image/')) {
+      if (!file.type.startsWith("image/")) {
         alert("Please select a valid image file");
         return;
       }
 
       setSelectedFile(file);
       setImageUrl(""); // Clear URL when file is selected
-      
+
       // Create preview URL
       const url = URL.createObjectURL(file);
       setPreviewUrl(url);
@@ -78,69 +119,72 @@ export default function CreateBlogPost() {
     setPreviewUrl(null);
     setImageUrl("");
     if (fileInputRef.current) {
-      fileInputRef.current.value = '';
+      fileInputRef.current.value = "";
     }
   };
 
-  const handleSubmit = (e: React.FormEvent, status: 'draft' | 'published') => {
+  const handleSubmit = (e: React.FormEvent, status: "draft" | "published") => {
     e.preventDefault();
-    
+
     if (!formData.title.trim()) {
-      alert("Please enter a blog title");
+      toast.error("Please enter a blog title");
       return;
     }
 
     if (!formData.content.trim()) {
-      alert("Please enter blog content");
+      toast.error("Please enter blog content");
       return;
     }
 
     if (!selectedFile && !imageUrl.trim()) {
-      alert("Please upload an image or enter an image URL");
+      toast.error("Please upload an image or enter an image URL");
       return;
     }
 
     // Create FormData for file upload
     const submitData = new FormData();
-    submitData.append('title', formData.title);
-    submitData.append('content', formData.content);
-    submitData.append('category', formData.category);
-    submitData.append('tags', JSON.stringify(formData.tags));
-    submitData.append('status', status);
-    
+    submitData.append("title", formData.title);
+    submitData.append("content", formData.content);
+    submitData.append("category", formData.category);
+    submitData.append("tags", formData.tags);
+    submitData.append("status", status);
+    submitData.append("id", id);
+
     if (selectedFile) {
-      submitData.append('blog-image', selectedFile);
+      submitData.append("blog-image", selectedFile);
     } else if (imageUrl.trim()) {
-      submitData.append('imageUrl', imageUrl);
+      submitData.append("imageUrl", imageUrl);
     }
 
-    createPost(submitData, {
+    updatePost(submitData, {
       onSuccess: () => {
-        router.push('/admin/blog');
+        router.push(`/admin/blog/${id}`);
       },
       onError: (error) => {
-        console.error('Error creating blog post:', error);
-      }
+        console.error("Error updating blog post:", error);
+      },
     });
   };
 
   const handleDraft = (e: React.FormEvent) => {
-    handleSubmit(e, 'draft');
+    handleSubmit(e, "draft");
   };
 
   const handlePublish = (e: React.FormEvent) => {
-    handleSubmit(e, 'published');
+    handleSubmit(e, "published");
   };
 
   const handleCancel = () => {
-    router.push('/admin/blog');
+    router.push("/admin/blog");
   };
-
   return (
-    <div className="min-h-screen bg-gray-100 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl shadow-lg w-full max-w-4xl p-8">
-        <h1 className="text-2xl font-bold text-[#2D3A4A] mb-8">Create New Blog Post</h1>
-        
+    <div className="pt-3">
+      <Back />
+      <div className="bg-white rounded-md shadow-lg w-full p-6 mt-4">
+        <h1 className="text-xl font-bold text-[#2D3A4A] mb-8">
+          Edit Blog Post
+        </h1>
+
         <form onSubmit={handlePublish} className="space-y-6">
           {/* Title and Category Row */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -151,7 +195,7 @@ export default function CreateBlogPost() {
               <input
                 type="text"
                 value={formData.title}
-                onChange={(e) => handleInputChange('title', e.target.value)}
+                onChange={(e) => handleInputChange("title", e.target.value)}
                 placeholder="Enter Blog Title"
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C85212] focus:border-transparent"
                 required
@@ -161,17 +205,21 @@ export default function CreateBlogPost() {
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Categories
               </label>
-              <select
+              <Select
                 value={formData.category}
-                onChange={(e) => handleInputChange('category', e.target.value)}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C85212] focus:border-transparent"
+                onValueChange={(value) => handleInputChange("category", value)}
               >
-                {categories.map((category) => (
-                  <option key={category} value={category}>
-                    {category}
-                  </option>
-                ))}
-              </select>
+                <SelectTrigger className="w-full px-4 py-6 border  border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C85212] focus:border-transparent">
+                  <SelectValue placeholder="Select Category" />
+                </SelectTrigger>
+                <SelectContent>
+                  {categories.map((category, index) => (
+                    <SelectItem key={index} value={category}>
+                      {category}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </div>
 
@@ -181,8 +229,9 @@ export default function CreateBlogPost() {
               Content
             </label>
             <RichTextEditor
+              key={post?._id || "new"}
               value={formData.content}
-              onChange={(value) => handleInputChange('content', value)}
+              onChange={(value) => handleInputChange("content", value)}
               placeholder="Create your blog content here..."
               className="min-h-[300px]"
             />
@@ -195,7 +244,7 @@ export default function CreateBlogPost() {
             </label>
             <input
               type="text"
-              value={formData.tags.join(', ')}
+              value={formData.tags}
               onChange={(e) => handleTagsChange(e.target.value)}
               placeholder="Property, First-Time Homebuyer"
               className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C85212] focus:border-transparent"
@@ -207,7 +256,7 @@ export default function CreateBlogPost() {
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Featured Image
             </label>
-            
+
             {previewUrl ? (
               <div className="space-y-4">
                 <div className="relative">
@@ -235,20 +284,25 @@ export default function CreateBlogPost() {
                 </button>
               </div>
             ) : (
-              <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
-                <Upload className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+              <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 grid place-items-center">
+                <ImageIcon size={35} className=" text-gray-400 mx-auto mb-4" />
                 <button
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
-                  className="bg-[#C85212] text-white px-6 py-2 rounded-lg hover:bg-[#a63e0a] transition-colors mb-4"
+                  className="flex items-center gap-2 text-[#4E5562] px-6 py-2 rounded-lg transition-colors mb-4 border border-[#4E5562B2]"
                 >
+                  <Upload size={15} className="" />
                   Upload Image
                 </button>
-                <p className="text-gray-600 mb-2">Upload a featured image for your blog post</p>
-                <p className="text-sm text-gray-500">Supported formats: JPG, PNG, GIF (Max 5MB)</p>
+                <p className="text-gray-600 mb-2">
+                  Upload a featured image for your blog post
+                </p>
+                <p className="text-sm text-gray-500">
+                  Supported formats: JPG, PNG, GIF (Max 5MB)
+                </p>
               </div>
             )}
-            
+
             <input
               type="file"
               accept="image/*"
@@ -284,7 +338,7 @@ export default function CreateBlogPost() {
             <button
               type="button"
               onClick={handleCancel}
-              className="px-6 py-3 border border-[#C85212] text-[#C85212] bg-white rounded-lg hover:bg-[#C85212] hover:text-white transition-colors"
+              className="text-sm px-3 py-1.5 border border-[#C85212] text-[#C85212] bg-white rounded-lg hover:bg-[#C85212] hover:text-white transition-colors"
             >
               Cancel
             </button>
@@ -293,16 +347,16 @@ export default function CreateBlogPost() {
                 type="button"
                 onClick={handleDraft}
                 disabled={isLoading}
-                className="px-6 py-3 border border-gray-300 text-gray-700 bg-white rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="text-sm px-3 py-1.5 border border-gray-300 text-gray-700 bg-white rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {isLoading ? 'Saving...' : 'Draft'}
+                {isLoading ? "Saving..." : "Draft"}
               </button>
               <button
                 type="submit"
                 disabled={isLoading}
-                className="px-6 py-3 bg-[#C85212] text-white rounded-lg hover:bg-[#a63e0a] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="text-sm px-3 py-1.5 bg-[#C85212] text-white rounded-lg hover:bg-[#a63e0a] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {isLoading ? 'Publishing...' : 'Publish'}
+                {isLoading ? "Publishing..." : "Publish"}
               </button>
             </div>
           </div>
@@ -310,4 +364,4 @@ export default function CreateBlogPost() {
       </div>
     </div>
   );
-} 
+}
