@@ -873,7 +873,7 @@ class BaseURL {
       );
     }
   };
-  httpGetAllMyListings = async (limit?: number, byId?: number, page?: number) => {
+  httpGetAllMyListings = async (limit?: number, byId?: number, page?: number, category?: string) => {
     try {
       let url = endpoints.getAllMyListings;
       const params = new URLSearchParams();
@@ -886,6 +886,9 @@ class BaseURL {
       if (page) {
         params.append("page", page.toString());
       }
+      if (category) {
+        params.append("category", category);
+      }
       if (params.toString()) {
         url += `?${params.toString()}`;
       }
@@ -895,6 +898,34 @@ class BaseURL {
     } catch (error: any) {
       throw new Error(
         error.response?.data?.message || "Get all My listings failed"
+      );
+    }
+  };
+  toggleListingAvailability = async (id: string, payload?: {
+    reason: string;
+    location: string;
+    customNote?: string | null;
+  }) => {
+    try {
+      const url = endpoints.toggleListingAvailability(id);
+      
+      // If no payload provided, send minimal payload for activation
+      let response;
+      if (payload === undefined) {
+        const activationPayload = {
+          reason: "Other",
+          location: "Other",
+          customNote: "Property reactivated"
+        };
+        response = await AxiosInstance.patch(url, activationPayload);
+      } else {
+        response = await AxiosInstance.patch(url, payload);
+      }
+      
+      return response.data;
+    } catch (error: any) {
+      throw new Error(
+        error.response?.data?.message || "Toggle availability failed"
       );
     }
   };

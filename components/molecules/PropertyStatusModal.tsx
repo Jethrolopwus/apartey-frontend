@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import { useToggleListingAvailability } from "@/Hooks/use-toggleListingAvailability.mutation";
 import { X } from "lucide-react";
 
 interface PropertyStatusModalProps {
@@ -9,6 +10,7 @@ interface PropertyStatusModalProps {
   onConfirm: (data: PropertyStatusData) => void;
   propertyTitle: string;
   category: "Rent" | "Swap" | "Buy";
+  propertyId: string | null;
 }
 
 export interface PropertyStatusData {
@@ -22,9 +24,11 @@ const PropertyStatusModal: React.FC<PropertyStatusModalProps> = ({
   onConfirm,
   propertyTitle,
   category,
+  propertyId,
 }) => {
   const [selectedOption, setSelectedOption] = useState<PropertyStatusData["transactionLocation"] | null>(null);
   const [otherDetails, setOtherDetails] = useState("");
+  const { mutateAsync, isPending } = useToggleListingAvailability();
 
   const handleOptionChange = (option: PropertyStatusData["transactionLocation"]) => {
     setSelectedOption(option);
@@ -33,14 +37,39 @@ const PropertyStatusModal: React.FC<PropertyStatusModalProps> = ({
     }
   };
 
-  const handleSubmit = () => {
-    if (!selectedOption) return;
-    
+  const handleSubmit = async () => {
+    if (!selectedOption || !propertyId) return;
+
+    // Map UI selection to backend enum values
+    let reason = "";
+    let location = "";
+    let customNote: string | undefined = undefined;
+
+    if (selectedOption === "onApartey") {
+      reason = "Transaction was successful";
+      location = "On Platform";
+    } else if (selectedOption === "elsewhere") {
+      reason = "Transaction was not completed";
+      location = "Elsewhere";
+    } else if (selectedOption === "notCompleted") {
+      reason = "Transaction was not completed";
+      location = "Not Sold";
+    } else if (selectedOption === "other") {
+      reason = "Other";
+      location = "Other";
+      customNote = otherDetails || undefined;
+    }
+
+    await mutateAsync({
+      id: propertyId,
+      payload: { reason, location, customNote: customNote ?? null },
+    });
+
     onConfirm({
       transactionLocation: selectedOption,
       otherDetails: selectedOption === "other" ? otherDetails : undefined,
     });
-    
+
     // Reset form
     setSelectedOption(null);
     setOtherDetails("");
@@ -81,10 +110,10 @@ const PropertyStatusModal: React.FC<PropertyStatusModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[9999] flex items-center justify-center">
+    <div className="fixed inset-0 z-[9999]  flex items-center justify-center">
       {/* Backdrop */}
       <div 
-        className="absolute inset-0 bg-black bg-opacity-50"
+        className="absolute inset-0 bg-[#00000070]"
         onClick={handleClose}
       />
       
@@ -191,10 +220,10 @@ const PropertyStatusModal: React.FC<PropertyStatusModalProps> = ({
           </button>
           <button
             onClick={handleSubmit}
-            disabled={!selectedOption}
+            disabled={!selectedOption || isPending || !propertyId}
             className="flex-1 px-4 py-2 text-sm font-medium text-white bg-[#C85212] hover:bg-orange-700 disabled:bg-gray-300 disabled:cursor-not-allowed rounded-lg transition-colors"
           >
-            Mark as Inactive
+            {isPending ? "Processing..." : "Mark as Inactive"}
           </button>
         </div>
       </div>

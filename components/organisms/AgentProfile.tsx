@@ -50,24 +50,23 @@ const AgentProfile: React.FC = () => {
   
   const agent: Agent = useMemo(() => {
     const currentUser = userData?.currentUser;
+    
+    // Get agent-specific data from roleProfiles
+    const agentProfile = currentUser?.roleProfiles?.agent;
+    
     return {
-      name: currentUser?.name || "Sarah Abba",
-      location: currentUser?.location || "Abuja, Nigeria",
-      agency: currentUser?.agency || "Imperial Property Agency",
-      code: currentUser?.code || "600APK",
-      verified: currentUser?.verified ?? true,
-      premium: currentUser?.premium ?? true,
-      profileImage: currentUser?.profileImage || "/Ellipse-1.png",
-      coverImage: currentUser?.coverImage || "/cover-image.png",
-      description:
-        currentUser?.description ||
-        "With over 8 years of experience in real estate development and property management, I specialize in residential and commercial properties across New York. My expertise includes property development, investment consulting, and helping clients find their perfect home or investment opportunity. I pride myself on delivering exceptional service and building lasting relationships with my clients.",
-      stats: currentUser?.stats || [
-        { label: "Work Experience", value: "3 years" },
-        { label: "Active Listings", value: "26" },
-        { label: "Properties sold", value: "12" },
-        { label: "Clients Rating", value: "4.9" },
-      ],
+      name: currentUser?.firstName && currentUser?.lastName 
+        ? `${currentUser.firstName} ${currentUser.lastName}` 
+        : currentUser?.firstName || "",
+      location: agentProfile?.location || "",
+      agency: agentProfile?.agency || "",
+      code: agentProfile?.code || "",
+      verified: currentUser?.isVerified ?? false,
+      premium: agentProfile?.premium ?? false,
+      profileImage: currentUser?.profilePicture || "",
+      coverImage: agentProfile?.coverImage || "",
+      description: agentProfile?.description || "",
+      stats: agentProfile?.stats || [],
     };
   }, [userData]);
 
@@ -119,8 +118,8 @@ const AgentProfile: React.FC = () => {
         bedrooms: property?.propertyDetails?.bedrooms,
         bathrooms: property?.propertyDetails?.bathrooms,
         totalAreaSqM: property?.propertyDetails?.totalAreaSqM,
-        rating: 4.0,
-        reviewCount: 0,
+        rating: property.rating || 0,
+        reviewCount: property.reviewCount || 0,
         beds: property?.propertyDetails?.bedrooms || 0,
         baths: property?.propertyDetails?.bathrooms || 0,
         size: property?.propertyDetails?.totalAreaSqM || 0,

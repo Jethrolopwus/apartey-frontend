@@ -1,6 +1,7 @@
 "use client";
 import React from "react";
 import { useGetAllListingsQuery } from "@/Hooks/use-getAllListings.query";
+import { useGetPropertyRatingsQuery } from "@/Hooks/use-getPropertyRatings.query";
 import Link from "next/link";
 import Image from "next/image";
 import { Star, MapPin, Heart, Bed, Bath, SquareDot } from "lucide-react";
@@ -9,6 +10,51 @@ import {
   PropertiesResponse,
   PropertyCategory,
 } from "@/types/generated";
+
+// Component to display property rating with real data
+const PropertyRatingDisplay: React.FC<{ propertyId: string; fallbackRating?: number; fallbackReviewCount?: number }> = ({ 
+  propertyId, 
+  fallbackRating = 0, 
+  fallbackReviewCount = 0 
+}) => {
+  const { data: ratingsData, isLoading } = useGetPropertyRatingsQuery(propertyId);
+  
+  const rating = ratingsData?.rating ?? fallbackRating;
+  const reviewCount = ratingsData?.reviewCount ?? fallbackReviewCount;
+  
+  if (isLoading) {
+    return (
+      <div className="flex items-center mb-2">
+        <div className="flex items-center">
+          {[...Array(5)].map((_, i) => (
+            <Star key={i} className="w-4 h-4 text-gray-300" />
+          ))}
+        </div>
+        <span className="text-sm text-gray-600 ml-2">Loading...</span>
+      </div>
+    );
+  }
+  
+  return (
+    <div className="flex items-center mb-2">
+      <div className="flex items-center">
+        {[...Array(5)].map((_, i) => (
+          <Star
+            key={i}
+            className={`w-4 h-4 ${
+              i < Math.round(rating)
+                ? "text-yellow-400 fill-current"
+                : "text-gray-300"
+            }`}
+          />
+        ))}
+      </div>
+      <span className="text-sm text-gray-600 ml-2">
+        {rating} ({reviewCount} reviews)
+      </span>
+    </div>
+  );
+};
 
 const transformPropertyToListing = (property: Property) => {
   const getPropertyTitle = (property: Property) => {
@@ -20,7 +66,13 @@ const transformPropertyToListing = (property: Property) => {
   };
 
   const getPropertyLocation = (property: Property) => {
-    const { city, country } = property.location || {};
+    const { fullAddress, city, country } = property.location || {};
+    
+    // Prioritize fullAddress if available, otherwise fall back to city, country
+    if (fullAddress) {
+      return fullAddress;
+    }
+    
     return (
       [city, country].filter(Boolean).join(", ") || "Location not specified"
     );
@@ -182,23 +234,11 @@ const HomeListingsPreview: React.FC = () => {
                   <Heart className="w-4 h-4 text-gray-400" />{" "}
                   {/* Moved here, static */}
                 </p>
-                <div className="flex items-center mb-2">
-                  <div className="flex items-center">
-                    {[...Array(5)].map((_, i) => (
-                      <Star
-                        key={i}
-                        className={`w-4 h-4 ${
-                          i < Math.round(listing.rating)
-                            ? "text-yellow-400 fill-current"
-                            : "text-gray-300"
-                        }`}
-                      />
-                    ))}
-                  </div>
-                  <span className="text-sm text-gray-600 ml-2">
-                    {listing.rating} ({listing.reviewCount} reviews)
-                  </span>
-                </div>
+                <PropertyRatingDisplay 
+                  propertyId={listing.id}
+                  fallbackRating={listing.rating}
+                  fallbackReviewCount={listing.reviewCount}
+                />
                 <div className="flex items-center gap-2 mb-2 text-sm text-gray-600">
                   {listing.bedrooms && (
                     <span className="flex items-center">

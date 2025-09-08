@@ -44,6 +44,7 @@ export default Object.freeze({
   claimProperties: (id: string) => `/listings/claim/${id}`,
   getClaimStatus: (id: string) => `/listings/claim/${id}`,
   getListingById: (id: string) => `/listings/${id}`,
+  toggleListingAvailability: (id: string) => `/listings/${id}/availability`,
   getPropertiesById: (id: string) => `/properties/${id}`,
 
   getRelatedListing: (id: string) => `/listings/${id}`,
