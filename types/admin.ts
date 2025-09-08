@@ -4,6 +4,9 @@ export interface AdminStats {
   totalProperties: number;
   activeListings: number;
   totalRevenue: number;
+  growth: any;
+  completed: any;
+  trends: any;
 }
 
 export interface UserDistribution {
@@ -31,6 +34,9 @@ export interface AdminTrends {
   propertyTypes: PropertyType[];
   countrySales: CountrySale[];
   monthlyUserTrend: MonthlyUserTrend[];
+  userDistributionByMonth: any;
+  completionDistribution: any;
+  recentCompleted: any;
 }
 
 export interface AdminOverviewResponse {
@@ -43,9 +49,11 @@ export interface AdminProperty {
   title: string;
   addedDate: string;
   type: string;
+  category: string;
   location: string;
   price: string;
   status: string;
+  claimed: string;
   lister: string;
 }
 
@@ -63,6 +71,7 @@ export interface AdminUser {
   status: string;
   email: string;
   createdAt: string;
+  joinDate?: string;
   propertiesCount: number;
   Deactivated: boolean;
 }
@@ -93,21 +102,30 @@ export interface AdminReviewsResponse {
 export interface SearchQueryParams {
   page?: number;
   limit?: number;
-  status?: "verified" | "flagged" | "flaaged";
+  status?: "verified" | "flagged";
   rating?: string;
   reviewer?: string;
   property?: string;
   startDate?: string;
   endDate?: string;
 }
+
+type Reasons = {
+  reason: string;
+  otherText: string;
+  count: number;
+};
 export interface AdminReviews {
   id: string;
   property: string | undefined;
   reviewer: string | undefined;
   rating: string | undefined;
-  status: "verified" | "flagged" | "flaaged" | undefined;
+  status: "verified" | "flagged" | undefined;
   comment: string | undefined;
   date: string | undefined;
+  flaggedByCount?: number;
+  likedByCount?: number;
+  flaggingReasons?: Reasons[];
 }
 
 export interface Pagination {
@@ -174,7 +192,7 @@ export interface ApiClaimResponse {
   district: string;
   stateOrRegion: string;
   postalCode: string;
-  cadastralNumber: string;
+  cadastralNumber?: string;
   additionalInfo: string;
   status: "approved" | "pending" | "rejected";
   createdAt: string;
@@ -189,6 +207,7 @@ export interface AdminClaimedProperty {
   propertyDescription: string;
   propertyId: string;
   address: string;
+  cadastralNumber?: string;
   claimant: string;
   date: string;
   status: "approved" | "pending" | "rejected";
@@ -211,8 +230,10 @@ export interface AdminClaimedPropertiesResponse {
 }
 
 export interface UseClaimPropertyQueryParams {
-  page?: number;
-  limit?: number;
+  page: number;
+  limit: number;
+  sortBy: string | "newest" | "oldest";
+  search?: string;
 }
 
 // ==== ADMIN ANALYTICS INTERFACES ====
@@ -289,20 +310,32 @@ export interface AdminProfileUpdateResponse {
 // ==== ADMIN BLOG POST INTERFACES ====
 
 export interface AdminPost {
-  id: string;
+  _id: string;
   title: string;
-  subtitle: string;
+  excerpt: string;
   content: string;
-  author: string;
-  date: string;
-  category: string;
+  author: {
+    firstName: string;
+  };
+  category:
+    | "Renting"
+    | "Selling"
+    | "Buying"
+    | "Investment"
+    | "Maintenance"
+    | "Tips"
+    | "News";
   views: number;
-  comments: number;
-  likes: number;
+  archived: boolean;
+  likes: string[];
   tags: string[];
-  status: "Published" | "Draft" | "Archived";
-  published: string;
+  status: "draft" | "published";
+  likesCount: number;
+  publishedAt: Date;
+  draftedAt: Date;
+  archivedAt: Date;
   image: string;
+  imageUrl?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -317,8 +350,9 @@ export interface useGetAdminAllBlogPostQueryParams {
   byId?: number;
   page?: number;
   search?: string;
-  sort?: "newest" | "oldest" | "most-liked" | "most-viewed";
-  status?: "Published" | "Draft" | "Archived";
+  sortBy?: string; // e.g. "createdAt", "likes", etc.
+  order?: "asc" | "desc";
+  status?: "published" | "draft";
 }
 
 export interface useGetAdminAllPropertiesQueryParams {
@@ -326,16 +360,23 @@ export interface useGetAdminAllPropertiesQueryParams {
   byId?: number;
   page?: number;
   search?: string;
-  sort?: "newest" | "oldest";
+  sortBy?: "newest" | "oldest";
 }
 
 export interface CreateAdminPostData {
   title: string;
   content: string;
-  tags: string[];
-  status: 'draft' | 'published';
+  tags: string;
+  status: "draft" | "published";
   excerpt?: string;
-  category: 'Renting' | 'Selling' | 'Buying' | 'Investment' | 'Maintenance' | 'Tips' | 'News';
+  category:
+    | "Renting"
+    | "Selling"
+    | "Buying"
+    | "Investment"
+    | "Maintenance"
+    | "Tips"
+    | "News";
   imageUrl?: string;
   image?: File;
 }
@@ -343,5 +384,3 @@ export interface CreateAdminPostData {
 export interface UpdateAdminPostData extends Partial<CreateAdminPostData> {
   id: string;
 }
-
-

@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   MessageCircle,
   Mail,
@@ -7,6 +7,7 @@ import {
   PlusCircle,
   MinusCircle,
 } from "lucide-react";
+import Link from "next/link";
 
 // Extend Window interface for Tawk_API
 declare global {
@@ -22,11 +23,55 @@ declare global {
 }
 
 export default function HelpCenter() {
-  // Function to open Tawk.to chat
-  const openTawkChat = () => {
-    if (typeof window !== 'undefined' && window.Tawk_API) {
+  const [isChatOpen, setIsChatOpen] = useState(false);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    if (!document.getElementById("tawk-to-script")) {
+      const s1 = document.createElement("script");
+      s1.id = "tawk-to-script";
+      s1.async = true;
+      s1.src = "https://embed.tawk.to/688398648beeee192b5d57d3/1j110mj0n";
+      s1.charset = "UTF-8";
+      s1.setAttribute("crossorigin", "*");
+      document.body.appendChild(s1);
+    }
+
+    // Initialize Tawk_API with safe no-op functions until the real script loads
+    window.Tawk_API = window.Tawk_API || {
+      maximize: () => {},
+      minimize: () => {},
+      toggle: () => {},
+      showWidget: () => {},
+      hideWidget: () => {},
+    };
+
+    // Hide widget initially
+    const interval = setInterval(() => {
+      if (window.Tawk_API?.hideWidget) {
+        window.Tawk_API.hideWidget();
+        clearInterval(interval);
+      }
+    }, 500);
+
+    return () => clearInterval(interval);
+  }, []);
+
+  const toggleTawkChat = () => {
+    if (!window.Tawk_API) return;
+
+    if (isChatOpen) {
+      // Hide completely when closing
+      window.Tawk_API.minimize();
+      window.Tawk_API.hideWidget();
+    } else {
+      // Show and open when starting
+      window.Tawk_API.showWidget();
       window.Tawk_API.maximize();
     }
+
+    setIsChatOpen(!isChatOpen);
   };
 
   const faqs = [
@@ -108,7 +153,10 @@ export default function HelpCenter() {
         {/* Support Options */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
           {/* Live Chat */}
-          <div className="bg-white cursor-pointer rounded-lg border border-gray-200 p-6 text-center">
+          <button
+            onClick={toggleTawkChat}
+            className="bg-white cursor-pointer shadow rounded-lg border border-gray-200 p-6 text-center transition-transform duration-300 hover:shadow-xl hover:scale-105"
+          >
             <div className="inline-flex items-center justify-center w-12 h-12 mb-4">
               <MessageCircle className="w-8 h-8 text-[#C85212]" />
             </div>
@@ -118,16 +166,16 @@ export default function HelpCenter() {
             <p className="text-sm text-gray-600 mb-4">
               Chat with our support team
             </p>
-            <button 
-              onClick={openTawkChat}
-              className="text-sm text-[#C85212] cursor-pointer hover:text-[#A64310] font-medium transition-colors"
-            >
-              Start Chat
-            </button>
-          </div>
+            <p className="text-sm text-[#C85212] cursor-pointer hover:text-[#A64310] font-medium transition-colors">
+              {isChatOpen ? "Close Chat" : "Start Chat"}
+            </p>
+          </button>
 
           {/* Email Support */}
-          <div className="bg-white rounded-lg border border-gray-200 p-6 text-center">
+          <Link
+            href="mailto:admin@apartey.com"
+            className="bg-white rounded-lg shadow border border-gray-200 p-6 text-center transition-transform duration-300 hover:shadow-xl hover:scale-105"
+          >
             <div className="inline-flex items-center justify-center w-12 h-12 mb-4">
               <Mail className="w-8 h-8 text-[#C85212]" />
             </div>
@@ -135,13 +183,13 @@ export default function HelpCenter() {
               Email Support
             </h3>
             <p className="text-sm text-gray-600 mb-4">Send us an email</p>
-            <button className="text-sm text-[#C85212] hover:text-[#A64310] font-medium transition-colors">
+            <p className="text-sm text-[#C85212] hover:text-[#A64310] font-medium transition-colors">
               admin@apartey.com
-            </button>
-          </div>
+            </p>
+          </Link>
 
           {/* Phone Support */}
-          <div className="bg-white rounded-lg border border-gray-200 p-6 text-center">
+          <div className="bg-white rounded-lg shadow border border-gray-200 p-6 text-center transition-transform duration-300 hover:shadow-xl hover:scale-105">
             <div className="inline-flex items-center justify-center w-12 h-12 mb-4">
               <Phone className="w-8 h-8 text-[#C85212]" />
             </div>

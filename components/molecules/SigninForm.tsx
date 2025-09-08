@@ -14,6 +14,7 @@ const SignInForm: React.FC<SignInFormProps> = ({
   onSubmit,
   register,
   errors,
+  isAdmin =false,
 }) => {
   const [showPassword, setShowPassword] = useState(false);
   const router = useRouter();
@@ -73,7 +74,7 @@ const SignInForm: React.FC<SignInFormProps> = ({
           authData.role ||
           authData.currentUserRole?.role ||
           "renter";
-        // toast.success("You are already signed in!");
+        toast.success("You are already signed in!");
         switch (userRole.toLowerCase()) {
           case "renter":
             router.push("/");
@@ -113,8 +114,8 @@ const SignInForm: React.FC<SignInFormProps> = ({
   }
 
   return (
-    <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-      <div className="space-y-4 shadow-md">
+    <form className="mt-8 space-y-6 " onSubmit={handleSubmit}>
+      <div className="space-y-4">
         <div>
           <label
             htmlFor="email"
@@ -155,14 +156,14 @@ const SignInForm: React.FC<SignInFormProps> = ({
             >
               Password
             </label>
-            <div className="text-sm">
+            {!isAdmin && <div className="text-sm">
               <a
                 href="/resetPassword"
                 className="font-medium text-blue-500 hover:text-blue-400"
               >
                 Forgot password?
               </a>
-            </div>
+            </div>}
           </div>
           <div className="mt-1 relative">
             <input

@@ -618,6 +618,7 @@ export interface SignInFormProps {
   onSubmit: (e: React.FormEvent) => void;
   register: any;
   errors: FieldErrors<FormData>;
+  isAdmin?: boolean;
 }
 
 // types/blog.ts

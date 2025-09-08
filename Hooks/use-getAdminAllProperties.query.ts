@@ -13,9 +13,9 @@ export const useGetAdminPropertiesQuery = (
       queryFn: () =>
         http.httpGetAdminAllProperties(
           params?.limit, 
-          params?.byId, 
+          params?.page, 
           params?.search, 
-          params?.sort
+          params?.sortBy
         ),
       staleTime: 5 * 60 * 1000,
       retry: 2,
