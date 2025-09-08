@@ -9,7 +9,8 @@ import { useGetAllMyListingsQuery } from "@/Hooks/use-getAllMyListings.query";
 import { useGetClaimStatusByIdQuery } from "@/Hooks/use-getClaimStatusById.query";
 import Link from "next/link";
 import { toast } from "react-hot-toast";
-import PropertyStatusModal, { PropertyStatusData } from "@/components/molecules/PropertyStatusModal";
+import PropertyStatusModal from "@/components/molecules/PropertyStatusModal";
+import PropertyActivateModal from "@/components/molecules/PropertyActivateModal";
 
 const DEFAULT_PROPERTY_IMAGE = "/Estate2.png";
 
@@ -65,6 +66,22 @@ const ClaimPropertyButton: React.FC<{ propertyId: string; onClaim: (id: string) 
   );
 };
 
+// Gate that shows children only when the property's claim status is approved
+const ClaimStatusGate: React.FC<{ propertyId: string; children: React.ReactNode }> = ({ propertyId, children }) => {
+  const { data: claimStatusData } = useGetClaimStatusByIdQuery(propertyId);
+  const hasApprovedClaim = claimStatusData?.status === "approved";
+  if (!hasApprovedClaim) {
+    return (
+      <div className="flex items-center justify-end w-full">
+        <span className="px-3 py-1 rounded-full text-xs font-semibold bg-gray-100 text-gray-500">
+          Not Claimed
+        </span>
+      </div>
+    );
+  }
+  return <>{children}</>;
+};
+
 interface Property {
   id: string;
   image: string;
@@ -80,7 +97,7 @@ interface Property {
   status: string;
   mark: string;
   isActive: boolean;
-  category: string;
+  category: "Rent" | "Swap" | "Buy";
 }
 
 interface Stat {
@@ -99,10 +116,12 @@ interface Homeowner {
   stats?: Stat[];
 }
 
+
 const HomeownerProfile: React.FC = () => {
   const router = useRouter();
   const [currentPage, setCurrentPage] = React.useState(1);
   const itemsPerPage = 6; // Limit of 6 as per design 
+  const [selectedCategory, setSelectedCategory] = React.useState<"Rent" | "Buy" | "Swap">("Rent");
 
   const {
     data: userData,
@@ -118,7 +137,13 @@ const HomeownerProfile: React.FC = () => {
   } = useGetAllMyListingsQuery({
     limit: itemsPerPage,
     page: currentPage,
+    category: selectedCategory,
   });
+
+  // Counts per category (fetch minimal data just to get totals)
+  const { data: rentCountData } = useGetAllMyListingsQuery({ limit: 1, page: 1, category: "Rent" });
+  const { data: buyCountData } = useGetAllMyListingsQuery({ limit: 1, page: 1, category: "Buy" });
+  const { data: swapCountData } = useGetAllMyListingsQuery({ limit: 1, page: 1, category: "Swap" });
 
  
 
@@ -126,22 +151,21 @@ const HomeownerProfile: React.FC = () => {
  
   const homeowner: Homeowner = useMemo(() => {
     const currentUser = userData?.currentUser;
+    
+    // Get homeowner-specific data from roleProfiles
+    const homeownerProfile = currentUser?.roleProfiles?.homeowner;
+    
     return {
-      name: currentUser?.name || "John Doe",
-      location: currentUser?.location || "Abuja, Nigeria",
-      verified: currentUser?.verified ?? true,
-      premium: currentUser?.premium ?? false,
-      profileImage: currentUser?.profileImage || "/Ellipse-1.png",
-      coverImage: currentUser?.coverImage || "/cover-image.png",
-      description:
-        currentUser?.description ||
-        "Experienced homeowner with multiple properties across different locations. I focus on providing quality accommodation and maintaining excellent relationships with tenants.",
-      stats: currentUser?.stats || [
-        { label: "Properties Owned", value: "5" },
-        { label: "Active Listings", value: "3" },
-        { label: "Tenant Rating", value: "4.8" },
-        { label: "Years Experience", value: "8" },
-      ],
+      name: currentUser?.firstName && currentUser?.lastName 
+        ? `${currentUser.firstName} ${currentUser.lastName}` 
+        : currentUser?.firstName || "",
+      location: homeownerProfile?.location || "",
+      verified: currentUser?.isVerified ?? false,
+      premium: homeownerProfile?.premium ?? false,
+      profileImage: currentUser?.profilePicture || "",
+      coverImage: homeownerProfile?.coverImage || "",
+      description: homeownerProfile?.description || "",
+      stats: homeownerProfile?.stats || [],
     };
   }, [userData]);
 
@@ -188,8 +212,8 @@ const HomeownerProfile: React.FC = () => {
         image: property?.media?.coverPhoto || DEFAULT_PROPERTY_IMAGE,
         title: getTitle(),
         location: getLocation(),
-        rating: 4.0,
-        reviewCount: 0,
+        rating: property.rating || 0,
+        reviewCount: property.reviewCount || 0,
         beds: property?.propertyDetails?.bedrooms || 0,
         baths: property?.propertyDetails?.bathrooms || 0,
         size: property?.propertyDetails?.totalAreaSqM || 0,
@@ -211,6 +235,10 @@ const HomeownerProfile: React.FC = () => {
   const [propertyStatusModalOpen, setPropertyStatusModalOpen] = React.useState(false);
   const [selectedProperty, setSelectedProperty] = React.useState<Property | null>(null);
 
+  // Property activate modal state
+  const [propertyActivateModalOpen, setPropertyActivateModalOpen] = React.useState(false);
+  const [selectedPropertyForActivation, setSelectedPropertyForActivation] = React.useState<Property | null>(null);
+
   //
   React.useEffect(() => {
     setPropertyStates(
@@ -227,20 +255,18 @@ const HomeownerProfile: React.FC = () => {
     
     // If property is currently active, show modal to confirm deactivation
     if (isCurrentlyActive) {
-      console.log("Opening modal for property:", property.title);
+    
       setSelectedProperty(property);
       setPropertyStatusModalOpen(true);
     } else {
-      // If property is inactive, directly activate it
-      setPropertyStates((prev) =>
-        prev.map((p) => (p.id === id ? { ...p, isRented: true } : p))
-      );
-      toast.success("Property marked as active!");
+      
+      setSelectedPropertyForActivation(property);
+      setPropertyActivateModalOpen(true);
     }
   };
 
   // Property status modal handlers
-  const handlePropertyStatusConfirm = (data: PropertyStatusData) => {
+  const handlePropertyStatusConfirm = () => {
     if (!selectedProperty) return;
 
     // Update property status to inactive
@@ -251,14 +277,7 @@ const HomeownerProfile: React.FC = () => {
     // Here you would typically make an API call to update the property status
     // For now, we'll just show a success message
     toast.success("Property marked as inactive!");
-    
-    // Log the transaction data for analytics (you can send this to your backend)
-    console.log("Property status change:", {
-      propertyId: selectedProperty.id,
-      propertyTitle: selectedProperty.title,
-      category: selectedProperty.category,
-      transactionData: data
-    });
+  
 
     setPropertyStatusModalOpen(false);
     setSelectedProperty(null);
@@ -267,6 +286,26 @@ const HomeownerProfile: React.FC = () => {
   const handlePropertyStatusModalClose = () => {
     setPropertyStatusModalOpen(false);
     setSelectedProperty(null);
+  };
+
+  // Property activate modal handlers
+  const handlePropertyActivateConfirm = () => {
+    if (!selectedPropertyForActivation) return;
+
+    // Update property status to active
+    setPropertyStates((prev) =>
+      prev.map((p) => (p.id === selectedPropertyForActivation.id ? { ...p, isRented: true } : p))
+    );
+
+    toast.success("Property marked as active!");
+    
+    setPropertyActivateModalOpen(false);
+    setSelectedPropertyForActivation(null);
+  };
+
+  const handlePropertyActivateModalClose = () => {
+    setPropertyActivateModalOpen(false);
+    setSelectedPropertyForActivation(null);
   };
 
   // Handle claim property button click with status check
@@ -443,11 +482,35 @@ const HomeownerProfile: React.FC = () => {
 
         {/* Tabs */}
         <div className="flex gap-4 mb-6">
-          <button className="px-4 py-2 rounded-full text-sm font-medium bg-gray-100 text-[#111827] border border-[#111827]">
-            For rent (8)
+          <button
+            onClick={() => { setSelectedCategory("Rent"); setCurrentPage(1); }}
+            className={`px-4 py-2 rounded-full text-sm font-medium border ${
+              selectedCategory === "Rent"
+                ? "bg-gray-100 text-[#111827] border-[#111827]"
+                : "bg-gray-100 text-gray-700 border-gray-200"
+            }`}
+          >
+            For rent ({rentCountData?.total ?? 0})
           </button>
-          <button className="px-4 py-2 rounded-full text-sm font-medium bg-gray-100 text-gray-700 border border-gray-200">
-            For sale (13)
+          <button
+            onClick={() => { setSelectedCategory("Buy"); setCurrentPage(1); }}
+            className={`px-4 py-2 rounded-full text-sm font-medium border ${
+              selectedCategory === "Buy"
+                ? "bg-gray-100 text-[#111827] border-[#111827]"
+                : "bg-gray-100 text-gray-700 border-gray-200"
+            }`}
+          >
+            For sale ({buyCountData?.total ?? 0})
+          </button>
+          <button
+            onClick={() => { setSelectedCategory("Swap"); setCurrentPage(1); }}
+            className={`px-4 py-2 rounded-full text-sm font-medium border ${
+              selectedCategory === "Swap"
+                ? "bg-gray-100 text-[#111827] border-[#111827]"
+                : "bg-gray-100 text-gray-700 border-gray-200"
+            }`}
+          >
+            For swap ({swapCountData?.total ?? 0})
           </button>
         </div>
 
@@ -502,8 +565,7 @@ const HomeownerProfile: React.FC = () => {
                         ))}
                       </div>
                       <span className="text-xs font-medium text-gray-700">
-                        {property.rating.toFixed(1)} ({property.reviewCount}{" "}
-                        reviews)
+                        {property.rating.toFixed(1)} ({property.reviewCount} reviews)
                       </span>
                     </div>
                     <div className="flex items-center text-gray-700 text-xs gap-4 mb-1">
@@ -535,45 +597,41 @@ const HomeownerProfile: React.FC = () => {
                   </div>
                   <div className="mt-4">
                     <hr className="mb-3 border-gray-200" />
-                    
                     <div className="mb-4">
                       <ClaimPropertyButton 
                         propertyId={property.id}
                         onClaim={handleClaimProperty}
                       />
                     </div>
-
-                    
-
                     <div className="flex items-center justify-between">
-  
-                      <div className="flex items-center gap-2">
-                        <button
-                          onClick={() => handleToggle(property.id)}
-                          className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${
-                            isRented ? "bg-green-500" : "bg-gray-200"
+                      <ClaimStatusGate propertyId={property.id}>
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => handleToggle(property.id)}
+                            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${
+                              isRented ? "bg-green-500" : "bg-gray-200"
+                            }`}
+                          >
+                            <span
+                              className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${
+                                isRented ? "translate-x-6" : "translate-x-1"
+                              }`}
+                            />
+                          </button>
+                          <span className="text-sm font-medium text-gray-700">
+                            Mark as Rented
+                          </span>
+                        </div>
+                        <span
+                          className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                            isRented
+                              ? "bg-green-100 text-green-700"
+                              : "bg-gray-100 text-gray-500"
                           }`}
                         >
-                          <span
-                            className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${
-                              isRented ? "translate-x-6" : "translate-x-1"
-                            }`}
-                          />
-                        </button>
-                        <span className="text-sm font-medium text-gray-700">
-                          Mark as Rented
+                          {isRented ? "Active" : "Inactive"}
                         </span>
-                      </div>
-                     
-                      <span
-                        className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                          isRented
-                            ? "bg-green-100 text-green-700"
-                            : "bg-gray-100 text-gray-500"
-                        }`}
-                      >
-                        {isRented ? "Active" : "Inactive"}
-                      </span>
+                      </ClaimStatusGate>
                     </div>
                   </div>
                 </div>
@@ -581,7 +639,6 @@ const HomeownerProfile: React.FC = () => {
             );
           })}
         </div>
-
       
         {properties.length === 0 && (
           <div className="text-center py-12">
@@ -590,19 +647,16 @@ const HomeownerProfile: React.FC = () => {
               <p className="text-sm">Start by adding your first property listing</p>
             </div>
             <Link href="/property-listings">
-              <Button variant="primary" className="px-6 py-2 bg-orange-600 hover:bg-orange-700">
+              <Button variant="primary" className="px-6 py-2 bg-[#C85212] hover:bg-orange-700">
                 Add Your First Property
               </Button>
             </Link>
           </div>
         )}
 
-      
-        {/* Pagination - Only show if there are multiple pages */}
         {listingsData?.pages && listingsData.pages > 1 && (
           <div className="flex items-center justify-center mt-8">
             <div className="flex items-center space-x-2">
-              {/* Previous Button */}
               <button
                 onClick={handlePreviousPage}
                 disabled={currentPage <= 1}
@@ -615,8 +669,6 @@ const HomeownerProfile: React.FC = () => {
                 <span>←</span>
                 <span className="ml-1">Previous</span>
               </button>
-              
-              {/* Page Numbers */}
               <div className="flex items-center space-x-1">
                 {Array.from({ length: listingsData.pages }, (_, i) => i + 1).map((page) => (
                   <button
@@ -632,8 +684,6 @@ const HomeownerProfile: React.FC = () => {
                   </button>
                 ))}
               </div>
-              
-              {/* Next Button */}
               <button
                 onClick={handleNextPage}
                 disabled={currentPage >= listingsData.pages}
@@ -651,13 +701,21 @@ const HomeownerProfile: React.FC = () => {
         )}
       </div>
 
-      {/* Property Status Modal */}
       <PropertyStatusModal
         isOpen={propertyStatusModalOpen}
         onClose={handlePropertyStatusModalClose}
         onConfirm={handlePropertyStatusConfirm}
         propertyTitle={selectedProperty?.title || "Property"}
-        category={selectedProperty?.category as "Rent" | "Swap" | "Buy" || "Rent"}
+        category={(selectedProperty?.category as "Rent" | "Swap" | "Buy") || "Rent"}
+        propertyId={selectedProperty?.id || null}
+      />
+
+      <PropertyActivateModal
+        isOpen={propertyActivateModalOpen}
+        onClose={handlePropertyActivateModalClose}
+        onConfirm={handlePropertyActivateConfirm}
+        propertyTitle={selectedPropertyForActivation?.title || "Property"}
+        propertyId={selectedPropertyForActivation?.id || null}
       />
     </div>
   );
