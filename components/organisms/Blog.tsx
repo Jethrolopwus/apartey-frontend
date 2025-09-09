@@ -50,22 +50,29 @@ export default function BlogComponent() {
         {posts.slice(0, 3).map((post: BlogPost) => (
           <div
             key={post._id}
-            className="flex shadow-md rounded-md pb-4 gap-2 flex-col items-center"
+            className="bg-white rounded-xl shadow-sm overflow-hidden hover:shadow-md transition-shadow cursor-pointer group block"
           >
-            <div className="w-full rounded-t-lg overflow-hidden mb-4">
+            <div className="relative h-48 md:h-56">
               <Image
                 src={post.imageUrl || "/HouseRent.png"}
                 alt={post.title}
                 width={400}
                 height={250}
-                className="w-full h-48 object-cover"
+                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                 priority={false}
               />
             </div>
-            <h3 className="text-lg font-medium text-gray-800 mb-2">
-              {post.title}
-            </h3>
-            <p className="text-sm text-gray-600">{stripHtmlTags(post.excerpt)}</p>
+            <div className="p-6">
+              <span className="inline-block bg-orange-100 text-orange-600 text-xs font-semibold px-3 py-1 rounded-full mb-2 w-fit">
+                {post.category}
+              </span>
+              <h3 className="font-bold text-gray-900 mb-3 text-lg leading-tight group-hover:text-orange-600 transition-colors">
+                {post.title}
+              </h3>
+              <p className="text-gray-600 text-sm mb-4 line-clamp-2">
+                {stripHtmlTags(post.excerpt)}
+              </p>
+            </div>
           </div>
         ))}
       </div>
