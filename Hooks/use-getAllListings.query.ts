@@ -28,8 +28,8 @@ export const useGetAllListingsQuery = (
       params?.petPolicy,
       params?.condition,
     ],
-    queryFn: () =>
-      http.httpGetAllListings(
+    queryFn: () => {
+      return http.httpGetAllListings(
         params?.limit,
         params?.byId,
         params?.category,
@@ -37,8 +37,9 @@ export const useGetAllListingsQuery = (
         params?.propertyType,
         params?.petPolicy,
         params?.condition
-      ),
-    staleTime: 5 * 60 * 1000,
+      );
+    },
+    staleTime: 0, // Disable caching to ensure fresh data on country change
     retry: 2,
   });
 

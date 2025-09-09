@@ -26,6 +26,17 @@ interface ExtendedJWT extends JWT {
   googleId?: string;
 }
 
+// Validate required environment variables
+if (!process.env.NEXTAUTH_SECRET) {
+  throw new Error("NEXTAUTH_SECRET environment variable is required");
+}
+if (!process.env.GOOGLE_CLIENT_ID) {
+  throw new Error("GOOGLE_CLIENT_ID environment variable is required");
+}
+if (!process.env.GOOGLE_CLIENT_SECRET) {
+  throw new Error("GOOGLE_CLIENT_SECRET environment variable is required");
+}
+
 const authOptions = {
   secret: process.env.NEXTAUTH_SECRET!,
   providers: [
@@ -112,7 +123,11 @@ const authOptions = {
         if (!response.ok) {
           const errorText = await response.text();
           console.error("Failed to sync user with backend:", errorText);
-          throw Error("An error occurred. Please try again");
+          
+          // Don't throw error to prevent blocking sign-in
+          // The user will still be signed in, but backend sync failed
+          console.warn("Backend sync failed, but allowing sign-in to continue");
+          return true;
         } else {
           const result = await response.json();
           console.log("User synced successfully with backend:", result);

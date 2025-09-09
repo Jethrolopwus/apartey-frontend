@@ -1,5 +1,5 @@
 "use client";
-import React, { useMemo } from "react";
+import React, { useMemo, useEffect } from "react";
 import Image from "next/image";
 import Button from "@/components/atoms/Buttons/ActionButton";
 import { useRouter } from "next/navigation";
@@ -7,6 +7,7 @@ import { Star, Bed, Bath, Ruler, KeyRound } from "lucide-react";
 import { useGetUserProfileQuery } from "@/Hooks/use-getuserProfile.query";
 import { useGetAllMyListingsQuery } from "@/Hooks/use-getAllMyListings.query";
 import { useGetClaimStatusByIdQuery } from "@/Hooks/use-getClaimStatusById.query";
+import { useLocation } from "@/app/userLocationContext";
 import Link from "next/link";
 import { toast } from "react-hot-toast";
 import PropertyStatusModal from "@/components/molecules/PropertyStatusModal";
@@ -119,6 +120,21 @@ interface Homeowner {
 
 const HomeownerProfile: React.FC = () => {
   const router = useRouter();
+  const { selectedCountryCode } = useLocation();
+  
+  // Convert country code to full country name for listings API
+  const getCountryName = (countryCode: string) => {
+    switch (countryCode) {
+      case "NG":
+        return "Nigeria";
+      case "EE":
+        return "Estonia";
+      default:
+        return "Nigeria"; // Default fallback
+    }
+  };
+  
+  const selectedCountry = getCountryName(selectedCountryCode);
   const [currentPage, setCurrentPage] = React.useState(1);
   const itemsPerPage = 6; // Limit of 6 as per design 
   const [selectedCategory, setSelectedCategory] = React.useState<"Rent" | "Buy" | "Swap">("Rent");
@@ -129,6 +145,7 @@ const HomeownerProfile: React.FC = () => {
     error: userError,
   } = useGetUserProfileQuery();
 
+
   const {
     data: listingsData,
     isLoading: listingsLoading,
@@ -138,12 +155,14 @@ const HomeownerProfile: React.FC = () => {
     limit: itemsPerPage,
     page: currentPage,
     category: selectedCategory,
+    country: selectedCountry, // Filter by user's selected country (full name)
   });
 
-  // Counts per category (fetch minimal data just to get totals)
-  const { data: rentCountData } = useGetAllMyListingsQuery({ limit: 1, page: 1, category: "Rent" });
-  const { data: buyCountData } = useGetAllMyListingsQuery({ limit: 1, page: 1, category: "Buy" });
-  const { data: swapCountData } = useGetAllMyListingsQuery({ limit: 1, page: 1, category: "Swap" });
+
+  // Counts per category (fetch minimal data just to get totals) - also filtered by country
+  const { data: rentCountData } = useGetAllMyListingsQuery({ limit: 1, page: 1, category: "Rent", country: selectedCountry });
+  const { data: buyCountData } = useGetAllMyListingsQuery({ limit: 1, page: 1, category: "Buy", country: selectedCountry });
+  const { data: swapCountData } = useGetAllMyListingsQuery({ limit: 1, page: 1, category: "Swap", country: selectedCountry });
 
  
 
@@ -240,7 +259,7 @@ const HomeownerProfile: React.FC = () => {
   const [selectedPropertyForActivation, setSelectedPropertyForActivation] = React.useState<Property | null>(null);
 
   //
-  React.useEffect(() => {
+  useEffect(() => {
     setPropertyStates(
       properties.map((p) => ({ id: p.id, isRented: true })) // All properties start as active
     );
@@ -433,7 +452,7 @@ const HomeownerProfile: React.FC = () => {
                   <div className="flex items-center">
                     <KeyRound className="mr-1 h-5 w-5 text-[#C85212]" />
                     <span className="text-sm font-medium text-gray-900">
-                      {userData?.currentUser?.rewards || 0}APK
+                      {userData?.currentUser?.rewards || 0}Apartey
                     </span>
                   </div>
                 </div>
@@ -551,14 +570,14 @@ const HomeownerProfile: React.FC = () => {
                       </p>
                     </div>
                     <div className="flex items-center gap-2 text-sm text-gray-600 mb-1">
-                      <div className="flex gap-0.5 text-yellow-500">
+                      <div className="flex gap-0.5">
                         {[...Array(5)].map((_, i) => (
                           <Star
                             key={i}
                             size={14}
                             className={
                               i < Math.floor(property.rating)
-                                ? "fill-yellow-500"
+                                ? "text-yellow-400 fill-current"
                                 : "text-gray-300"
                             }
                           />

@@ -8,15 +8,18 @@ export interface useGetAllListingsQueryParams {
   byId?: number;
   page?: number;
   category?: "Rent" | "Swap" | "Buy";
+  country?: string;
 }
 
 export const useGetAllMyListingsQuery = (
   params?: useGetAllListingsQueryParams
 ) => {
   const { data, isLoading, error, refetch } = useQuery<PropertiesResponse>({
-    queryKey: ["MyListings", params?.limit, params?.byId, params?.page, params?.category],
-    queryFn: () => http.httpGetAllMyListings(params?.limit, params?.byId, params?.page, params?.category),
-    staleTime: 5 * 60 * 1000,
+    queryKey: ["MyListings", params?.limit, params?.byId, params?.page, params?.category, params?.country],
+    queryFn: () => {
+      return http.httpGetAllMyListings(params?.limit, params?.byId, params?.page, params?.category, params?.country);
+    },
+    staleTime: 0, // Disable caching to ensure fresh data on country change
     retry: 2,
   });
 

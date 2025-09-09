@@ -211,14 +211,14 @@ const ReviewsSection: React.FC<ReviewsSectionProps> = ({
     for (let i = 0; i < 5; i++) {
       if (i < fullStars) {
         stars.push(
-          <Star key={i} size={16} className="fill-gray-400 text-gray-400" />
+          <Star key={i} size={16} className="fill-yellow-400 text-yellow-400" />
         );
       } else if (i === fullStars && hasHalfStar) {
         stars.push(
           <Star
             key={i}
             size={16}
-            className="fill-gray-400 text-gray-400 opacity-50"
+            className="fill-yellow-400 text-yellow-400 opacity-50"
           />
         );
       } else {

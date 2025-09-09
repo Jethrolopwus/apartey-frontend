@@ -16,6 +16,8 @@ import {
 import { useAuthRedirect } from "@/Hooks/useAuthRedirect";
 import { useUserRole } from "@/Hooks/useUserRole";
 import { TokenManager } from "@/utils/tokenManager";
+import { useGetAllNotificationsQuery } from "@/Hooks/use-getAllNotifications.query";
+import { useGetUserFavoriteQuery } from "@/Hooks/use-getUsersFavorites.query";
 
 interface UserDropdownMenuProps {
   isOpen: boolean;
@@ -39,6 +41,14 @@ const UserDropdownMenu: React.FC<UserDropdownMenuProps> = ({
   const [selectedItem, setSelectedItem] = useState<string | null>(null);
   const { role } = useUserRole();
   const { isAuthenticated, checkAuthentication } = useAuthRedirect();
+  
+  // Get real data for notifications and favorites
+  const { data: notificationsData } = useGetAllNotificationsQuery();
+  const { data: favoritesData } = useGetUserFavoriteQuery();
+  
+  // Calculate real counts
+  const notificationCount = notificationsData?.length || 0;
+  const favoriteCount = favoritesData?.favorites?.length || 0;
 
   // Prevent rendering if not authenticated
   useEffect(() => {
@@ -81,7 +91,6 @@ const UserDropdownMenu: React.FC<UserDropdownMenuProps> = ({
     userData?.userName ||
     `${role ? role.charAt(0).toUpperCase() + role.slice(1) : "Renter"} User`;
   const userEmail = userData?.userEmail || `${role || "renter"}@example.com`;
-  const favoriteCount = userData?.favoriteCount || 3;
 
   const menuItems = [
     {
@@ -98,8 +107,8 @@ const UserDropdownMenu: React.FC<UserDropdownMenuProps> = ({
       label: "Notifications",
       icon: Bell,
       route: "/notifications",
-      hasNotification: true,
-      notificationCount: favoriteCount,
+      hasNotification: notificationCount > 0,
+      notificationCount: notificationCount,
     },
     {
       id: "activity",
@@ -118,7 +127,7 @@ const UserDropdownMenu: React.FC<UserDropdownMenuProps> = ({
           : role?.toLowerCase() === "agent"
           ? "/agent/profile-favorite"
           : "/profile-favorite",
-      hasNotification: true,
+      hasNotification: favoriteCount > 0,
       notificationCount: favoriteCount,
     },
     {

@@ -14,7 +14,8 @@ const Footer: React.FC = () => {
   ];
 
   const handleCountryChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setSelectedCountryCode(event.target.value);
+    const newCountryCode = event.target.value;
+    setSelectedCountryCode(newCountryCode);
   };
 
   return (

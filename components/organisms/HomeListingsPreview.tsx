@@ -2,6 +2,7 @@
 import React from "react";
 import { useGetAllListingsQuery } from "@/Hooks/use-getAllListings.query";
 import { useGetPropertyRatingsQuery } from "@/Hooks/use-getPropertyRatings.query";
+import { useLocation } from "@/app/userLocationContext";
 import Link from "next/link";
 import Image from "next/image";
 import { Star, MapPin, Heart, Bed, Bath, SquareDot } from "lucide-react";
@@ -106,14 +107,35 @@ const transformPropertyToListing = (property: Property) => {
 };
 
 const HomeListingsPreview: React.FC = () => {
+  const { selectedCountryCode } = useLocation();
+  
+  // Convert country code to full country name for listings API
+  const getCountryName = (countryCode: string) => {
+    switch (countryCode) {
+      case "NG":
+        return "Nigeria";
+      case "EE":
+        return "Estonia";
+      default:
+        return "Nigeria"; // Default fallback
+    }
+  };
+  
+  const selectedCountry = getCountryName(selectedCountryCode);
+  
+  // Debug log to show location-based filtering
+  
   const { data, isLoading, error, refetch } = useGetAllListingsQuery({
     limit: 3,
+    country: selectedCountry, // Filter by user's selected country (full name)
+    // No category specified - get most recent properties of ANY category
   }) as {
     data: PropertiesResponse | undefined;
     isLoading: boolean;
     error: Error | null;
     refetch: () => void;
   };
+
 
   const listings = React.useMemo(
     () =>
@@ -135,7 +157,7 @@ const HomeListingsPreview: React.FC = () => {
           )
             return false;
           if (
-            typeof property.propertyDetails.price !== "number" ||
+            (property.propertyDetails.price !== null && typeof property.propertyDetails.price !== "number") ||
             typeof property.propertyDetails.currency !== "string"
           )
             return false;
@@ -159,7 +181,7 @@ const HomeListingsPreview: React.FC = () => {
             Listings
           </p>
           <h2 className="text-xl md:text-2xl font-semibold text-gray-800">
-            Deals for you
+            Recent Properties {selectedCountry && `in ${selectedCountry}`}
           </h2>
         </div>
         <Link

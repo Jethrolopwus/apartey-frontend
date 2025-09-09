@@ -122,7 +122,7 @@ const ProfilePage = () => {
                   <div className="flex items-center">
                     <KeyRound className="mr-1 h-5 w-5 text-orange-600" />
                     <span className="text-sm font-medium text-gray-900">
-                      {user?.rewards || 0}APK
+                      {user?.rewards || 0}Apartey
                     </span>
                   </div>
                 </div>

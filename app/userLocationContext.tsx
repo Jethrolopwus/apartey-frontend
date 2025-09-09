@@ -127,11 +127,13 @@ export function LocationProvider({ children }: { children: React.ReactNode }) {
 
   // Custom setter for selectedCountryCode that marks manual changes
   const handleCountryCodeChange = (countryCode: string) => {
+    
     if (hasInitialized) {
       setIsManualChange(true);
     }
     setSelectedCountryCode(countryCode);
   };
+
 
   return (
     <LocationContext.Provider

@@ -30,6 +30,16 @@ const AuthSyncProvider: React.FC = () => {
         },
         onError: (error: unknown) => {
           console.error('Google Auth mutation error:', error);
+          
+          // Handle different error types
+          const errorMessage = error instanceof Error ? error.message : String(error);
+          if (errorMessage?.includes('Authentication failed')) {
+            console.warn('Authentication failed during sync, but user is still signed in');
+          } else if (errorMessage?.includes('Network')) {
+            console.warn('Network error during sync, user can still use the app');
+          } else {
+            console.warn('Unknown error during sync, but allowing user to continue');
+          }
         }
       });
     }

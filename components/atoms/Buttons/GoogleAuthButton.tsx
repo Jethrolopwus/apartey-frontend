@@ -6,8 +6,8 @@ import { GoogleAuthButtonProps } from "@/types/generated";
 import { useGoogleAuthMutation } from "@/Hooks/use.googleAuth.mutation";
 import { useGetOnboardingStatusQuery } from "@/Hooks/get-onboardingStatus.query";
 import { TokenManager } from "@/utils/tokenManager";
-import toast from "react-hot-toast";
 import Image from "next/image";
+import ErrorHandler from "@/utils/errorHandler";
 
 const GoogleAuthButton: React.FC<GoogleAuthButtonProps> = ({
   mode,
@@ -103,7 +103,7 @@ const GoogleAuthButton: React.FC<GoogleAuthButtonProps> = ({
                 if (role === "homeowner") {
                   router.push("/landlord");
                 } else if (role === "agent") {
-                  router.push("/agent");
+                  router.push("/agent-profile");
                 } else {
                   router.push("/");
                 }
@@ -111,24 +111,30 @@ const GoogleAuthButton: React.FC<GoogleAuthButtonProps> = ({
             }
           }
         },
-        onError: () => {
-          toast.error("Backend authentication failed. Please try again.");
+        onError: (error: unknown) => {
+          ErrorHandler.handleAuthError(error);
         },
       });
     }
   }, [status, session, googleAuth, onboardingStatus, router, mode, callbackUrl]);
 
   const handleGoogleAuth = async () => {
-    setIsLoading(true);
-    if (onClick) {
-      onClick();
+    try {
+      setIsLoading(true);
+      if (onClick) {
+        onClick();
+      }
+      localStorage.setItem("authMode", mode);
+      if (mode === "signin") {
+        localStorage.setItem("hasCompletedOnboarding", "true");
+      }
+      
+      await signIn("google", { callbackUrl });
+    } catch (error: unknown) {
+      ErrorHandler.handleGoogleOAuthError(error);
+    } finally {
+      setIsLoading(false);
     }
-    localStorage.setItem("authMode", mode);
-    if (mode === "signin") {
-      localStorage.setItem("hasCompletedOnboarding", "true");
-    }
-    await signIn("google", { callbackUrl });
-    setIsLoading(false);
   };
 
   const isLoadingState =

@@ -253,7 +253,7 @@ const AgentProfile: React.FC = () => {
                   <div className="flex items-center">
                     <KeyRound className="mr-1 h-5 w-5 text-[#C85212]" />
                     <span className="text-sm font-medium text-gray-900">
-                      {userData?.currentUser?.rewards || 0}APK
+                      {userData?.currentUser?.rewards || 0}Apartey
                     </span>
                   </div>
                 </div>
