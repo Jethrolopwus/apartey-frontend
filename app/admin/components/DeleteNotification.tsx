@@ -1,40 +1,39 @@
 "use client";
-import React from "react";
-import { useRouter } from "next/navigation";
-import { useDeleteAdminBlogPostMutation } from "@/Hooks/use-deleteAdminBlogPostById.query";
-import toast from "react-hot-toast";
 
-interface DeleteBlogPostModalProps {
-  postId: string;
-  postTitle: string;
+import { useDeleteNotificationById } from "@/Hooks/use-deleteNotification";
+import React from "react";
+import toast from "react-hot-toast";
+// import { useDeleteNotificationByIdMutation } from "@/Hooks/use-deleteNotificationById.mutation";
+
+interface DeleteNotificationModalProps {
+  notificationId: string;
+  message: string;
   isOpen: boolean;
   onClose: () => void;
+  onSuccess?: () => void;
 }
 
-export default function DeleteBlogPostModal({
-  postId,
-  postTitle,
+export default function DeleteNotificationModal({
+  notificationId,
+  message,
   isOpen,
   onClose,
-}: DeleteBlogPostModalProps) {
-  const router = useRouter();
-  const { mutate: deletePost, isLoading } = useDeleteAdminBlogPostMutation();
+  onSuccess,
+}: DeleteNotificationModalProps) {
+  const { mutate: deleteNotification, isPending } =
+    useDeleteNotificationById();
 
   const handleDelete = () => {
-    deletePost(postId, {
+    deleteNotification(notificationId, {
       onSuccess: () => {
-        toast.success("Blog post deleted successfully");
+        toast.success("Notification deleted successfully");
+        if (onSuccess) onSuccess();
         onClose();
-        router.push("/admin/blog");
       },
-      onError: (error) => {
-        toast.error(error.message || "Failed to delete blog post");
+      onError: (error: Error) => {
+        toast.error(error.message || "Failed to delete notification");
       },
     });
-  };
-
-  const handleCancel = () => {
-    onClose();
   };
 
   if (!isOpen) return null;
@@ -44,15 +43,20 @@ export default function DeleteBlogPostModal({
       <div className="bg-white rounded-2xl shadow-lg w-full max-w-md mx-4">
         {/* Header */}
         <div className="p-6 border-b border-gray-200">
-          <h2 className="text-xl font-bold text-[#2D3A4A]">Delete Blog Post</h2>
+          <h2 className="text-xl font-bold text-[#2D3A4A]">
+            Delete Notification
+          </h2>
         </div>
 
         {/* Content */}
         <div className="p-6">
           <p className="text-gray-700 mb-6">
-            Are you sure you want to delete &ldquo;{postTitle}&rdquo;? This
-            action cannot be undone and all associated data will be permanently
-            removed.
+            Are you sure you want to delete this notification? <br />
+            <span className="italic text-gray-500">
+              &ldquo;{message}&rdquo;
+            </span>
+            <br />
+            This action cannot be undone.
           </p>
         </div>
 
@@ -60,8 +64,8 @@ export default function DeleteBlogPostModal({
         <div className="p-6 border-t border-gray-200 flex justify-between">
           <button
             type="button"
-            onClick={handleCancel}
-            disabled={isLoading}
+            onClick={onClose}
+            disabled={isPending}
             className="px-4 py-1.5 rounded-lg border cursor-pointer border-gray-200 text-gray-700 text-sm hover:bg-gray-50 transition-colors"
           >
             Cancel
@@ -69,10 +73,10 @@ export default function DeleteBlogPostModal({
           <button
             type="button"
             onClick={handleDelete}
-            disabled={isLoading}
+            disabled={isPending}
             className="px-4 py-1.5 rounded-lg border cursor-pointer border-gray-200 text-white bg-red-600 text-sm hover:bg-red-700 transition-colors"
           >
-            {isLoading ? "Deleting..." : "Delete Post"}
+            {isPending ? "Deleting..." : "Delete"}
           </button>
         </div>
       </div>

@@ -13,7 +13,7 @@ export const useGetAllAdminUsersQuery = (
     queryKey: ["Users", params],
     queryFn: () => http.httpGetAdminAllUsers(
       params?.limit, 
-      params?.byId, 
+      params?.page, 
       params?.search, 
       params?.sort
     ),

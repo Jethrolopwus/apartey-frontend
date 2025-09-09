@@ -14,54 +14,50 @@ export default function AdminPropertyClaimModal({
   claim,
 }: AdminPropertyClaimModalProps) {
   if (!isOpen || !claim) return null;
-
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div className="fixed inset-0 bg-[#00000070] flex items-center justify-center z-50">
       <div className="bg-white rounded-lg p-6 w-[400px] shadow-lg border border-gray-200">
-        <h2 className="text-lg font-semibold text-[#2D3A4A] mb-4">
-          Property Claim Details
-        </h2>
+        <h2 className="text-lg font-semibold  mb-4">Property Claim Details</h2>
         <div className="space-y-4">
           <div>
-            <h3 className="text-sm font-medium text-gray-500 mb-2">
-              Property Information
-            </h3>
-            <p className="text-sm text-gray-700">
+            <h3 className="text-sm font-medium mb-2">Property Information</h3>
+            <p className="text-sm">
               <span className="font-semibold">Title:</span>{" "}
-              {claim.propertyDescription}
+              <span className="text-gray-500">{claim.propertyDescription}</span>
             </p>
-            <p className="text-sm text-gray-700">
-              <span className="font-semibold">Address:</span> {claim.address}
+            <p className="text-sm ">
+              <span className="font-semibold">Address:</span>{" "}
+              <span className="text-gray-500">{claim.address}</span>
             </p>
-            <p className="text-sm text-gray-700">
+            {/* <p className="text-sm ">
               <span className="font-semibold">Current Owner:</span> [Not
               Available]
+            </p> */}
+          </div>
+          <div>
+            <h3 className="text-sm font-medium  mb-2">Claim Details</h3>
+            <p className="text-sm ">
+              <span className="font-semibold">Claimant:</span>{" "}
+              <span className="text-gray-500">{claim.claimant}</span>
+            </p>
+            <p className="text-sm ">
+              <span className="font-semibold">Reason:</span>{" "}
+              <span className="text-gray-500">{claim.message}</span>
             </p>
           </div>
           <div>
-            <h3 className="text-sm font-medium text-gray-500 mb-2">
-              Claim Details
-            </h3>
-            <p className="text-sm text-gray-700">
-              <span className="font-semibold">Claimant:</span> {claim.claimant}
+            <p className="text-sm ">
+              Attached:{" "}
+              {claim.proof ? (
+                <p>cadastralNumber: {claim.proof}</p>
+              ) : (
+                <p>No file attachement</p>
+              )}
             </p>
-            <p className="text-sm text-gray-700">
-              <span className="font-semibold">Reason:</span> {claim.message}
-            </p>
-          </div>
-          <div>
-            <p className="text-sm text-gray-700">
-              Attached: {claim.proof ? "1 file(s)" : "0 file(s)"}
-            </p>
-            {claim.proof && (
-              <button className="mt-2 text-sm text-gray-500 underline hover:text-gray-700">
-                Attachment
-              </button>
-            )}
           </div>
         </div>
         <button
-          className="mt-6 w-full bg-[#2D3A4A] text-white py-2 rounded-lg hover:bg-[#1e2735]"
+          className="text-white cursor-pointer bg-[#C85212] hover:bg-[#a7440f] text-sm float-right mt-10 rounded-[8px] px-4 py-1.5"
           onClick={onClose}
         >
           Close

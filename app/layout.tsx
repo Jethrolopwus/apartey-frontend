@@ -44,24 +44,6 @@ export default function RootLayout({
           defer
           strategy="beforeInteractive"
         />
-        {/* Tawk.to Live Chat Script */}
-        <Script
-          id="tawk-to-script"
-          strategy="afterInteractive"
-          dangerouslySetInnerHTML={{
-            __html: `
-              var Tawk_API=Tawk_API||{}, Tawk_LoadStart=new Date();
-              (function(){
-                var s1=document.createElement("script"),s0=document.getElementsByTagName("script")[0];
-                s1.async=true;
-                s1.src='https://embed.tawk.to/688398648beeee192b5d57d3/1j110mj0n';
-                s1.charset='UTF-8';
-                s1.setAttribute('crossorigin','*');
-                s0.parentNode.insertBefore(s1,s0);
-              })();
-            `,
-          }}
-        />
       </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} bg-gray-50 min-h-screen font-sans`}

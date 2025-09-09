@@ -27,42 +27,49 @@ const AdminSignIn: React.FC = () => {
 
   useEffect(() => {
     // Check if user is already authenticated
-    const token = localStorage.getItem('token') || localStorage.getItem('accessToken');
-    const isAdminLogin = localStorage.getItem('isAdminLogin') === 'true';
-    const userRole = localStorage.getItem('userRole');
-    
-    if (token && isAdminLogin && userRole && userRole.toLowerCase().includes('admin')) {
+    const token =
+      localStorage.getItem("token") || localStorage.getItem("accessToken");
+    const isAdminLogin = localStorage.getItem("isAdminLogin") === "true";
+    const userRole = localStorage.getItem("userRole");
+
+    if (
+      token &&
+      isAdminLogin &&
+      userRole &&
+      userRole.toLowerCase().includes("admin")
+    ) {
       // User is already authenticated, redirect to dashboard
-      router.push('/admin/dashboard');
+      router.push("/admin/dashboard");
       return;
     }
 
     if (session) {
-      console.log("AdminSignIn - Session detected:", session);
       // For Google OAuth users, set onboarding completion if they have a role
       if (typeof window !== "undefined" && session.user) {
         localStorage.setItem("authMode", "signin");
         localStorage.setItem("isAdminLogin", "true");
-        
+
         // For Google OAuth users, assume they have completed onboarding
         // since they already have an account
         localStorage.setItem("hasCompletedOnboarding", "true");
-        
+
         // Check if user has a role in the session (if available)
         const userWithRole = session.user as { role?: string };
         if (userWithRole.role) {
           localStorage.setItem("userRole", userWithRole.role);
         }
-        
+
         console.log("NextAuth session user:", session.user);
         console.log("Admin login flags set in session:", {
           authMode: localStorage.getItem("authMode"),
-          hasCompletedOnboarding: localStorage.getItem("hasCompletedOnboarding"),
+          hasCompletedOnboarding: localStorage.getItem(
+            "hasCompletedOnboarding"
+          ),
           isAdminLogin: localStorage.getItem("isAdminLogin"),
-          userRole: localStorage.getItem("userRole")
+          userRole: localStorage.getItem("userRole"),
         });
       }
-      
+
       // Redirect to admin dashboard for admin users
       console.log("Redirecting admin to dashboard after Google OAuth");
       router.push("/admin/dashboard");
@@ -86,7 +93,7 @@ const AdminSignIn: React.FC = () => {
           localStorage.setItem("adminName", data.user.firstName);
         } else if (data.user?.email) {
           // Use email prefix as name if no name is provided
-          const name = data.user.email.split('@')[0];
+          const name = data.user.email.split("@")[0];
           localStorage.setItem("adminName", name);
         }
         if (data.user?.role) {
@@ -97,18 +104,18 @@ const AdminSignIn: React.FC = () => {
       // Set auth mode for signin (not signup)
       if (typeof window !== "undefined") {
         localStorage.setItem("authMode", "signin");
-        
+
         // If user has a role, they've completed onboarding
         if (data.user?.role) {
           localStorage.setItem("hasCompletedOnboarding", "true");
           localStorage.setItem("userRole", data.user.role);
         }
       }
-      
+
       toast.success("Admin signed in successfully!");
       reset();
       refetchAuthStatus();
-      
+
       // Redirect to admin dashboard
       console.log("Redirecting admin to dashboard after successful login");
       router.push("/admin/dashboard");
@@ -162,7 +169,7 @@ const AdminSignIn: React.FC = () => {
       console.log("Admin login flags set:", {
         authMode: localStorage.getItem("authMode"),
         hasCompletedOnboarding: localStorage.getItem("hasCompletedOnboarding"),
-        isAdminLogin: localStorage.getItem("isAdminLogin")
+        isAdminLogin: localStorage.getItem("isAdminLogin"),
       });
     }
     signIn("google", { callbackUrl: "/admin/dashboard" });
@@ -184,7 +191,7 @@ const AdminSignIn: React.FC = () => {
             <Image
               src="/logo.png"
               alt="Apartey Logo"
-              width={100}
+              width={130}
               height={50}
               priority
             />
@@ -204,6 +211,7 @@ const AdminSignIn: React.FC = () => {
               register={register}
               errors={errors}
               isSubmitting={isLoading}
+              isAdmin={true}
             />
           </div>
 
@@ -239,4 +247,4 @@ const AdminSignIn: React.FC = () => {
   );
 };
 
-export default AdminSignIn; 
+export default AdminSignIn;

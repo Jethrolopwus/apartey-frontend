@@ -8,13 +8,13 @@ export interface UseGetAllAdminUsersQueryParams {
   byId?: number;
 }
 
-export const useDeleteAdminUserById = () => {
+export const useDeactivateAdminUserById = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (id: string) => http.httpDeleteAdminUserById(id),
+    mutationFn: (id: string) => http.httpDeactivateAdminUserById(id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["AdminProperties"] });
+      queryClient.invalidateQueries({ queryKey: ["Users"] });
     },
     onError: (error) => {
       console.error("Error deleting property:", error);

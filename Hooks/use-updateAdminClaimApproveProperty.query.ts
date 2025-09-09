@@ -15,10 +15,10 @@ export const useUpdateAdminClaimApprovedPropertyById = () => {
   return useMutation<
     ApiClaimResponse,
     Error,
-    { id: string; action: "approved" | "rejected" }
+    { claimId: string; propertyId: string }
   >({
-    mutationFn: ({ id, action }) =>
-      http.httpUpdateAdminApproveClaimedProperty(id, { status: action }),
+    mutationFn: ({claimId, propertyId }) =>
+      http.httpUpdateAdminApproveClaimedProperty(claimId, propertyId),
     onMutate: () => {
       toast.loading("Updating claim status...");
     },

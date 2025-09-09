@@ -60,7 +60,7 @@ export default Object.freeze({
   // ==ADMINUSERS ENDPOINTS===//
   getAllAdminUsers: "/admin/users",
   getAdminUsersById: (id: string) => `/admin/users/${id}`,
-  deleteAdminUser: (id: string) => `/admin/users/${id}`,
+  deactivateAdminUser: (id: string) => `/admin/users/${id}/status`,
   toggleAdminUserDeactivate: (id: string) => `/admin/users/${id}/status`,
   // ==ADMIN REVIEWS ENDPOINTS===//
   getAllAdminReviews: "/admin/reviews",
@@ -70,8 +70,9 @@ export default Object.freeze({
   // ==ADMIN CLAIM ENDPOINTS===//
   getAllAdminPropertyClaims: "/admin/claims",
   getAdminPropertyClaimDetails: (id: string) => `/admin/claims/${id}`,
-  approvePropertyClaim: (id: string) => `/admin/claims/${id}`,
-  rejectPropertyClaim: (id: string) => `/admin/claims/${id}/reject`,
+  approvePropertyClaim:(claimId: string, propertyId: string) => `/admin/claims/${claimId}/${propertyId}/approve`,
+  rejectPropertyClaim: (claimId: string, propertyId: string) =>
+    `/admin/claims/${claimId}/${propertyId}/reject`,
 
   // ==ADMIN ANALYTICS ENDPOINTS===//
   getAdminAnalytics: "/admin/analytics",
@@ -81,9 +82,9 @@ export default Object.freeze({
   getAllAdminBlogPosts: "/admin/blog",
   createAdminBlogPost: "/admin/blog",
   getAdminBlogPostById: (id: string) => `/admin/blog/${id}`,
+  archiveAdminBlogPostById: (id: string) => `/admin/blog/${id}/archive`,
   updateAdminBlogPost: (id: string) => `/admin/blog/${id}`,
   deleteAdminBlogPost: (id: string) => `/admin/blog/${id}`,
-
   // == PAYMENT ENDPOINTS===//
   adsPayment: (id: string) => `/payment/create-checkout-session/${id}`,
 });
