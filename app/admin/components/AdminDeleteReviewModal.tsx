@@ -35,15 +35,15 @@ export default function AdminDeleteReviewModal({
   if (!reviewId || !reviewProperty) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white w-[400px] rounded-[8px] shadow-lg">
+    <div className="fixed inset-0 bg-[#00000070] flex items-center justify-center z-50">
+      <div className="bg-white w-[400px] rounded-[8px] pt-3 shadow-lg">
         <div className="flex justify-between items-center p-[16px] border-b border-gray-200 h-[40px]">
           <h3 className="text-[18px] font-semibold text-[#2D3A4A]">
-            Suspend Review
+            Delete Review
           </h3>
           <button
             onClick={onClose}
-            className="ml-[8px] text-gray-400 hover:text-[#1E2A38]"
+            className="ml-[8px] cursor-pointer text-gray-400 hover:text-[#1E2A38]"
           >
             <X className="w-[24px] h-[24px]" />
           </button>
@@ -58,20 +58,20 @@ export default function AdminDeleteReviewModal({
               Error: {(error as Error).message}
             </p>
           )}
-          <div className="flex justify-between gap-[24px]">
+           <div className="p-6 border-t border-gray-200 flex justify-between">
             <button
-              className="w-[100px] h-[40px] text-[14px] text-[#2D3A4A] border border-[#E5E7EB] rounded-[8px] hover:bg-gray-100"
+              className="px-4 py-1.5 rounded-lg border cursor-pointer border-gray-200 text-gray-700 text-sm hover:bg-gray-50 transition-colors"
               onClick={onClose}
               disabled={isPending}
             >
               Cancel
             </button>
             <button
-              className="w-[80px] h-[40px] text-[14px] text-white bg-[#DC2626] rounded-[8px] hover:bg-red-700 disabled:opacity-50"
+               className="px-4 py-1.5 rounded-lg border cursor-pointer border-gray-200 text-white bg-red-600 text-sm hover:bg-red-700 transition-colors"
               onClick={handleDelete}
               disabled={isPending}
             >
-              {isPending ? "Suspending..." : "Suspend"}
+              {isPending ? "Deleting..." : "Delete"}
             </button>
           </div>
         </div>

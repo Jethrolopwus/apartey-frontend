@@ -28,22 +28,25 @@ import {
   AdminPost,
   AdminPostsResponse,
   CreateAdminPostData,
+  BlogSearchParams,
 } from "@/types/admin";
-import { CreateAdsPaymentRequest, PaymentIntentResponse } from "@/types/payment";
+import { InsightStatsResponse } from "@/types/insight";
+import {
+  CreateAdsPaymentRequest,
+  PaymentIntentResponse,
+} from "@/types/payment";
 import {
   AdminPropertiesResponse,
   AdminProperty,
   AdminUser,
   AdminUsersResponse,
 } from "@/types/admin";
-import { InsightStatsResponse } from "@/types/insight";
-import { BlogResponse, BlogSearchParams } from "@/types/blog";
+import { Search } from "lucide-react";
 
 const AxiosInstance = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_URL,
   headers: {
     Accept: "application/json",
-    "Content-Type": "application/json",
   },
 });
 
@@ -907,8 +910,7 @@ class BaseURL {
       if (params.toString()) {
         url += `?${params.toString()}`;
       }
-      
-      
+
       const response = await AxiosInstance.get(url);
       
       
@@ -1057,17 +1059,17 @@ class BaseURL {
 
   httpGetAdminAllProperties = async (
     limit?: number,
-    byId?: number,
+    page?: number,
     search?: string,
-    sort?: string
+    sortBy?: string
   ): Promise<AdminPropertiesResponse> => {
     try {
       let url = endpoints.getAdminProperties;
       const params = new URLSearchParams();
-      if (byId) params.append("byId", byId.toString());
+      if (page) params.append("page", page.toString());
       if (limit) params.append("limit", limit.toString());
       if (search) params.append("search", search);
-      if (sort) params.append("sort", sort);
+      if (sortBy) params.append("sortBy", sortBy);
       if (params.toString()) url += `?${params.toString()}`;
       const response = await AxiosInstance.get(url);
       return response.data;
@@ -1136,14 +1138,14 @@ class BaseURL {
   // ==== ADMIN USERS ======
   httpGetAdminAllUsers = async (
     limit?: number,
-    byId?: number,
+    page?: number,
     search?: string,
     sort?: string
   ): Promise<AdminUsersResponse> => {
     try {
       let url = endpoints.getAllAdminUsers;
       const params = new URLSearchParams();
-      if (byId) params.append("byId", byId.toString());
+      if (page) params.append("page", page.toString());
       if (limit) params.append("limit", limit.toString());
       if (search) params.append("search", search);
       if (sort) params.append("sort", sort);
@@ -1156,6 +1158,7 @@ class BaseURL {
       );
     }
   };
+
   httpGetAdminUsersById = async (id: string): Promise<AdminUser> => {
     try {
       const response = await AxiosInstance.get(endpoints.getAdminUsersById(id));
@@ -1199,21 +1202,27 @@ class BaseURL {
       );
     }
   };
-  httpUpdateAdminProfile = async (data: globalThis.FormData): Promise<AdminProfileUpdateResponse> => {
+  httpUpdateAdminProfile = async (
+    data: globalThis.FormData
+  ): Promise<AdminProfileUpdateResponse> => {
     try {
-      const response = await AxiosInstance.patch(endpoints.updateProfilePic, data, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      });
+      const response = await AxiosInstance.patch(
+        endpoints.updateProfilePic,
+        data,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        }
+      );
       return response.data;
     } catch (error: any) {
       throw new Error(error.response?.data?.message || "Update profile failed");
     }
   };
-  httpDeleteAdminUserById = async (id: string): Promise<void> => {
+  httpDeactivateAdminUserById = async (id: string): Promise<void> => {
     try {
-      await AxiosInstance.delete(endpoints.deleteAdminUser(id));
+      await AxiosInstance.patch(endpoints.deactivateAdminUser(id));
     } catch (error: any) {
       throw new Error(
         error.response?.data?.message || "Delete Admin User failed"
@@ -1224,15 +1233,19 @@ class BaseURL {
   // ADMIN REVIEWS ====
   httpGetAdminAllReviews = async (
     search?: string,
-    sort?: string
+    sortBy?: string,
+    page?: number,
+    limit?: number
   ): Promise<AdminReviewsResponse> => {
     try {
       let url = endpoints.getAllAdminReviews;
       const params = new URLSearchParams();
       if (search) params.append("search", encodeURIComponent(search));
-      if (sort) params.append("sort", sort);
+      if (sortBy) params.append("sortBy", sortBy);
+      if (page) params.append("page", page.toString());
+      if (limit) params.append("limit", limit.toString());
       if (params.toString()) url += `?${params.toString()}`;
-      
+
       const response = await AxiosInstance.get(url);
       return response.data;
     } catch (error: any) {
@@ -1246,7 +1259,9 @@ class BaseURL {
       const response = await AxiosInstance.get(endpoints.getAdminAnalytics);
       return response.data;
     } catch (error: any) {
-      throw new Error(error.response?.data?.message || "Get Admin Analytics failed");
+      throw new Error(
+        error.response?.data?.message || "Get Admin Analytics failed"
+      );
     }
   };
   httpGetAdminReviewById = async (id: string): Promise<AdminReviews> => {
@@ -1271,14 +1286,18 @@ class BaseURL {
 
   // === ADMIN CLAIM PROPERTIES ==== //
   httpGetAdminAllClaimedProperties = async (
-    limit?: number,
-    page?: number
+    limit: number,
+    page: number,
+    search: string,
+    sortBy: string
   ): Promise<AdminClaimedPropertiesResponse> => {
     try {
       let url = endpoints.getAllAdminPropertyClaims;
       const params = new URLSearchParams();
       if (page) params.append("page", page.toString());
       if (limit) params.append("limit", limit.toString());
+      if (search) params.append("search", search.toString());
+      if (sortBy) params.append("sortBy", sortBy.toString());
       if (params.toString()) url += `?${params.toString()}`;
       const response = await AxiosInstance.get(url);
       return response.data;
@@ -1303,57 +1322,37 @@ class BaseURL {
     }
   };
   httpUpdateAdminApproveClaimedProperty = async (
-    id: string,
-    data: { status: "approved" | "pending" | "rejected" }
+    claimId: string,
+    propertyId: string
   ): Promise<ApiClaimResponse> => {
     try {
-      const payload = {
-        status: data.status,
-      };
-      console.log(
-        "Sending PATCH request to:",
-        endpoints.approvePropertyClaim(id)
-      );
-      console.log("Payload:", payload);
       const response = await AxiosInstance.patch(
-        endpoints.approvePropertyClaim(id),
-        payload
+        endpoints.approvePropertyClaim(claimId, propertyId)
       );
       console.log("Response Data:", response.data);
       return response.data;
     } catch (error: any) {
-      console.error("Update claimed property failed:", {
-        message: error.response?.data?.message || error.message,
-        status: error.response?.status,
-        headers: error.response?.headers,
-        request: {
-          url: endpoints.updateAdminProperty(id),
-          data,
-        },
-      });
+      console.error("Update claimed property failed:");
       throw new Error(
         error.response?.data?.message || "Update claimed property failed"
       );
     }
   };
   httpUpdateAdminRejectClaimedProperty = async (
-    id: string,
-    data: Partial<AdminClaimedProperty>
+    claimId: string,
+    propertyId: string,
+    data: { reason: string }
   ): Promise<AdminClaimedProperty> => {
     try {
       const payload = {
         ...data,
       };
-      console.log(
-        "Sending PATCH request to:",
-        endpoints.rejectPropertyClaim(id)
-      );
-      console.log("Payload:", data);
+
       const response = await AxiosInstance.patch(
-        endpoints.rejectPropertyClaim(id),
+        endpoints.rejectPropertyClaim(claimId, propertyId),
         payload
       );
-      console.log("Response Data:", response.data);
+
       return response.data;
     } catch (error: any) {
       console.error("Update claimed property failed:", {
@@ -1361,7 +1360,7 @@ class BaseURL {
         status: error.response?.status,
         headers: error.response?.headers,
         request: {
-          url: endpoints.rejectPropertyClaim(id),
+          url: endpoints.rejectPropertyClaim(claimId, propertyId),
           data,
         },
       });
@@ -1371,43 +1370,91 @@ class BaseURL {
     }
   };
   // === ADMIN POSTS ==== //
-  httpGetAdminAllBlogPosts = async (): Promise<AdminPostsResponse> => {
+  httpGetAdminAllBlogPosts = async (
+    params?: any
+  ): Promise<AdminPostsResponse> => {
     try {
-      const response = await AxiosInstance.get(endpoints.getAllAdminBlogPosts);
+      const response = await AxiosInstance.get(endpoints.getAllAdminBlogPosts, {
+        params,
+      });
       return response.data;
     } catch (error: any) {
-      throw new Error(error.response?.data?.message || "Get all Admin Posts failed");
+      throw new Error(
+        error.response?.data?.message || "Get all Admin Posts failed"
+      );
     }
   };
-  httpCreateAdminBlogPost = async (data: CreateAdminPostData | globalThis.FormData): Promise<AdminPost> => {
+
+  httpCreateAdminBlogPost = async (
+    data: CreateAdminPostData | globalThis.FormData
+  ): Promise<AdminPost> => {
     try {
-      const response = await AxiosInstance.post(endpoints.createAdminBlogPost, data);
+      const response = await AxiosInstance.post(
+        endpoints.createAdminBlogPost,
+        data,
+        {
+          headers:
+            data instanceof FormData
+              ? { "Content-Type": "multipart/form-data" }
+              : { "Content-Type": "application/json" },
+        }
+      );
       return response.data;
     } catch (error: any) {
-      throw new Error(error.response?.data?.message || "Create Admin Post failed");
+      throw new Error(
+        error.response?.data?.message || "Create Admin Post failed"
+      );
     }
   };
+
   httpGetAdminBlogPostById = async (id: string): Promise<AdminPost> => {
     try {
-      const response = await AxiosInstance.get(endpoints.getAdminBlogPostById(id));
+      const response = await AxiosInstance.get(
+        endpoints.getAdminBlogPostById(id)
+      );
       return response.data;
     } catch (error: any) {
       throw new Error(error.response?.data?.message || "Get Admin Post failed");
     }
   };
-  httpUpdateAdminBlogPost = async (id: string, data: Partial<CreateAdminPostData> | globalThis.FormData): Promise<AdminPost> => {
+
+  httpArchiveAdminBlogPostById = async (id: string): Promise<void> => {
     try {
-      const response = await AxiosInstance.put(endpoints.updateAdminBlogPost(id), data);
+      await AxiosInstance.patch(endpoints.archiveAdminBlogPostById(id));
+    } catch (error: any) {
+      throw new Error(error.response?.data?.message || "Get Admin Post failed");
+    }
+  };
+
+  httpUpdateAdminBlogPost = async (
+    id: string,
+    data: Partial<CreateAdminPostData> | globalThis.FormData
+  ): Promise<AdminPost> => {
+    try {
+      const response = await AxiosInstance.put(
+        endpoints.updateAdminBlogPost(id),
+        data,
+        {
+          headers:
+            data instanceof FormData
+              ? { "Content-Type": "multipart/form-data" }
+              : { "Content-Type": "application/json" },
+        }
+      );
       return response.data;
     } catch (error: any) {
-      throw new Error(error.response?.data?.message || "Update Admin Post failed");
+      throw new Error(
+        error.response?.data?.message || "Update Admin Post failed"
+      );
     }
   };
   httpDeleteAdminBlogPost = async (id: string): Promise<void> => {
     try {
       await AxiosInstance.delete(endpoints.deleteAdminBlogPost(id));
     } catch (error: any) {
-      throw new Error(error.response?.data?.message || "Delete Admin Post failed");
+      throw new Error(
+        error.response?.data?.message || "Delete Admin Post failed"
+      );
     }
   };
 
@@ -1422,14 +1469,21 @@ class BaseURL {
   };
 
   // === ADMIN PAYMENT ==== //
-  httpCreateAdsPayment = async (data: CreateAdsPaymentRequest): Promise<PaymentIntentResponse> => {
+  httpCreateAdsPayment = async (
+    data: CreateAdsPaymentRequest
+  ): Promise<PaymentIntentResponse> => {
     try {
-      const response = await AxiosInstance.post(endpoints.adsPayment(data.id), data.paymentData);
+      const response = await AxiosInstance.post(
+        endpoints.adsPayment(data.id),
+        data.paymentData
+      );
       return response.data;
     } catch (error: any) {
       console.error("Payment intent creation error:", error);
       console.error("Error response:", error.response?.data);
-      throw new Error(error.response?.data?.message || "Create Ads Payment failed");
+      throw new Error(
+        error.response?.data?.message || "Create Ads Payment failed"
+      );
     }
   };
 }

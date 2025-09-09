@@ -12,9 +12,20 @@ export const useGetAdminClaimPropertyQuery = (
 ) => {
   const { data, isLoading, error, refetch } =
     useQuery<AdminClaimedPropertiesResponse>({
-      queryKey: ["Admin claim Properties", params?.limit, params?.page],
+      queryKey: [
+        "AdminProperties",
+        params?.limit,
+        params?.page,
+        params?.search,
+        params?.sortBy,
+      ],
       queryFn: () =>
-        http.httpGetAdminAllClaimedProperties(params?.limit, params?.page),
+        http.httpGetAdminAllClaimedProperties(
+          params?.limit as number,
+          params?.page as number,
+          params?.search as string,
+          params?.sortBy as string
+        ),
       staleTime: 5 * 60 * 1000,
       retry: 2,
     });

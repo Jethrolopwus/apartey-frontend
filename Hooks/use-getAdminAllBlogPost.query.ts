@@ -8,8 +8,8 @@ export const useGetAdminAllBlogPostQuery = (
   params?: useGetAdminAllBlogPostQueryParams
 ) => {
   const { data, isLoading, error, refetch } = useQuery<AdminPostsResponse>({
-    queryKey: ["admin-blog-posts", params],
-    queryFn: () => http.httpGetAdminAllBlogPosts(),
+    queryKey: ["admin-blog-posts", params], // <-- include params in key
+    queryFn: () => http.httpGetAdminAllBlogPosts(params), // <-- pass params
     staleTime: 5 * 60 * 1000,
     retry: 2,
   });
