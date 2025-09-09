@@ -46,7 +46,21 @@ export async function POST(request: NextRequest) {
     if (!backendResponse.ok) {
       const errorText = await backendResponse.text();
       console.error('Backend response error:', errorText);
-      throw new Error(`Backend responded with ${backendResponse.status}: ${errorText}`);
+      
+      // Handle specific backend errors
+      if (backendResponse.status === 401) {
+        throw new Error('Authentication failed. Please sign in again.');
+      } else if (backendResponse.status === 403) {
+        throw new Error('Access denied. Your account may not have the required permissions.');
+      } else if (backendResponse.status === 404) {
+        throw new Error('User service not found. Please contact support.');
+      } else if (backendResponse.status === 409) {
+        throw new Error('User already exists. Please try signing in instead.');
+      } else if (backendResponse.status >= 500) {
+        throw new Error('Server error occurred. Please try again later.');
+      } else {
+        throw new Error(`Backend error (${backendResponse.status}): ${errorText}`);
+      }
     }
 
     const backendData = await backendResponse.json();

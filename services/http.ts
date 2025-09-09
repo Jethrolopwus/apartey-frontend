@@ -1,5 +1,6 @@
 import axios from "axios";
 import endpoints from "./endpoints";
+import ErrorHandler from "@/utils/errorHandler";
 import type {
   Category,
   userLocationData,
@@ -101,7 +102,11 @@ class BaseURL {
 
       return response.data;
     } catch (error: any) {
-      throw error;
+      console.error("Google Auth HTTP Error:", error);
+      
+      // Use the error handler to create user-friendly error messages
+      const errorMessage = ErrorHandler.getErrorMessage(error, 'authentication');
+      throw new Error(errorMessage);
     }
   };
 
@@ -833,7 +838,7 @@ class BaseURL {
     limit?: number,
     byId?: number,
     category?: PropertyCategory,
-    country: string = "Estonia",
+    country?: string,
     propertyType?: string,
     petPolicy?: string,
     condition?: string
@@ -865,15 +870,22 @@ class BaseURL {
       if (params.toString()) {
         url += `?${params.toString()}`;
       }
+      
+      
       const response = await AxiosInstance.get(url);
+      
+      
       return response.data;
     } catch (error: any) {
+      console.error("❌ HTTP Service - getAllListings API Error:");
+      console.error("  - Error:", error);
+      console.error("  - Response:", error.response?.data);
       throw new Error(
         error.response?.data?.message || "Get all listings failed"
       );
     }
   };
-  httpGetAllMyListings = async (limit?: number, byId?: number, page?: number, category?: string) => {
+  httpGetAllMyListings = async (limit?: number, byId?: number, page?: number, category?: string, country?: string) => {
     try {
       let url = endpoints.getAllMyListings;
       const params = new URLSearchParams();
@@ -889,13 +901,22 @@ class BaseURL {
       if (category) {
         params.append("category", category);
       }
+      if (country) {
+        params.append("country", country);
+      }
       if (params.toString()) {
         url += `?${params.toString()}`;
       }
       
+      
       const response = await AxiosInstance.get(url);
+      
+      
       return response.data;
     } catch (error: any) {
+      console.error("❌ HTTP Service - getAllMyListings API Error:");
+      console.error("  - Error:", error);
+      console.error("  - Response:", error.response?.data);
       throw new Error(
         error.response?.data?.message || "Get all My listings failed"
       );

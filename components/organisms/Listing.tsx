@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useGetAllListingsQuery } from "@/Hooks/use-getAllListings.query";
 import { useGetUserRoleQuery } from "@/Hooks/use-getUserRole.query";
+import { useLocation } from "@/app/userLocationContext";
 import Image from "next/image";
 import { Property, PropertyCategory } from "@/types/generated";
 import { useUpdatePropertyToggleLikeMutation } from "@/Hooks/use.propertyLikeToggle.mutation";
@@ -13,6 +14,7 @@ import { toast } from "react-hot-toast";
 
 const Listings = () => {
   const searchParams = useSearchParams();
+  const { selectedCountryCode } = useLocation();
   const [contactModalOpen, setContactModalOpen] = useState(false);
   const [contactProperty, setContactProperty] = useState<string | undefined>(undefined);
   const [messageSent, setMessageSent] = useState(false);
@@ -27,10 +29,26 @@ const Listings = () => {
   const petPolicyParam = searchParams.get("petPolicy");
   const conditionParam = searchParams.get("condition");
 
+  // Convert country code to full country name for listings API
+  const getCountryName = (countryCode: string) => {
+    switch (countryCode) {
+      case "NG":
+        return "Nigeria";
+      case "EE":
+        return "Estonia";
+      default:
+        return "Nigeria"; // Default fallback
+    }
+  };
+
   const category: PropertyCategory = ["Swap", "Rent", "Buy"].includes(categoryParam ?? "")
     ? (categoryParam as PropertyCategory)
     : categoryParam === "Sale" ? "Buy" : "Swap";
-  const country: string = countryParam ?? "Estonia";
+  
+  // Use location context country if no URL country param, otherwise use URL param
+  const country: string = countryParam ?? getCountryName(selectedCountryCode);
+
+  // Debug log to show location-based filtering
 
   const [showDisclaimer, setShowDisclaimer] = useState(false);
 
