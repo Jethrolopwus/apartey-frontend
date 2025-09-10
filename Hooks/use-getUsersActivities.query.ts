@@ -5,7 +5,7 @@ import http from "@/services/http";
 
 export const useGetUserActivitiesQuery = () => {
   return useQuery({
-    queryKey: ["user-role"],
+    queryKey: ["user-activities"],
     queryFn: () => http.httpGetUsersActivities(),
     retry: false,
     staleTime: 1000 * 60 * 5, 

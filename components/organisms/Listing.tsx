@@ -10,6 +10,7 @@ import { useLocation } from "@/app/userLocationContext";
 import Image from "next/image";
 import { Property, PropertyCategory } from "@/types/generated";
 import { useUpdatePropertyToggleLikeMutation } from "@/Hooks/use.propertyLikeToggle.mutation";
+import { useGetUserFavoriteQuery } from "@/Hooks/use-getUsersFavorites.query";
 import { toast } from "react-hot-toast";
 
 const Listings = () => {
@@ -54,6 +55,9 @@ const Listings = () => {
 
   // Fetch user role to determine if "List your Home" button should be shown
   const { data: userRoleData, isLoading: isUserRoleLoading } = useGetUserRoleQuery();
+  
+  // Fetch user favorites to initialize liked properties state
+  const { data: favoritesData } = useGetUserFavoriteQuery();
 
   const { data, isLoading, error } = useGetAllListingsQuery({
     category,
@@ -78,6 +82,14 @@ const Listings = () => {
   useEffect(() => {
     setShowDisclaimer(category === "Swap");
   }, [category, country]);
+
+  // Initialize liked properties from user favorites
+  useEffect(() => {
+    if (favoritesData?.favorites) {
+      const favoriteIds = new Set<string>(favoritesData.favorites.map((favorite: { _id: string }) => favorite._id));
+      setLikedProperties(favoriteIds);
+    }
+  }, [favoritesData]);
 
   const handleUnderstand = () => {
     setShowDisclaimer(false);
@@ -104,6 +116,9 @@ const Listings = () => {
       return;
     }
 
+    // Store the current state before optimistic update
+    const wasLiked = likedProperties.has(propertyId);
+
     setLikedProperties((prev) => {
       const newSet = new Set(prev);
       if (newSet.has(propertyId)) {
@@ -116,7 +131,8 @@ const Listings = () => {
 
     toggleLike(propertyId, {
       onSuccess: (response: { data?: { isLiked?: boolean }; message?: string }) => {
-        const isLiked = response.data?.isLiked ?? likedProperties.has(propertyId);
+        // Use the response data or fall back to the optimistic update result
+        const isLiked = response.data?.isLiked ?? !wasLiked;
         
         setLikedProperties((prev) => {
           const newSet = new Set(prev);
@@ -133,10 +149,10 @@ const Listings = () => {
         // Revert the optimistic update
         setLikedProperties((prev) => {
           const newSet = new Set(prev);
-          if (newSet.has(propertyId)) {
-            newSet.delete(propertyId);
-          } else {
+          if (wasLiked) {
             newSet.add(propertyId);
+          } else {
+            newSet.delete(propertyId);
           }
           return newSet;
         });

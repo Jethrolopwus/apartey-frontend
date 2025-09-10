@@ -17,7 +17,7 @@ import { useAuthRedirect } from "@/Hooks/useAuthRedirect";
 import { useUserRole } from "@/Hooks/useUserRole";
 import { TokenManager } from "@/utils/tokenManager";
 import { useGetAllNotificationsQuery } from "@/Hooks/use-getAllNotifications.query";
-import { useGetUserFavoriteQuery } from "@/Hooks/use-getUsersFavorites.query";
+import { useGetUserProfileQuery } from "@/Hooks/use-getuserProfile.query";
 
 interface UserDropdownMenuProps {
   isOpen: boolean;
@@ -42,13 +42,16 @@ const UserDropdownMenu: React.FC<UserDropdownMenuProps> = ({
   const { role } = useUserRole();
   const { isAuthenticated, checkAuthentication } = useAuthRedirect();
   
-  // Get real data for notifications and favorites
+  // Get real data for notifications and user profile
   const { data: notificationsData } = useGetAllNotificationsQuery();
-  const { data: favoritesData } = useGetUserFavoriteQuery();
+  const { data: userProfileData } = useGetUserProfileQuery();
   
-  // Calculate real counts
+  
+  // Calculate real counts from user profile data
   const notificationCount = notificationsData?.length || 0;
-  const favoriteCount = favoritesData?.favorites?.length || 0;
+  const favoriteCount = userProfileData?.currentUser?.favorites?.length || 0;
+  const activityCount = userProfileData?.currentUser?.activityLog?.length || 0;
+  const rewardsCount = userProfileData?.currentUser?.rewards || 0;
 
   // Prevent rendering if not authenticated
   useEffect(() => {
@@ -87,10 +90,12 @@ const UserDropdownMenu: React.FC<UserDropdownMenuProps> = ({
     }
   };
 
-  const userName =
-    userData?.userName ||
-    `${role ? role.charAt(0).toUpperCase() + role.slice(1) : "Renter"} User`;
-  const userEmail = userData?.userEmail || `${role || "renter"}@example.com`;
+  // Get real user data from profile
+  const currentUser = userProfileData?.currentUser;
+  const userName = currentUser 
+    ? `${currentUser.firstName} ${currentUser.lastName}`.trim()
+    : userData?.userName || `${role ? role.charAt(0).toUpperCase() + role.slice(1) : "Renter"} User`;
+  const userEmail = currentUser?.email || userData?.userEmail || `${role || "renter"}@example.com`;
 
   const menuItems = [
     {
@@ -115,7 +120,8 @@ const UserDropdownMenu: React.FC<UserDropdownMenuProps> = ({
       label: "Activity",
       icon: HistoryIcon,
       route: "/activity",
-      hasNotification: false,
+      hasNotification: activityCount > 0,
+      notificationCount: activityCount,
     },
     {
       id: "favorites",
@@ -135,7 +141,8 @@ const UserDropdownMenu: React.FC<UserDropdownMenuProps> = ({
       label: "Rewards",
       icon: Award,
       route: "/rewards",
-      hasNotification: false,
+      hasNotification: rewardsCount > 0,
+      notificationCount: rewardsCount,
     },
     {
       id: "settings",

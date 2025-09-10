@@ -417,10 +417,7 @@ class BaseURL {
   };
   httpGetUsersActivities = async (): Promise<RoleSubmissionResponse> => {
     try {
-      const token =
-        localStorage.getItem("authToken") ||
-        localStorage.getItem("token") ||
-        localStorage.getItem("accessToken");
+      const token = TokenManager.getToken();
       if (!token) throw new Error("No authentication token found.");
       const response = await AxiosInstance.get(endpoints.getUsersActivities, {
         headers: {
@@ -439,12 +436,9 @@ class BaseURL {
   };
   httpGetUsersFavorites = async (): Promise<RoleSubmissionResponse> => {
     try {
-      const token =
-        localStorage.getItem("authToken") ||
-        localStorage.getItem("token") ||
-        localStorage.getItem("accessToken");
+      const token = TokenManager.getToken();
       if (!token) throw new Error("No authentication token found.");
-      const response = await AxiosInstance.get(endpoints.getUsersActivities, {
+      const response = await AxiosInstance.get(endpoints.getUsersFavorites, {
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
