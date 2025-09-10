@@ -5,7 +5,7 @@ import http from "@/services/http";
 
 export const useGetUserFavoriteQuery = () => {
   return useQuery({
-    queryKey: ["user-role"],
+    queryKey: ["user-favorites"],
     queryFn: () => http.httpGetUsersFavorites(),
     retry: false,
     staleTime: 1000 * 60 * 5, 

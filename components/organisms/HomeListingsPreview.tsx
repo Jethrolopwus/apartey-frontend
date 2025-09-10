@@ -1,5 +1,5 @@
 "use client";
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { useGetAllListingsQuery } from "@/Hooks/use-getAllListings.query";
 import { useGetPropertyRatingsQuery } from "@/Hooks/use-getPropertyRatings.query";
 import { useLocation } from "@/app/userLocationContext";
@@ -11,6 +11,9 @@ import {
   PropertiesResponse,
   PropertyCategory,
 } from "@/types/generated";
+import { useUpdatePropertyToggleLikeMutation } from "@/Hooks/use.propertyLikeToggle.mutation";
+import { useGetUserFavoriteQuery } from "@/Hooks/use-getUsersFavorites.query";
+import { toast } from "react-hot-toast";
 
 // Component to display property rating with real data
 const PropertyRatingDisplay: React.FC<{ propertyId: string; fallbackRating?: number; fallbackReviewCount?: number }> = ({ 
@@ -108,6 +111,7 @@ const transformPropertyToListing = (property: Property) => {
 
 const HomeListingsPreview: React.FC = () => {
   const { selectedCountryCode } = useLocation();
+  const [likedProperties, setLikedProperties] = useState<Set<string>>(new Set());
   
   // Convert country code to full country name for listings API
   const getCountryName = (countryCode: string) => {
@@ -136,6 +140,68 @@ const HomeListingsPreview: React.FC = () => {
     refetch: () => void;
   };
 
+  const { toggleLike, isLoading: isToggleLoading } = useUpdatePropertyToggleLikeMutation();
+  
+  // Fetch user favorites to initialize liked properties state
+  const { data: favoritesData } = useGetUserFavoriteQuery();
+
+  // Initialize liked properties from user favorites
+  useEffect(() => {
+    if (favoritesData?.favorites) {
+      const favoriteIds = new Set<string>(favoritesData.favorites.map((favorite: { _id: string }) => favorite._id));
+      setLikedProperties(favoriteIds);
+    }
+  }, [favoritesData]);
+
+  const toggleLikeProperty = (propertyId: string) => {
+    if (!propertyId) {
+      return;
+    }
+
+    // Store the current state before optimistic update
+    const wasLiked = likedProperties.has(propertyId);
+
+    setLikedProperties((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(propertyId)) {
+        newSet.delete(propertyId);
+      } else {
+        newSet.add(propertyId);
+      }
+      return newSet;
+    });
+
+    toggleLike(propertyId, {
+      onSuccess: (response: { data?: { isLiked?: boolean }; message?: string }) => {
+        // Use the response data or fall back to the optimistic update result
+        const isLiked = response.data?.isLiked ?? !wasLiked;
+        
+        setLikedProperties((prev) => {
+          const newSet = new Set(prev);
+          if (isLiked) {
+            newSet.add(propertyId);
+          } else {
+            newSet.delete(propertyId);
+          }
+          return newSet;
+        });
+        toast.success(response?.message || `Property ${isLiked ? "liked" : "unliked"} successfully!`);
+      },
+      onError: (error: { message?: string }) => {
+        // Revert the optimistic update
+        setLikedProperties((prev) => {
+          const newSet = new Set(prev);
+          if (wasLiked) {
+            newSet.add(propertyId);
+          } else {
+            newSet.delete(propertyId);
+          }
+          return newSet;
+        });
+        toast.error(error?.message || "Failed to toggle like.");
+      },
+    });
+  };
 
   const listings = React.useMemo(
     () =>
@@ -222,40 +288,55 @@ const HomeListingsPreview: React.FC = () => {
               No properties found.
             </div>
           )}
-          {listings.map((listing, index) => (
-            <div
-              key={`${listing.id}-${index}`}
-              className="bg-white rounded-lg border border-gray-200 overflow-hidden hover:shadow-lg transition-shadow"
-            >
-              <div className="relative w-full h-48 overflow-hidden">
-                <Link
-                  href={`/listings/${listing.category?.toLowerCase()}/${
-                    listing.id
-                  }`}
-                  className="block group"
-                >
-                  <Image
-                    src={listing.imageUrl}
-                    alt={listing.title}
-                    width={600}
-                    height={270}
-                    className="w-full h-full object-cover group-hover:brightness-90 transition-all duration-300"
-                    priority={false}
-                  />
-                </Link>
-              </div>
-              <div className="p-4">
-                <h3 className="font-semibold text-gray-900 mb-1">
-                  {listing.title}
-                </h3>
-                <p className="text-sm text-gray-600 mb-2 flex items-center justify-between">
-                  <span className="flex items-center">
-                    <MapPin className="w-4 h-4 mr-1" />
-                    {listing.location}
-                  </span>
-                  <Heart className="w-4 h-4 text-gray-400" />{" "}
-                  {/* Moved here, static */}
-                </p>
+          {listings.map((listing, index) => {
+            const isLiked = listing.id ? likedProperties.has(listing.id) : false;
+            
+            return (
+              <div
+                key={`${listing.id}-${index}`}
+                className="bg-white rounded-lg border border-gray-200 overflow-hidden hover:shadow-lg transition-shadow"
+              >
+                <div className="relative w-full h-48 overflow-hidden">
+                  <Link
+                    href={`/listings/${listing.category?.toLowerCase()}/${
+                      listing.id
+                    }`}
+                    className="block group"
+                  >
+                    <Image
+                      src={listing.imageUrl}
+                      alt={listing.title}
+                      width={600}
+                      height={270}
+                      className="w-full h-full object-cover group-hover:brightness-90 transition-all duration-300"
+                      priority={false}
+                    />
+                  </Link>
+                </div>
+                <div className="p-4">
+                  <h3 className="font-semibold text-gray-900 mb-1">
+                    {listing.title}
+                  </h3>
+                  <p className="text-sm text-gray-600 mb-2 flex items-center justify-between">
+                    <span className="flex items-center">
+                      <MapPin className="w-4 h-4 mr-1" />
+                      {listing.location}
+                    </span>
+                    {listing.id && (
+                      <Heart
+                        className={`w-4 h-4 ${isLiked ? "text-red-500 fill-current" : "text-gray-400"} ${
+                          isToggleLoading ? "opacity-50 cursor-not-allowed" : "cursor-pointer"
+                        }`}
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          if (!isToggleLoading) {
+                            toggleLikeProperty(listing.id);
+                          }
+                        }}
+                      />
+                    )}
+                  </p>
                 <PropertyRatingDisplay 
                   propertyId={listing.id}
                   fallbackRating={listing.rating}
@@ -299,7 +380,8 @@ const HomeListingsPreview: React.FC = () => {
                 </span>
               </div>
             </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </section>

@@ -167,6 +167,7 @@ const FavoritesPage: React.FC<FavoritesPageProps> = ({ onViewAll }) => {
   const { toggleLike } = useUpdatePropertyToggleLikeMutation();
   const { refetch } = useGetUserFavoriteQuery();
 
+
   // Helper function to format price with currency
   const formatPrice = (price: number, currency: string): string => {
     if (!price) return "Price not specified";
