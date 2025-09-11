@@ -5,13 +5,13 @@ import http from "@/services/http";
 import type { userLocationData } from "@/types/generated";
 
 // Function to detect user's IP location
-const detectUserLocation = async (): Promise<userLocationData> => {
+export const detectUserLocation = async (): Promise<userLocationData> => {
   try {
     // Use our API endpoint for IP detection
     const response = await fetch('/api/location/detect');
     const data = await response.json();
     
-    // console.log('🔍 Hook received data:', data);
+   
     
     return {
       countryCode: data.countryCode,

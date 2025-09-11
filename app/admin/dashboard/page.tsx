@@ -11,7 +11,7 @@ import UserDistributionCard from "@/components/molecules/UserDistributionCard";
 
 import SalesMappingCard from "@/components/molecules/SalesMappingCard";
 
-import SwapSaleTrends from "@/components/molecules/SwapSaleTrends";
+import SwapSaleTrends from "@/components/molecules/SwapSaleRentTrends";
 import RecentCompletedListings from "@/components/molecules/RecentCompletedListings";
 import CompletionDistribution from "@/components/molecules/CompletionDistribution";
 import AdminAuthGuard from "@/components/molecules/AdminAuthGuard";
@@ -26,8 +26,23 @@ const AdminDashboardContent: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div className="w-full min-h-screen bg-[#F8F9FB] flex items-center justify-center">
-        <div className="text-lg">Loading dashboard data...</div>
+      <div className="w-full mt-4">
+        <div className="animate-pulse">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6 mb-8">
+            {[...Array(4)].map((_, idx) => (
+              <div key={idx} className="bg-gray-200 rounded-2xl h-28"></div>
+            ))}
+          </div>
+
+          <div className=" mt-5 flex flex-col items-center gap-4">
+            <div className="w-full min-h-[350px] rounded-lg bg-gray-200"></div>
+            <div className="w-full min-h-[350px] rounded-lg bg-gray-200"></div>
+          </div>
+          <div className=" mt-5 flex items-center gap-4">
+            <div className="w-full min-h-[350px] rounded-lg bg-gray-200"></div>
+            <div className="w-full min-h-[350px] rounded-lg bg-gray-200"></div>
+          </div>
+        </div>
       </div>
     );
   }
@@ -44,8 +59,6 @@ const AdminDashboardContent: React.FC = () => {
   const stats = overviewData?.stats;
   const trends = overviewData?.trends;
 
-  console.log(trends);
-
   return (
     <div className="w-full mt-6">
       {/* Top summary cards */}
@@ -54,27 +67,31 @@ const AdminDashboardContent: React.FC = () => {
           label="Total properties"
           value={stats?.totalProperties || 0}
           percentage={overviewData?.stats?.growth?.totalProperties.value}
+          increase={overviewData?.stats?.growth?.totalProperties.isIncrease}
         />
         <TotalUsersCard
           label="Total Users"
           value={stats?.totalUsers || 0}
           percentage={overviewData?.stats?.growth?.totalUsers.value}
+          increase={overviewData?.stats?.growth?.totalUsers.isIncrease}
         />
         <ActiveListingsCard
           label="Active Listings"
           value={stats?.activeListings || 0}
           percentage={overviewData?.stats?.growth?.activeListings.value}
+          increase={overviewData?.stats?.growth?.activeListings.isIncrease}
         />
         <NewUsersThisMonthCard
           label="New Users This Month"
           value={stats?.newUsersThisMonth || 0}
           percentage={overviewData?.stats?.growth?.newUsers.value}
+          increase={overviewData?.stats?.growth?.newUsers.isIncrease}
         />
       </div>
 
       {/* Top section: Revenue and User Distribution side by side */}
       <div className="">
-        <TotalRevenueCard totalRevenue={stats?.totalRevenue || 0} />
+        <TotalRevenueCard dailyRevenue={stats?.dailyRevenue || []} />
         <UserDistributionCard
           userDistribution={trends?.userDistributionByMonth || []}
         />
@@ -103,7 +120,10 @@ const AdminDashboardContent: React.FC = () => {
           <div className="text-2xl md:text-3xl font-bold text-green-600 mb-1">
             {stats?.completed.rents}
           </div>
-          <p className="text-gray-400 text-xs">+8% Success rate</p>
+          <p className="text-gray-400 text-xs">
+            {stats?.completed.change.rents.isIncrease ? "+" : "-"}
+            {stats?.completed.change.rents.value}% Success rate
+          </p>
         </div>
 
         {/* Successful Sales */}
@@ -114,7 +134,10 @@ const AdminDashboardContent: React.FC = () => {
           <div className="text-2xl md:text-3xl font-bold text-blue-600 mb-1">
             {stats?.completed.sales}
           </div>
-          <p className="text-gray-400 text-xs">+10% Success rate</p>
+          <p className="text-gray-400 text-xs">
+            {stats?.completed.change.sales.isIncrease ? "+" : "-"}
+            {stats?.completed.change.sales.value}% Success rate
+          </p>
         </div>
 
         {/* Successful Swaps */}
@@ -125,13 +148,16 @@ const AdminDashboardContent: React.FC = () => {
           <div className="text-2xl md:text-3xl font-bold text-orange-500 mb-1">
             {stats?.completed.swaps}
           </div>
-          <p className="text-gray-400 text-xs">+15% Success rate</p>
+          <p className="text-gray-400 text-xs">
+            {stats?.completed.change.swaps.isIncrease ? "+" : "-"}
+            {stats?.completed.change.swaps.value}% Success rate
+          </p>
         </div>
       </div>
 
       {/* Middle section: Recent Completed Listings and Right Column (Completion Distribution + Sales Mapping) */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-7 mb-6 md:mb-10">
-        <RecentCompletedListings />
+        <RecentCompletedListings data={trends?.recentCompleted} />
         <div className="space-y-4 md:space-y-7">
           <CompletionDistribution data={trends?.completionDistribution} />
           <SalesMappingCard countrySales={trends?.countrySales || []} />
@@ -140,7 +166,7 @@ const AdminDashboardContent: React.FC = () => {
 
       {/* Bottom section: Swap vs Sale Trends (full width) */}
       <div className="w-full">
-        <SwapSaleTrends />
+        <SwapSaleTrends data={trends?.monthlyCompletedCategoryTrend} />
       </div>
     </div>
   );
