@@ -135,8 +135,8 @@ const RecentCompletedListings: React.FC<{ data: RecentCompleted[] }> = ({
                 </h4>
                 <p className="text-xs text-gray-500">
                   Owner: {listing.lister.firstName}, Completed{" "}
-                  {listing.deactivationMeta.location}:{" "}
-                  {new Date(listing.deactivationMeta.date).toDateString()}
+                  {listing.deactivationMeta?.location || "Unknown location"}:{" "}
+                  {listing.deactivationMeta?.date ? new Date(listing.deactivationMeta.date).toDateString() : "Unknown date"}
                 </p>
                 <p className="text-xs font-medium text-gray-500 mt-1">
                   {getCurrencySymbol(listing.category)}{" "}

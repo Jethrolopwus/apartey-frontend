@@ -60,7 +60,7 @@ export interface RecentCompleted {
     };
     description: string;
   };
-  deactivationMeta: {
+  deactivationMeta?: {
     reason: string;
     location: string | null;
     customNote: string | null;
@@ -107,7 +107,7 @@ export interface CompletionDistribution {
   count: number;
 }
 
-export interface RecentCompleted {
+export interface DetailedRecentCompleted {
   _id: string;
   lister: {
     _id: string;
