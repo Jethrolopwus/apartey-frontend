@@ -56,7 +56,7 @@ const SignUpForm: React.FC<SignUpFormProps> = ({
             />
             {errors.name && (
               <p className="mt-1 text-xs text-red-600">{errors.name.message}</p>
-            )}message
+            )}
           </div>
         </div>
 

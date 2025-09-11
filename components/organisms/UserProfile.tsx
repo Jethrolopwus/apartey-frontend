@@ -20,6 +20,19 @@ const ProfilePage = () => {
   const user = data?.currentUser;
   const token = useAuthToken();
 
+  // Get bio and website from the user's role profile
+  const getUserRoleData = () => {
+    const userRole = user?.role || 'renter';
+    const roleProfiles = user?.roleProfiles;
+    const roleProfile = roleProfiles?.[userRole as keyof typeof roleProfiles];
+    return {
+      bio: roleProfile?.bio || "",
+      website: roleProfile?.website || "",
+    };
+  };
+
+  const roleData = getUserRoleData();
+
   if (!token) {
     return <p className="p-4 text-gray-500">No authentication token found. Please sign in.</p>;
   }
@@ -130,7 +143,7 @@ const ProfilePage = () => {
 
               {/* Bio */}
               <p className="mb-4 text-sm text-gray-600 leading-relaxed">
-                {user?.bio ||
+                {roleData.bio ||
                   "Welcome! You haven't added a bio yet. Tell others about yourself here."}
               </p>
 
@@ -183,14 +196,14 @@ const ProfilePage = () => {
             <div>
               <p className="text-gray-500">Website</p>
               <p className="font-medium">
-                {user?.website ? (
+                {roleData.website ? (
                   <a
-                    href={user.website}
+                    href={roleData.website}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-blue-600 underline"
                   >
-                    {user.website}
+                    {roleData.website}
                   </a>
                 ) : (
                   "N/A"

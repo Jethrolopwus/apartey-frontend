@@ -22,10 +22,18 @@ interface SingleBlogPost {
   image?: string;
   imageUrl?: string;
   publishedAt?: string;
-  author?: {
+  author?: string | {
     name: string;
     avatar: string;
   };
+  views?: number;
+  likes?: string[];
+  likesCount?: number;
+  tags?: string[];
+  status?: string;
+  archived?: boolean;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 // Custom Image component with error handling
@@ -161,9 +169,18 @@ const BlogDetails: React.FC<BlogDetailsProps> = ({ id }) => {
       );
     }
 
-    const post = (data as SingleBlogPost) || ({} as SingleBlogPost);
-    const authorName = post?.author?.name || "Apartey Team";
-    const authorAvatar = post?.author?.avatar || "/aparteyLogo.png";
+    // Extract blog post from the API response structure
+    console.log("Blog API Response:", data);
+    const post = (data as { blogPost?: SingleBlogPost })?.blogPost || (data as SingleBlogPost) || ({} as SingleBlogPost);
+    console.log("Extracted post:", post);
+    
+    // Handle author - it can be a string ID or an object with name/avatar
+    const authorName = typeof post?.author === 'object' && post?.author?.name 
+      ? post.author.name 
+      : "Apartey Team";
+    const authorAvatar = typeof post?.author === 'object' && post?.author?.avatar 
+      ? post.author.avatar 
+      : "/aparteyLogo.png";
     const publishedAt = post.publishedAt || new Date().toISOString();
     const formattedDate = new Date(publishedAt).toLocaleDateString("en-GB", {
       day: "2-digit",
@@ -172,7 +189,7 @@ const BlogDetails: React.FC<BlogDetailsProps> = ({ id }) => {
     });
     const readTime = "8";
     const category = post.category || "General";
-    const imageUrl = post.image || post.imageUrl || "/HouseRent.png";
+    const imageUrl = post.imageUrl || post.image || "/HouseRent.png";
     const content = post.content || "";
 
     return (
@@ -222,7 +239,7 @@ const BlogDetails: React.FC<BlogDetailsProps> = ({ id }) => {
                 <span>{readTime} min read</span>
               </div>
               <div className="prose max-w-none text-gray-700 text-base md:text-lg leading-relaxed whitespace-pre-line">
-                {content}
+                {stripHtmlTags(content)}
               </div>
             </div>
           </article>

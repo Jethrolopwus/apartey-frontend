@@ -148,8 +148,9 @@ const authOptions = {
         return url;
       }
       
-      // Default to signin page
-      return `${baseUrl}/signin`;
+      // For Google OAuth, don't default to signin - let the component handle it
+      // This prevents interference with the Google OAuth flow
+      return url || baseUrl;
     },
   },
   pages: {

@@ -4,7 +4,6 @@ import { signIn, useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { GoogleAuthButtonProps } from "@/types/generated";
 import { useGoogleAuthMutation } from "@/Hooks/use.googleAuth.mutation";
-import { useGetOnboardingStatusQuery } from "@/Hooks/get-onboardingStatus.query";
 import { TokenManager } from "@/utils/tokenManager";
 import Image from "next/image";
 import ErrorHandler from "@/utils/errorHandler";
@@ -22,8 +21,6 @@ const GoogleAuthButton: React.FC<GoogleAuthButtonProps> = ({
 
   const { mutate: googleAuth, isLoading: isGoogleAuthLoading } =
     useGoogleAuthMutation();
-  const { data: onboardingStatus, isLoading: isOnboardingLoading } =
-    useGetOnboardingStatusQuery();
 
   useEffect(() => {
     if (
@@ -53,62 +50,59 @@ const GoogleAuthButton: React.FC<GoogleAuthButtonProps> = ({
             if (response?.user?.role) {
               localStorage.setItem("userRole", response.user.role);
             }
-            const hasCompletedOnboarding = localStorage.getItem(
-              "hasCompletedOnboarding"
-            );
-            const role =
-              onboardingStatus?.currentUserStatus?.role ||
-              response?.user?.role ||
-              localStorage.getItem("userRole") ||
-              "renter";
 
-            // Check if this is an admin login - check multiple sources
+            // Check if this is an admin login
             const isAdminLogin = localStorage.getItem("isAdminLogin") === "true";
-            const isAdminRole = role?.toLowerCase().includes('admin');
             const isAdminCallback = callbackUrl?.includes('/admin/');
             
-            console.log("Google Auth - Admin check:", { isAdminLogin, isAdminRole, isAdminCallback, role, callbackUrl });
-            
-            if (isAdminLogin || isAdminRole || isAdminCallback) {
+            if (isAdminLogin || isAdminCallback) {
               console.log("Redirecting to admin dashboard from Google Auth");
               localStorage.setItem("isAdminLogin", "true");
               router.push("/admin/dashboard");
               return;
             }
 
-            // For signin users, assume they have completed onboarding
-            if (mode === "signin") {
+            // Set Google OAuth flag
+            localStorage.setItem("isGoogleAuth", "true");
+
+            // Check if user has completed onboarding from backend response
+            const hasCompletedOnboarding = response?.user?.isOnboarded;
+            const userRole = response?.user?.role;
+
+            console.log("Google Auth Response:", { 
+              hasCompletedOnboarding, 
+              userRole, 
+              mode,
+              response 
+            });
+
+            if (hasCompletedOnboarding) {
+              // Existing user - redirect based on role
               localStorage.setItem("authMode", "signin");
               localStorage.setItem("hasCompletedOnboarding", "true");
               
               if (localStorage.getItem("pendingReviewData")) {
                 router.push("/write-reviews/unlisted");
               } else {
-                if (role === "homeowner") {
-                
-                  router.push("/landlord");
-                } else if (role === "agent") {
+                // Redirect based on role for existing users
+                if (userRole === "homeowner") {
+                  router.push("/homeowner-profile");
+                } else if (userRole === "agent") {
                   router.push("/agent-profile");
                 } else {
                   router.push("/profile");
                 }
               }
-            } else if (mode === "signup" || !hasCompletedOnboarding) {
-              localStorage.setItem("authMode", "signup");
-              router.push("/onboarding");
             } else {
-              if (localStorage.getItem("pendingReviewData")) {
-                router.push("/write-reviews/unlisted");
-              } else {
-                if (role === "homeowner") {
-                  router.push("/landlord");
-                } else if (role === "agent") {
-                  router.push("/agent-profile");
-                } else {
-                  router.push("/");
-                }
-              }
+              // New user - redirect to onboarding
+              localStorage.setItem("authMode", "signup");
+              localStorage.removeItem("hasCompletedOnboarding");
+              console.log("New Google user - redirecting to onboarding");
+              router.push("/onboarding");
             }
+            
+            // Clear the Google OAuth flag after successful redirect
+            localStorage.removeItem("isGoogleAuth");
           }
         },
         onError: (error: unknown) => {
@@ -116,7 +110,7 @@ const GoogleAuthButton: React.FC<GoogleAuthButtonProps> = ({
         },
       });
     }
-  }, [status, session, googleAuth, onboardingStatus, router, mode, callbackUrl]);
+  }, [status, session, googleAuth, router, mode, callbackUrl]);
 
   const handleGoogleAuth = async () => {
     try {
@@ -124,10 +118,10 @@ const GoogleAuthButton: React.FC<GoogleAuthButtonProps> = ({
       if (onClick) {
         onClick();
       }
+      
+      // Set basic flags - the actual redirect logic will be handled in useEffect
       localStorage.setItem("authMode", mode);
-      if (mode === "signin") {
-        localStorage.setItem("hasCompletedOnboarding", "true");
-      }
+      localStorage.setItem("isGoogleAuth", "true");
       
       await signIn("google", { callbackUrl });
     } catch (error: unknown) {
@@ -138,7 +132,7 @@ const GoogleAuthButton: React.FC<GoogleAuthButtonProps> = ({
   };
 
   const isLoadingState =
-    isLoading || isGoogleAuthLoading || isOnboardingLoading;
+    isLoading || isGoogleAuthLoading;
 
   return (
     <button

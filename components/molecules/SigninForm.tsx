@@ -44,13 +44,14 @@ const SignInForm: React.FC<SignInFormProps> = ({
             localStorage.removeItem("pendingReviewData");
             switch (intendedProfile.toLowerCase()) {
               case "renter":
-                router.push("/");
+                router.push("/profile");
                 break;
+              case "homeowner":
               case "landlord":
-                router.push("/landlord");
+                router.push("/homeowner-profile");
                 break;
               case "agent":
-                router.push("/agent");
+                router.push("/agent-profile");
                 break;
               default:
                 router.push("/profile");
@@ -77,13 +78,13 @@ const SignInForm: React.FC<SignInFormProps> = ({
         toast.success("You are already signed in!");
         switch (userRole.toLowerCase()) {
           case "renter":
-            router.push("/");
+            router.push("/profile");
             break;
           case "homeowner":
-            router.push("/landlord");
+            router.push("/homeowner-profile");
             break;
           case "agent":
-            router.push("/agent");
+            router.push("/agent-profile");
             break;
           default:
             router.push("/profile");

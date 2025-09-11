@@ -42,6 +42,7 @@ export default function VerifyEmail() {
           console.log("response",response);
 
         TokenManager.setToken(response.token);
+        localStorage.removeItem("pendingVerification"); // Clear verification flag
         router.push("/onboarding");
         },
 
@@ -58,9 +59,9 @@ export default function VerifyEmail() {
 
   useEffect(() => {
     const email = localStorage.getItem("email");
-    const token = localStorage.getItem("token");
+    const pendingVerification = localStorage.getItem("pendingVerification");
 
-    if (!email || !token) {
+    if (!email || pendingVerification !== "true") {
       router.push("/signup");
     } else {
       setUserEmail(email);

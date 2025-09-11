@@ -48,32 +48,36 @@ export default function BlogComponent() {
         {isLoading && <div className="col-span-3 text-center">Loading...</div>}
         {error && <div className="col-span-3 text-center text-red-500">Failed to load blog posts.</div>}
         {posts.slice(0, 3).map((post: BlogPost) => (
-          <div
+          <Link
             key={post._id}
-            className="bg-white rounded-xl shadow-sm overflow-hidden hover:shadow-md transition-shadow cursor-pointer group block"
+            href={`/blog/${post._id}`}
+            passHref
+            legacyBehavior
           >
-            <div className="relative h-48 md:h-56">
-              <Image
-                src={post.imageUrl || "/HouseRent.png"}
-                alt={post.title}
-                width={400}
-                height={250}
-                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                priority={false}
-              />
-            </div>
-            <div className="p-6">
-              <span className="inline-block bg-orange-100 text-orange-600 text-xs font-semibold px-3 py-1 rounded-full mb-2 w-fit">
-                {post.category}
-              </span>
-              <h3 className="font-bold text-gray-900 mb-3 text-lg leading-tight group-hover:text-orange-600 transition-colors">
-                {post.title}
-              </h3>
-              <p className="text-gray-600 text-sm mb-4 line-clamp-2">
-                {stripHtmlTags(post.excerpt)}
-              </p>
-            </div>
-          </div>
+            <a className="bg-white rounded-xl shadow-sm overflow-hidden hover:shadow-md transition-shadow cursor-pointer group block">
+              <div className="relative h-48 md:h-56">
+                <Image
+                  src={post.imageUrl || "/HouseRent.png"}
+                  alt={post.title}
+                  width={400}
+                  height={250}
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                  priority={false}
+                />
+              </div>
+              <div className="p-6">
+                <span className="inline-block bg-orange-100 text-orange-600 text-xs font-semibold px-3 py-1 rounded-full mb-2 w-fit">
+                  {post.category}
+                </span>
+                <h3 className="font-bold text-gray-900 mb-3 text-lg leading-tight group-hover:text-orange-600 transition-colors">
+                  {post.title}
+                </h3>
+                <p className="text-gray-600 text-sm mb-4 line-clamp-2">
+                  {stripHtmlTags(post.excerpt)}
+                </p>
+              </div>
+            </a>
+          </Link>
         ))}
       </div>
     </div>

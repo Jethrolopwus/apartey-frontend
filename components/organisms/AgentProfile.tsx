@@ -19,6 +19,8 @@ interface Agent {
   profileImage: string;
   coverImage: string;
   description: string;
+  bio: string;
+  website: string;
   stats?: Stat[]; 
 }
 
@@ -66,6 +68,8 @@ const AgentProfile: React.FC = () => {
       profileImage: currentUser?.profilePicture || "",
       coverImage: agentProfile?.coverImage || "",
       description: agentProfile?.description || "",
+      bio: agentProfile?.bio || "",
+      website: agentProfile?.website || "",
       stats: agentProfile?.stats || [],
     };
   }, [userData]);
@@ -259,8 +263,20 @@ const AgentProfile: React.FC = () => {
                 </div>
             </div>
             <p className="text-gray-700 text-sm mt-2 max-w-2xl">
-              {agent.description}
+              {agent.bio || "Welcome! You haven't added a bio yet. Tell others about yourself here."}
             </p>
+            {agent.website && (
+              <div className="mt-2">
+                <a
+                  href={agent.website}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-blue-600 hover:text-blue-800 underline text-sm"
+                >
+                  {agent.website}
+                </a>
+              </div>
+            )}
             <div className="flex flex-wrap gap-8 mt-4">
               {(agent.stats || []).map((stat, idx: number) => (
                 <div

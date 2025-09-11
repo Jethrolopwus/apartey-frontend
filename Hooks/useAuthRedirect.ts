@@ -150,6 +150,20 @@ export const useAuthRedirect = (
         authMode = localStorage.getItem("authMode");
         hasPendingReviewData = localStorage.getItem("pendingReviewData");
         hasCompletedOnboarding = localStorage.getItem("hasCompletedOnboarding");
+        const pendingVerification = localStorage.getItem("pendingVerification");
+        const isGoogleAuth = localStorage.getItem("isGoogleAuth");
+        
+        // If user is in verification process, don't redirect
+        if (pendingVerification === "true") {
+          setIsRedirecting(false);
+          return;
+        }
+        
+        // If this is Google OAuth, let GoogleAuthButton handle the redirect
+        if (isGoogleAuth === "true") {
+          setIsRedirecting(false);
+          return;
+        }
       }
 
       // Debug information removed for production
@@ -194,7 +208,7 @@ export const useAuthRedirect = (
         if (authMode === "signin") {
           // Redirect based on user role
           if (role === "homeowner") {
-            finalRedirect = "/landlord";
+            finalRedirect = "/homeowner-profile";
           } else if (role === "agent") {
             finalRedirect = "/agent-profile";
           } else {
@@ -205,7 +219,7 @@ export const useAuthRedirect = (
         } else {
           // Redirect based on user role
           if (role === "homeowner") {
-            finalRedirect = "/landlord";
+            finalRedirect = "/homeowner-profile";
           } else if (role === "agent") {
             finalRedirect = "/agent-profile";
           } else {

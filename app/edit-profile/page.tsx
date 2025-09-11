@@ -7,7 +7,7 @@ import { useEffect } from "react";
 import { toast } from "react-hot-toast";
 
 export default function EditProfilePage() {
-  const { data, isLoading, isError, error } = useGetUserProfileQuery();
+  const { data, isLoading, isError, error, refetch } = useGetUserProfileQuery();
   const { mutate, error: updateError, data: updateData } = useUpdateProfileMutation();
   const router = useRouter();
 
@@ -37,20 +37,48 @@ export default function EditProfilePage() {
     }
     mutate(formData, {
       onSuccess: () => {
-        router.push("/profile");
+        // Refetch user data to get updated information
+        refetch();
+        
+        // Redirect based on user role
+        const userRole = data?.currentUser?.role;
+        if (userRole === "homeowner") {
+          router.push("/homeowner-profile");
+        } else if (userRole === "agent") {
+          router.push("/agent-profile");
+        } else {
+          router.push("/profile");
+        }
       },
     });
   };
 
   const handleCancel = () => {
-    router.push("/profile");
+    // Redirect based on user role
+    const userRole = data?.currentUser?.role;
+    if (userRole === "homeowner") {
+      router.push("/homeowner-profile");
+    } else if (userRole === "agent") {
+      router.push("/agent-profile");
+    } else {
+      router.push("/profile");
+    }
   };
 
   return (
     <div className="min-h-screen bg-gray-100">
       <EditProfile
         userEmail={user?.email}
-        initialData={user}
+        initialData={{
+          firstName: user?.firstName,
+          lastName: user?.lastName,
+          phone: user?.phone,
+          address: user?.address,
+          dateOfBirth: user?.dateOfBirth,
+          profilePicture: user?.profilePicture,
+          role: user?.role,
+          roleProfiles: user?.roleProfiles,
+        }}
         onSave={handleSave}
         onCancel={handleCancel}
       />

@@ -907,10 +907,19 @@ class BaseURL {
       }
 
       const response = await AxiosInstance.get(url);
-      
-      
       return response.data;
     } catch (error: any) {
+      // Handle the case where user has no properties (404 with "You have no properties yet" message)
+      if (error.response?.status === 404 && 
+          error.response?.data?.message === "You have no properties yet.") {
+        // Return empty array instead of throwing error
+        return {
+          listings: [],
+          totalCount: 0,
+          message: "You have no properties yet."
+        };
+      }
+      
       console.error("❌ HTTP Service - getAllMyListings API Error:");
       console.error("  - Error:", error);
       console.error("  - Response:", error.response?.data);

@@ -18,11 +18,17 @@ interface EditProfileProps {
       street?: string;
     };
     dateOfBirth?: string;
-    occupation?: string;
     bio?: string;
     website?: string;
     avatar?: string;
     profilePicture?: string;
+    role?: string;
+    roleProfiles?: {
+      renter?: { bio?: string; website?: string };
+      homeowner?: { bio?: string; website?: string };
+      agent?: { bio?: string; website?: string };
+      admin?: { bio?: string; website?: string };
+    };
   };
   onSave?: (data: FormData) => void;
   onCancel?: () => void;
@@ -34,9 +40,7 @@ interface ProfileFormValues {
   lastName: string;
   email: string;
   phone: string;
-  address: string;
   dateOfBirth: string;
-  occupation: string;
   bio: string;
   website: string;
   avatar?: string;
@@ -56,6 +60,18 @@ const EditProfile: React.FC<EditProfileProps> = ({
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [avatarUrl, setAvatarUrl] = useState<string>(initialData.profilePicture || "");
 
+  // Get bio and website from the user's role profile
+  const getUserRoleData = () => {
+    const userRole = initialData.role || 'renter';
+    const roleProfile = initialData.roleProfiles?.[userRole as keyof typeof initialData.roleProfiles];
+    return {
+      bio: roleProfile?.bio || "",
+      website: roleProfile?.website || "",
+    };
+  };
+
+  const roleData = getUserRoleData();
+
   const {
     control,
     handleSubmit,
@@ -65,16 +81,13 @@ const EditProfile: React.FC<EditProfileProps> = ({
   } = useForm<ProfileFormValues>({
     mode: "onChange",
     defaultValues: {
-      firstName: initialData.firstName || "Andrew",
-      lastName: initialData.lastName || "Abba",
+      firstName: initialData.firstName || "",
+      lastName: initialData.lastName || "",
       email: userEmail,
-      phone: initialData.phone || "234819999999",
+      phone: initialData.phone || "",
       dateOfBirth: initialData.dateOfBirth ? initialData.dateOfBirth.slice(0, 10) : "",
-      occupation: initialData.occupation || "Freelancer",
-      bio:
-        initialData.bio ||
-        "Extensive experience in rentals and a vast database means I can quickly find the service that are right for you. Looking for a seamless and exciting rental experience.",
-      website: initialData.website || "https://yourwebsite.com",
+      bio: roleData.bio || "",
+      website: roleData.website || "",
       avatar: initialData.profilePicture || "",
       country: initialData.address?.country || "",
       stateOrRegion: initialData.address?.stateOrRegion || "",
@@ -86,11 +99,21 @@ const EditProfile: React.FC<EditProfileProps> = ({
   // Calculate completion percentage based on filled fields
   const watchedFields = watch();
   const calculateCompletion = () => {
-    const fields = Object.values(watchedFields);
-    const filledFields = fields.filter(
+    // Define the required fields for completion calculation
+    const requiredFields = [
+      watchedFields.firstName,
+      watchedFields.lastName,
+      watchedFields.phone,
+      watchedFields.dateOfBirth,
+      watchedFields.bio,
+      watchedFields.country,
+      watchedFields.stateOrRegion,
+    ];
+    
+    const filledFields = requiredFields.filter(
       (field) => field && field.toString().trim() !== ""
     ).length;
-    return Math.round((filledFields / fields.length) * 100);
+    return Math.round((filledFields / requiredFields.length) * 100);
   };
 
   const completionPercentage = calculateCompletion();
@@ -122,7 +145,6 @@ const EditProfile: React.FC<EditProfileProps> = ({
     formDataObject.append("email", data.email);
     formDataObject.append("phone", data.phone);
     formDataObject.append("dateOfBirth", data.dateOfBirth);
-    formDataObject.append("occupation", data.occupation);
     formDataObject.append("bio", data.bio);
     formDataObject.append("website", data.website);
     formDataObject.append("country", address.country);
@@ -194,8 +216,8 @@ const EditProfile: React.FC<EditProfileProps> = ({
           <div>
             <p className="text-gray-900 font-medium">Complete your profile</p>
             <ul className="text-sm text-gray-600 mt-1">
-              <li>• Verify your email</li>
-              <li>• Add date of birth</li>
+              <li>• Add your bio</li>
+              <li>• Complete address information</li>
             </ul>
           </div>
         </div>
@@ -452,32 +474,6 @@ const EditProfile: React.FC<EditProfileProps> = ({
               />
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Occupation
-              </label>
-              <Controller
-                name="occupation"
-                control={control}
-                rules={{ required: "Occupation is required" }}
-                render={({ field }) => (
-                  <>
-                    <input
-                      {...field}
-                      type="text"
-                      className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                        errors.occupation ? "border-red-500" : "border-gray-300"
-                      }`}
-                    />
-                    {errors.occupation && (
-                      <p className="text-red-500 text-xs mt-1">
-                        {errors.occupation.message}
-                      </p>
-                    )}
-                  </>
-                )}
-              />
-            </div>
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">

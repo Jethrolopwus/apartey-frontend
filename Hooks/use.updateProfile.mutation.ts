@@ -1,8 +1,10 @@
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import http from "@/services/http";
 import { RoleSubmissionResponse } from "@/types/generated";
 
 export const useUpdateProfileMutation = () => {
+  const queryClient = useQueryClient();
+  
   const { data, isPending, error, mutate } = useMutation<
     RoleSubmissionResponse,
     Error,
@@ -15,6 +17,10 @@ export const useUpdateProfileMutation = () => {
         }
       }
       return http.httpUpdateProfile(data);
+    },
+    onSuccess: () => {
+      // Invalidate and refetch user profile data
+      queryClient.invalidateQueries({ queryKey: ["user-profile"] });
     },
   });
 

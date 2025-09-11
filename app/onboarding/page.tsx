@@ -78,15 +78,24 @@ export default function RoleSelect() {
               if (localStorage.getItem("pendingReviewData")) {
                 router.push("/write-reviews/unlisted");
               } else {
-                // Redirect based on user role
-                const userRole = onboardingResponse?.currentUserStatus?.role;
-                if (userRole === "homeowner") {
-                  router.push("/landlord");
-                } else if (userRole === "agent") {
-                  router.push("/agent-profile");
-                } else {
-                  router.push("/profile");
-                }
+                // Both traditional and Google OAuth users should be redirected based on role
+                const userRole = onboardingResponse?.user?.role || onboardingResponse?.currentUserStatus?.role;
+                
+                console.log("Redirecting based on role:", userRole);
+                
+                // Add a small delay to ensure role is properly set
+                setTimeout(() => {
+                  // Clear Google OAuth flag after successful onboarding
+                  localStorage.removeItem("isGoogleAuth");
+                  
+                  if (userRole === "homeowner") {
+                    router.push("/homeowner-profile");
+                  } else if (userRole === "agent") {
+                    router.push("/agent-profile");
+                  } else {
+                    router.push("/profile");
+                  }
+                }, 100);
               }
             },
             onError: (onboardingError: unknown) => {
@@ -109,15 +118,24 @@ export default function RoleSelect() {
               if (localStorage.getItem("pendingReviewData")) {
                 router.push("/write-reviews/unlisted");
               } else {
-                // Redirect based on user role
-                const userRole = addRoleData?.currentUserRole?.role;
-                if (userRole === "homeowner") {
-                  router.push("/landlord");
-                } else if (userRole === "agent") {
-                  router.push("/agent-profile");
-                } else {
-                  router.push("/profile");
-                }
+                // Both traditional and Google OAuth users should be redirected based on role
+                const userRole = addRoleData?.user?.role || addRoleData?.currentUserRole?.role;
+                
+                console.log("Redirecting based on role (error path):", userRole);
+                
+                // Add a small delay to ensure role is properly set
+                setTimeout(() => {
+                  // Clear Google OAuth flag after successful onboarding
+                  localStorage.removeItem("isGoogleAuth");
+                  
+                  if (userRole === "homeowner") {
+                    router.push("/homeowner-profile");
+                  } else if (userRole === "agent") {
+                    router.push("/agent-profile");
+                  } else {
+                    router.push("/profile");
+                  }
+                }, 100);
               }
             },
           });

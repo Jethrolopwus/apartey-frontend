@@ -114,6 +114,8 @@ interface Homeowner {
   profileImage: string;
   coverImage: string;
   description: string;
+  bio: string;
+  website: string;
   stats?: Stat[];
 }
 
@@ -184,6 +186,8 @@ const HomeownerProfile: React.FC = () => {
       profileImage: currentUser?.profilePicture || "",
       coverImage: homeownerProfile?.coverImage || "",
       description: homeownerProfile?.description || "",
+      bio: homeownerProfile?.bio || "",
+      website: homeownerProfile?.website || "",
       stats: homeownerProfile?.stats || [],
     };
   }, [userData]);
@@ -374,7 +378,15 @@ const HomeownerProfile: React.FC = () => {
     return <div className="p-8 text-center">Loading...</div>;
   }
 
-      if (userError || listingsError) {
+  // Treat "no properties" response as a valid empty state, not an error
+  const isNoPropertiesError =
+    listingsError &&
+    typeof (listingsError as unknown as { message?: string }).message === "string" &&
+    ((listingsError as unknown as { message?: string }).message || "")
+      .toLowerCase()
+      .includes("no properties");
+
+      if (userError || (listingsError && !isNoPropertiesError)) {
       console.error("User Error:", userError);
       console.error("Listings Error:", listingsError);
       return (
@@ -458,8 +470,20 @@ const HomeownerProfile: React.FC = () => {
                 </div>
             </div>
             <p className="text-gray-700 text-sm mt-2 max-w-2xl">
-              Extensive experience in rentals and a vast database means I can quickly find the options that are right for you. Looking for a seamless and exciting rental experience? Contact me today - I promise it won&apos;t be boring! Your perfect home is just a call away.
+              {homeowner.bio || "Welcome! You haven't added a bio yet. Tell others about yourself here."}
             </p>
+            {homeowner.website && (
+              <div className="mt-2">
+                <a
+                  href={homeowner.website}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-blue-600 hover:text-blue-800 underline text-sm"
+                >
+                  {homeowner.website}
+                </a>
+              </div>
+            )}
             <div className="flex flex-wrap gap-8 mt-4">
               <div className="flex flex-col items-center min-w-[90px]">
                 <span className="text-lg font-bold text-gray-900">0 years</span>

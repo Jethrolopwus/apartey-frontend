@@ -26,12 +26,12 @@ const SignUp: React.FC = () => {
 
   useEffect(() => {
     if (data) {
-      localStorage.setItem("token", data?.token);
       localStorage.setItem("email", data?.user?.email);
       localStorage.setItem("authMode", "signup"); // Set auth mode for signup
-      toast.success("Account created successfully!");
+      localStorage.setItem("pendingVerification", "true"); // Flag to indicate user is in verification process
+      toast.success("Account created successfully! Please check your email for verification code.");
       reset();
-      router.push("/onboarding");
+      router.push("/verifyEmail");
     }
   }, [data, router, reset]);
 

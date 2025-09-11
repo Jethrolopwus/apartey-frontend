@@ -30,27 +30,16 @@ const SignIn: React.FC = () => {
 
   useEffect(() => {
     if (session) {
-      // For Google OAuth users, set onboarding completion if they have a role
+      // For Google OAuth users, let the GoogleAuthButton handle the redirect logic
+      // Don't interfere with the onboarding flow here
       if (typeof window !== "undefined" && session.user) {
-        localStorage.setItem("authMode", "signin");
-        
-        // For Google OAuth users, assume they have completed onboarding
-        // since they already have an account
-        localStorage.setItem("hasCompletedOnboarding", "true");
-        
-        // Check if user has a role in the session (if available)
-        const userWithRole = session.user as { role?: string };
-        if (userWithRole.role) {
-          localStorage.setItem("userRole", userWithRole.role);
-        }
-        
         console.log("NextAuth session user:", session.user);
+        
+        // Only set authMode if it's not already set by GoogleAuthButton
+        if (!localStorage.getItem("authMode")) {
+          localStorage.setItem("authMode", "signin");
+        }
       }
-      
-      setTimeout(() => {
-        console.log("Calling handlePostLoginRedirect for NextAuth session");
-        handlePostLoginRedirectRef.current();
-      }, 100);
     }
   }, [session]);
 
@@ -122,7 +111,7 @@ const SignIn: React.FC = () => {
     console.log("Google sign in initiated");
     if (typeof window !== "undefined") {
       localStorage.setItem("authMode", "signin");
-      localStorage.setItem("hasCompletedOnboarding", "true");
+      // Don't set hasCompletedOnboarding here - let GoogleAuthButton handle it
     }
     signIn("google", { callbackUrl: "/signin" });
   };

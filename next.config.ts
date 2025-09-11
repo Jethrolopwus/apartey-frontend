@@ -9,6 +9,11 @@ const nextConfig: NextConfig = {
         hostname: "apartey-media-storage.s3.eu-north-1.amazonaws.com",
         pathname: "/**",
       },
+      {
+        protocol: "https",
+        hostname: "lh3.googleusercontent.com",
+        pathname: "/**",
+      },
     ],
     domains: ["maps.googleapis.com"],
   },
