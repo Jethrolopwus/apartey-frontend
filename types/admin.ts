@@ -34,10 +34,45 @@ export interface AdminStats {
   newUsersThisMonth: number;
   totalProperties: number;
   activeListings: number;
-  totalRevenue: number;
+  dailyRevenue: any;
   growth: any;
   completed: any;
   trends: any;
+}
+
+export interface RecentCompleted {
+  _id: string;
+  lister: {
+    _id: string;
+    firstName: string;
+    email: string;
+  };
+  category: "Sale" | "Rent" | "Swap" | string;
+  propertyType: string;
+  location: {
+    fullAddress: string;
+  };
+  propertyDetails: {
+    price: {
+      currency: string;
+      salePrice?: number;
+      rentPrice?: number;
+    };
+    description: string;
+  };
+  deactivationMeta: {
+    reason: string;
+    location: string | null;
+    customNote: string | null;
+    date: string;
+  };
+}
+
+export interface monthlyCompletedCategoryTrend {
+  month: string;
+  Swap: number;
+  Rent: number;
+  Sale: number;
 }
 
 export interface UserDistribution {
@@ -161,6 +196,7 @@ export interface AdminTrends {
   monthlyUserTrend: MonthlyUserTrend[];
   completionDistribution: any;
   recentCompleted: any;
+  monthlyCompletedCategoryTrend: any;
 }
 
 export interface AdminOverviewResponse {
@@ -379,6 +415,10 @@ export interface AdminAnalyticsGrowth {
     isIncrease: boolean;
   };
   propertiesListed: {
+    value: number;
+    isIncrease: boolean;
+  };
+  revenue: {
     value: number;
     isIncrease: boolean;
   };

@@ -62,6 +62,7 @@ export default Object.freeze({
   getAdminUsersById: (id: string) => `/admin/users/${id}`,
   deactivateAdminUser: (id: string) => `/admin/users/${id}/status`,
   toggleAdminUserDeactivate: (id: string) => `/admin/users/${id}/status`,
+  updatePassword:() => '/admin/settings/password',
   // ==ADMIN REVIEWS ENDPOINTS===//
   getAllAdminReviews: "/admin/reviews",
   getAdminReviewsById: (id: string) => `/admin/reviews/${id}`,

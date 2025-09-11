@@ -75,7 +75,7 @@ export default function AdminReviews() {
   const [sortBy, setSortBy] = useState("newest");
   const [selectedReviewId, setSelectedReviewId] = useState<string | null>(null);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
- 
+
   const [selectedDeleteReviewId, setSelectedDeleteReviewId] = useState<
     string | null
   >(null);
@@ -116,7 +116,6 @@ export default function AdminReviews() {
     setSortBy(value);
   };
 
-
   const handleViewReview = (id: string) => setSelectedReviewId(id);
 
   const handleDeleteReview = (id: string, property: string) => {
@@ -137,8 +136,20 @@ export default function AdminReviews() {
 
   if (isLoading) {
     return (
-      <div className="w-full min-h-screen flex justify-center items-center text-sm md:text-base">
-        Loading...
+      <div className="w-full mt-4">
+        <div className="animate-pulse">
+          <div className="h-8 bg-gray-200 rounded w-32 mb-8"></div>
+
+          <div className="flex justify-between items-center">
+            <div className="h-11 mt2 bg-gray-200 rounded w-48 mb-8"></div>
+            <div className="h-11 mt2 bg-gray-200 rounded w-48 mb-8"></div>
+          </div>
+          <div className="flex flex-col space-y-2">
+            {[...Array(5)].map((_, idx) => (
+              <div key={idx} className="bg-gray-200 w-full h-10"></div>
+            ))}
+          </div>
+        </div>
       </div>
     );
   }

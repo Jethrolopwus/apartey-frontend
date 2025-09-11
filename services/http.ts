@@ -42,6 +42,7 @@ import {
   AdminUsersResponse,
 } from "@/types/admin";
 import { Search } from "lucide-react";
+import { Passwords } from "@/Hooks/use-updateAdminPassword.mutation copy";
 
 const AxiosInstance = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_URL,
@@ -1214,6 +1215,16 @@ class BaseURL {
       throw new Error(error.response?.data?.message || "Update profile failed");
     }
   };
+
+  httpUpdateAdminPassword = async (data: Passwords) => {
+    try {
+      const response = await AxiosInstance.patch(endpoints.updatePassword(), data);
+       return response.data;
+    } catch (error: any) {
+      throw new Error(error.response?.data?.message || "Update profile failed");
+    }
+  };
+
   httpDeactivateAdminUserById = async (id: string): Promise<void> => {
     try {
       await AxiosInstance.patch(endpoints.deactivateAdminUser(id));

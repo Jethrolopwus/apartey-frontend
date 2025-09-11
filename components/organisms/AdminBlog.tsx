@@ -130,11 +130,21 @@ export default function AdminBlog() {
     setSearchTerm(e.target.value);
   };
 
-  if (isLoading) {
+ if (isLoading) {
     return (
-      <div className="w-full max-w-5xl mx-auto bg-transparent p-0 mt-4">
-        <div className="flex items-center justify-center h-64">
-          <div className="text-lg text-gray-500">Loading blog posts...</div>
+      <div className="w-full mt-4">
+        <div className="animate-pulse">
+          <div className="h-8 bg-gray-200 rounded w-32 mb-8"></div>
+
+          <div className="flex justify-between items-center">
+            <div className="h-11 mt2 bg-gray-200 rounded w-48 mb-8"></div>
+            <div className="h-11 mt2 bg-gray-200 rounded w-48 mb-8"></div>
+          </div>
+          <div className="flex flex-col space-y-2">
+            {[...Array(4)].map((_, idx) => (
+              <div key={idx} className="bg-gray-200 w-full h-20"></div>
+            ))}
+          </div>
         </div>
       </div>
     );

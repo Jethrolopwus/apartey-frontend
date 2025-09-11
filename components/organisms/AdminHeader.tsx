@@ -4,16 +4,20 @@ import io from "socket.io-client";
 import Image from "next/image";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Notification, useGetAllNotificationsQuery } from "@/Hooks/use-getAllNotifications.query";
+import {
+  Notification,
+  useGetAllNotificationsQuery,
+} from "@/Hooks/use-getAllNotifications.query";
+import { useGetUserProfileQuery } from "@/Hooks/use-getuserProfile.query";
+import { detectUserLocation } from "@/Hooks/use-getUserLocation.query";
+import { userLocationData } from "@/types/generated";
 
 interface AdminUser {
-  name: string;
+  firstName: string;
   email: string;
   profilePicture?: string;
   role: string;
 }
-
-
 
 const socket = io(process.env.NEXT_PUBLIC_API_URL as string, {
   transports: ["websocket"],
@@ -21,19 +25,36 @@ const socket = io(process.env.NEXT_PUBLIC_API_URL as string, {
 
 export default function Header() {
   const [adminUser, setAdminUser] = useState<AdminUser | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
 
   const { data } = useGetAllNotificationsQuery();
 
   const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [userLocation, setUserLocation] = useState<userLocationData>();
 
   const router = useRouter();
+
+  const { data: userData, isLoading } = useGetUserProfileQuery();
 
   useEffect(() => {
     if (data?.length) {
       setNotifications(data);
     }
   }, [data]);
+
+  useEffect(() => {
+    if (userData?.currentUser) {
+      setAdminUser(userData.currentUser);
+    }
+  }, [userData]);
+
+  useEffect(() => {
+    const fetchLocation = async () => {
+      const res = await detectUserLocation();
+      setUserLocation(res);
+    };
+
+    fetchLocation();
+  }, []);
 
   useEffect(() => {
     socket.on("notification", (newNotification: Notification) => {
@@ -45,77 +66,8 @@ export default function Header() {
     };
   }, []);
 
-  useEffect(() => {
-    const loadAdminUser = () => {
-      try {
-        // Get user data from localStorage
-        const email = localStorage.getItem("email");
-        const userRole = localStorage.getItem("userRole");
-
-        // For now, we'll use the email as name if no name is stored
-        // In a real app, you might want to fetch user details from an API
-        const name =
-          localStorage.getItem("adminName") || email?.split("@")[0] || "Admin";
-        const profilePicture = localStorage.getItem("adminProfilePicture");
-
-        setAdminUser({
-          name: name.charAt(0).toUpperCase() + name.slice(1), // Capitalize first letter
-          email: email || "",
-          profilePicture: profilePicture || undefined,
-          role: userRole || "Admin",
-        });
-      } catch (error) {
-        console.error("Error loading admin user data:", error);
-        // Fallback to default values
-        setAdminUser({
-          name: "Admin",
-          email: "",
-          role: "Admin",
-        });
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    loadAdminUser();
-  }, []);
-
   // Listen for profile updates (when profile picture is updated)
-  useEffect(() => {
-    const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === "adminProfilePicture" || e.key === "adminName") {
-        loadAdminUser();
-      }
-    };
-
-    window.addEventListener("storage", handleStorageChange);
-    return () => window.removeEventListener("storage", handleStorageChange);
-  }, []);
-
-  const loadAdminUser = () => {
-    try {
-      const email = localStorage.getItem("email");
-      const userRole = localStorage.getItem("userRole");
-      const name =
-        localStorage.getItem("adminName") || email?.split("@")[0] || "Admin";
-      const profilePicture = localStorage.getItem("adminProfilePicture");
-
-      setAdminUser({
-        name: name.charAt(0).toUpperCase() + name.slice(1),
-        email: email || "",
-        profilePicture: profilePicture || undefined,
-        role: userRole || "Admin",
-      });
-    } catch (error) {
-      console.error("Error loading admin user data:", error);
-      setAdminUser({
-        name: "Admin",
-        email: "",
-        role: "Admin",
-      });
-    }
-  };
-
+  if (!adminUser) return;
   return (
     <header className="flex sticky top-0 items-center h-8 justify-between border border-l-0 border-t-0 border-r-0 border-[#e0e0e0] bg-white px-6 py-4 min-h-[60px] w-full">
       <h1 className="text-xl font-bold">DashBoard</h1>
@@ -130,7 +82,17 @@ export default function Header() {
         />
       </div>
 
-      <div className="flex items-center gap-8">
+      <div className="flex items-center gap-2">
+        <div className="mr-20">
+          {userLocation?.countryCode && (
+            <Image
+              src={`https://flagcdn.com/${userLocation.countryCode.toLowerCase()}.svg`}
+              alt="flag"
+              width={40}
+              height={40}
+            />
+          )}
+        </div>
         <button
           onClick={() => router.push("/admin/notifications")}
           className="bg-[#FFFAF1] cursor-pointer h-[48px] relative w-[48px] rounded-[8px] flex justify-center items-center"
@@ -152,37 +114,40 @@ export default function Header() {
             />
           </svg>
           {notifications.length > 0 && (
-            <div className="absolute right-2 top-2 h-[6px] w-[6px] rounded-full bg-[#EB5757]"></div>
+            <div className="absolute right-2 top-2 h-[6px] w-[6px] rounded-full  bg-[#EB5757]"></div>
           )}
         </button>
-        <span className="text-sm text-gray-500 font-medium">Eng (US)</span>
-        <div className="flex items-center gap-3 bg-[#F8F9FB] px-3 py-1.5 rounded-xl">
+        <button
+          onClick={() => router.push("/admin/settings")}
+          className="flex cursor-pointer items-center gap-3  px-3 py-1"
+        >
           {isLoading ? (
-            <div className="w-9 h-9 rounded-full bg-gray-200 animate-pulse"></div>
+            <div className="w-9 h-9 rounded-[16px] bg-gray-200 animate-pulse"></div>
           ) : adminUser?.profilePicture ? (
             <Image
               src={adminUser.profilePicture}
-              alt={adminUser.name}
+              alt={adminUser.firstName}
               width={36}
               height={36}
-              className="w-9 h-9 rounded-full border-2 border-white shadow object-cover"
+              className="w-9 h-9 rounded-[16px] border-2 border-white shadow object-cover"
             />
           ) : (
             <div className="w-9 h-9 rounded-full border-2 border-white shadow bg-[#C85212] flex items-center justify-center">
               <span className="text-white font-semibold text-sm">
-                {adminUser?.name?.charAt(0) || "A"}
+                {adminUser?.firstName?.charAt(0) || "A"}
               </span>
             </div>
           )}
           <div className="flex flex-col items-start">
             <span className="font-semibold text-gray-900 text-base leading-tight">
-              {isLoading ? "Loading..." : adminUser?.name || "Admin"}
+              {isLoading ? "Loading..." : adminUser?.firstName || "Admin"}
             </span>
             <span className="text-xs text-gray-500 font-medium">
-              {adminUser?.role || "Admin"}
+              {adminUser?.role.charAt(0)?.toUpperCase() +
+                adminUser?.role.slice(1) || "Admin"}
             </span>
           </div>
-        </div>
+        </button>
       </div>
     </header>
   );

@@ -1,6 +1,7 @@
 "use client";
 import React, { useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
+import AparteyLoader from '../atoms/Loader';
 
 interface AdminAuthGuardProps {
   children: React.ReactNode;
@@ -55,8 +56,8 @@ export default function AdminAuthGuard({ children }: AdminAuthGuardProps) {
   // Show loading spinner while checking authentication
   if (isLoading) {
     return (
-      <div className="flex min-h-screen bg-gray-50 items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-600"></div>
+      <div className="flex min-h-screen bg-white items-center justify-center">
+        <AparteyLoader/>
       </div>
     );
   }
