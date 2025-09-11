@@ -1,39 +1,81 @@
 "use client";
-import React from "react";
+import React, { useMemo, useState } from "react";
+import {
+  ComposableMap,
+  Geographies,
+  Geography,
+  ZoomableGroup,
+} from "react-simple-maps";
+import { scaleLinear } from "d3-scale";
+import { interpolateYlOrRd } from "d3-scale-chromatic";
+import type { Feature, Geometry } from "geojson";
 
 export interface SalesMappingCardProps {
   countrySales: Array<{ country: string; listings: number }>;
 }
 
-const SalesMappingCard: React.FC<SalesMappingCardProps> = ({
-  countrySales,
-}) => {
-  // Calculate percentages for better visualization
-  const maxListings = Math.max(...countrySales.map((c) => c.listings), 1);
+export interface CountrySalesItem {
+  country: string;
+  listings: number;
+}
 
-  const countriesWithPercentage = countrySales.map((country) => ({
-    ...country,
-    percentage: (country.listings / maxListings) * 100,
-  }));
+interface GeoJsonProperties {
+  NAME?: string;
+  [key: string]: unknown;
+}
 
+const GEO_URL =
+  "https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json";
 
+const SalesMappingCard: React.FC<SalesMappingCardProps> = ({ countrySales }) => {
+  const [tooltip, setTooltip] = useState<{
+    x: number;
+    y: number;
+    text: string;
+  } | null>(null);
 
-  // Color mapping for different countries
-  const getCountryColor = (country: string, percentage: number) => {
-    const colors = {
-      Estonia: "#4F8AFA",
-      Nigeria: "#FF6B6B",
-      USA: "#FFB200",
-      Brazil: "#FF5A5F",
-      China: "#A78BFA",
-      "Saudi Arabia": "#1CC29F",
-    };
+  // Build a quick lookup: Country Name -> listings
+  const salesByName = useMemo(() => {
+    const obj: Record<string, number> = {};
+    countrySales.forEach(({ country, listings }) => {
+      obj[country] = listings;
+    });
+    return obj;
+  }, [countrySales]);
 
-    // Use predefined color or generate based on percentage
-    return (
-      colors[country as keyof typeof colors] ||
-      `hsl(${percentage * 2}, 70%, 50%)`
-    );
+  const values = Object.values(salesByName);
+  const minVal = values.length ? Math.min(...values) : 0;
+  const maxVal = values.length ? Math.max(...values) : 1;
+
+  const colorScale = useMemo(
+    () =>
+      scaleLinear<string>()
+        .domain([minVal, (minVal + maxVal) / 2, maxVal])
+        .range([
+          interpolateYlOrRd(0.2),
+          interpolateYlOrRd(0.6),
+          interpolateYlOrRd(1),
+        ]),
+    [minVal, maxVal]
+  );
+
+  const onGeographyHover = (
+    geo: Feature<Geometry, GeoJsonProperties>,
+    evt: React.MouseEvent<SVGPathElement>
+  ) => {
+    const name = geo.properties?.NAME ?? "Unknown";
+    const val = salesByName[name] ?? 0;
+
+    if (!val) {
+      setTooltip(null);
+      return;
+    }
+
+    setTooltip({
+      x: evt.clientX,
+      y: evt.clientY,
+      text: `${name}: ${val}`,
+    });
   };
 
   return (
@@ -47,54 +89,78 @@ const SalesMappingCard: React.FC<SalesMappingCardProps> = ({
         </p>
       </div>
 
-      {/* World map representation using CSS */}
-      <div className="mb-4 md:mb-6">
-        <div className="relative bg-gray-50 rounded-lg p-3 md:p-4 h-32 md:h-40 overflow-hidden">
-          {/* Simple world representation */}
-          <div className="flex justify-center items-center h-full">
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-1 md:gap-2 text-xs">
-              {countriesWithPercentage.map((country) => (
-                <div
-                  key={country.country}
-                  className="flex flex-col items-center p-1 md:p-2 rounded-md transition-all hover:scale-105"
-                  style={{
-                    backgroundColor: getCountryColor(
-                      country.country,
-                      country.percentage
-                    ),
-                    color: "white",
-                    opacity: 0.8,
-                  }}
-                >
-                  <div className="font-bold text-xs truncate w-full text-center">
-                    {country.country}
-                  </div>
-                  <div className="text-xs">{country.listings}</div>
-                </div>
-              ))}
-            </div>
+      {/* World Heatmap */}
+      <div className="relative bg-gray-50 rounded-lg h-64 overflow-hidden">
+        <ComposableMap
+          projectionConfig={{ scale: 130 }}
+          width={800}
+          height={400}
+          style={{ width: "100%", height: "100%" }}
+        >
+          <ZoomableGroup>
+            <Geographies geography={GEO_URL}>
+              {({ geographies }: { geographies: Feature<Geometry, GeoJsonProperties>[] }) =>
+                geographies.map((geo) => {
+                  const name = geo.properties?.NAME ?? "Unknown";
+                  const val = salesByName[name] ?? 0;
+                  const fill = val ? colorScale(val) : "#E5E7EB";
+
+                  return (
+                    <Geography
+                      key={geo.id ?? name}
+                      geography={geo}
+                      onMouseEnter={(evt) => onGeographyHover(geo, evt)}
+                      onMouseMove={(evt) => onGeographyHover(geo, evt)}
+                      onMouseLeave={() => setTooltip(null)}
+                      style={{
+                        default: {
+                          fill,
+                          stroke: "#D1D5DB",
+                          strokeWidth: 0.3,
+                          outline: "none",
+                        },
+                        hover: {
+                          fill,
+                          outline: "none",
+                          cursor: "pointer",
+                        },
+                        pressed: { outline: "none" },
+                      }}
+                    />
+                  );
+                })
+              }
+            </Geographies>
+          </ZoomableGroup>
+        </ComposableMap>
+
+        {/* Tooltip */}
+        {tooltip && (
+          <div
+            className="pointer-events-none fixed z-50 bg-black/80 text-white px-2 py-1 rounded text-xs"
+            style={{
+              top: tooltip.y + 12,
+              left: tooltip.x + 12,
+            }}
+          >
+            {tooltip.text}
           </div>
-        </div>
+        )}
       </div>
 
       {/* Legend */}
-      <div className="flex justify-center gap-2 md:gap-3 flex-wrap">
-        {countriesWithPercentage.map((country) => (
+      <div className="flex justify-center gap-2 md:gap-3 flex-wrap mt-4">
+        {countrySales.map((c) => (
           <div
-            key={country.country}
+            key={c.country}
             className="flex items-center gap-1 md:gap-2 text-xs text-gray-600"
           >
             <div
               className="w-3 h-3 rounded-full"
-              style={{
-                backgroundColor: getCountryColor(
-                  country.country,
-                  country.percentage
-                ),
-              }}
+              style={{ backgroundColor: colorScale(c.listings) }}
             />
-            <span className="font-medium">{country.country}</span>
-            <span className="text-gray-500">({country.listings})</span>
+            <span className="font-medium">{c.country}</span>
+            <span className="text-gray-500">({c.listings})</span>
           </div>
         ))}
       </div>

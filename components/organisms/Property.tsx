@@ -66,10 +66,8 @@ export default function AdminPropertiesPage() {
     sortBy: sortBy as "newest" | "oldest",
   });
 
-  const {
-    isPending: isUpdating,
-    error: updateError,
-  } = useUpdateAdminPropertyById();
+  const { isPending: isUpdating, error: updateError } =
+    useUpdateAdminPropertyById();
 
   const { mutate: deleteProperty, isPending: isDeleting } =
     useDeleteAdminPropertyById();
@@ -178,6 +176,24 @@ export default function AdminPropertiesPage() {
     pending: "bg-yellow-100 text-yellow-700",
     rejected: "bg-red-100 text-red-700",
   };
+
+  if (isLoading) {
+    return (
+      <div className="w-full mt-4">
+        <div className="animate-pulse">
+          <div className="flex justify-between items-center">
+            <div className="h-11 mt2 bg-gray-200 rounded w-48 mb-8"></div>
+            <div className="h-11 mt2 bg-gray-200 rounded w-48 mb-8"></div>
+          </div>
+          <div className="flex flex-col space-y-2">
+            {[...Array(5)].map((_, idx) => (
+              <div key={idx} className="bg-gray-200 w-full h-10"></div>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
   return (
     <div>
       {/* Search and Sort Bar */}
@@ -218,9 +234,6 @@ export default function AdminPropertiesPage() {
         </div>
       </div>
 
-      {isLoading && (
-        <p className="text-sm md:text-base">Loading properties...</p>
-      )}
       {error && (
         <p className="text-red-500 text-sm md:text-base">
           Error: {error.message}
@@ -418,7 +431,7 @@ export default function AdminPropertiesPage() {
               </table>
             </div>
           </div>
-          
+
           {/* Pagination */}
           <div className="mt-6 flex justify-center items-center space-x-1">
             {/* Previous button */}
@@ -436,12 +449,11 @@ export default function AdminPropertiesPage() {
               .filter((page) => {
                 if (page === 1 || page === totalPages) return true; // Always show first & last
                 if (page >= currentPage - 1 && page <= currentPage + 1)
-                  return true; 
+                  return true;
                 return false;
               })
               .map((page, idx, arr) => (
                 <div key={page}>
-                  
                   {idx > 0 && arr[idx] - arr[idx - 1] > 1 && (
                     <span className="px-2">...</span>
                   )}

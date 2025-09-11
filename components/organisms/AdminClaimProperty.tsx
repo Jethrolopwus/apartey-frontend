@@ -7,7 +7,13 @@ import { useUpdateAdminClaimApprovedPropertyById } from "@/Hooks/use-updateAdmin
 import { AdminClaimedProperty } from "@/types/admin";
 import { useUpdateAdminClaimRejectPropertyById } from "@/Hooks/use-updateAdminClaimRejectProperty.query";
 import AdminPropertyClaimRejectModal from "@/app/admin/components/AdminPropertyClaimRejectModal";
-import { Calendar, ChevronLeft, ChevronRight, MapPinIcon, User } from "lucide-react";
+import {
+  Calendar,
+  ChevronLeft,
+  ChevronRight,
+  MapPinIcon,
+  User,
+} from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -144,15 +150,30 @@ export default function AdminClaimProperty() {
   };
 
   const renderClaims = () => {
-    if (isLoading)
-      return <p className="text-sm md:text-base">Loading claims...</p>;
     if (error)
       return (
         <p className="text-red-500 text-sm md:text-base">
           Error: {error.message}
         </p>
       );
+    if (isLoading) {
+      return (
+        <div className="w-full mt-4">
+          <div className="animate-pulse">
 
+            <div className="flex justify-between items-center">
+              <div className="h-11 mt2 bg-gray-200 rounded w-48 mb-8"></div>
+              <div className="h-11 mt2 bg-gray-200 rounded w-48 mb-8"></div>
+            </div>
+            <div className="flex flex-col space-y-2">
+              {[...Array(5)].map((_, idx) => (
+                <div key={idx} className="bg-gray-200 w-full h-10"></div>
+              ))}
+            </div>
+          </div>
+        </div>
+      );
+    }
     return (
       <>
         {/* Claims Cards */}
@@ -261,12 +282,11 @@ export default function AdminClaimProperty() {
           {Array.from({ length: totalPages }, (_, i) => i + 1)
             .filter((p) => {
               if (p === 1 || p === totalPages) return true;
-              if (p >= page - 1 && p <= page + 1) return true; 
+              if (p >= page - 1 && p <= page + 1) return true;
               return false;
             })
             .map((p, idx, arr) => (
               <React.Fragment key={p}>
-                
                 {idx > 0 && arr[idx] - arr[idx - 1] > 1 && (
                   <span className="px-2">...</span>
                 )}
