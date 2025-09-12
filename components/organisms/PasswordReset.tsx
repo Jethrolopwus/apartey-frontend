@@ -17,8 +17,7 @@ const ResetPassword: React.FC = () => {
   const handleFormSubmit = async (data: FormValues) => {
     try {
       await resetPassword(data, {
-        onSuccess: (response) => {
-          console.log("Reset password success:", response);
+        onSuccess: () => {
           toast.success(
             "Reset password link sent successfully! Check your email."
           );
@@ -26,15 +25,13 @@ const ResetPassword: React.FC = () => {
           // router.push("/signin");
         },
         onError: (error: Error) => {
-          console.error("Reset password error:", error);
           toast.error(
             error.message ||
               "Failed to send reset password link. Please try again."
           );
         },
       });
-    } catch (error) {
-      console.error("Form submission error:", error);
+    } catch {
       toast.error("An unexpected error occurred. Please try again.");
     }
   };

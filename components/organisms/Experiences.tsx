@@ -5,7 +5,6 @@ import Link from 'next/link';
 
 export default function ExperienceComponent() {
   const handleWriteReview = () => {
-    console.log('Opening review form');
     // Add your logic for opening a review form/modal
   };
   const features = [

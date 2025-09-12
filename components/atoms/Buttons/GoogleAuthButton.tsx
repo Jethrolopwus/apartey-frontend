@@ -7,6 +7,7 @@ import { useGoogleAuthMutation } from "@/Hooks/use.googleAuth.mutation";
 import { TokenManager } from "@/utils/tokenManager";
 import Image from "next/image";
 import ErrorHandler from "@/utils/errorHandler";
+import AparteyLoader from "@/components/atoms/Loader";
 
 const GoogleAuthButton: React.FC<GoogleAuthButtonProps> = ({
   mode,
@@ -97,7 +98,6 @@ const GoogleAuthButton: React.FC<GoogleAuthButtonProps> = ({
               // New user - redirect to onboarding
               localStorage.setItem("authMode", "signup");
               localStorage.removeItem("hasCompletedOnboarding");
-              console.log("New Google user - redirecting to onboarding");
               router.push("/onboarding");
             }
             
@@ -134,6 +134,15 @@ const GoogleAuthButton: React.FC<GoogleAuthButtonProps> = ({
   const isLoadingState =
     isLoading || isGoogleAuthLoading;
 
+  // Show loader when authenticating
+  if (isLoadingState) {
+    return (
+      <div className="flex w-full items-center justify-center rounded-md border border-gray-300 bg-white px-4 py-8">
+        <AparteyLoader />
+      </div>
+    );
+  }
+
   return (
     <button
       type="button"
@@ -148,7 +157,7 @@ const GoogleAuthButton: React.FC<GoogleAuthButtonProps> = ({
         width={20}
         height={20}
       />
-      {isLoadingState ? "Authenticating..." : buttonText}
+      {buttonText}
     </button>
   );
 };

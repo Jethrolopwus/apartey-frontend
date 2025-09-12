@@ -3,6 +3,7 @@ import { ArrowRight } from "lucide-react";
 import Link from "next/link";
 import { useGetAllBlogPostQuery } from "@/Hooks/use-getAllBlogPost.query";
 import Image from "next/image";
+import AparteyLoader from "@/components/atoms/Loader";
 
 // Define a BlogPost type if not imported
 interface BlogPost {
@@ -45,7 +46,7 @@ export default function BlogComponent() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {isLoading && <div className="col-span-3 text-center">Loading...</div>}
+        {isLoading && <div className="col-span-3 flex justify-center"><AparteyLoader /></div>}
         {error && <div className="col-span-3 text-center text-red-500">Failed to load blog posts.</div>}
         {posts.slice(0, 3).map((post: BlogPost) => (
           <Link

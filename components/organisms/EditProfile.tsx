@@ -124,7 +124,6 @@ const EditProfile: React.FC<EditProfileProps> = ({
     if (file && file.type.startsWith("image/")) {
       const imageUrl = URL.createObjectURL(file);
       setSelectedFile(file);
-      console.log(file)
       setAvatarUrl(imageUrl);
       setValue("avatar", "");
     }
@@ -154,13 +153,8 @@ const EditProfile: React.FC<EditProfileProps> = ({
     // Always append avatar as file if present, else as string
     if (selectedFile) {
       formDataObject.append("avatar", selectedFile);
-      console.log("File", selectedFile)
     }
     
-    // Log all FormData entries
-    for (const pair of formDataObject.entries()) {
-      console.log('Data', pair[0], pair[1]);
-    }
     onSave?.(formDataObject);
   };
 

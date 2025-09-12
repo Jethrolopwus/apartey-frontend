@@ -11,7 +11,6 @@ const PricingComingSoon = () => {
     if (email) {
       setIsSubmitted(true);
       // Here you would typically send the email to your backend
-      console.log("Email submitted:", email);
     }
   };
 

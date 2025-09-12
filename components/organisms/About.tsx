@@ -18,9 +18,8 @@ const About: React.FC = () => {
       onSuccess: () => {
         toast.success('Message sent successfully! We\'ll get back to you soon.');
       },
-      onError: (error) => {
+      onError: () => {
         toast.error('Failed to send message. Please try again.');
-        console.error('Contact error:', error);
       }
     });
   };

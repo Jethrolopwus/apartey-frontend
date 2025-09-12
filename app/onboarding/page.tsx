@@ -6,6 +6,7 @@ import { useAddRolesMutation } from "@/Hooks/use.addRoles.mutation";
 import { useUpdateOnboardingStatusMutation } from "@/Hooks/use.updateOnboardingStatus.mutation";
 import { TokenManager } from "@/utils/tokenManager";
 import { toast } from "react-hot-toast";
+import ErrorHandler from "@/utils/errorHandler";
 import { useGetUserRoleQuery } from "@/Hooks/use-getUserRole.query";
 // import AuthGuard from "@/components/molecules/AuthStatus";
 
@@ -41,14 +42,8 @@ export default function RoleSelect() {
       { role: selectedRole },
       {
         onSuccess: (response) => {
-          console.log("Role added successfully:", response);
-
           // Update token if provided
-          if (TokenManager.updateFromResponse(response)) {
-            console.log("Token updated from role response");
-          } else {
-            console.warn("No new token received from role API response");
-          }
+          TokenManager.updateFromResponse(response);
 
           // Refetch user data
           refetch();
@@ -56,12 +51,8 @@ export default function RoleSelect() {
           // Step 2: Update onboarding status after role is successfully added
           updateOnboardingStatus(undefined, {
             onSuccess: (onboardingResponse) => {
-              console.log("Onboarding status updated:", onboardingResponse);
-
               // Update token if provided from onboarding response
-              if (TokenManager.updateFromResponse(onboardingResponse)) {
-                console.log("Token updated from onboarding response");
-              }
+              TokenManager.updateFromResponse(onboardingResponse);
 
               // Set onboarding completion flag
               if (typeof window !== "undefined") {
@@ -81,7 +72,6 @@ export default function RoleSelect() {
                 // Both traditional and Google OAuth users should be redirected based on role
                 const userRole = onboardingResponse?.user?.role || onboardingResponse?.currentUserStatus?.role;
                 
-                console.log("Redirecting based on role:", userRole);
                 
                 // Add a small delay to ensure role is properly set
                 setTimeout(() => {
@@ -99,7 +89,7 @@ export default function RoleSelect() {
               }
             },
             onError: (onboardingError: unknown) => {
-              console.error("Onboarding status update error:", onboardingError);
+              ErrorHandler.handleAuthError(onboardingError);
 
               // Set onboarding completion flag even if backend update fails
               if (typeof window !== "undefined") {
@@ -121,7 +111,6 @@ export default function RoleSelect() {
                 // Both traditional and Google OAuth users should be redirected based on role
                 const userRole = addRoleData?.user?.role || addRoleData?.currentUserRole?.role;
                 
-                console.log("Redirecting based on role (error path):", userRole);
                 
                 // Add a small delay to ensure role is properly set
                 setTimeout(() => {
@@ -141,7 +130,7 @@ export default function RoleSelect() {
           });
         },
         onError: (error: unknown) => {
-          console.error("Role submission error:", error);
+          ErrorHandler.handleAuthError(error);
 
           if (
             error instanceof Error &&

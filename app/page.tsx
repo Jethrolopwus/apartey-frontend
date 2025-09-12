@@ -66,7 +66,6 @@ export default function Home() {
     }
 
     if (error) {
-      console.error("Error fetching location:", error);
       const defaultLocation: userLocationData = {
         countryCode: "EE",
         countryName: "Estonia",

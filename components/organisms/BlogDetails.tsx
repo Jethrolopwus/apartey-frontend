@@ -7,6 +7,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useGetAllBlogPostQuery } from "@/Hooks/use-getAllBlogPost.query";
 import { useGetAllBlogPostByIdQuery } from "@/Hooks/use-getAllBlogPostById.query";
 import { BlogPost } from "@/types/blog";
+import AparteyLoader from "@/components/atoms/Loader";
 
 interface BlogDetailsProps {
   id?: string;
@@ -155,11 +156,7 @@ const BlogDetails: React.FC<BlogDetailsProps> = ({ id }) => {
     const { data, isLoading, error } = singlePostQuery;
 
     if (isLoading) {
-      return (
-        <div className="min-h-screen flex items-center justify-center">
-          Loading...
-        </div>
-      );
+      return <AparteyLoader />;
     }
     if (error) {
       return (
@@ -170,9 +167,7 @@ const BlogDetails: React.FC<BlogDetailsProps> = ({ id }) => {
     }
 
     // Extract blog post from the API response structure
-    console.log("Blog API Response:", data);
     const post = (data as { blogPost?: SingleBlogPost })?.blogPost || (data as SingleBlogPost) || ({} as SingleBlogPost);
-    console.log("Extracted post:", post);
     
     // Handle author - it can be a string ID or an object with name/avatar
     const authorName = typeof post?.author === 'object' && post?.author?.name 
@@ -252,11 +247,7 @@ const BlogDetails: React.FC<BlogDetailsProps> = ({ id }) => {
   const { data, isLoading, error } = allPostsQuery;
 
   if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        Loading...
-      </div>
-    );
+    return <AparteyLoader />;
   }
   if (error) {
     return (

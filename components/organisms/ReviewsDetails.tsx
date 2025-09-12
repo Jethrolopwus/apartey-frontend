@@ -13,6 +13,7 @@ import {
   Flag,
   Heart,
 } from "lucide-react";
+import AparteyLoader from "@/components/atoms/Loader";
 import Link from "next/link";
 import Image from "next/image";
 import ListingsButtons from "@/components/atoms/Buttons/ListingButtons";
@@ -81,7 +82,6 @@ export default function ReviewDetails({ id }: Props) {
   }, [likeData, review]);
 
   useEffect(() => {
-    console.log("Flag mutation data:", flagData, "error:", flagError);
     if (flagData && flagData.success) {
       setFlagOpen(false);
       toast.success(flagData.message || "Review flagged successfully!");
@@ -96,21 +96,9 @@ export default function ReviewDetails({ id }: Props) {
     }
   }, [flagData, flagError]);
 
-  console.log("Review ID from props:", id);
-  console.log("Data", data);
-  console.log("Review", review);
 
   if (isLoading) {
-    return (
-      <div className="max-w-6xl mx-auto p-4">
-        <div className="flex items-center justify-center min-h-[400px]">
-          <div className="flex flex-col items-center gap-4">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#C85212]"></div>
-            <p className="text-lg text-gray-600">Loading review details...</p>
-          </div>
-        </div>
-      </div>
-    );
+    return <AparteyLoader />;
   }
 
   if (error || !review) {
@@ -177,11 +165,9 @@ export default function ReviewDetails({ id }: Props) {
   const handleFlagSubmit = (reason: string, otherText?: string) => {
     const reviewId = review?.id || review?._id;
     if (!reviewId) {
-      console.log("Review not loaded. Please try again.", review);
       toast.error("Review not loaded. Please try again.");
       return;
     }
-    console.log("Flag submit:", { id: reviewId, reason, otherText });
     flagReview({ id: reviewId, reason, otherText });
   };
 

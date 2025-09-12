@@ -12,6 +12,7 @@ import Link from "next/link";
 import { toast } from "react-hot-toast";
 import PropertyStatusModal from "@/components/molecules/PropertyStatusModal";
 import PropertyActivateModal from "@/components/molecules/PropertyActivateModal";
+import AparteyLoader from "@/components/atoms/Loader";
 
 const DEFAULT_PROPERTY_IMAGE = "/Estate2.png";
 
@@ -27,7 +28,7 @@ const ClaimPropertyButton: React.FC<{ propertyId: string; onClaim: (id: string) 
         disabled
         className="w-full px-4 py-2 text-sm font-semibold bg-gray-200 text-gray-500 rounded cursor-not-allowed"
       >
-        Loading...
+        <AparteyLoader />
       </button>
     );
   }
@@ -353,8 +354,7 @@ const HomeownerProfile: React.FC = () => {
         // If endpoint doesn't exist or fails, allow navigation (fallback)
         router.push(`/claim-property/${propertyId}`);
       }
-    } catch (error) {
-      console.error("Error checking claim status:", error);
+    } catch {
       // If there's an error, allow navigation (fallback)
       router.push(`/claim-property/${propertyId}`);
     }
@@ -375,7 +375,7 @@ const HomeownerProfile: React.FC = () => {
   };
 
   if (userLoading || listingsLoading) {
-    return <div className="p-8 text-center">Loading...</div>;
+    return <AparteyLoader />;
   }
 
   // Treat "no properties" response as a valid empty state, not an error
@@ -387,8 +387,6 @@ const HomeownerProfile: React.FC = () => {
       .includes("no properties");
 
       if (userError || (listingsError && !isNoPropertiesError)) {
-      console.error("User Error:", userError);
-      console.error("Listings Error:", listingsError);
       return (
         <div className="p-8 text-center">
           <div className="text-red-500 mb-4">

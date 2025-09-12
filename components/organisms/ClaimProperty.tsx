@@ -187,7 +187,6 @@ const ClaimProperty = () => {
       onError: (error) => {
         setSubmitting(false);
         toast.error(error?.message || "Failed to submit property claim. Please try again.");
-        console.error("Claim submission failed:", error);
       },
     });
   };

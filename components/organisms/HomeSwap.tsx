@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { useGetAllPropertiesQuery } from "@/Hooks/use-getAllProperties.query";
 import Image from 'next/image';
 import type { Property } from '@/types/generated';
+import AparteyLoader from "@/components/atoms/Loader";
 
 const HomeSwap = () => {
   const [showDisclaimer, setShowDisclaimer] = useState(true);
@@ -16,7 +17,6 @@ const HomeSwap = () => {
 
   // Fetch properties (pagination not supported by API, so only limit is used)
   const { data, isLoading, error } = useGetAllPropertiesQuery({ limit });
-  console.log('[HomeSwap] Properties data:', data);
 
   const handleUnderstand = () => {
     setShowDisclaimer(false);
@@ -272,7 +272,7 @@ const HomeSwap = () => {
             {/* Loading/Error States */}
             {isLoading && (
               <div className="flex justify-center items-center py-12">
-                <span className="text-gray-500">Loading properties...</span>
+                <AparteyLoader />
               </div>
             )}
             {error && (

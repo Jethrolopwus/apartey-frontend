@@ -11,6 +11,7 @@ import { useSignInMutation } from "@/Hooks/use.login.mutation";
 import { useAuthStatusQuery } from "@/Hooks/use-getAuthStatus.query";
 import { useAuthRedirect } from "@/Hooks/useAuthRedirect";
 import { toast } from "react-hot-toast";
+import ErrorHandler from "@/utils/errorHandler";
 
 const SignIn: React.FC = () => {
   const { data: session, status } = useSession();
@@ -33,7 +34,6 @@ const SignIn: React.FC = () => {
       // For Google OAuth users, let the GoogleAuthButton handle the redirect logic
       // Don't interfere with the onboarding flow here
       if (typeof window !== "undefined" && session.user) {
-        console.log("NextAuth session user:", session.user);
         
         // Only set authMode if it's not already set by GoogleAuthButton
         if (!localStorage.getItem("authMode")) {
@@ -45,7 +45,6 @@ const SignIn: React.FC = () => {
 
   useEffect(() => {
     if (data) {
-      console.log("Sign in data:", data);
       if (typeof window !== "undefined") {
         if (data.token) {
           localStorage.setItem("token", data.token);
@@ -75,7 +74,6 @@ const SignIn: React.FC = () => {
       reset();
       refetchAuthStatus();
       setTimeout(() => {
-        console.log("Calling handlePostLoginRedirect after token storage");
         handlePostLoginRedirectRef.current();
       }, 100);
     }
@@ -83,23 +81,7 @@ const SignIn: React.FC = () => {
 
   useEffect(() => {
     if (error) {
-      console.error("Sign in error:", error);
-      let errorMessage = "Failed to sign in. Please try again.";
-      if (error instanceof Error) {
-        errorMessage = error.message;
-      } else if (error && typeof error === "object" && "response" in error) {
-        const apiError = error as {
-          response?: { status?: number; data?: { message?: string } };
-        };
-        if (apiError.response?.status === 401) {
-          errorMessage = "Invalid email or password";
-        } else if (apiError.response?.status === 404) {
-          errorMessage = "Account not found";
-        } else if (apiError.response?.data?.message) {
-          errorMessage = apiError.response.data.message;
-        }
-      }
-      toast.error(errorMessage);
+      ErrorHandler.handleAuthError(error);
     }
   }, [error]);
 
@@ -108,7 +90,6 @@ const SignIn: React.FC = () => {
   });
 
   const handleGoogleSignIn = () => {
-    console.log("Google sign in initiated");
     if (typeof window !== "undefined") {
       localStorage.setItem("authMode", "signin");
       // Don't set hasCompletedOnboarding here - let GoogleAuthButton handle it

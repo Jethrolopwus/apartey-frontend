@@ -11,11 +11,6 @@ export const useUpdateProfileMutation = () => {
     any
   >({
     mutationFn: (data) => {
-      if (data instanceof FormData) {
-        for (let pair of data.entries()) {
-          console.log('httpUpdateProfile entry:', pair[0], pair[1]);
-        }
-      }
       return http.httpUpdateProfile(data);
     },
     onSuccess: () => {

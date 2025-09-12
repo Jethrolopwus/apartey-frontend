@@ -12,6 +12,7 @@ import { Property, PropertyCategory } from "@/types/generated";
 import { useUpdatePropertyToggleLikeMutation } from "@/Hooks/use.propertyLikeToggle.mutation";
 import { useGetUserFavoriteQuery } from "@/Hooks/use-getUsersFavorites.query";
 import { toast } from "react-hot-toast";
+import AparteyLoader from "@/components/atoms/Loader";
 
 const Listings = () => {
   const searchParams = useSearchParams();
@@ -235,14 +236,7 @@ const Listings = () => {
 
   const renderPagination = () => {
     // Debug: Log the pagination data
-    console.log("Pagination data:", {
-      pages: data?.pages,
-      currentPage: data?.page,
-      total: data?.total,
-      hasNextPage: data?.hasNextPage,
-      hasPreviousPage: data?.hasPreviousPage,
-      propertiesCount: data?.properties?.length
-    });
+    // Pagination data: pages, currentPage, total, hasNextPage, hasPreviousPage, propertiesCount
 
     // Always show pagination, but with different logic:
     // - Show Page 1 by default
@@ -250,12 +244,7 @@ const Listings = () => {
     const totalPages = data?.pages || 1;
     const hasMultiplePages = totalPages > 1;
     
-    console.log("Pagination logic:", {
-      totalPages,
-      hasMultiplePages,
-      currentPage,
-      limit
-    });
+    // Pagination logic: totalPages, hasMultiplePages, currentPage, limit
 
     return (
       <div className="flex justify-center items-center space-x-3 mt-14 lg:mt-32">
@@ -565,7 +554,7 @@ const Listings = () => {
             <h2 className="text-3xl font-semibold text-teal-800 mb-6">{getAvailableText()}</h2>
             {isLoading && (
               <div className="flex justify-center items-center py-12">
-                <span className="text-gray-500">Loading properties...</span>
+                <AparteyLoader />
               </div>
             )}
             {error && (

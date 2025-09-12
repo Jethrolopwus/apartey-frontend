@@ -50,7 +50,6 @@ const SignUp: React.FC = () => {
   });
 
   const handleGoogleSignUp = () => {
-    console.log("Google sign up initiated");
     localStorage.setItem("authMode", "signup");
     signIn("google", { callbackUrl: "/onboarding" });
   };

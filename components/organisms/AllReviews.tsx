@@ -8,6 +8,7 @@ import { useState, useEffect, useMemo, useRef } from "react";
 import { Review, AllReviewsProps } from "@/types/generated";
 import SearchInput, { PlacePrediction } from "../atoms/Buttons/SearchInput";
 import { toast } from "react-hot-toast";
+import AparteyLoader from "@/components/atoms/Loader";
 
 // Sort options configuration
 const sortOptions = [
@@ -89,7 +90,6 @@ const AllReviews: React.FC<AllReviewsProps> = ({
   // Extract unique apartment numbers and set reviews
   useEffect(() => {
     if (data) {
-      console.log("API Response:", data);
 
       const uniqueApts = Array.from(
         new Set(
@@ -132,10 +132,7 @@ const AllReviews: React.FC<AllReviewsProps> = ({
 
       // Validate apartment selection
       if (apartment !== "all" && !uniqueApts.includes(apartment)) {
-        console.warn(
-          `Selected apartment "${apartment}" not in apartmentNumbers:`,
-          uniqueApts
-        );
+        // Warning: Selected apartment not in apartmentNumbers
         toast.error(`No reviews found for apartment ${apartment}.`);
         setApartment("all");
       }
@@ -156,7 +153,6 @@ const AllReviews: React.FC<AllReviewsProps> = ({
     }
     params.delete("page"); 
     const url = `/reviewsPage?${params.toString()}`;
-    console.log("Navigating to:", url);
     router.push(url, { scroll: false });
 
     // Apply client-side filtering
@@ -191,7 +187,6 @@ const AllReviews: React.FC<AllReviewsProps> = ({
     }
     params.delete("page"); // Reset to page 1
     const url = `/reviewsPage?${params.toString()}`;
-    console.log("Navigating to:", url);
     router.push(url);
   };
 
@@ -221,7 +216,6 @@ const AllReviews: React.FC<AllReviewsProps> = ({
   // Handle review click
   const handleReviewClick = (review: Review) => {
     if (review._id) {
-      console.log("Navigating to review ID:", review._id);
       router.push(`/reviewsPage/${review._id}`);
     } else {
       toast.error("Unable to view review details: Missing review ID");
@@ -254,25 +248,7 @@ const AllReviews: React.FC<AllReviewsProps> = ({
   };
 
   if (isLoading) {
-    return (
-      <div className={`bg-gray-50 ${className}`}>
-        <div className="max-w-7xl mx-auto px-4 py-10">
-          <div className={`grid gap-6 ${gridCols}`}>
-            {[...Array(6)].map((_, i) => (
-              <div
-                key={i}
-                className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 animate-pulse"
-              >
-                <div className="w-full h-48 bg-gray-200 rounded-t-xl mb-4"></div>
-                <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
-                <div className="h-4 bg-gray-200 rounded w-1/2 mb-2"></div>
-                <div className="h-4 bg-gray-200 rounded w-full"></div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-    );
+    return <AparteyLoader />;
   }
 
   if (error) {
@@ -318,15 +294,7 @@ const AllReviews: React.FC<AllReviewsProps> = ({
   const currentPage = Number(searchParams.get("page")) || 1;
   
   // Debug logging
-  console.log("AllReviews Pagination Debug:", {
-    totalReviews,
-    limit,
-    calculatedTotalPages: totalPages,
-    currentPage,
-    apiTotalPages: data?.totalPages,
-    hasNextPage: data?.hasNextPage,
-    hasPreviousPage: data?.hasPreviousPage
-  });
+  // AllReviews Pagination Debug: totalReviews, limit, calculatedTotalPages, currentPage, apiTotalPages, hasNextPage, hasPreviousPage
 
   return (
     <div className={`bg-gray-50 ${className}`}>
@@ -567,7 +535,6 @@ const AllReviews: React.FC<AllReviewsProps> = ({
                 }
                 params.set("page", (currentPage - 1).toString());
                 const url = `/reviewsPage?${params.toString()}`;
-                console.log("Navigating to:", url);
                 router.push(url);
               }}
             >
@@ -592,7 +559,6 @@ const AllReviews: React.FC<AllReviewsProps> = ({
                 }
                 params.set("page", "1");
                 const url = `/reviewsPage?${params.toString()}`;
-                console.log("Navigating to:", url);
                 router.push(url);
               }}
             >
@@ -619,7 +585,6 @@ const AllReviews: React.FC<AllReviewsProps> = ({
                   }
                   params.set("page", number.toString());
                   const url = `/reviewsPage?${params.toString()}`;
-                  console.log("Navigating to:", url);
                   router.push(url);
                 }}
               >
@@ -641,7 +606,6 @@ const AllReviews: React.FC<AllReviewsProps> = ({
                 }
                 params.set("page", (currentPage + 1).toString());
                 const url = `/reviewsPage?${params.toString()}`;
-                console.log("Navigating to:", url);
                 router.push(url);
               }}
             >

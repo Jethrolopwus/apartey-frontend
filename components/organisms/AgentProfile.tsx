@@ -8,6 +8,7 @@ import { Star, Bed, Bath, Ruler, KeyRound } from "lucide-react";
 import { useGetUserProfileQuery } from "@/Hooks/use-getuserProfile.query";
 import { useGetAllMyListingsQuery } from "@/Hooks/use-getAllMyListings.query";
 import Link from "next/link";
+import AparteyLoader from "@/components/atoms/Loader";
 
 interface Agent {
   name: string;
@@ -167,11 +168,10 @@ const AgentProfile: React.FC = () => {
   };
 
   if (userLoading || listingsLoading) {
-    return <div className="p-8 text-center">Loading...</div>;
+    return <AparteyLoader />;
   }
 
   if (userError) {
-    console.error("User Error:", userError);
     return (
       <div className="p-8 text-center text-red-500">
         Error loading profile.

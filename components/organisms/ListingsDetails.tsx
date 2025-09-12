@@ -8,6 +8,7 @@ import type { Property } from "@/types/generated";
 import { useGetListingsByIdQuery } from "@/Hooks/use-getAllListingsById.query";
 import { useRouter } from "next/navigation";
 import ContactOwnerModal from "@/components/molecules/ContactOwnerModal";
+import AparteyLoader from "@/components/atoms/Loader";
 
 interface GetPropertyResponse {
   message: string;
@@ -31,11 +32,7 @@ const PropertyDetails = () => {
   const property = data?.property;
 
   if (isLoading) {
-    return (
-      <div className="flex justify-center items-center min-h-screen bg-[#FAFAFA]">
-        <span className="text-gray-500">Loading property...</span>
-      </div>
-    );
+    return <AparteyLoader />;
   }
 
   if (error || !property) {
@@ -89,8 +86,7 @@ const PropertyDetails = () => {
     setContactProperty("");
   };
 
-  const handleSendMessage = (data: { name: string; email: string; message: string; propertyName?: string }) => {
-    console.log("Sending message:", data);
+  const handleSendMessage = () => {
     // Here you can implement the actual message sending logic
     // For now, just close the modal
     handleCloseContactModal();

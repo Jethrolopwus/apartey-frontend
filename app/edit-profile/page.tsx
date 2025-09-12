@@ -5,6 +5,7 @@ import { useUpdateProfileMutation } from "@/Hooks/use.updateProfile.mutation";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { toast } from "react-hot-toast";
+import AparteyLoader from "@/components/atoms/Loader";
 
 export default function EditProfilePage() {
   const { data, isLoading, isError, error, refetch } = useGetUserProfileQuery();
@@ -17,24 +18,12 @@ export default function EditProfilePage() {
     }
   }, [updateData]);
 
-  if (isLoading) return <div className="p-8">Loading...</div>;
+  if (isLoading) return <AparteyLoader />;
   if (isError) return <div className="p-8 text-red-500">{(error as Error)?.message || "Error loading profile."}</div>;
 
   const user = data?.currentUser;
 
   const handleSave = (formData: unknown) => {
-    console.log("Payload to send in save:", formData);
-    if (formData instanceof FormData) {
-      for (const pair of formData.entries()) {
-        if (pair[1] instanceof File) {
-          console.log('FormData entry:', pair[0], pair[1].name, pair[1]);
-        } else {
-          console.log('FormData entry:', pair[0], pair[1]);
-        }
-      }
-    } else {
-      console.log("Payload to send in save (not FormData):", formData);
-    }
     mutate(formData, {
       onSuccess: () => {
         // Refetch user data to get updated information

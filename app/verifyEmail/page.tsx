@@ -39,7 +39,6 @@ export default function VerifyEmail() {
       { email: email as string, code: formData.code, password: "", confirmPassword: "" },
       {
         onSuccess: (response) => {
-          console.log("response",response);
 
         TokenManager.setToken(response.token);
         localStorage.removeItem("pendingVerification"); // Clear verification flag

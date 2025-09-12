@@ -5,9 +5,11 @@ import SignInButton from "@/components/atoms/Buttons/SignInButton";
 import { SignInFormProps } from "@/types/generated";
 import { useAuthStatusQuery } from "@/Hooks/use-getAuthStatus.query";
 import { toast } from "react-hot-toast";
+import ErrorHandler from "@/utils/errorHandler";
 import { useRouter } from "next/navigation";
 import { TokenManager } from "@/utils/tokenManager";
 import { useUserRole } from "@/Hooks/useUserRole";
+import AparteyLoader from "@/components/atoms/Loader";
 
 const SignInForm: React.FC<SignInFormProps> = ({
   isSubmitting,
@@ -59,8 +61,7 @@ const SignInForm: React.FC<SignInFormProps> = ({
             }
             return true;
           }
-        } catch (error) {
-          console.error("Error parsing pending review data:", error);
+        } catch {
           localStorage.removeItem("pendingReviewData");
         }
       }
@@ -100,18 +101,12 @@ const SignInForm: React.FC<SignInFormProps> = ({
       await onSubmit(e);
       await refetchAuthStatus();
     } catch (error) {
-      console.error("Sign-in error:", error);
-      toast.error("Sign-in failed. Please try again.");
+      ErrorHandler.handleAuthError(error);
     }
   };
 
   if (isCheckingAuth) {
-    return (
-      <div className="flex justify-center items-center p-8">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-        <span className="ml-2">Checking authentication...</span>
-      </div>
-    );
+    return <AparteyLoader />;
   }
 
   return (

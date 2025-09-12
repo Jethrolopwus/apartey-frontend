@@ -8,6 +8,7 @@ import { ChevronLeft, ChevronRight, CirclePower } from "lucide-react";
 import AdminViewPropertyModal from "@/app/admin/components/AdminViewPropertyModal";
 import AdminDeletePropertyModal from "@/app/admin/components/AdminDeletePropertyModal";
 import toast from "react-hot-toast";
+import AparteyLoader from "@/components/atoms/Loader";
 import {
   Select,
   SelectContent,
@@ -178,21 +179,7 @@ export default function AdminPropertiesPage() {
   };
 
   if (isLoading) {
-    return (
-      <div className="w-full mt-4">
-        <div className="animate-pulse">
-          <div className="flex justify-between items-center">
-            <div className="h-11 mt2 bg-gray-200 rounded w-48 mb-8"></div>
-            <div className="h-11 mt2 bg-gray-200 rounded w-48 mb-8"></div>
-          </div>
-          <div className="flex flex-col space-y-2">
-            {[...Array(5)].map((_, idx) => (
-              <div key={idx} className="bg-gray-200 w-full h-10"></div>
-            ))}
-          </div>
-        </div>
-      </div>
-    );
+    return <AparteyLoader />;
   }
   return (
     <div>

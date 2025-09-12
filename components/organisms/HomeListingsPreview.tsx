@@ -14,6 +14,7 @@ import {
 import { useUpdatePropertyToggleLikeMutation } from "@/Hooks/use.propertyLikeToggle.mutation";
 import { useGetUserFavoriteQuery } from "@/Hooks/use-getUsersFavorites.query";
 import { toast } from "react-hot-toast";
+import AparteyLoader from "@/components/atoms/Loader";
 
 // Component to display property rating with real data
 const PropertyRatingDisplay: React.FC<{ propertyId: string; fallbackRating?: number; fallbackReviewCount?: number }> = ({ 
@@ -34,7 +35,7 @@ const PropertyRatingDisplay: React.FC<{ propertyId: string; fallbackRating?: num
             <Star key={i} className="w-4 h-4 text-gray-300" />
           ))}
         </div>
-        <span className="text-sm text-gray-600 ml-2">Loading...</span>
+        <span className="text-sm text-gray-600 ml-2"><AparteyLoader /></span>
       </div>
     );
   }
@@ -266,10 +267,7 @@ const HomeListingsPreview: React.FC = () => {
       </div>
       {isLoading ? (
         <div className="flex justify-center items-center py-12">
-          <div
-            className="animate-spin rounded-full h-10 w-10 border-b-2 border-orange-600"
-            aria-label="Loading listings"
-          ></div>
+          <AparteyLoader />
         </div>
       ) : error ? (
         <div className="flex flex-col justify-center items-center py-12 text-red-500">

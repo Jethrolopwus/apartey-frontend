@@ -12,6 +12,7 @@ import AgentsToolSection from "../molecules/AgentsToolSection";
 import Link from "next/link";
 import { useGetUserRoleQuery } from "@/Hooks/use-getUserRole.query";
 import Image from "next/image";
+import AparteyLoader from "@/components/atoms/Loader";
 
 export default function Hero() {
   const router = useRouter();
@@ -25,14 +26,7 @@ export default function Hero() {
   ];
 
   if (isLoading)
-    return (
-      <div className="text-center py-10">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-orange-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading...</p>
-        </div>
-      </div>
-    );
+    return <AparteyLoader />;
 
   return (
     <div className="relative py-12 bg-gray-50 md:py-12 overflow-hidden">

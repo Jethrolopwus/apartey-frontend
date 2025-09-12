@@ -32,7 +32,6 @@ export class ErrorHandler {
    */
   static handleAuthError(error: unknown): void {
     const errorDetails = this.toErrorDetails(error);
-    console.error("Authentication Error:", errorDetails);
 
     const status = errorDetails?.status || errorDetails?.response?.status;
 
