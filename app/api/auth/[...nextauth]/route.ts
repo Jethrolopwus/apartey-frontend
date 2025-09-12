@@ -39,10 +39,28 @@ if (!process.env.GOOGLE_CLIENT_SECRET) {
 
 const authOptions = {
   secret: process.env.NEXTAUTH_SECRET!,
+  debug: process.env.NODE_ENV === "development",
   providers: [
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID!,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+      authorization: {
+        params: {
+          prompt: "consent",
+          access_type: "offline",
+          response_type: "code",
+          scope: "openid email profile"
+        }
+      },
+      checks: ["state"],
+      profile(profile) {
+        return {
+          id: profile.sub,
+          name: profile.name,
+          email: profile.email,
+          image: profile.picture,
+        }
+      }
     }),
   ],
   callbacks: {
@@ -92,65 +110,26 @@ const authOptions = {
       email?: { verificationRequest?: boolean };
       credentials?: Record<string, unknown>;
     }) {
-      const { user, account } = params;
+      const { account } = params;
 
-      // Automatically sync user data with backend on sign in
-      try {
-        console.log("User signing in:", user);
-
-        const userData = {
-          googleId: user.id,
-          email: user.email,
-          firstName: user.name?.split(" ")[0] || "",
-          lastName: user.name?.split(" ").slice(1).join(" ") || "",
-          image: user.image,
-          provider: account?.provider || "google",
-          providerId: account?.providerAccountId || user.email,
-          lastLogin: new Date().toISOString(),
-        };
-
-        // Get the base URL for the sync endpoint
-        const baseUrl = process.env.NEXTAUTH_URL || "http://localhost:3000";
-
-        const response = await fetch(`${baseUrl}/api/users/sync`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(userData),
-        });
-
-        if (!response.ok) {
-          const errorText = await response.text();
-          console.error("Failed to sync user with backend:", errorText);
-          
-          // Don't throw error to prevent blocking sign-in
-          // The user will still be signed in, but backend sync failed
-          console.warn("Backend sync failed, but allowing sign-in to continue");
-          return true;
-        } else {
-          const result = await response.json();
-          console.log("User synced successfully with backend:", result);
-
-          return true;
-        }
-      } catch (error) {
-        console.error("Error syncing user during sign in:", error);
-        return true; // Continue with sign in even if sync fails
+      // Always allow sign in for Google OAuth
+      // The backend sync will be handled by the GoogleAuthButton component
+      // For Google OAuth, always return true to allow sign in
+      if (account?.provider === "google") {
+        return true;
       }
+
+      // For other providers, you can add additional logic here
+      return true;
     },
     async redirect({ url, baseUrl }: { url: string; baseUrl: string }) {
-      // Allow the component to handle redirects after authentication
-      console.log("Redirect callback - url:", url, "baseUrl:", baseUrl);
-
-      // For Google OAuth, let the component handle the redirect
-      if (url.startsWith(baseUrl)) {
-        return url;
+      // If the URL contains /onboarding, redirect there directly
+      if (url.includes('/onboarding')) {
+        return `${baseUrl}/onboarding`;
       }
-      
-      // For Google OAuth, don't default to signin - let the component handle it
-      // This prevents interference with the Google OAuth flow
-      return url || baseUrl;
+
+      // Always redirect to base URL to let the component handle the redirect
+      return baseUrl;
     },
   },
   pages: {

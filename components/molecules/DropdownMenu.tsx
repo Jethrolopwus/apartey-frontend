@@ -42,6 +42,9 @@ const UserDropdownMenu: React.FC<UserDropdownMenuProps> = ({
   const { role } = useUserRole();
   const { isAuthenticated, checkAuthentication } = useAuthRedirect();
   
+  // Get role from localStorage as fallback
+  const [currentRole, setCurrentRole] = useState<string | null>(null);
+  
   // Get real data for notifications and user profile
   const { data: notificationsData } = useGetAllNotificationsQuery();
   const { data: userProfileData } = useGetUserProfileQuery();
@@ -62,12 +65,38 @@ const UserDropdownMenu: React.FC<UserDropdownMenuProps> = ({
     }
   }, [isOpen, isAuthenticated, checkAuthentication, router, onClose]);
 
+  // Get current role from multiple sources
+  useEffect(() => {
+    const getUserRole = () => {
+      // Try to get role from userProfileData first
+      if (userProfileData?.currentUser?.role) {
+        return userProfileData.currentUser.role;
+      }
+      
+      // Fallback to useUserRole hook
+      if (role) {
+        return role;
+      }
+      
+      // Fallback to localStorage
+      if (typeof window !== "undefined") {
+        return localStorage.getItem("userRole");
+      }
+      
+      return null;
+    };
+
+    const userRole = getUserRole();
+    setCurrentRole(userRole);
+  }, [role, userProfileData]);
+
   // Listen for role changes to update menu items
   useEffect(() => {
     const handleStorageChange = (e: StorageEvent) => {
       if (e.key === "userRole") {
-        // Force re-render by updating selectedItem
+        // Force re-render by updating selectedItem and currentRole
         setSelectedItem(null);
+        setCurrentRole(e.newValue);
       }
     };
 
@@ -78,7 +107,8 @@ const UserDropdownMenu: React.FC<UserDropdownMenuProps> = ({
   }, []);
 
   const getProfileRoute = () => {
-    switch (role?.toLowerCase()) {
+    const userRole = currentRole || role;
+    switch (userRole?.toLowerCase()) {
       case "renter":
         return "/profile";
       case "homeowner":
@@ -92,16 +122,17 @@ const UserDropdownMenu: React.FC<UserDropdownMenuProps> = ({
 
   // Get real user data from profile
   const currentUser = userProfileData?.currentUser;
+  const userRole = currentRole || role;
   const userName = currentUser 
     ? `${currentUser.firstName} ${currentUser.lastName}`.trim()
-    : userData?.userName || `${role ? role.charAt(0).toUpperCase() + role.slice(1) : "Renter"} User`;
-  const userEmail = currentUser?.email || userData?.userEmail || `${role || "renter"}@example.com`;
+    : userData?.userName || `${userRole ? userRole.charAt(0).toUpperCase() + userRole.slice(1) : "Renter"} User`;
+  const userEmail = currentUser?.email || userData?.userEmail || `${userRole || "renter"}@example.com`;
 
   const menuItems = [
     {
       id: "profile",
       label: `${
-        role ? role.charAt(0).toUpperCase() + role.slice(1) : "Renter"
+        userRole ? userRole.charAt(0).toUpperCase() + userRole.slice(1) : "Renter"
       } Profile`,
       icon: User,
       route: getProfileRoute(),
@@ -128,9 +159,9 @@ const UserDropdownMenu: React.FC<UserDropdownMenuProps> = ({
       label: "Favorites",
       icon: Heart,
       route:
-        role?.toLowerCase() === "homeowner"
+        userRole?.toLowerCase() === "homeowner"
           ? "/landlord/profile-favorite"
-          : role?.toLowerCase() === "agent"
+          : userRole?.toLowerCase() === "agent"
           ? "/agent/profile-favorite"
           : "/profile-favorite",
       hasNotification: favoriteCount > 0,
@@ -238,7 +269,7 @@ const UserDropdownMenu: React.FC<UserDropdownMenuProps> = ({
           const isSelected = selectedItem === item.id;
           return (
             <button
-              key={`${item.id}-${role}`} // Force re-render when role changes
+              key={`${item.id}-${userRole}`} // Force re-render when role changes
               onClick={() => handleMenuItemClick(item)}
               className={`w-full px-4 py-3 text-left transition-colors flex items-center justify-between group ${
                 isSelected ? "bg-gray-100" : "hover:bg-gray-50"

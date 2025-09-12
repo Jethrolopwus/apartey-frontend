@@ -5,7 +5,6 @@ import { ArrowRight, Star } from "lucide-react";
 import { useGetAllReviewsQuery } from "@/Hooks/use-GetAllReviews.query";
 import { useLocation } from "@/app/userLocationContext";
 import { useRouter } from "next/navigation";
-import AparteyLoader from "@/components/atoms/Loader";
 
 import type { Review } from "@/types/generated";
 
@@ -42,7 +41,11 @@ const FeaturedReviews = () => {
   });
 
   if (isLoading) {
-    return <AparteyLoader />;
+    return (
+      <div className="flex justify-center items-center py-12">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#C85212]"></div>
+      </div>
+    );
   }
 
   if (error) {

@@ -164,6 +164,13 @@ export const useAuthRedirect = (
           setIsRedirecting(false);
           return;
         }
+        
+        // If user is in signup mode, always go to onboarding
+        if (authMode === "signup") {
+          setIsRedirecting(false);
+          router.push("/onboarding");
+          return;
+        }
       }
 
       // Debug information removed for production

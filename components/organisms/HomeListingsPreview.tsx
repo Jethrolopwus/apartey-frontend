@@ -1,6 +1,6 @@
 "use client";
 import React, { useState, useEffect } from "react";
-import { useGetAllListingsQuery } from "@/Hooks/use-getAllListings.query";
+import { useGetAllMyListingsQuery } from "@/Hooks/use-getAllMyListings.query";
 import { useGetPropertyRatingsQuery } from "@/Hooks/use-getPropertyRatings.query";
 import { useLocation } from "@/app/userLocationContext";
 import Link from "next/link";
@@ -14,7 +14,6 @@ import {
 import { useUpdatePropertyToggleLikeMutation } from "@/Hooks/use.propertyLikeToggle.mutation";
 import { useGetUserFavoriteQuery } from "@/Hooks/use-getUsersFavorites.query";
 import { toast } from "react-hot-toast";
-import AparteyLoader from "@/components/atoms/Loader";
 
 // Component to display property rating with real data
 const PropertyRatingDisplay: React.FC<{ propertyId: string; fallbackRating?: number; fallbackReviewCount?: number }> = ({ 
@@ -35,7 +34,7 @@ const PropertyRatingDisplay: React.FC<{ propertyId: string; fallbackRating?: num
             <Star key={i} className="w-4 h-4 text-gray-300" />
           ))}
         </div>
-        <span className="text-sm text-gray-600 ml-2"><AparteyLoader /></span>
+        <span className="text-sm text-gray-600 ml-2">Loading...</span>
       </div>
     );
   }
@@ -130,10 +129,10 @@ const HomeListingsPreview: React.FC = () => {
   
   // Debug log to show location-based filtering
   
-  const { data, isLoading, error, refetch } = useGetAllListingsQuery({
+  // Use user's own listings to show recent properties
+  const { data, isLoading, error, refetch } = useGetAllMyListingsQuery({
     limit: 3,
-    country: selectedCountry, // Filter by user's selected country (full name)
-    // No category specified - get most recent properties of ANY category
+    // No category filter - get most recent properties of ANY category
   }) as {
     data: PropertiesResponse | undefined;
     isLoading: boolean;
@@ -267,7 +266,7 @@ const HomeListingsPreview: React.FC = () => {
       </div>
       {isLoading ? (
         <div className="flex justify-center items-center py-12">
-          <AparteyLoader />
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#C85212]"></div>
         </div>
       ) : error ? (
         <div className="flex flex-col justify-center items-center py-12 text-red-500">

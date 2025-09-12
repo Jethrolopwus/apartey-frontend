@@ -13,7 +13,6 @@ import {
   Flag,
   Heart,
 } from "lucide-react";
-import AparteyLoader from "@/components/atoms/Loader";
 import Link from "next/link";
 import Image from "next/image";
 import ListingsButtons from "@/components/atoms/Buttons/ListingButtons";
@@ -98,7 +97,11 @@ export default function ReviewDetails({ id }: Props) {
 
 
   if (isLoading) {
-    return <AparteyLoader />;
+    return (
+      <div className="flex justify-center items-center min-h-screen">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#C85212]"></div>
+      </div>
+    );
   }
 
   if (error || !review) {

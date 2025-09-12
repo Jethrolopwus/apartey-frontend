@@ -123,9 +123,15 @@ const PropertyListings = () => {
               router.push(checkoutUrl);
             }, 1200);
           } else {
-            // Fallback to profile if no property ID
+            // Fallback to profile if no property ID - redirect based on user role
             setTimeout(() => {
-              router.push("/homeowner-profile");
+              if (userRole === "homeowner") {
+                router.push("/homeowner-profile");
+              } else if (userRole === "agent") {
+                router.push("/agent-profile");
+              } else {
+                router.push("/profile");
+              }
             }, 1200);
           }
         },

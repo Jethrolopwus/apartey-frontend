@@ -94,7 +94,7 @@ const SignIn: React.FC = () => {
       localStorage.setItem("authMode", "signin");
       // Don't set hasCompletedOnboarding here - let GoogleAuthButton handle it
     }
-    signIn("google", { callbackUrl: "/signin" });
+    signIn("google", { callbackUrl: "/" });
   };
 
   if (status === "loading") {

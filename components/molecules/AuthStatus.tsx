@@ -3,7 +3,6 @@
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import AparteyLoader from "@/components/atoms/Loader";
 import { useGetOnboardingStatusQuery } from "@/Hooks/get-onboardingStatus.query";
 import { TokenManager } from "@/utils/tokenManager";
 
@@ -71,7 +70,11 @@ const AuthStatus: React.FC<AuthStatusProps> = ({
 
   // Show loading state while checking authentication
   if (isChecking || status === 'loading' || isOnboardingLoading) {
-    return <AparteyLoader />;
+    return (
+      <div className="flex justify-center items-center min-h-screen">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#C85212]"></div>
+      </div>
+    );
   }
 
   // If authentication is not required or user is authenticated, show children

@@ -17,6 +17,7 @@ export interface useGetAllListingsQueryParams {
 export const useGetAllListingsQuery = (
   params?: useGetAllListingsQueryParams
 ) => {
+  
   const { data, isLoading, error, refetch } = useQuery<PropertiesResponse>({
     queryKey: [
       "Listings",
@@ -27,6 +28,7 @@ export const useGetAllListingsQuery = (
       params?.propertyType,
       params?.petPolicy,
       params?.condition,
+      params?.page,
     ],
     queryFn: () => {
       return http.httpGetAllListings(
@@ -36,12 +38,16 @@ export const useGetAllListingsQuery = (
         params?.country,
         params?.propertyType,
         params?.petPolicy,
-        params?.condition
+        params?.condition,
+        params?.page
       );
     },
     staleTime: 0, // Disable caching to ensure fresh data on country change
     retry: 2,
+    enabled: true, // Ensure query is enabled
   });
+
+  console.log('🔍 DEBUG: useGetAllListingsQuery - query state:', { data, isLoading, error });
 
   return { data, isLoading, error, refetch };
 };

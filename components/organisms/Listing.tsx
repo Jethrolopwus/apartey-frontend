@@ -12,7 +12,6 @@ import { Property, PropertyCategory } from "@/types/generated";
 import { useUpdatePropertyToggleLikeMutation } from "@/Hooks/use.propertyLikeToggle.mutation";
 import { useGetUserFavoriteQuery } from "@/Hooks/use-getUsersFavorites.query";
 import { toast } from "react-hot-toast";
-import AparteyLoader from "@/components/atoms/Loader";
 
 const Listings = () => {
   const searchParams = useSearchParams();
@@ -43,12 +42,16 @@ const Listings = () => {
     }
   };
 
-  const category: PropertyCategory = ["Swap", "Rent", "Buy"].includes(categoryParam ?? "")
+  const category: PropertyCategory = ["Swap", "Rent", "Sale"].includes(categoryParam ?? "")
     ? (categoryParam as PropertyCategory)
-    : categoryParam === "Sale" ? "Buy" : "Swap";
+    : "Rent"; // Changed default from "Swap" to "Rent"
   
   // Use location context country if no URL country param, otherwise use URL param
   const country: string = countryParam ?? getCountryName(selectedCountryCode);
+
+  console.log('🔍 DEBUG: Listing component - categoryParam:', categoryParam);
+  console.log('🔍 DEBUG: Listing component - category:', category);
+  console.log('🔍 DEBUG: Listing component - country:', country);
 
   // Debug log to show location-based filtering
 
@@ -61,14 +64,18 @@ const Listings = () => {
   const { data: favoritesData } = useGetUserFavoriteQuery();
 
   const { data, isLoading, error } = useGetAllListingsQuery({
-    category,
-    country,
+    category, // Restore category filter
+    country, // Restore country filter
     limit,
     page: currentPage,
     propertyType: propertyTypeParam || undefined,
     petPolicy: petPolicyParam || undefined,
     condition: conditionParam || undefined,
   });
+
+  console.log('🔍 DEBUG: Listing component - API response data:', data);
+  console.log('🔍 DEBUG: Listing component - isLoading:', isLoading);
+  console.log('🔍 DEBUG: Listing component - error:', error);
 
   const { toggleLike, isLoading: isToggleLoading } = useUpdatePropertyToggleLikeMutation();
 
@@ -192,7 +199,7 @@ const Listings = () => {
     switch (category) {
       case "Rent":
         return "Home Rentals";
-      case "Buy":
+      case "Sale":
         return "Homes for Sale";
       case "Swap":
       default:
@@ -204,7 +211,7 @@ const Listings = () => {
     switch (category) {
       case "Rent":
         return "Find your perfect rental home and experience new destinations.";
-      case "Buy":
+      case "Sale":
         return "Discover properties for sale to find your dream home.";
       case "Swap":
       default:
@@ -222,7 +229,7 @@ const Listings = () => {
     switch (category) {
       case "Rent":
         return "Available Home for Rent";
-      case "Buy":
+      case "Sale":
         return "Available Home for Sale";
       case "Swap":
       default:
@@ -397,13 +404,22 @@ const Listings = () => {
   };
 
   const getUniqueProperties = () => {
-    if (!data?.properties) return [];
+    if (!data?.properties) {
+      console.log('🔍 DEBUG: No properties data available');
+      return [];
+    }
+    
+    console.log('🔍 DEBUG: Raw properties data:', data.properties);
+    console.log('🔍 DEBUG: Properties count:', data.properties.length);
     
     // Remove duplicate properties by ID to prevent rendering issues
     const uniqueProperties = data.properties.filter((property, index, self) => {
       if (!property._id) return false;
       return index === self.findIndex(p => p._id === property._id);
     });
+    
+    console.log('🔍 DEBUG: Unique properties after filtering:', uniqueProperties);
+    console.log('🔍 DEBUG: Unique properties count:', uniqueProperties.length);
     
     return uniqueProperties;
   };
@@ -554,19 +570,21 @@ const Listings = () => {
             <h2 className="text-3xl font-semibold text-teal-800 mb-6">{getAvailableText()}</h2>
             {isLoading && (
               <div className="flex justify-center items-center py-12">
-                <AparteyLoader />
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#C85212]"></div>
               </div>
             )}
             {error && (
               <div className="flex justify-center items-center py-12">
-                <span className="text-red-500">Failed to load properties: {error.message}</span>
+                <span className="text-red-500">Failed to load properties: {error instanceof Error ? error.message : 'Unknown error'}</span>
               </div>
             )}
 
             {!isLoading && !error && (
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {data?.properties?.length === 0 && (
-                  <div className="col-span-full text-center text-gray-500 py-12">No properties found in {country}.</div>
+                  <div className="col-span-full text-center text-gray-500 py-12">
+                    No {category.toLowerCase()} properties found in {country}.
+                  </div>
                 )}
                 
 

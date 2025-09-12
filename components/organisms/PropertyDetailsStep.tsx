@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { useForm } from 'react-hook-form';
-import { ChevronRight, ChevronLeft, Calendar, Home, Car, Bath } from 'lucide-react';
+import { ChevronRight, ChevronLeft, Home, Car, Bath } from 'lucide-react';
 import { StepProps } from '@/types/generated';
 import { PropertyListingPayload } from '@/types/propertyListing';
 
@@ -91,6 +91,13 @@ const PropertyDetailsStep: React.FC<PropertyDetailsStepProps> = ({ onNext, onBac
 
   // State to track if Listing Duration section should be shown
   const [showListingDuration, setShowListingDuration] = useState(false);
+  
+  // State for listing duration
+  const [listingDuration, setListingDuration] = useState({
+    startDate: '',
+    endDate: '',
+    quickSelect: '1 Month' as '1 Month' | '3 Months' | '6 Months' | '1 Year'
+  });
 
   // Type-safe property existence check for propertyDetails
   function hasPropertyDetails(obj: unknown): obj is { propertyDetails: unknown } {
@@ -117,7 +124,11 @@ const PropertyDetailsStep: React.FC<PropertyDetailsStepProps> = ({ onNext, onBac
     totalAreaSqM: (propertyDetails as Record<string, unknown>).totalAreaSqM || "120",
     livingAreaSqM: (propertyDetails as Record<string, unknown>).livingAreaSqM || "86",
     bedroomAreaSqM: (propertyDetails as Record<string, unknown>).bedroomAreaSqM || "25",
-    listingDuration: (propertyDetails as Record<string, unknown>).listingDuration || "June 18, 2025 - July 18, 2025",
+    listingDuration: (propertyDetails as Record<string, unknown>).listingDuration || {
+      startDate: '',
+      endDate: '',
+      quickSelect: '1 Month'
+    },
     livingRooms: (propertyDetails as Record<string, unknown>).livingRooms || 3,
     bedrooms: (propertyDetails as Record<string, unknown>).bedrooms || 3,
     bathrooms: (propertyDetails as Record<string, unknown>).bathrooms || 2,
@@ -149,6 +160,66 @@ const PropertyDetailsStep: React.FC<PropertyDetailsStepProps> = ({ onNext, onBac
     }));
   }, [watchedDescription]);
 
+  // Check if category is Swap to show listing duration
+  useEffect(() => {
+    const category = (formData as Record<string, unknown>).category;
+    setShowListingDuration(category === 'Swap');
+  }, [formData]);
+
+  // Handle quick select for listing duration
+  const handleQuickSelect = (duration: '1 Month' | '3 Months' | '6 Months' | '1 Year') => {
+    const startDate = new Date();
+    const endDate = new Date();
+    
+    let durationInMonths = 0;
+    switch (duration) {
+      case '1 Month':
+        durationInMonths = 1;
+        break;
+      case '3 Months':
+        durationInMonths = 3;
+        break;
+      case '6 Months':
+        durationInMonths = 6;
+        break;
+      case '1 Year':
+        durationInMonths = 12;
+        break;
+    }
+    
+    endDate.setMonth(endDate.getMonth() + durationInMonths);
+    
+    const newListingDuration = {
+      startDate: startDate.toISOString().split('T')[0],
+      endDate: endDate.toISOString().split('T')[0],
+      quickSelect: duration
+    };
+    
+    setListingDuration(newListingDuration);
+    
+    // Update form data
+    setLocalData((prev: unknown) => ({
+      ...(prev as object || {}),
+      listingDuration: newListingDuration
+    }));
+  };
+
+  // Handle date changes
+  const handleDateChange = (field: 'startDate' | 'endDate', value: string) => {
+    const newListingDuration = {
+      ...listingDuration,
+      [field]: value
+    };
+    
+    setListingDuration(newListingDuration);
+    
+    // Update form data
+    setLocalData((prev: unknown) => ({
+      ...(prev as object || {}),
+      listingDuration: newListingDuration
+    }));
+  };
+
   // Effect to check if category is "Swap" and show/hide Listing Duration section
   useEffect(() => {
     if ((formData.category as string) === "Swap") {
@@ -171,10 +242,6 @@ const PropertyDetailsStep: React.FC<PropertyDetailsStepProps> = ({ onNext, onBac
     setLocalData((prev: unknown) => ({ ...(prev as object || {}), [field]: selected }));
   };
 
-  const handleQuickSelect = (duration: string) => {
-    // This would update the listing duration based on selection
-    console.log('Selected duration:', duration);
-  };
 
   // Form submission handler
   const onSubmit = (data: PropertyDetailsFormData) => {
@@ -353,40 +420,102 @@ const PropertyDetailsStep: React.FC<PropertyDetailsStepProps> = ({ onNext, onBac
 
         {/* Listing Duration Section - Only show for Swap category */}
         {showListingDuration && (
-          <div className="space-y-4">
-            <div className="flex items-start justify-between">
-              <div className="flex-1">
+          <div className="space-y-6">
+            <h3 className="text-lg font-medium text-gray-900">Listing Duration</h3>
+            
+            {/* Date Pickers */}
+            <div className="grid grid-cols-2 gap-6">
+              <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Listing Duration
+                  Start Date <span className="text-red-500">*</span>
                 </label>
-                <div className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-md bg-white text-gray-700">
-                  <Calendar className="w-4 h-4" />
-                  <span>{(localData as Record<string, unknown>).listingDuration as string}</span>
-                </div>
+                <input
+                  type="date"
+                  value={listingDuration.startDate}
+                  onChange={(e) => handleDateChange('startDate', e.target.value)}
+                  className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-orange-500 focus:border-orange-500 sm:text-sm"
+                />
               </div>
               
-              <div className="flex-1 ml-8">
+              <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Quick Select
+                  End Date <span className="text-red-500">*</span>
                 </label>
-                <div className="flex gap-2">
-                  {["1 Month", "3 Months", "6 Months", "1 Year"].map((duration) => {
-                    const isSelected = duration === "1 Month";
-                    return (
-                      <button
-                        key={duration}
-                        onClick={() => handleQuickSelect(duration)}
-                        className={`px-4 py-2 border border-gray-200 rounded-md text-sm transition-all ${
-                          isSelected
-                            ? "bg-white text-gray-800"
-                            : "bg-gray-100 text-gray-500 hover:bg-gray-200"
-                        }`}
-                      >
-                        {duration}
-                      </button>
-                    );
-                  })}
-                </div>
+                <input
+                  type="date"
+                  value={listingDuration.endDate}
+                  onChange={(e) => handleDateChange('endDate', e.target.value)}
+                  className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-orange-500 focus:border-orange-500 sm:text-sm"
+                />
+              </div>
+            </div>
+            
+            {/* Quick Select */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Quick Select
+              </label>
+              <div className="flex gap-2 flex-wrap">
+                {(["1 Month", "3 Months", "6 Months", "1 Year"] as const).map((duration) => {
+                  const isSelected = listingDuration.quickSelect === duration;
+                  return (
+                    <button
+                      key={duration}
+                      type="button"
+                      onClick={() => handleQuickSelect(duration)}
+                      className={`px-4 py-2 border rounded-md text-sm transition-all ${
+                        isSelected
+                          ? "bg-orange-500 text-white border-orange-500"
+                          : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
+                      }`}
+                    >
+                      {duration}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Room Type Selection - Only show for Swap category */}
+        {showListingDuration && (
+          <div className="space-y-4">
+            <h3 className="text-lg font-medium text-gray-900">Room Type</h3>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Select Room Type <span className="text-red-500">*</span>
+              </label>
+              <div className="grid grid-cols-2 gap-4">
+                {["Living Room", "Bedroom", "Kitchen", "Bathroom", "Study Room", "Storage Room"].map((roomType) => {
+                  const isSelected = (localData as Record<string, unknown>).roomType === roomType;
+                  return (
+                    <button
+                      key={roomType}
+                      type="button"
+                      onClick={() => {
+                        setLocalData((prev: unknown) => ({
+                          ...(prev as object || {}),
+                          roomType: roomType
+                        }));
+                      }}
+                      className={`p-4 border rounded-lg text-left transition-all ${
+                        isSelected
+                          ? "bg-orange-50 border-orange-500 text-orange-900"
+                          : "bg-white border-gray-300 text-gray-700 hover:bg-gray-50"
+                      }`}
+                    >
+                      <div className="flex items-center">
+                        <div className={`w-4 h-4 rounded-full border-2 mr-3 ${
+                          isSelected ? "bg-orange-500 border-orange-500" : "border-gray-300"
+                        }`}>
+                          {isSelected && <div className="w-2 h-2 bg-white rounded-full m-0.5"></div>}
+                        </div>
+                        <span className="font-medium">{roomType}</span>
+                      </div>
+                    </button>
+                  );
+                })}
               </div>
             </div>
           </div>

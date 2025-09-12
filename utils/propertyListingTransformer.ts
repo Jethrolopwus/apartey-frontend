@@ -111,21 +111,34 @@ export function transformFormDataToPayload(formData: PropertyListingFormState): 
   const transformListingDuration = () => {
     if (formData.category !== 'Swap') return undefined;
     
-    // Parse the listing duration string to extract dates
-    const durationString = formData.propertyDetails?.listingDuration;
-    if (!durationString) return undefined;
+    // Get the listing duration object
+    const listingDuration = formData.propertyDetails?.listingDuration;
+    if (!listingDuration) return undefined;
 
-    // This is a simplified parser - you might need to enhance this based on your actual date format
-    const startDate = new Date(); // Default to current date
-    const quickSelect = formData.propertyDetails?.listingDuration?.includes('1 Month') ? '1 Month' as QuickSelect :
-                       formData.propertyDetails?.listingDuration?.includes('3 Months') ? '3 Months' as QuickSelect :
-                       formData.propertyDetails?.listingDuration?.includes('6 Months') ? '6 Months' as QuickSelect :
-                       formData.propertyDetails?.listingDuration?.includes('1 Year') ? '1 Year' as QuickSelect : undefined;
+    // Handle both object and string formats
+    if (typeof listingDuration === 'object' && listingDuration !== null) {
+      // If it's an object with startDate, endDate, quickSelect
+      const durationObj = listingDuration as { startDate?: string; endDate?: string; quickSelect?: string };
+      return {
+        startDate: durationObj.startDate ? new Date(durationObj.startDate) : new Date(),
+        endDate: durationObj.endDate ? new Date(durationObj.endDate) : undefined,
+        quickSelect: durationObj.quickSelect as QuickSelect
+      };
+    } else if (typeof listingDuration === 'string') {
+      // If it's a string (legacy format), parse it
+      const startDate = new Date();
+      const quickSelect = listingDuration.includes('1 Month') ? '1 Month' as QuickSelect :
+                         listingDuration.includes('3 Months') ? '3 Months' as QuickSelect :
+                         listingDuration.includes('6 Months') ? '6 Months' as QuickSelect :
+                         listingDuration.includes('1 Year') ? '1 Year' as QuickSelect : undefined;
 
-    return {
-      startDate,
-      quickSelect
-    };
+      return {
+        startDate,
+        quickSelect
+      };
+    }
+
+    return undefined;
   };
 
   // Transform contact info
@@ -247,7 +260,6 @@ export function validateFormData(formData: PropertyListingFormState): { isValid:
  * This matches the exact structure expected by the backend
  */
 export function createFormDataPayload(formData: PropertyListingFormState): FormData {
-  
   const formDataObj = new FormData();
   
   // Basic Info
@@ -425,20 +437,44 @@ export function createFormDataPayload(formData: PropertyListingFormState): FormD
   
   // Listing Duration (only for Swap category)
   if (formData.category === 'Swap' && formData.propertyDetails?.listingDuration) {
-    // Parse the listing duration string to extract dates
-    const startDate = new Date();
-    formDataObj.append('listingDuration.startDate', startDate.toISOString());
+    const listingDuration = formData.propertyDetails.listingDuration;
     
-    // Extract quick select from the duration string
-    const durationString = formData.propertyDetails.listingDuration;
-    if (durationString.includes('1 Month')) {
-      formDataObj.append('listingDuration.quickSelect', '1 Month');
-    } else if (durationString.includes('3 Months')) {
-      formDataObj.append('listingDuration.quickSelect', '3 Months');
-    } else if (durationString.includes('6 Months')) {
-      formDataObj.append('listingDuration.quickSelect', '6 Months');
-    } else if (durationString.includes('1 Year')) {
-      formDataObj.append('listingDuration.quickSelect', '1 Year');
+    // Handle both object and string formats
+    if (typeof listingDuration === 'object' && listingDuration !== null) {
+      // If it's an object with startDate, endDate, quickSelect
+      const durationObj = listingDuration as { startDate?: string; endDate?: string; quickSelect?: string };
+      
+      // Add start date
+      if (durationObj.startDate) {
+        formDataObj.append('listingDuration.startDate', durationObj.startDate);
+      } else {
+        formDataObj.append('listingDuration.startDate', new Date().toISOString());
+      }
+      
+      // Add end date if available
+      if (durationObj.endDate) {
+        formDataObj.append('listingDuration.endDate', durationObj.endDate);
+      }
+      
+      // Add quick select
+      if (durationObj.quickSelect) {
+        formDataObj.append('listingDuration.quickSelect', durationObj.quickSelect);
+      }
+    } else if (typeof listingDuration === 'string') {
+      // If it's a string (legacy format), parse it
+      const startDate = new Date();
+      formDataObj.append('listingDuration.startDate', startDate.toISOString());
+      
+      // Extract quick select from the duration string
+      if (listingDuration.includes('1 Month')) {
+        formDataObj.append('listingDuration.quickSelect', '1 Month');
+      } else if (listingDuration.includes('3 Months')) {
+        formDataObj.append('listingDuration.quickSelect', '3 Months');
+      } else if (listingDuration.includes('6 Months')) {
+        formDataObj.append('listingDuration.quickSelect', '6 Months');
+      } else if (listingDuration.includes('1 Year')) {
+        formDataObj.append('listingDuration.quickSelect', '1 Year');
+      }
     }
   }
   

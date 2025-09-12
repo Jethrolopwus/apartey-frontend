@@ -51,6 +51,7 @@ const SignUp: React.FC = () => {
 
   const handleGoogleSignUp = () => {
     localStorage.setItem("authMode", "signup");
+    localStorage.setItem("isGoogleAuth", "true");
     signIn("google", { callbackUrl: "/onboarding" });
   };
 

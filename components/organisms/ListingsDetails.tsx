@@ -8,7 +8,6 @@ import type { Property } from "@/types/generated";
 import { useGetListingsByIdQuery } from "@/Hooks/use-getAllListingsById.query";
 import { useRouter } from "next/navigation";
 import ContactOwnerModal from "@/components/molecules/ContactOwnerModal";
-import AparteyLoader from "@/components/atoms/Loader";
 
 interface GetPropertyResponse {
   message: string;
@@ -32,7 +31,11 @@ const PropertyDetails = () => {
   const property = data?.property;
 
   if (isLoading) {
-    return <AparteyLoader />;
+    return (
+      <div className="flex justify-center items-center min-h-screen">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#C85212]"></div>
+      </div>
+    );
   }
 
   if (error || !property) {

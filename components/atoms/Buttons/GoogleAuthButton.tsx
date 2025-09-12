@@ -7,7 +7,6 @@ import { useGoogleAuthMutation } from "@/Hooks/use.googleAuth.mutation";
 import { TokenManager } from "@/utils/tokenManager";
 import Image from "next/image";
 import ErrorHandler from "@/utils/errorHandler";
-import AparteyLoader from "@/components/atoms/Loader";
 
 const GoogleAuthButton: React.FC<GoogleAuthButtonProps> = ({
   mode,
@@ -44,13 +43,8 @@ const GoogleAuthButton: React.FC<GoogleAuthButtonProps> = ({
       googleAuth(googleData, {
         onSuccess: (response) => {
           if (response?.token) {
-            TokenManager.setToken(response.token, "token");
-            if (response?.user?.email) {
-              localStorage.setItem("email", response.user.email);
-            }
-            if (response?.user?.role) {
-              localStorage.setItem("userRole", response.user.role);
-            }
+            // Use TokenManager to handle all token and user data storage
+            TokenManager.updateFromResponse(response);
 
             // Check if this is an admin login
             const isAdminLogin = localStorage.getItem("isAdminLogin") === "true";
@@ -63,46 +57,40 @@ const GoogleAuthButton: React.FC<GoogleAuthButtonProps> = ({
               return;
             }
 
-            // Set Google OAuth flag
-            localStorage.setItem("isGoogleAuth", "true");
-
-            // Check if user has completed onboarding from backend response
-            const hasCompletedOnboarding = response?.user?.isOnboarded;
+            // Get user role from backend response
             const userRole = response?.user?.role;
+            const hasCompletedOnboarding = response?.user?.isOnboarded;
+            const authMode = localStorage.getItem("authMode");
 
-            console.log("Google Auth Response:", { 
-              hasCompletedOnboarding, 
-              userRole, 
-              mode,
-              response 
-            });
 
-            if (hasCompletedOnboarding) {
-              // Existing user - redirect based on role
-              localStorage.setItem("authMode", "signin");
-              localStorage.setItem("hasCompletedOnboarding", "true");
-              
+            // Add a small delay to ensure the OAuth flow completes
+            setTimeout(() => {
               if (localStorage.getItem("pendingReviewData")) {
                 router.push("/write-reviews/unlisted");
+              } else if (mode === "signup" || authMode === "signup" || !hasCompletedOnboarding) {
+                // For signup mode or users who haven't completed onboarding, redirect to onboarding
+                localStorage.setItem("authMode", "signup");
+                localStorage.removeItem("hasCompletedOnboarding"); // Clear this to ensure onboarding flow
+                window.location.href = "/onboarding"; // Use window.location for immediate redirect
               } else {
-                // Redirect based on role for existing users
+                // For signin mode with completed onboarding, redirect based on role
+                localStorage.setItem("authMode", "signin");
+                localStorage.setItem("hasCompletedOnboarding", "true");
+                
                 if (userRole === "homeowner") {
-                  router.push("/homeowner-profile");
+                  window.location.href = "/homeowner-profile";
                 } else if (userRole === "agent") {
-                  router.push("/agent-profile");
+                  window.location.href = "/agent-profile";
                 } else {
-                  router.push("/profile");
+                  window.location.href = "/profile";
                 }
               }
-            } else {
-              // New user - redirect to onboarding
-              localStorage.setItem("authMode", "signup");
-              localStorage.removeItem("hasCompletedOnboarding");
-              router.push("/onboarding");
-            }
+            }, 100);
             
             // Clear the Google OAuth flag after successful redirect
-            localStorage.removeItem("isGoogleAuth");
+            setTimeout(() => {
+              localStorage.removeItem("isGoogleAuth");
+            }, 200);
           }
         },
         onError: (error: unknown) => {
@@ -123,8 +111,11 @@ const GoogleAuthButton: React.FC<GoogleAuthButtonProps> = ({
       localStorage.setItem("authMode", mode);
       localStorage.setItem("isGoogleAuth", "true");
       
-      await signIn("google", { callbackUrl });
+      
+      // Use the base URL as callback to prevent OAuth errors
+      await signIn("google", { callbackUrl: "/" });
     } catch (error: unknown) {
+      console.error("Google Auth error:", error);
       ErrorHandler.handleGoogleOAuthError(error);
     } finally {
       setIsLoading(false);
@@ -138,7 +129,7 @@ const GoogleAuthButton: React.FC<GoogleAuthButtonProps> = ({
   if (isLoadingState) {
     return (
       <div className="flex w-full items-center justify-center rounded-md border border-gray-300 bg-white px-4 py-8">
-        <AparteyLoader />
+        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-[#C85212]"></div>
       </div>
     );
   }

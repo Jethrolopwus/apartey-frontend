@@ -8,7 +8,6 @@ import { useGetAllReviewsQuery } from "@/Hooks/use-GetAllReviews.query";
 import { Review, SortComponentProps, ReviewLocation } from "@/types/generated";
 import { useLocation } from "@/app/userLocationContext";
 import Image from "next/image";
-import AparteyLoader from "@/components/atoms/Loader";
 
 interface Coordinates {
   lat: number;
@@ -250,7 +249,11 @@ const ReviewsSection: React.FC<ReviewsSectionProps> = ({
   };
 
   if (isLoading) {
-    return <AparteyLoader />;
+    return (
+      <div className="flex justify-center items-center py-12">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#C85212]"></div>
+      </div>
+    );
   }
 
   if (error) {

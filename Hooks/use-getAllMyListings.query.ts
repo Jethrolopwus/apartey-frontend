@@ -7,7 +7,7 @@ export interface useGetAllListingsQueryParams {
   limit?: number;
   byId?: number;
   page?: number;
-  category?: "Rent" | "Swap" | "Buy";
+  category?: "Rent" | "Swap" | "Sale";
   country?: string;
 }
 

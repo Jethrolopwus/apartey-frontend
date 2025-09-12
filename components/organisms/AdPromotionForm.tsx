@@ -108,7 +108,10 @@ type AdPromotionFormProps = {
 
 const AdPromotionForm: React.FC<AdPromotionFormProps> = ({ setFormData }) => {
   const { data: locationData, isLoading: locationLoading } = useDetectUserLocation();
-  const { currency, currencyCode, prices } = getCurrencyAndPrices(locationData?.countryCode || 'US');
+  
+  // Fallback to Nigeria if location detection fails or returns Estonia
+  const countryCode = locationData?.countryCode === 'EE' ? 'NG' : (locationData?.countryCode || 'NG');
+  const { currency, currencyCode, prices } = getCurrencyAndPrices(countryCode);
   
   const [selectedTier, setSelectedTier] = useState<'Easy Start' | 'Fast Sale' | 'Turbo Boost'>('Easy Start');
   const [selectedServices, setSelectedServices] = useState<string[]>([]);
@@ -153,10 +156,10 @@ const AdPromotionForm: React.FC<AdPromotionFormProps> = ({ setFormData }) => {
         aparteyKeys: showOtherServices ? aparteyKeys : 0,
         keysDiscount: showOtherServices ? keysDiscount : 0,
         currency: currencyCode,
-        location: locationData?.countryCode || 'US',
+        location: countryCode,
       },
     }));
-  }, [selectedTier, selectedServices, totalPrice, aparteyKeys, keysDiscount, showOtherServices, setFormData, currencyCode, locationData]);
+  }, [selectedTier, selectedServices, totalPrice, aparteyKeys, keysDiscount, showOtherServices, setFormData, currencyCode, countryCode]);
 
   // Loading state while detecting location
   if (locationLoading) {

@@ -12,7 +12,6 @@ import Link from "next/link";
 import { toast } from "react-hot-toast";
 import PropertyStatusModal from "@/components/molecules/PropertyStatusModal";
 import PropertyActivateModal from "@/components/molecules/PropertyActivateModal";
-import AparteyLoader from "@/components/atoms/Loader";
 
 const DEFAULT_PROPERTY_IMAGE = "/Estate2.png";
 
@@ -24,11 +23,11 @@ const ClaimPropertyButton: React.FC<{ propertyId: string; onClaim: (id: string) 
   
   if (claimStatusLoading) {
     return (
-      <button 
+      <button
         disabled
         className="w-full px-4 py-2 text-sm font-semibold bg-gray-200 text-gray-500 rounded cursor-not-allowed"
       >
-        <AparteyLoader />
+        Loading...
       </button>
     );
   }
@@ -99,7 +98,7 @@ interface Property {
   status: string;
   mark: string;
   isActive: boolean;
-  category: "Rent" | "Swap" | "Buy";
+  category: "Rent" | "Swap" | "Sale";
 }
 
 interface Stat {
@@ -140,7 +139,7 @@ const HomeownerProfile: React.FC = () => {
   const selectedCountry = getCountryName(selectedCountryCode);
   const [currentPage, setCurrentPage] = React.useState(1);
   const itemsPerPage = 6; // Limit of 6 as per design 
-  const [selectedCategory, setSelectedCategory] = React.useState<"Rent" | "Buy" | "Swap">("Rent");
+  const [selectedCategory, setSelectedCategory] = React.useState<"Rent" | "Sale" | "Swap">("Rent");
 
   const {
     data: userData,
@@ -164,7 +163,7 @@ const HomeownerProfile: React.FC = () => {
 
   // Counts per category (fetch minimal data just to get totals) - also filtered by country
   const { data: rentCountData } = useGetAllMyListingsQuery({ limit: 1, page: 1, category: "Rent", country: selectedCountry });
-  const { data: buyCountData } = useGetAllMyListingsQuery({ limit: 1, page: 1, category: "Buy", country: selectedCountry });
+  const { data: buyCountData } = useGetAllMyListingsQuery({ limit: 1, page: 1, category: "Sale", country: selectedCountry });
   const { data: swapCountData } = useGetAllMyListingsQuery({ limit: 1, page: 1, category: "Swap", country: selectedCountry });
 
  
@@ -375,7 +374,11 @@ const HomeownerProfile: React.FC = () => {
   };
 
   if (userLoading || listingsLoading) {
-    return <AparteyLoader />;
+    return (
+      <div className="flex justify-center items-center min-h-screen">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#C85212]"></div>
+      </div>
+    );
   }
 
   // Treat "no properties" response as a valid empty state, not an error
@@ -534,9 +537,9 @@ const HomeownerProfile: React.FC = () => {
             For rent ({rentCountData?.total ?? 0})
           </button>
           <button
-            onClick={() => { setSelectedCategory("Buy"); setCurrentPage(1); }}
+            onClick={() => { setSelectedCategory("Sale"); setCurrentPage(1); }}
             className={`px-4 py-2 rounded-full text-sm font-medium border ${
-              selectedCategory === "Buy"
+              selectedCategory === "Sale"
                 ? "bg-gray-100 text-[#111827] border-[#111827]"
                 : "bg-gray-100 text-gray-700 border-gray-200"
             }`}
@@ -747,7 +750,7 @@ const HomeownerProfile: React.FC = () => {
         onClose={handlePropertyStatusModalClose}
         onConfirm={handlePropertyStatusConfirm}
         propertyTitle={selectedProperty?.title || "Property"}
-        category={(selectedProperty?.category as "Rent" | "Swap" | "Buy") || "Rent"}
+        category={(selectedProperty?.category as "Rent" | "Swap" | "Sale") || "Rent"}
         propertyId={selectedProperty?.id || null}
       />
 

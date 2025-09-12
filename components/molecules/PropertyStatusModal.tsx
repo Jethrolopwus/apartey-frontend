@@ -9,7 +9,7 @@ interface PropertyStatusModalProps {
   onClose: () => void;
   onConfirm: (data: PropertyStatusData) => void;
   propertyTitle: string;
-  category: "Rent" | "Swap" | "Buy";
+  category: "Rent" | "Swap" | "Sale";
   propertyId: string | null;
 }
 
@@ -87,7 +87,7 @@ const PropertyStatusModal: React.FC<PropertyStatusModalProps> = ({
         return "Have you rented this home?";
       case "Swap":
         return "Have you swapped this home?";
-      case "Buy":
+      case "Sale":
         return "Have you sold this home?";
       default:
         return "Have you rented this home?";
@@ -100,7 +100,7 @@ const PropertyStatusModal: React.FC<PropertyStatusModalProps> = ({
         return "rented";
       case "Swap":
         return "swapped";
-      case "Buy":
+      case "Sale":
         return "sold";
       default:
         return "rented";

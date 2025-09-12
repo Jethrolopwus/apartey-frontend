@@ -8,7 +8,6 @@ import { useState, useEffect, useMemo, useRef } from "react";
 import { Review, AllReviewsProps } from "@/types/generated";
 import SearchInput, { PlacePrediction } from "../atoms/Buttons/SearchInput";
 import { toast } from "react-hot-toast";
-import AparteyLoader from "@/components/atoms/Loader";
 
 // Sort options configuration
 const sortOptions = [
@@ -248,7 +247,11 @@ const AllReviews: React.FC<AllReviewsProps> = ({
   };
 
   if (isLoading) {
-    return <AparteyLoader />;
+    return (
+      <div className="flex justify-center items-center min-h-screen">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#C85212]"></div>
+      </div>
+    );
   }
 
   if (error) {
@@ -366,7 +369,7 @@ const AllReviews: React.FC<AllReviewsProps> = ({
                 <select
                   value={apartment}
                   onChange={(e) => handleDropdownFilter(e.target.value)}
-                  className="border border-gray-300 rounded-md px-4 py-2.5 text-sm bg-white min-w-[140px] focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+                  className="border border-gray-300 rounded-md px-4 py-2.5 text-sm bg-white min-w-[140px] focus:outline-none focus:ring-2 focus:ring-[#C85212] focus:border-teal-[#C85212]"
                 >
                   <option value="all">All Apartments</option>
                   {apartmentNumbers.map((apt) => (
@@ -445,10 +448,10 @@ const AllReviews: React.FC<AllReviewsProps> = ({
                     {review.linkedProperty && (
                       <div className="flex items-center gap-2">
                         <span className="bg-blue-600/90 backdrop-blur-sm text-white text-xs font-semibold px-2 py-1 rounded-full">
-                          {review.linkedProperty.bedrooms}BR
+                          {review.linkedProperty.bedrooms}
                         </span>
                         <span className="bg-blue-600/90 backdrop-blur-sm text-white text-xs font-semibold px-2 py-1 rounded-full">
-                          {review.linkedProperty.bathrooms}BA
+                          {review.linkedProperty.bathrooms}
                         </span>
                       </div>
                     )}
@@ -461,7 +464,7 @@ const AllReviews: React.FC<AllReviewsProps> = ({
                     </h3>
                     {review.linkedProperty?.price && (
                       <p className="text-sm text-teal-600 font-semibold mb-2">
-                        ₦{(review.linkedProperty.price / 1000000).toFixed(1)}M
+                       
                       </p>
                     )}
                     <div className="flex items-center gap-2 mb-1">

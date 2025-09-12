@@ -9,7 +9,6 @@ import ErrorHandler from "@/utils/errorHandler";
 import { useRouter } from "next/navigation";
 import { TokenManager } from "@/utils/tokenManager";
 import { useUserRole } from "@/Hooks/useUserRole";
-import AparteyLoader from "@/components/atoms/Loader";
 
 const SignInForm: React.FC<SignInFormProps> = ({
   isSubmitting,
@@ -18,6 +17,8 @@ const SignInForm: React.FC<SignInFormProps> = ({
   errors,
   isAdmin =false,
 }) => {
+  
+  
   const [showPassword, setShowPassword] = useState(false);
   const router = useRouter();
   const { updateRole } = useUserRole();
@@ -26,7 +27,6 @@ const SignInForm: React.FC<SignInFormProps> = ({
     data: authData,
     isLoading: isCheckingAuth,
     error: authError,
-    refetch: refetchAuthStatus,
   } = useAuthStatusQuery();
 
   const togglePasswordVisibility = () => {
@@ -95,22 +95,25 @@ const SignInForm: React.FC<SignInFormProps> = ({
     }
   }, [authData, authError, router, updateRole]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
       await onSubmit(e);
-      await refetchAuthStatus();
     } catch (error) {
       ErrorHandler.handleAuthError(error);
     }
   };
 
   if (isCheckingAuth) {
-    return <AparteyLoader />;
+    return (
+      <div className="flex justify-center items-center py-8">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#C85212]"></div>
+      </div>
+    );
   }
 
   return (
-    <form className="mt-8 space-y-6 " onSubmit={handleSubmit}>
+    <form className="mt-8 space-y-6 " onSubmit={handleFormSubmit}>
       <div className="space-y-4">
         <div>
           <label

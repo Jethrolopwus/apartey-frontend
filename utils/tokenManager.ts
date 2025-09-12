@@ -42,6 +42,18 @@ export class TokenManager {
 
     if (newToken) {
       this.setToken(newToken);
+      
+      // Also store additional user data if available
+      if (response?.user?.email) {
+        localStorage.setItem("email", response.user.email);
+      }
+      if (response?.user?.role) {
+        localStorage.setItem("userRole", response.user.role);
+      }
+      if (response?.user?.isOnboarded !== undefined) {
+        localStorage.setItem("hasCompletedOnboarding", response.user.isOnboarded.toString());
+      }
+      
       return true;
     }
 

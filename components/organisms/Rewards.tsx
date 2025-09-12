@@ -4,12 +4,10 @@ import { useGetUserProfileQuery } from "@/Hooks/use-getuserProfile.query";
 
 interface RewardsProps {
   currentKeys?: number;
-  onRedeemKeys?: () => void;
 }
 
 const Rewards: React.FC<RewardsProps> = ({
   currentKeys,
-  onRedeemKeys,
 }) => {
   // Get real user data from profile
   const { data: userProfileData, isLoading, isError } = useGetUserProfileQuery();
@@ -28,7 +26,7 @@ const Rewards: React.FC<RewardsProps> = ({
     if (!isHydrated || isLoading) {
       return (
         <div className="bg-white rounded-2xl p-8 text-center">
-          <div className="text-gray-500">Loading rewards...</div>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#C85212] mx-auto"></div>
         </div>
       );
     }
@@ -69,12 +67,6 @@ const Rewards: React.FC<RewardsProps> = ({
                 {actualKeys.toLocaleString()} Apartey keys
               </p>
             </div>
-            <button
-              onClick={onRedeemKeys}
-              className="bg-[#C85212] hover:bg-orange-800 text-white px-6 py-2 rounded-lg font-medium transition-colors"
-            >
-              Redeem Keys
-            </button>
           </div>
         </div>
       </div>

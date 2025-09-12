@@ -8,7 +8,6 @@ import { ChevronLeft, ChevronRight, CirclePower } from "lucide-react";
 import AdminViewPropertyModal from "@/app/admin/components/AdminViewPropertyModal";
 import AdminDeletePropertyModal from "@/app/admin/components/AdminDeletePropertyModal";
 import toast from "react-hot-toast";
-import AparteyLoader from "@/components/atoms/Loader";
 import {
   Select,
   SelectContent,
@@ -179,7 +178,11 @@ export default function AdminPropertiesPage() {
   };
 
   if (isLoading) {
-    return <AparteyLoader />;
+    return (
+      <div className="flex justify-center items-center min-h-screen">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#C85212]"></div>
+      </div>
+    );
   }
   return (
     <div>

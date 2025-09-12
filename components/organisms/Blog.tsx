@@ -3,7 +3,6 @@ import { ArrowRight } from "lucide-react";
 import Link from "next/link";
 import { useGetAllBlogPostQuery } from "@/Hooks/use-getAllBlogPost.query";
 import Image from "next/image";
-import AparteyLoader from "@/components/atoms/Loader";
 
 // Define a BlogPost type if not imported
 interface BlogPost {
@@ -46,16 +45,14 @@ export default function BlogComponent() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {isLoading && <div className="col-span-3 flex justify-center"><AparteyLoader /></div>}
+        {isLoading && <div className="col-span-3 flex justify-center"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#C85212]"></div></div>}
         {error && <div className="col-span-3 text-center text-red-500">Failed to load blog posts.</div>}
         {posts.slice(0, 3).map((post: BlogPost) => (
           <Link
             key={post._id}
             href={`/blog/${post._id}`}
-            passHref
-            legacyBehavior
+            className="bg-white rounded-xl shadow-sm overflow-hidden hover:shadow-md transition-shadow cursor-pointer group block"
           >
-            <a className="bg-white rounded-xl shadow-sm overflow-hidden hover:shadow-md transition-shadow cursor-pointer group block">
               <div className="relative h-48 md:h-56">
                 <Image
                   src={post.imageUrl || "/HouseRent.png"}
@@ -77,7 +74,6 @@ export default function BlogComponent() {
                   {stripHtmlTags(post.excerpt)}
                 </p>
               </div>
-            </a>
           </Link>
         ))}
       </div>

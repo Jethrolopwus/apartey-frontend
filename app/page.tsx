@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import BlogComponent from "@/components/organisms/Blog";
 import CategoryComponent from "@/components/organisms/Category";
 import ExperienceComponent from "@/components/organisms/Experiences";
@@ -10,6 +10,7 @@ import type { RootState } from "@/store";
 import HomeListingsPreview from "@/components/organisms/HomeListingsPreview";
 import { useGetUserLocationQuery } from "@/Hooks/use-getUserLocation.query";
 import { userLocationData } from "@/types/generated";
+import AparteyLoader from "@/components/atoms/Loader";
 
 export default function Home() {
   const user = useAppSelector((state: RootState) => state.auth.user);
@@ -76,23 +77,31 @@ export default function Home() {
   }, [data, error]);
 
   return (
-    <div>
-      <Hero />
-      <HomeListingsPreview />
-      <CategoryComponent />
-      <BlogComponent />
-      <ExperienceComponent />
-      {isLoading ? (
-        <p>Loading location...</p>
-      ) : location ? (
-        <div>
-          <p>
-            Country: {location.countryName} ({location.countryCode})
-          </p>
+    <Suspense
+      fallback={
+        <div className="flex justify-center items-center min-h-screen bg-[#FAFAFA]">
+          <AparteyLoader />
         </div>
-      ) : (
-        <p>Unable to load location</p>
-      )}
-    </div>
+      }
+    >
+      <div>
+        <Hero />
+        <HomeListingsPreview />
+        <CategoryComponent />
+        <BlogComponent />
+        <ExperienceComponent />
+        {isLoading ? (
+          <p>Loading location...</p>
+        ) : location ? (
+          <div>
+            <p>
+              Country: {location.countryName} ({location.countryCode})
+            </p>
+          </div>
+        ) : (
+          <p>Unable to load location</p>
+        )}
+      </div>
+    </Suspense>
   );
 }

@@ -746,9 +746,20 @@ class BaseURL {
       if (params.toString()) {
         url += `?${params.toString()}`;
       }
+      
+      console.log('🔍 DEBUG: getAllProperties API URL:', url);
+      console.log('🔍 DEBUG: getAllProperties params:', { limit, byId });
+      
       const response = await AxiosInstance.get(url);
+      
+      console.log('🔍 DEBUG: getAllProperties API response:', response.data);
+      console.log('🔍 DEBUG: getAllProperties API response properties count:', response.data?.properties?.length);
+      
       return response.data;
     } catch (error: any) {
+      console.error("❌ HTTP Service - getAllProperties API Error:");
+      console.error("  - Error:", error);
+      console.error("  - Response:", error.response?.data);
       throw new Error(
         error.response?.data?.message || "Get all listings failed"
       );
@@ -839,11 +850,15 @@ class BaseURL {
     country?: string,
     propertyType?: string,
     petPolicy?: string,
-    condition?: string
+    condition?: string,
+    page?: number
   ) => {
+    console.log('🔍 DEBUG: httpGetAllListings function called with params:', { limit, byId, category, country, propertyType, petPolicy, condition, page });
+    
     try {
       let url = endpoints.getAllListings;
       const params = new URLSearchParams();
+      
       if (byId) {
         params.append("byId", byId.toString());
       }
@@ -865,69 +880,29 @@ class BaseURL {
       if (condition) {
         params.append("condition", condition);
       }
+      if (page) {
+        params.append("page", page.toString());
+      }
+      
       if (params.toString()) {
         url += `?${params.toString()}`;
       }
       
-      
       const response = await AxiosInstance.get(url);
-      
       
       return response.data;
     } catch (error: any) {
       console.error("❌ HTTP Service - getAllListings API Error:");
       console.error("  - Error:", error);
       console.error("  - Response:", error.response?.data);
+      console.error("  - Status:", error.response?.status);
+      console.error("  - URL:", error.config?.url);
       throw new Error(
         error.response?.data?.message || "Get all listings failed"
       );
     }
   };
-  httpGetAllMyListings = async (limit?: number, byId?: number, page?: number, category?: string, country?: string) => {
-    try {
-      let url = endpoints.getAllMyListings;
-      const params = new URLSearchParams();
-      if (byId) {
-        params.append("byId", byId.toString());
-      }
-      if (limit) {
-        params.append("limit", limit.toString());
-      }
-      if (page) {
-        params.append("page", page.toString());
-      }
-      if (category) {
-        params.append("category", category);
-      }
-      if (country) {
-        params.append("country", country);
-      }
-      if (params.toString()) {
-        url += `?${params.toString()}`;
-      }
 
-      const response = await AxiosInstance.get(url);
-      return response.data;
-    } catch (error: any) {
-      // Handle the case where user has no properties (404 with "You have no properties yet" message)
-      if (error.response?.status === 404 && 
-          error.response?.data?.message === "You have no properties yet.") {
-        // Return empty array instead of throwing error
-        return {
-          listings: [],
-          totalCount: 0,
-          message: "You have no properties yet."
-        };
-      }
-      
-      console.error("❌ HTTP Service - getAllMyListings API Error:");
-      console.error("  - Error:", error);
-      console.error("  - Response:", error.response?.data);
-      throw new Error(
-        error.response?.data?.message || "Get all My listings failed"
-      );
-    }
-  };
   toggleListingAvailability = async (id: string, payload?: {
     reason: string;
     location: string;
@@ -992,6 +967,47 @@ class BaseURL {
       return response.data;
     } catch (error: any) {
       throw new Error(error.response?.data?.message || "Listing not found");
+    }
+  };
+
+  httpGetAllMyListings = async (
+    limit?: number,
+    byId?: number,
+    page?: number,
+    category?: PropertyCategory,
+    country?: string
+  ) => {
+    try {
+      let url = endpoints.getAllMyListings;
+      const params = new URLSearchParams();
+      
+      if (limit) {
+        params.append("limit", limit.toString());
+      }
+      if (byId) {
+        params.append("byId", byId.toString());
+      }
+      if (page) {
+        params.append("page", page.toString());
+      }
+      if (category) {
+        params.append("category", category);
+      }
+      if (country) {
+        params.append("country", country);
+      }
+      
+      if (params.toString()) {
+        url += `?${params.toString()}`;
+      }
+      
+      const response = await AxiosInstance.get(url);
+      return response.data;
+    } catch (error: any) {
+      console.error("❌ HTTP Service - getAllMyListings API Error:", error.response?.data?.message || error.message);
+      throw new Error(
+        error.response?.data?.message || "Get all my listings failed"
+      );
     }
   };
 

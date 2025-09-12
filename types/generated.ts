@@ -689,7 +689,7 @@ export interface userLocationData {
   countryName: string;
 }
 
-export type PropertyCategory = "Swap" | "Rent" | "Buy";
+export type PropertyCategory = "Swap" | "Rent" | "Sale";
 
 export interface FavoriteItem {
   _id: string;
