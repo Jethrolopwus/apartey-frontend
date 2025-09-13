@@ -17,6 +17,19 @@ const nextConfig: NextConfig = {
     ],
     domains: ["maps.googleapis.com"],
   },
+  async headers() {
+    return [
+      {
+        source: '/(.*)',
+        headers: [
+          {
+            key: 'Content-Security-Policy',
+            value: "connect-src 'self' https://apartey-server.onrender.com https://api.stripe.com https://r.stripe.com https://*.stripe.com https://maps.googleapis.com https://*.googleapis.com https://api.ipify.org https://ipapi.co https://ipinfo.io https://ip-api.com;"
+          }
+        ]
+      }
+    ]
+  }
 };
 
 export default nextConfig;

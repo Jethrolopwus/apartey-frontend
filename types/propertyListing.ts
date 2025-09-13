@@ -313,6 +313,7 @@ export interface AdPromotionStepData {
 // ===== FORM STATE TYPE =====
 
 export interface PropertyListingFormState {
+  [x: string]: any;
   // Step 1
   category?: CategoryType;
   propertyType?: PropertyType;

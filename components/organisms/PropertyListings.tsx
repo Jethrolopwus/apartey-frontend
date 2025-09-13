@@ -116,8 +116,19 @@ const PropertyListings = () => {
           const propertyId = response?.property?.id;
           
           if (propertyId) {
-            // Build checkout URL with payment parameters
-            const checkoutUrl = `/check-out/${propertyId}?tier=FastSale&addOns=liftsToTop,certifiedByApartey&aparteyKeys=100&currency=ngn`;
+            // Build checkout URL with payment parameters from ad promotion data
+            const adPromotion = formData?.adPromotion;
+            const params = new URLSearchParams({
+              tier: adPromotion?.selectedTier || 'FastSale',
+              addOns: adPromotion?.selectedServices?.join(',') || '',
+              aparteyKeys: adPromotion?.aparteyKeys?.toString() || '0',
+              currency: adPromotion?.currency?.toLowerCase() || 'ngn',
+              totalPrice: adPromotion?.totalPrice?.toString() || '0',
+              keysDiscount: adPromotion?.keysDiscount?.toString() || '0'
+            });
+            
+            const checkoutUrl = `/check-out/${propertyId}?${params.toString()}`;
+            console.log("🔍 Redirecting to checkout:", checkoutUrl);
             
             setTimeout(() => {
               router.push(checkoutUrl);
@@ -177,9 +188,81 @@ const PropertyListings = () => {
   const CurrentStepComponent = steps[currentStep].component;
 
   return (
-    <div className="min-h-screen bg-gray-50 flex">
-      {/* Sidebar */}
-      <div className="w-80 bg-white border-r border-gray-200 p-6">
+    <div className="min-h-screen bg-gray-50 flex flex-col md:flex-row">
+      {/* Mobile Stepper - Only visible on mobile */}
+      <div className="md:hidden bg-white border-b border-gray-200 p-4">
+        <div className="mb-4">
+          <h2 className="text-lg font-semibold text-gray-900">
+            List Your Property
+          </h2>
+          <p className="text-sm text-gray-500 mt-1">
+            Step {currentStep + 1} of {steps.length}
+          </p>
+        </div>
+        
+        {/* Mobile Progress Bar */}
+        <div className="mb-4">
+          <div className="flex justify-between text-xs text-gray-500 mb-2">
+            <span>Progress</span>
+            <span>{Math.round(((currentStep + 1) / steps.length) * 100)}%</span>
+          </div>
+          <div className="w-full bg-gray-200 rounded-full h-2">
+            <div
+              className="h-2 rounded-full transition-all duration-300"
+              style={{
+                width: `${((currentStep + 1) / steps.length) * 100}%`,
+                backgroundColor: "#C85212",
+              }}
+            />
+          </div>
+        </div>
+
+        {/* Mobile Step Indicators */}
+        <div className="flex justify-between items-center">
+          {steps.map((step, index) => {
+            const IconComponent = step.icon;
+            const isActive = index === currentStep;
+            const isCompleted = index < currentStep;
+
+            return (
+              <div
+                key={step.id}
+                className="flex flex-col items-center space-y-1"
+              >
+                <div
+                  className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                    isActive
+                      ? "bg-orange-500"
+                      : isCompleted
+                      ? "bg-green-500"
+                      : "bg-gray-300"
+                  }`}
+                >
+                  <IconComponent
+                    className={`w-4 h-4 ${
+                      isActive || isCompleted ? "text-white" : "text-gray-600"
+                    }`}
+                  />
+                </div>
+                <span
+                  className={`text-xs font-medium text-center ${
+                    isActive
+                      ? "text-orange-900"
+                      : isCompleted
+                      ? "text-green-700"
+                      : "text-gray-600"
+                  }`}
+                >
+                  {step.label}
+                </span>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Desktop Sidebar - Hidden on mobile */}
+      <div className="hidden md:block w-80 bg-white border-r border-gray-200 p-6">
         <div className="mb-6">
           <h2 className="text-lg font-semibold text-gray-900">
             List Your Property
@@ -238,7 +321,7 @@ const PropertyListings = () => {
           })}
         </div>
 
-        {/* Progress Bar */}
+        {/* Desktop Progress Bar */}
         <div className="mt-8">
           <div className="flex justify-between text-xs text-gray-500 mb-2">
             <span>Progress</span>
@@ -257,7 +340,7 @@ const PropertyListings = () => {
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 p-8">
+      <div className="flex-1 p-4 md:p-8">
         <CurrentStepComponent
           onNext={handleNext}
           onBack={handleBack}

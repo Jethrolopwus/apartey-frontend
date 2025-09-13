@@ -262,24 +262,25 @@ const PropertyDetailsStep: React.FC<PropertyDetailsStepProps> = ({ onNext, onBac
     const options = ["Any", "1", "2", "3", "4", "5"];
     
     return (
-      <div className="flex items-center justify-between">
-        <label className="text-sm font-medium text-gray-700">
+      <div className="space-y-3">
+        <label className="block text-sm font-medium text-gray-700">
           {label} <span className="text-red-500">*</span>
         </label>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           {options.map((option) => {
             const isSelected = option === "Any" ? value === null : value === parseInt(option);
             return (
               <button
                 key={option}
+                type="button"
                 onClick={() => onChange(option === "Any" ? null : parseInt(option))}
-                className={`flex items-center gap-2 px-4 py-2 rounded-full border text-sm font-medium transition-all ${
+                className={`flex items-center gap-1 sm:gap-2 px-3 sm:px-4 py-2 rounded-full border text-sm font-medium transition-all ${
                   isSelected
                     ? "border-gray-600 bg-gray-100 text-gray-800"
                     : "border-gray-200 bg-white text-gray-500 hover:border-gray-300"
                 }`}
               >
-                {Icon && <Icon className="w-4 h-4" />}
+                {Icon && <Icon className="w-3 h-3 sm:w-4 sm:h-4" />}
                 {option}
               </button>
             );
@@ -315,14 +316,14 @@ const PropertyDetailsStep: React.FC<PropertyDetailsStepProps> = ({ onNext, onBac
           <h3 className="text-lg font-semibold text-gray-900">{title}</h3>
           {subtitle && <p className="text-sm text-gray-500">{subtitle}</p>}
         </div>
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
           {options.map((option) => (
-            <label key={option} className="flex items-center space-x-3">
+            <label key={option} className="flex items-center space-x-3 p-2 rounded-md hover:bg-gray-50">
               <input
                 type="checkbox"
                 checked={selectedOptions.includes(option)}
                 onChange={() => handleToggle(option)}
-                className="w-4 h-4 text-gray-800 border-gray-300 rounded focus:ring-gray-800"
+                className="w-4 h-4 text-gray-800 border-gray-300 rounded focus:ring-gray-800 flex-shrink-0"
               />
               <span className="text-sm text-gray-700">{option}</span>
             </label>
@@ -333,13 +334,13 @@ const PropertyDetailsStep: React.FC<PropertyDetailsStepProps> = ({ onNext, onBac
   };
 
   return (
-    <div className="max-w-4xl w-full space-y-8">
-      <h1 className="text-2xl font-semibold text-gray-900">Property details</h1>
+    <div className="max-w-4xl w-full space-y-6 px-4 sm:px-6 lg:px-0">
+      <h1 className="text-xl sm:text-2xl font-semibold text-gray-900">Property details</h1>
 
-      <form onSubmit={handleSubmit(onSubmit)}>
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
         {/* Property Information Section */}
-        <div className="space-y-6">
-          <div className="grid grid-cols-2 gap-6">
+        <div className="space-y-4 sm:space-y-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
             <div>
               <label className="block text-sm font-medium text-gray-700">
                 Total floors <span className="text-red-500">*</span>
@@ -349,7 +350,7 @@ const PropertyDetailsStep: React.FC<PropertyDetailsStepProps> = ({ onNext, onBac
                 name="totalFloors"
                 value={(localData as Record<string, unknown>).totalFloors as string}
                 onChange={handleInputChange}
-                className="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-gray-500 focus:border-gray-500 sm:text-sm"
+                className="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-gray-500 focus:border-gray-500 text-sm"
               />
             </div>
             <div>
@@ -361,12 +362,12 @@ const PropertyDetailsStep: React.FC<PropertyDetailsStepProps> = ({ onNext, onBac
                 name="floor"
                 value={(localData as Record<string, unknown>).floor as string}
                 onChange={handleInputChange}
-                className="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-gray-500 focus:border-gray-500 sm:text-sm"
+                className="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-gray-500 focus:border-gray-500 text-sm"
               />
             </div>
           </div>
 
-          <div className="grid grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
             <div>
               <label className="block text-sm font-medium text-gray-700">
                 Total area (m²) <span className="text-red-500">*</span>
@@ -376,7 +377,7 @@ const PropertyDetailsStep: React.FC<PropertyDetailsStepProps> = ({ onNext, onBac
                 name="totalAreaSqM"
                 value={(localData as Record<string, unknown>).totalAreaSqM as string}
                 onChange={handleInputChange}
-                className="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-gray-500 focus:border-gray-500 sm:text-sm"
+                className="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-gray-500 focus:border-gray-500 text-sm"
               />
             </div>
             <div>
@@ -388,7 +389,7 @@ const PropertyDetailsStep: React.FC<PropertyDetailsStepProps> = ({ onNext, onBac
                 name="livingAreaSqM"
                 value={(localData as Record<string, unknown>).livingAreaSqM as string}
                 onChange={handleInputChange}
-                className="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-gray-500 focus:border-gray-500 sm:text-sm"
+                className="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-gray-500 focus:border-gray-500 text-sm"
               />
             </div>
             <div>
@@ -400,7 +401,7 @@ const PropertyDetailsStep: React.FC<PropertyDetailsStepProps> = ({ onNext, onBac
                 name="bedroomAreaSqM"
                 value={(localData as Record<string, unknown>).bedroomAreaSqM as string}
                 onChange={handleInputChange}
-                className="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-gray-500 focus:border-gray-500 sm:text-sm"
+                className="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-gray-500 focus:border-gray-500 text-sm"
               />
             </div>
           </div>
@@ -420,11 +421,11 @@ const PropertyDetailsStep: React.FC<PropertyDetailsStepProps> = ({ onNext, onBac
 
         {/* Listing Duration Section - Only show for Swap category */}
         {showListingDuration && (
-          <div className="space-y-6">
+          <div className="space-y-4 sm:space-y-6">
             <h3 className="text-lg font-medium text-gray-900">Listing Duration</h3>
             
             {/* Date Pickers */}
-            <div className="grid grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Start Date <span className="text-red-500">*</span>
@@ -433,7 +434,7 @@ const PropertyDetailsStep: React.FC<PropertyDetailsStepProps> = ({ onNext, onBac
                   type="date"
                   value={listingDuration.startDate}
                   onChange={(e) => handleDateChange('startDate', e.target.value)}
-                  className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-orange-500 focus:border-orange-500 sm:text-sm"
+                  className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-orange-500 focus:border-orange-500 text-sm"
                 />
               </div>
               
@@ -445,7 +446,7 @@ const PropertyDetailsStep: React.FC<PropertyDetailsStepProps> = ({ onNext, onBac
                   type="date"
                   value={listingDuration.endDate}
                   onChange={(e) => handleDateChange('endDate', e.target.value)}
-                  className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-orange-500 focus:border-orange-500 sm:text-sm"
+                  className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-orange-500 focus:border-orange-500 text-sm"
                 />
               </div>
             </div>
@@ -455,7 +456,7 @@ const PropertyDetailsStep: React.FC<PropertyDetailsStepProps> = ({ onNext, onBac
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Quick Select
               </label>
-              <div className="flex gap-2 flex-wrap">
+              <div className="grid grid-cols-2 sm:flex gap-2 flex-wrap">
                 {(["1 Month", "3 Months", "6 Months", "1 Year"] as const).map((duration) => {
                   const isSelected = listingDuration.quickSelect === duration;
                   return (
@@ -463,7 +464,7 @@ const PropertyDetailsStep: React.FC<PropertyDetailsStepProps> = ({ onNext, onBac
                       key={duration}
                       type="button"
                       onClick={() => handleQuickSelect(duration)}
-                      className={`px-4 py-2 border rounded-md text-sm transition-all ${
+                      className={`px-3 sm:px-4 py-2 border rounded-md text-sm transition-all ${
                         isSelected
                           ? "bg-orange-500 text-white border-orange-500"
                           : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
@@ -486,7 +487,7 @@ const PropertyDetailsStep: React.FC<PropertyDetailsStepProps> = ({ onNext, onBac
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Select Room Type <span className="text-red-500">*</span>
               </label>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                 {["Living Room", "Bedroom", "Kitchen", "Bathroom", "Study Room", "Storage Room"].map((roomType) => {
                   const isSelected = (localData as Record<string, unknown>).roomType === roomType;
                   return (
@@ -499,19 +500,19 @@ const PropertyDetailsStep: React.FC<PropertyDetailsStepProps> = ({ onNext, onBac
                           roomType: roomType
                         }));
                       }}
-                      className={`p-4 border rounded-lg text-left transition-all ${
+                      className={`p-3 sm:p-4 border rounded-lg text-left transition-all ${
                         isSelected
                           ? "bg-orange-50 border-orange-500 text-orange-900"
                           : "bg-white border-gray-300 text-gray-700 hover:bg-gray-50"
                       }`}
                     >
                       <div className="flex items-center">
-                        <div className={`w-4 h-4 rounded-full border-2 mr-3 ${
+                        <div className={`w-4 h-4 rounded-full border-2 mr-3 flex-shrink-0 ${
                           isSelected ? "bg-orange-500 border-orange-500" : "border-gray-300"
                         }`}>
                           {isSelected && <div className="w-2 h-2 bg-white rounded-full m-0.5"></div>}
                         </div>
-                        <span className="font-medium">{roomType}</span>
+                        <span className="font-medium text-sm sm:text-base">{roomType}</span>
                       </div>
                     </button>
                   );
@@ -597,19 +598,19 @@ const PropertyDetailsStep: React.FC<PropertyDetailsStepProps> = ({ onNext, onBac
         </div>
 
         {/* Navigation Buttons */}
-        <div className="border-t-2 border-[#C85212] mt-8 pt-8"></div>
-        <div className="flex justify-between">
+        <div className="border-t-2 border-[#C85212] mt-6 sm:mt-8 pt-6 sm:pt-8"></div>
+        <div className="flex flex-col sm:flex-row gap-3 sm:gap-0 sm:justify-between">
           <button 
             type="button"
             onClick={onBack} 
-            className="flex items-center px-6 py-3 border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-colors"
+            className="flex items-center justify-center px-4 sm:px-6 py-3 border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-colors order-2 sm:order-1"
           >
             <ChevronLeft className="w-4 h-4 mr-2" />
             Back
           </button>
           <button 
             type="submit"
-            className="flex items-center px-6 py-3 text-white rounded-lg font-medium transition-colors hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed" 
+            className="flex items-center justify-center px-4 sm:px-6 py-3 text-white rounded-lg font-medium transition-colors hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed order-1 sm:order-2" 
             style={{ backgroundColor: '#C85212' }}
             disabled={!isValid}
           >

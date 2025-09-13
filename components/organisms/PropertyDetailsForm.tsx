@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import CountSelector from "@/components/molecules/CountSelector";
-import CheckboxGrid from "@/components/molecules/CheckboxGrid";
+// import CheckboxGrid from "@/components/molecules/CheckboxGrid";
 import { PropertyListingPayload } from "@/types/propertyListing";
 
 // Backend: AmenitiesEnum
@@ -109,9 +109,9 @@ const PropertyDetailsForm = ({
     setLocalData((prev: unknown) => ({ ...(prev as object || {}), [field]: value }));
   };
 
-  const handleCheckboxChange = (field: string) => (selected: string[]) => {
-    setLocalData((prev: unknown) => ({ ...(prev as object || {}), [field]: selected }));
-  };
+  // const handleCheckboxChange = (field: string) => (selected: string[]) => {
+  //   setLocalData((prev: unknown) => ({ ...(prev as object || {}), [field]: selected }));
+  // };
 
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -127,10 +127,10 @@ const PropertyDetailsForm = ({
 
 
   return (
-    <div className="w-full space-y-8">
-      <h1 className="text-2xl font-semibold text-gray-900">Property details</h1>
+    <div className="w-full space-y-6 px-4 sm:px-6 lg:px-0">
+      <h1 className="text-xl sm:text-2xl font-semibold text-gray-900">Property details</h1>
 
-      <div className="grid grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
         <div>
           <label
             htmlFor="totalFloors"
@@ -144,7 +144,7 @@ const PropertyDetailsForm = ({
             id="totalFloors"
             value={(localData as Record<string, unknown>).totalFloors as string}
             onChange={handleInputChange}
-            className="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-orange-500 focus:border-orange-500 sm:text-sm"
+            className="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-orange-500 focus:border-orange-500 text-sm"
           />
         </div>
         <div>
@@ -160,12 +160,12 @@ const PropertyDetailsForm = ({
             id="floor"
             value={(localData as Record<string, unknown>).floor as string}
             onChange={handleInputChange}
-            className="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-orange-500 focus:border-orange-500 sm:text-sm"
+            className="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-orange-500 focus:border-orange-500 text-sm"
           />
         </div>
       </div>
 
-      <div className="grid grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
         <div>
           <label
             htmlFor="totalAreaSqM"
@@ -180,11 +180,11 @@ const PropertyDetailsForm = ({
               id="totalAreaSqM"
               value={(localData as Record<string, unknown>).totalAreaSqM as string}
               onChange={handleInputChange}
-              className="block w-full rounded-md border-gray-300 py-2 px-3 focus:border-orange-500 focus:ring-orange-500 sm:text-sm pr-14"
+              className="block w-full rounded-md border-gray-300 py-2 px-3 focus:border-orange-500 focus:ring-orange-500 text-sm pr-14"
               placeholder="0"
             />
             <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3">
-              <span className="text-gray-500 sm:text-sm">sq.m</span>
+              <span className="text-gray-500 text-sm">sq.m</span>
             </div>
           </div>
         </div>
@@ -202,11 +202,11 @@ const PropertyDetailsForm = ({
               id="livingAreaSqM"
               value={(localData as Record<string, unknown>).livingAreaSqM as string}
               onChange={handleInputChange}
-              className="block w-full rounded-md border-gray-300 py-2 px-3 focus:border-orange-500 focus:ring-orange-500 sm:text-sm pr-14"
+              className="block w-full rounded-md border-gray-300 py-2 px-3 focus:border-orange-500 focus:ring-orange-500 text-sm pr-14"
               placeholder="0"
             />
             <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3">
-              <span className="text-gray-500 sm:text-sm">sq.m</span>
+              <span className="text-gray-500 text-sm">sq.m</span>
             </div>
           </div>
         </div>
@@ -224,11 +224,11 @@ const PropertyDetailsForm = ({
               id="kitchenAreaSqM"
               value={(localData as Record<string, unknown>).kitchenAreaSqM as string}
               onChange={handleInputChange}
-              className="block w-full rounded-md border-gray-300 py-2 px-3 focus:border-orange-500 focus:ring-orange-500 sm:text-sm pr-14"
+              className="block w-full rounded-md border-gray-300 py-2 px-3 focus:border-orange-500 focus:ring-orange-500 text-sm pr-14"
               placeholder="0"
             />
             <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3">
-              <span className="text-gray-500 sm:text-sm">sq.m</span>
+              <span className="text-gray-500 text-sm">sq.m</span>
             </div>
           </div>
         </div>
@@ -252,20 +252,56 @@ const PropertyDetailsForm = ({
         />
       </div>
 
-      <CheckboxGrid
-        title="Amenities"
-        options={amenities}
-        selectedOptions={(localData as Record<string, unknown>).amenities as string[]}
-        onChange={handleCheckboxChange("amenities")}
-      />
+      <div className="space-y-4">
+        <div>
+          <h3 className="text-lg font-semibold text-gray-900">Amenities</h3>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+          {amenities.map((option) => (
+            <label key={option} className="flex items-center space-x-3 p-2 rounded-md hover:bg-gray-50">
+              <input
+                type="checkbox"
+                checked={((localData as Record<string, unknown>).amenities as string[])?.includes(option) || false}
+                onChange={() => {
+                  const currentAmenities = (localData as Record<string, unknown>).amenities as string[] || [];
+                  const newAmenities = currentAmenities.includes(option)
+                    ? currentAmenities.filter(item => item !== option)
+                    : [...currentAmenities, option];
+                  setLocalData((prev: unknown) => ({ ...(prev as object || {}), amenities: newAmenities }));
+                }}
+                className="w-4 h-4 text-gray-800 border-gray-300 rounded focus:ring-gray-800 flex-shrink-0"
+              />
+              <span className="text-sm text-gray-700">{option}</span>
+            </label>
+          ))}
+        </div>
+      </div>
 
-      <CheckboxGrid
-        title="Infrastructure"
-        subtitle="(up to 500 meters)"
-        options={infrastructure}
-        selectedOptions={(localData as Record<string, unknown>).infrastructure as string[]}
-        onChange={handleCheckboxChange("infrastructure")}
-      />
+      <div className="space-y-4">
+        <div>
+          <h3 className="text-lg font-semibold text-gray-900">Infrastructure</h3>
+          <p className="text-sm text-gray-500">(up to 500 meters)</p>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+          {infrastructure.map((option) => (
+            <label key={option} className="flex items-center space-x-3 p-2 rounded-md hover:bg-gray-50">
+              <input
+                type="checkbox"
+                checked={((localData as Record<string, unknown>).infrastructure as string[])?.includes(option) || false}
+                onChange={() => {
+                  const currentInfrastructure = (localData as Record<string, unknown>).infrastructure as string[] || [];
+                  const newInfrastructure = currentInfrastructure.includes(option)
+                    ? currentInfrastructure.filter(item => item !== option)
+                    : [...currentInfrastructure, option];
+                  setLocalData((prev: unknown) => ({ ...(prev as object || {}), infrastructure: newInfrastructure }));
+                }}
+                className="w-4 h-4 text-gray-800 border-gray-300 rounded focus:ring-gray-800 flex-shrink-0"
+              />
+              <span className="text-sm text-gray-700">{option}</span>
+            </label>
+          ))}
+        </div>
+      </div>
 
       <div>
         <label

@@ -55,13 +55,16 @@ const ClaimProperty = () => {
   useEffect(() => {
     if (propertyData?.property) {
       const property = propertyData.property;
-      setForm({
+      
+      const newForm = {
         streetAddress: property.location?.streetAddress || property.location?.fullAddress || "",
         district: property.location?.district || "",
         state: property.location?.stateOrRegion || "",
         postalCode: property.location?.zipCode || property.location?.postalCode || "",
         propertyType: property.propertyType || "Residential",
-      });
+      };
+      
+      setForm(newForm);
     }
   }, [propertyData]);
 
@@ -150,8 +153,14 @@ const ClaimProperty = () => {
   };
   const handleSubmitClaim = async () => {
     // Validate required fields
-    if (!verificationForm.fullName || !verificationForm.email || !verificationForm.phone) {
-      toast.error("Please fill in all required fields before submitting.");
+    if (!verificationForm.fullName || !verificationForm.email) {
+      toast.error("Please fill in your full name and email address before submitting.");
+      return;
+    }
+
+    // Check if phone is provided, if not show a warning but allow submission
+    if (!verificationForm.phone) {
+      toast.error("Please provide your phone number for verification purposes.");
       return;
     }
 
@@ -204,14 +213,11 @@ const ClaimProperty = () => {
   };
 
   // Read-only fields for prepopulated data
-  const detailsReadOnlyFields = [
-    "streetAddress",
-    "district",
-    "state",
-    "postalCode",
-    "propertyType",
-  ];
-  const verificationReadOnlyFields = ["email", "fullName", "phone"];
+  // Make email and fullName read-only if they exist, but allow phone to be editable
+  const detailsReadOnlyFields: string[] = [];
+  const verificationReadOnlyFields = verificationForm.email && verificationForm.fullName 
+    ? ["email", "fullName"] 
+    : [];
 
   if (!propertyId) {
     return (
@@ -397,13 +403,22 @@ const ClaimProperty = () => {
       )}
       {/* Step 2: Verification Form */}
       {step === 2 && (
-        <ClaimPropertyVerificationForm
-          form={verificationForm}
-          handleChange={handleVerificationChange}
-          handleContinue={handleVerificationContinue}
-          handleCancel={handleVerificationCancel}
-          readOnlyFields={verificationReadOnlyFields}
-        />
+        <div>
+          {!verificationForm.phone && (
+            <div className="w-full max-w-xl mb-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+              <div className="text-yellow-800 text-sm">
+                <strong>Note:</strong> Please provide your phone number for verification purposes.
+              </div>
+            </div>
+          )}
+          <ClaimPropertyVerificationForm
+            form={verificationForm}
+            handleChange={handleVerificationChange}
+            handleContinue={handleVerificationContinue}
+            handleCancel={handleVerificationCancel}
+            readOnlyFields={verificationReadOnlyFields}
+          />
+        </div>
       )}
       {/* Step 3: Confirmation Form */}
       {step === 3 && (

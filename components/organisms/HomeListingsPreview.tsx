@@ -223,8 +223,8 @@ const HomeListingsPreview: React.FC = () => {
           )
             return false;
           if (
-            (property.propertyDetails.price !== null && typeof property.propertyDetails.price !== "number") ||
-            typeof property.propertyDetails.currency !== "string"
+            (property.propertyDetails.price !== null && property.propertyDetails.price !== undefined && typeof property.propertyDetails.price !== "number") ||
+            (property.propertyDetails.currency !== null && property.propertyDetails.currency !== undefined && typeof property.propertyDetails.currency !== "string")
           )
             return false;
           if (

@@ -127,4 +127,4 @@ const PaymentSuccessPage = () => {
   );
 };
 
-export default PaymentSuccessPage; 
+export default PaymentSuccessPage;

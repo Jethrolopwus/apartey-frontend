@@ -1516,6 +1516,7 @@ class BaseURL {
       );
     }
   };
+
 }
 
 const http = new BaseURL();

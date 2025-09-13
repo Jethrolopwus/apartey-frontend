@@ -5,54 +5,60 @@ interface PaymentSummaryProps {
   addOns: string[];
   aparteyKeys: number;
   currency: string;
+  totalPrice?: number;
+  keysDiscount?: number;
 }
 
 const PaymentSummary = ({ 
   selectedTier, 
   addOns, 
   aparteyKeys, 
-  currency 
+  currency,
+  totalPrice,
+  keysDiscount
 }: PaymentSummaryProps) => {
-  // Calculate pricing based on tier and add-ons
+  // Use actual pricing from ad promotion form if available
   const getTierPrice = (tier: string): number => {
+    // If we have totalPrice from the form, calculate tier price
+    if (totalPrice !== undefined) {
+      const addOnsTotal = addOns.length * 20000; // Assuming 20k per add-on for NGN
+      const keysDiscountAmount = keysDiscount || 0;
+      return totalPrice + keysDiscountAmount - addOnsTotal;
+    }
+    
+    // Fallback to default pricing
     switch (tier) {
       case "FastSale":
-        return 5000;
-      case "Premium":
-        return 10000;
-      case "Standard":
-        return 3000;
+        return currency === 'ngn' ? 40000 : currency === 'eur' ? 28 : 28;
+      case "Turbo Boost":
+        return currency === 'ngn' ? 120000 : currency === 'eur' ? 80 : 80;
+      case "Easy Start":
+        return 0;
       default:
-        return 5000;
+        return currency === 'ngn' ? 40000 : currency === 'eur' ? 28 : 28;
     }
   };
 
-  const getAddOnPrice = (addOn: string): number => {
-    switch (addOn) {
-      case "liftsToTop":
-        return 2000;
-      case "certifiedByApartey":
-        return 1500;
-      default:
-        return 0;
-    }
+  const getAddOnPrice = (): number => {
+    return currency === 'ngn' ? 20000 : currency === 'eur' ? 17 : 18;
   };
 
   const getAddOnLabel = (addOn: string): string => {
     switch (addOn) {
-      case "liftsToTop":
-        return "Lift to Top";
-      case "certifiedByApartey":
+      case "Check and certify my ad by Apartey experts":
         return "Certified by Apartey";
+      case "10 lifts to the top of the list (daily, 7 days)":
+        return "Lift to Top (7 days)";
+      case "Detailed user engagement analytics":
+        return "Advanced Analytics";
       default:
         return addOn;
     }
   };
 
   const tierPrice = getTierPrice(selectedTier);
-  const addOnsTotal = addOns.reduce((total, addOn) => total + getAddOnPrice(addOn), 0);
-  const aparteyKeysPrice = aparteyKeys * 100; // 100 per key
-  const subtotal = tierPrice + addOnsTotal + aparteyKeysPrice;
+  const addOnsTotal = addOns.reduce((total) => total + getAddOnPrice(), 0);
+  const finalTotal = totalPrice !== undefined ? totalPrice : (tierPrice + addOnsTotal - (keysDiscount || 0));
 
   return (
     <div className="bg-white rounded-lg shadow-lg p-6 mb-8">
@@ -68,34 +74,40 @@ const PaymentSummary = ({
             <p className="text-sm text-gray-600">Property listing promotion</p>
           </div>
           <span className="font-semibold text-gray-900">
-            {tierPrice.toLocaleString()} {currency.toUpperCase()}
+            {currency === 'ngn' ? '₦' : currency === 'eur' ? '€' : '$'}{tierPrice.toLocaleString()}
           </span>
         </div>
 
         {/* Add-ons */}
-        {addOns.length > 0 && (
+        {addOns.length > 0 && addOns[0] !== '' && (
           <div className="space-y-2">
             <h4 className="font-medium text-gray-900">Add-ons</h4>
-            {addOns.map((addOn) => (
-              <div key={addOn} className="flex justify-between items-center py-2">
+            {addOns.map((addOn, index) => (
+              <div key={index} className="flex justify-between items-center py-2">
                 <span className="text-sm text-gray-600">{getAddOnLabel(addOn)}</span>
                 <span className="text-sm font-medium text-gray-900">
-                  {getAddOnPrice(addOn).toLocaleString()} {currency.toUpperCase()}
+                  {currency === 'ngn' ? '₦' : currency === 'eur' ? '€' : '$'}{getAddOnPrice().toLocaleString()}
                 </span>
               </div>
             ))}
+            <div className="flex justify-between items-center py-2 border-t border-gray-100">
+              <span className="text-sm font-medium text-gray-700">Add-ons Subtotal</span>
+              <span className="text-sm font-semibold text-gray-900">
+                {currency === 'ngn' ? '₦' : currency === 'eur' ? '€' : '$'}{addOnsTotal.toLocaleString()}
+              </span>
+            </div>
           </div>
         )}
 
-        {/* Apartey Keys */}
-        {aparteyKeys > 0 && (
+        {/* Apartey Keys Discount */}
+        {aparteyKeys > 0 && keysDiscount && keysDiscount > 0 && (
           <div className="flex justify-between items-center py-3 border-t border-gray-200">
             <div>
-              <h4 className="font-medium text-gray-900">Apartey Keys</h4>
-              <p className="text-sm text-gray-600">{aparteyKeys} keys</p>
+              <h4 className="font-medium text-green-700">Apartey Keys Discount</h4>
+              <p className="text-sm text-gray-600">{aparteyKeys} keys applied</p>
             </div>
-            <span className="font-semibold text-gray-900">
-              {aparteyKeysPrice.toLocaleString()} {currency.toUpperCase()}
+            <span className="font-semibold text-green-700">
+              -{currency === 'ngn' ? '₦' : currency === 'eur' ? '€' : '$'}{keysDiscount.toLocaleString()}
             </span>
           </div>
         )}
@@ -104,7 +116,7 @@ const PaymentSummary = ({
         <div className="flex justify-between items-center py-4 border-t-2 border-gray-300">
           <h3 className="text-lg font-semibold text-gray-900">Total</h3>
           <span className="text-xl font-bold text-gray-900">
-            {subtotal.toLocaleString()} {currency.toUpperCase()}
+            {currency === 'ngn' ? '₦' : currency === 'eur' ? '€' : '$'}{finalTotal.toLocaleString()}
           </span>
         </div>
 
